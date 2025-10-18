@@ -1,11 +1,13 @@
 import Text from "@/components/ui/Text";
+import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { Link } from "expo-router";
 import React, { useState } from "react";
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
@@ -43,20 +45,20 @@ const SignUpScreen = () => {
 
   return (
     <ScrollView
-      className="bg-light flex-1 px-6 pt-20"
+      className="flex-1 bg-light px-6 pt-20"
       keyboardShouldPersistTaps="handled"
     >
       <Text
         family="nunito"
         weight="bold"
-        className="mb-6 text-center  text-3xl "
+        className="mb-8 text-center  text-3xl "
       >
         Create Your Account
       </Text>
 
       {/* Name Field */}
       <View className="mb-4">
-        <Text className="text-tertiary mb-2 text-sm">Name</Text>
+        <Text className="mb-2 text-sm text-tertiary">Name</Text>
         <TextInput
           value={form.name}
           onChangeText={(t) => setForm({ ...form, name: t })}
@@ -64,11 +66,9 @@ const SignUpScreen = () => {
           onBlur={() => setFocused(null)}
           placeholder="Enter your full name"
           className={cn(
-            "rounded-xl border border-red-500 bg-white px-4 py-4 text-base",
-            focused === "name" && "border-blue-500",
-            errors.name
-              ? "border-red-500"
-              : "border-gray-300 focus:border-blue-500",
+            "border-gray-200 font-poppins rounded-xl border bg-white px-4 py-3 text-base",
+            focused === "name" && "focus",
+            errors.name ? "border-red-500" : "focus:border-primary_400",
           )}
         />
         {errors.name && (
@@ -78,7 +78,7 @@ const SignUpScreen = () => {
 
       {/* Email Field */}
       <View className="mb-4">
-        <Text className="text-gray-700 mb-2">Email</Text>
+        <Text className="mb-2 text-sm text-tertiary">Email</Text>
         <TextInput
           value={form.email}
           onChangeText={(t) => setForm({ ...form, email: t })}
@@ -87,13 +87,10 @@ const SignUpScreen = () => {
           placeholder="example@email.com"
           keyboardType="email-address"
           autoCapitalize="none"
-          style={{ borderColor: "red" }}
           className={cn(
-            "rounded-xl border border-red-500 px-4 py-3 text-base",
-            focused === "email" && "border-blue-500",
-            errors.email
-              ? "border-red-500"
-              : "border-gray-300 focus:border-blue-500",
+            "border-gray-300 font-poppins rounded-xl border px-4 py-3 text-base",
+            focused === "email" && "focus",
+            errors.email ? "border-red-500" : "focus:border-blue-500",
           )}
         />
         {errors.email && (
@@ -103,7 +100,7 @@ const SignUpScreen = () => {
 
       {/* Phone Field */}
       <View className="mb-4">
-        <Text className="text-gray-700 mb-2">Phone Number</Text>
+        <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
         <TextInput
           value={form.phone}
           onChangeText={(t) => setForm({ ...form, phone: t })}
@@ -112,7 +109,7 @@ const SignUpScreen = () => {
           placeholder="Enter your phone number"
           keyboardType="phone-pad"
           className={cn(
-            "rounded-xl border px-4 py-3 text-base",
+            "font-poppins rounded-xl border px-4 py-3 text-base",
             focused === "phone" && "border-blue-500",
             errors.phone
               ? "border-red-500"
@@ -126,7 +123,7 @@ const SignUpScreen = () => {
 
       {/* Password Field */}
       <View className="mb-6">
-        <Text className="text-gray-700 mb-2">Password</Text>
+        <Text className="mb-2 text-sm text-tertiary">Password</Text>
         <View
           className={cn(
             "flex-row items-center rounded-xl border px-4",
@@ -143,7 +140,7 @@ const SignUpScreen = () => {
             onBlur={() => setFocused(null)}
             placeholder="Create a Password"
             secureTextEntry={!showPassword}
-            className="flex-1 py-3 text-base"
+            className="font-poppins flex-1 py-3 text-base"
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons
@@ -165,15 +162,25 @@ const SignUpScreen = () => {
       >
         <View
           className={cn(
-            "mr-3 h-5 w-5 items-center justify-center rounded border",
-            agree ? "border-blue-500 bg-blue-500" : "border-gray-400",
+            "mr-3 h-6 w-6 items-center justify-center rounded-md border",
+            agree ? "" : "border-textColor",
           )}
         >
-          {agree && <Ionicons name="checkmark" size={14} color="white" />}
+          {agree && (
+            <Ionicons name="checkmark" size={14} color={COLORS.textColor} />
+          )}
         </View>
-        <Text className="text-gray-600 text-sm">
-          I Agree to Service Policy, Terms and Condition
-        </Text>
+        <Text className="text-sm">I Agree to </Text>
+        <Link asChild href={"/"}>
+          <Pressable>
+            <Text
+              weight="semibold"
+              className="text-primary_400 text-sm active:underline"
+            >
+              Service Policy, Terms and Condition
+            </Text>
+          </Pressable>
+        </Link>
       </Pressable>
 
       {/* Create Account Button */}
@@ -182,7 +189,7 @@ const SignUpScreen = () => {
         onPress={handleSubmit}
         className={cn(
           "mb-6 items-center justify-center rounded-xl py-4",
-          agree ? "bg-blue-500" : "bg-blue-200",
+          agree ? "bg-primary_400" : "bg-primary_400/30",
         )}
       >
         <Text className="text-base font-semibold text-white">
@@ -193,21 +200,42 @@ const SignUpScreen = () => {
       {/* Divider */}
       <View className="mb-6 flex-row items-center">
         <View className="bg-gray-200 h-[1px] flex-1" />
-        <Text className="text-gray-500 mx-3 text-sm">OR</Text>
+        <Text weight="semibold" className="mx-3 text-sm">
+          OR
+        </Text>
         <View className="bg-gray-200 h-[1px] flex-1" />
       </View>
 
       {/* Continue with Google */}
-      <Pressable className="border-gray-300 mb-10 flex-row items-center justify-center rounded-xl border py-4">
-        <Ionicons name="logo-google" size={20} color="#000" />
-        <Text className="text-gray-700 ml-2 text-base font-medium">
+      <Pressable className="border-gray-300 mb-6 flex-row items-center justify-center rounded-xl border py-4">
+        <Image
+          source={require("@/assets/icons/google.svg")}
+          style={{ width: 20, height: 20 }}
+        />
+        <Text className="ml-4 text-base text-tertiary">
           Continue with Google
         </Text>
       </Pressable>
+      {/* Continue with Twitter */}
+      <Pressable className="border-gray-300 mb-8 flex-row items-center justify-center rounded-xl border py-4">
+        <Image
+          source={require("@/assets/icons/twitter.svg")}
+          style={{ width: 20, height: 20 }}
+        />
+        <Text className="ml-4 text-base text-tertiary">
+          Continue with Twitter
+        </Text>
+      </Pressable>
+      <Link asChild href={"/signIn"}>
+        <Pressable className="flex-row items-center justify-center gap-2">
+          <Text className="text-tertiary">Existing User?</Text>
+          <Text weight="medium" className="text-primary_400">
+            Sign In
+          </Text>
+        </Pressable>
+      </Link>
     </ScrollView>
   );
 };
 
 export default SignUpScreen;
-
-const styles = StyleSheet.create({});

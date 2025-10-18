@@ -25,6 +25,21 @@ const FontProvider = ({ children }: PropsWithChildren) => {
     NunitoSemiboldItalic: require("../assets/fonts/nunito-sans-semibold_italic.ttf"),
     NunitoBold: require("../assets/fonts/nunito-sans-bold.ttf"),
     NunitoBoldItalic: require("../assets/fonts/nunito-sans-bold_italic.ttf"),
+
+    // Poppins family
+    PoppinsLight: require("../assets/fonts/poppins-light.ttf"),
+    PoppinsLightItalic: require("../assets/fonts/poppins-light_italic.ttf"),
+    PoppinsRegular: require("../assets/fonts/poppins-regular.ttf"),
+    PoppinsMedium: require("../assets/fonts/poppins-medium.ttf"),
+    PoppinsMediumItalic: require("../assets/fonts/poppins-medium_italic.ttf"),
+    PoppinsSemibold: require("../assets/fonts/poppins-semibold.ttf"),
+    PoppinsSemiboldItalic: require("../assets/fonts/poppins-semibold_italic.ttf"),
+    PoppinsBold: require("../assets/fonts/poppins-bold.ttf"),
+    PoppinsBoldItalic: require("../assets/fonts/poppins-bold_italic.ttf"),
+    PoppinsExtrabold: require("../assets/fonts/poppins-extrabold.ttf"),
+    PoppinsExtraboldItalic: require("../assets/fonts/poppins-extrabold_italic.ttf"),
+    PoppinsBlack: require("../assets/fonts/poppins-black.ttf"),
+    PoppinsBlackItalic: require("../assets/fonts/poppins-black_Italic.ttf"),
   });
 
   useEffect(() => {

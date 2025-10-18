@@ -14,7 +14,7 @@ const WelcomeScreen = () => {
         <Text
           family="degular"
           weight="semibold"
-          className="mb-2 text-center text-4xl"
+          className="mb-2 text-center text-[40px] leading-tight"
         >
           Smart Way to
           {"\n"}
@@ -22,12 +22,12 @@ const WelcomeScreen = () => {
             italic
             family="degular"
             weight="semibold"
-            className="text-secondary"
+            className="text-secondary_400"
           >
             Master Your Money{" "}
           </Text>
         </Text>
-        <Text className="text-center text-xs">
+        <Text className="text-center text-sm">
           One app for all your money goals—budget better, track spending, manage
           loans, and build lasting savings with ease.
         </Text>
@@ -46,7 +46,7 @@ const WelcomeScreen = () => {
       >
         Welcome Onboard, let’s help you get started
       </Text>
-      <View className="flex-[3] gap-5">
+      <View className="flex-[2] gap-5">
         <Button title="Sign Up" onPress={()=>router.navigate('/signUp')} className="mt-auto" />
         <Button title="Sign In" onPress={()=>router.navigate('/signIn')}  variant="outline" />
       </View>

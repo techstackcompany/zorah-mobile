@@ -35,7 +35,7 @@ const slides: Slide[] = [
     title: "Money management made",
     highlight: "simple",
     subtitle: "Money Management",
-    bgColor: COLORS.primaryFaint,
+    bgColor: COLORS.primary_100,
     description:
       "PocketMonie helps you track budgets, set savings goals, and stay in control of your money.",
     image: require("../assets/images/onboarding/image1.png"),
@@ -45,7 +45,7 @@ const slides: Slide[] = [
     title: "Shop smarter, save",
     highlight: "bigger",
     subtitle: "MarketPlace",
-    bgColor: COLORS.secondaryFaint,
+    bgColor: COLORS.secondary_100,
     description:
       "Shop local, save more. PocketMonie MarketPlace brings you the best deals while supporting local vendors.",
     image: require("../assets/images/onboarding/image2.png"),
@@ -55,7 +55,7 @@ const slides: Slide[] = [
     title: "Shop smarter, save",
     highlight: "bigger",
     subtitle: "MarketPlace",
-    bgColor: COLORS.primaryFaint,
+    bgColor: COLORS.primary_100,
     imagePosition: "right bottom",
     description:
       "Shop local, save more. PocketMonie MarketPlace brings you the best deals while supporting local vendors.",
@@ -76,9 +76,8 @@ const lastIndex = slides.length - 1;
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const router = useRouter()
+  const router = useRouter();
   const isLastSlide = currentIndex === slides.length - 1;
-
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slideIndex = Math.round(event.nativeEvent.contentOffset.x / width);
@@ -89,7 +88,7 @@ export default function OnboardingScreen() {
     if (!isLastSlide) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      router.replace('/welcome')
+      router.replace("/welcome");
     }
   };
   const handleSkip = () => {
@@ -135,7 +134,7 @@ export default function OnboardingScreen() {
                       key={index}
                       className={cn(
                         "mx-1 h-2 w-1/6 max-w-24 rounded-full",
-                        index === currentIndex ? " bg-secondary" : "bg-gray",
+                        index === currentIndex ? " bg-secondary_400" : "bg-grey",
                       )}
                     />
                   ))}
@@ -154,18 +153,18 @@ export default function OnboardingScreen() {
                 <Text
                   family="degular"
                   weight="semibold"
-                  className="text-center text-[38px] leading-tight"
+                  className="text-center text-[38px] leading-tight mb-3"
                 >
                   {item.title}{" "}
                   <Text
                     family="degular"
                     weight="semibold"
-                    className="text-secondary"
+                    className="text-secondary_400"
                   >
                     {item.highlight}
                   </Text>
                 </Text>
-                <Text className=" trac mt-3 text-center font-nunito leading-relaxed">
+                <Text className=" tracking-wide mt-3 text-center font-nunito leading-relaxed text-lg sm:text-xl">
                   {item.description}
                 </Text>
               </View>

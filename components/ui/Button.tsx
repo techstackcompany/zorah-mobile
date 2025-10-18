@@ -40,13 +40,13 @@ export default function Button({
 
   const variantStyles =
     variant === "solid"
-      ? "bg-primary"
-      : "border border-primary bg-transparent active:bg-primary/10";
+      ? "bg-primary_400"
+      : "border border-primary_400 bg-transparent active:bg-primary_400/10";
 
   const textStyles =
     variant === "solid"
-      ? "text-white font-semibold text-base"
-      : "text-primary font-semibold text-base";
+      ? "text-white text-base font-nunitoMedium"
+      : "text-primary_400  text-base font-nunitoMedium";
 
   const disabledStyles =
     variant === "solid" ? "bg-gray-300" : "border-gray-300 text-gray-300";
