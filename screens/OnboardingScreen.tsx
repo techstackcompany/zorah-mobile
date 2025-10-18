@@ -1,8 +1,10 @@
+import MainContainer from "@/components/layouts/MainContainer";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Image, ImageStyle } from "expo-image";
+import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   Dimensions,
@@ -12,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
@@ -75,6 +76,9 @@ const lastIndex = slides.length - 1;
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const router = useRouter()
+  const isLastSlide = currentIndex === slides.length - 1;
+
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slideIndex = Math.round(event.nativeEvent.contentOffset.x / width);
@@ -82,17 +86,17 @@ export default function OnboardingScreen() {
   };
 
   const handleNext = () => {
-    if (currentIndex < slides.length - 1) {
+    if (!isLastSlide) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      console.log("Navigate to main app screen");
+      router.replace('/welcome')
     }
   };
   const handleSkip = () => {
     flatListRef.current?.scrollToIndex({ index: lastIndex, animated: false });
   };
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <MainContainer>
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -103,7 +107,7 @@ export default function OnboardingScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <View className="flex-1 items-center pb-10" style={{ width }}>
+          <View className="flex-1 items-center " style={{ width }}>
             {/* Illustration */}
 
             <View
@@ -168,15 +172,14 @@ export default function OnboardingScreen() {
 
               {/* CTA */}
               <Button
+                onPress={handleNext}
                 className="mt-auto"
-                title={
-                  currentIndex === slides.length - 1 ? "Finish" : "Get Started"
-                }
+                title={isLastSlide ? "Finish" : "Get Started"}
               />
             </View>
           </View>
         )}
       />
-    </SafeAreaView>
+    </MainContainer>
   );
 }

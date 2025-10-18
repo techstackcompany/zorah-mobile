@@ -33,7 +33,7 @@ export default function Text({
     <RNText
       {...props}
       style={[{ fontFamily: getFontName() }, style]}
-      className={cn("text-textColor", className)}
+      className={cn("text-textColor font-degular", className)}
     />
   );
 }

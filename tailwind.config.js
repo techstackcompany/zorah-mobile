@@ -12,7 +12,9 @@ module.exports = {
         degular: ["DegularRegular"],
         degularMedium: ["DegularMedium"],
         degularSemibold: ["DegularSemibold"],
+        degularSemiboldItalic:['DegularSemiboldItalic'],
         degularBold: ["DegularBold"],
+
         nunito: ["NunitoRegular"],
         nunitoMedium: ["NunitoMedium"],
         nunitoSemibold: ["NunitoSemibold"],

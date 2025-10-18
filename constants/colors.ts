@@ -5,6 +5,10 @@
   gray: "#D9D9D9",
   primaryFaint:'#F6FAFF',
   secondaryFaint:"#EBF9F3",
+  light:"#FDFCFB",
+  tertiary:'#2C2C2C',
+  "grayLight":"#EFEFEF"
+
 };
 
 export default COLORS
