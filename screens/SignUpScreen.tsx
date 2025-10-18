@@ -45,8 +45,13 @@ const SignUpScreen = () => {
 
   return (
     <ScrollView
-      className="flex-1 bg-light px-6 pt-20"
+      className="flex-1 bg-light px-6"
       keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: "center",
+        paddingVertical: 48,
+      }}
     >
       <Text
         family="nunito"

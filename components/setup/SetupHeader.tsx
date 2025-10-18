@@ -28,12 +28,12 @@ const SetupHeader = ({
       <Text weight="semibold" className="text-sm text-textColor">
         Step {currentStep} of {totalSteps}
       </Text>
-      <View className="mt-3 h-1 rounded-full bg-grayLight">
+      <View className="mt-3 h-1 rounded-full bg-white">
         <View
           className="h-full rounded-full bg-secondary_500"
           style={{ width: `${progress}%` }}
         />
-      </View>
+      </View> 
       <Text
         family="degular"
         weight="semibold"
