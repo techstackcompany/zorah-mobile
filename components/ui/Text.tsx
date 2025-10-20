@@ -15,7 +15,7 @@ interface Props extends RNTextProps {
 
 export default function Text({
   family = "nunito",
-  weight = "regular",
+  weight = "medium",
   italic = false,
   className = "",
   style,

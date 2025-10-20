@@ -11,6 +11,8 @@ const COLORS = {
   lightMuted: "#FAFAFA",
   tertiary: "#2C2C2C",
   grayLight: "#EFEFEF",
+  peach: "#BE5E1A",
+  peachTint: "#FFEBE2",
 };
 
 export default COLORS;

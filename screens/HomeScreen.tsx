@@ -4,38 +4,31 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import { Image, ImageSource } from "expo-image";
 import React, { useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleProp,
-  View,
-  ViewStyle,
-} from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 type CurrencyOption = {
   code: string;
   label: string;
   symbol: string;
-  flag: string;
+  flag: ImageSource;
 };
 
 type SummaryCard = {
   id: string;
   label: string;
   amount: string;
-  icon: "arrow-down" | "arrow-up";
-  iconColor: string;
+  icon: ImageSource;
   accent: string;
 };
 
 type QuickAction = {
   id: string;
   label?: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: ImageSource;
   background: string;
-  iconColor: string;
+  aspectRatio?: 1;
 };
 
 type FxRate = {
@@ -44,7 +37,7 @@ type FxRate = {
   code: string;
   change: number;
   price: string;
-  flag: string;
+  flags: [ImageSource, ImageSource];
 };
 
 type BottomNavItem = {
@@ -59,19 +52,19 @@ const currencies: CurrencyOption[] = [
     code: "NGN",
     label: "NGN - Nigerian (Naira)",
     symbol: "₦",
-    flag: "🇳🇬",
+    flag: require("@/assets/icons/nigeria-flag-curved.svg"),
   },
   {
     code: "CAD",
     label: "CAD - Canadian (Dollar)",
     symbol: "$",
-    flag: "🇨🇦",
+    flag: require("@/assets/icons/canada-flag-curved.svg"),
   },
   {
     code: "GHS",
     label: "GHS - Ghanaian (Cedi)",
     symbol: "₵",
-    flag: "🇬🇭",
+    flag: require("@/assets/icons/ghana-flag-curved.svg"),
   },
 ];
 
@@ -80,16 +73,14 @@ const summaryCards: SummaryCard[] = [
     id: "expense",
     label: "Expense",
     amount: "₦0.00",
-    icon: "arrow-down",
-    iconColor: "#FC9E4F",
-    accent: "bg-[#FFF3E9]",
+    icon: require("@/assets/icons/arrow-down.svg"),
+    accent: "bg-peachTint",
   },
   {
     id: "income",
     label: "Income",
     amount: "₦0.00",
-    icon: "arrow-up",
-    iconColor: "#32A34D",
+    icon: require("@/assets/icons/arrow-up.svg"),
     accent: "bg-secondary_100",
   },
 ];
@@ -98,22 +89,20 @@ const quickActions: QuickAction[] = [
   {
     id: "expense-income",
     label: "Expense & Income",
-    icon: "add-circle",
+    icon: require("@/assets/icons/add-circle.svg"),
     background: "bg-white",
-    iconColor: COLORS.primary_400,
   },
   {
     id: "goals",
     label: "Set Goals",
-    icon: "flag",
+    icon: require("@/assets/icons/piggy.svg"),
     background: "bg-white",
-    iconColor: COLORS.secondary_500,
   },
   {
     id: "more",
-    icon: "ellipsis-horizontal",
+    icon: require("@/assets/icons/more-ellipsis.svg"),
     background: "bg-white",
-    iconColor: COLORS.tertiary,
+    aspectRatio: 1,
   },
 ];
 
@@ -124,23 +113,32 @@ const fxRates: FxRate[] = [
     code: "CADNGN",
     change: 2.5,
     price: "1,650.10",
-    flag: "🇨🇦",
+    flags: [
+      require("@/assets/icons/canada-flag-curved.svg"),
+      require("@/assets/icons/nigeria-flag-curved.svg"),
+    ],
   },
   {
-    id: "usdcad",
-    pair: "USD/CAD",
-    code: "USDCAD",
+    id: "cadghs",
+    pair: "CAD/GHS",
+    code: "CADGHS",
     change: -0.2,
-    price: "1.38314",
-    flag: "🇺🇸",
+    price: "589.42",
+    flags: [
+      require("@/assets/icons/canada-flag-curved.svg"),
+      require("@/assets/icons/ghana-flag-curved.svg"),
+    ],
   },
   {
-    id: "audngn",
-    pair: "AUD/NGN",
-    code: "AUDNGN",
+    id: "ghsngn",
+    pair: "GHS/NGN",
+    code: "GHSNGN",
     change: -0.2,
-    price: "1.38314",
-    flag: "🇦🇺",
+    price: "85.33",
+    flags: [
+      require("@/assets/icons/ghana-flag-curved.svg"),
+      require("@/assets/icons/nigeria-flag-curved.svg"),
+    ],
   },
 ];
 
@@ -151,14 +149,6 @@ const bottomNavItems: BottomNavItem[] = [
   { id: "analytics", label: "Analytics", icon: "stats-chart" },
   { id: "profile", label: "Profile", icon: "person-circle-outline" },
 ];
-
-const cardShadow: StyleProp<ViewStyle> = {
-  shadowColor: "#1F2937",
-  shadowOffset: { width: 0, height: 10 },
-  shadowOpacity: 0.08,
-  shadowRadius: 12,
-  elevation: 4,
-};
 
 const HomeScreen = () => {
   const [currency, setCurrency] = useState<CurrencyOption>(currencies[0]);
@@ -240,6 +230,11 @@ const HomeScreen = () => {
                   onPress={() => setShowCurrencySheet(true)}
                   className="flex-row items-center gap-2 rounded-full bg-white px-3 py-2"
                 >
+                  <Image
+                    source={currency.flag}
+                    style={{ width: 20, height: 20, borderRadius: 10 }}
+                    contentFit="cover"
+                  />
                   <Text weight="semibold" className="text-primary_400">
                     {currency.code}
                   </Text>
@@ -265,29 +260,31 @@ const HomeScreen = () => {
                 {summaryCards.map((item) => (
                   <View
                     key={item.id}
-                    className={cn("flex-1  px-3 py-4 flex-row items-center bg-white rounded-3xl gap-3", )}
+                    className={cn("flex-1 rounded-xl px-4 py-3 flex-row items-center  bg-white gap-3" )}
                   >
-                    <View className="mb-3 h-10 w-10 items-center justify-center rounded-full bg-white/80">
-                      <Ionicons
-                        name={item.icon}
-                        size={20}
-                        color={item.iconColor}
+                    <View className={cn("h-10 w-10 items-center justify-center", item.accent)}>
+                      <Image
+                        source={item.icon}
+                        style={{ width: 30, height: 30 }}
+                        contentFit="contain"
                       />
                     </View>
-                    <Text className="text-sm text-textColor/60">
+                    <View>
+                    <Text weight="medium" className="text-base text-textColor/60">
                       {item.label}
                     </Text>
                     <Text weight="semibold" className="mt-1 text-lg">
                       {item.amount}
                     </Text>
+                    </View>
                   </View>
                 ))}
               </View>
             </View>
           </View>
-          <View className="px-6 bg-lightMuted">
+          <View className="bg-lightMuted px-6">
             <View className="mt-4">
-              <Text weight="semibold" className="text-base">
+              <Text weight="semibold" className="text-lg">
                 Quick Actions
               </Text>
               <View className="mt-4 flex-row gap-3">
@@ -295,42 +292,45 @@ const HomeScreen = () => {
                   <Pressable
                     key={action.id}
                     className={cn(
-                      " flex-row items-center gap-3 rounded-full px-4 py-2",
+                      "flex-row items-center gap-2 rounded-full border border-grayLight px-3 py-2 ",
                       action.background,
+                      action.aspectRatio === 1 && "aspect-square",
                     )}
                   >
-                    <View className="h-8 w-8 items-center justify-center rounded-full bg-primary_100">
-                      <Ionicons
-                        name={action.icon}
-                        size={22}
-                        color={action.iconColor}
+                    <View className="h-8 w-8 items-center justify-center rounded-full">
+                      <Image
+                        source={action.icon}
+                        style={{ aspectRatio: 1, width: "100%" }}
+                        contentFit="contain"
                       />
                     </View>
-                    {action.label &&<Text className="text-sm">{action.label}</Text>}
+                    {action.label && (
+                      <Text className="text-sm text-black" weight="semibold">
+                        {action.label}
+                      </Text>
+                    )}
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            <View
-              className="mt-8 rounded-3xl bg-secondary_100 px-5 py-5"
-            >
+            <View className="mt-8 rounded-3xl bg-secondary_100 px-5 py-5">
               <View className="mb-3 flex-row items-center gap-3">
                 <View className="h-10 w-10 items-center justify-center rounded-full bg-white/70">
                   <Ionicons
                     name="bulb"
-                    size={20}
+                    size={24}
                     color={COLORS.secondary_500}
                   />
                 </View>
                 <Text
-                  weight="semibold"
-                  className="text-base text-secondary_500"
+                  weight="bold"
+                  className="text-xl"
                 >
                   Financial Tip
                 </Text>
               </View>
-              <Text className="text-sm text-textColor/80">
+              <Text className="text-sm text-textColor/60">
                 Set aside ₦500 daily for emergencies. Small amounts add up to
                 big savings over time!
               </Text>
@@ -361,7 +361,36 @@ const HomeScreen = () => {
                       )}
                     >
                       <View className="flex-row items-center gap-3">
-                        <Text className="text-2xl">{rate.flag}</Text>
+                        <View className="relative h-8 w-10">
+                          <Image
+                            source={rate.flags[0]}
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 13,
+                              position: "absolute",
+                              left: 0,
+                              top: 0,
+                              borderWidth: 1,
+                              borderColor: "#ffffff",
+                            }}
+                            contentFit="cover"
+                          />
+                          <Image
+                            source={rate.flags[1]}
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 13,
+                              position: "absolute",
+                              right: 0,
+                              top: 0,
+                              borderWidth: 1,
+                              borderColor: "#ffffff",
+                            }}
+                            contentFit="cover"
+                          />
+                        </View>
                         <View>
                           <Text weight="semibold">{rate.pair}</Text>
                           <Text className="text-xs text-textColor/50">
@@ -411,39 +440,7 @@ const HomeScreen = () => {
           </View>
         </ScrollView>
 
-        <View className="pb-3">
-          <View className="rounded-full bg-primary_400 px-2 py-2">
-            <View className="flex-row items-center justify-between">
-              {bottomNavItems.map((item) => {
-                const isActive = !!item.active;
-                return (
-                  <Pressable
-                    key={item.id}
-                    className={cn(
-                      "flex-1 items-center justify-center py-2",
-                      isActive &&
-                        "mx-1 flex-row gap-2 rounded-full bg-white px-3",
-                    )}
-                  >
-                    <Ionicons
-                      name={item.icon}
-                      size={22}
-                      color={isActive ? COLORS.primary_400 : "#FFFFFF"}
-                    />
-                    {isActive ? (
-                      <Text
-                        weight="semibold"
-                        className="text-sm text-primary_400"
-                      >
-                        {item.label}
-                      </Text>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        </View>
+   
       </View>
 
       <SlideUpModal
@@ -462,10 +459,14 @@ const HomeScreen = () => {
               <Pressable
                 key={option.code}
                 onPress={() => handleCurrencySelect(option)}
-                className="flex-row items-center justify-between rounded-2xl   px-4 py-4"
+                className="flex-row items-center justify-between rounded-2xl px-4 py-4"
               >
                 <View className="flex-row items-center gap-3">
-                  <Text className="text-2xl">{option.flag}</Text>
+                  <Image
+                    source={option.flag}
+                    style={{ width: 28, height: 28, borderRadius: 14 }}
+                    contentFit="cover"
+                  />
                   <Text>{option.label}</Text>
                 </View>
                 <Ionicons

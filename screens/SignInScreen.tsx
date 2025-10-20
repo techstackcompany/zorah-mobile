@@ -105,12 +105,11 @@ const SignInScreen = () => {
         ) : null}
       </View>
 
-      <Pressable
-        onPress={() => console.log("Forgot password pressed")}
-        className="mb-8 self-end"
-      >
-        <Text className="text-sm text-tertiary">Forgot Password?</Text>
-      </Pressable>
+      <Link asChild href="/forgot-password">
+        <Pressable className="mb-8 self-end">
+          <Text className="text-sm text-tertiary">Forgot Password?</Text>
+        </Pressable>
+      </Link>
 
       <Pressable
         onPress={handleSubmit}
