@@ -5,6 +5,7 @@ const COLORS = {
   textColor: "#2A3A50",
   grey: "#D9D9D9",
   primary_100: "#F6FAFF",
+  primary_200:'#EAEFFF',
   secondary_100: "#EBF9F3",
   light: "#FDFCFB",
   lightMuted: "#FAFAFA",

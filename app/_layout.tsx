@@ -9,6 +9,7 @@ import "../global.css";
 export const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>

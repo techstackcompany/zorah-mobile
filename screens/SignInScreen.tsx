@@ -1,8 +1,9 @@
 import Text from "@/components/ui/Text";
+import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Pressable,
@@ -17,6 +18,8 @@ const SignInScreen = () => {
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const { setIsVerified, signIn } = useSession();
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
@@ -31,6 +34,9 @@ const SignInScreen = () => {
     if (validate()) {
       console.log("Sign in form submitted:", form);
     }
+    signIn("Temp token");
+    setIsVerified(true);
+    router.navigate("/");
   };
 
   return (
@@ -43,11 +49,7 @@ const SignInScreen = () => {
         paddingVertical: 48,
       }}
     >
-      <Text
-        family="nunito"
-        weight="bold"
-        className="mb-8 text-center text-3xl"
-      >
+      <Text family="nunito" weight="bold" className="mb-8 text-center text-3xl">
         Login Your Account
       </Text>
 
@@ -60,7 +62,7 @@ const SignInScreen = () => {
           onFocus={() => setFocused("name")}
           onBlur={() => setFocused(null)}
           className={cn(
-            "border-gray-200 font-poppins rounded-xl border bg-white px-4 py-3 text-base",
+            "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
             focused === "name" && "focus",
             errors.name ? "border-red-500" : "focus:border-primary_400",
           )}
@@ -88,7 +90,7 @@ const SignInScreen = () => {
             secureTextEntry={!showPassword}
             onFocus={() => setFocused("password")}
             onBlur={() => setFocused(null)}
-            className="font-poppins flex-1 py-3 text-base"
+            className="flex-1 py-3 font-poppins text-base"
           />
           <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
             <Ionicons
@@ -118,14 +120,14 @@ const SignInScreen = () => {
       </Pressable>
 
       <View className="mb-6 flex-row items-center">
-        <View className="bg-gray-200 h-[1px] flex-1" />
+        <View className="h-[1px] flex-1 bg-gray-200" />
         <Text weight="semibold" className="mx-3 text-sm">
           OR
         </Text>
-        <View className="bg-gray-200 h-[1px] flex-1" />
+        <View className="h-[1px] flex-1 bg-gray-200" />
       </View>
 
-      <Pressable className="border-gray-300 mb-4 flex-row items-center justify-center rounded-xl border py-4">
+      <Pressable className="mb-4 flex-row items-center justify-center rounded-xl border border-gray-300 py-4">
         <Image
           source={require("@/assets/icons/google.svg")}
           style={{ width: 20, height: 20 }}
@@ -135,15 +137,7 @@ const SignInScreen = () => {
         </Text>
       </Pressable>
 
-      <Pressable className="border-gray-300 mb-8 flex-row items-center justify-center rounded-xl border py-4">
-        <Image
-          source={require("@/assets/icons/twitter.svg")}
-          style={{ width: 20, height: 20 }}
-        />
-        <Text className="ml-4 text-base text-tertiary">
-          Continue with Twitter
-        </Text>
-      </Pressable>
+      
 
       <Link asChild href={"/signUp"}>
         <Pressable className="mb-10 flex-row items-center justify-center gap-2">

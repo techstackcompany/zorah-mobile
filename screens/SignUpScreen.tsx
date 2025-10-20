@@ -3,7 +3,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Pressable,
@@ -24,7 +24,7 @@ const SignUpScreen = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [agree, setAgree] = useState(false);
-
+const router = useRouter()
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim()) newErrors.name = "Please enter your name";
@@ -41,6 +41,7 @@ const SignUpScreen = () => {
     if (validate()) {
       console.log("Form submitted:", form);
     }
+    router.navigate('/setup/choose-language')
   };
 
   return (
@@ -221,16 +222,7 @@ const SignUpScreen = () => {
           Continue with Google
         </Text>
       </Pressable>
-      {/* Continue with Twitter */}
-      <Pressable className="border-gray-300 mb-8 flex-row items-center justify-center rounded-xl border py-4">
-        <Image
-          source={require("@/assets/icons/twitter.svg")}
-          style={{ width: 20, height: 20 }}
-        />
-        <Text className="ml-4 text-base text-tertiary">
-          Continue with Twitter
-        </Text>
-      </Pressable>
+    
       <Link asChild href={"/signIn"}>
         <Pressable className="flex-row items-center justify-center gap-2">
           <Text className="text-tertiary">Existing User?</Text>

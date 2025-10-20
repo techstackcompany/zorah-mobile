@@ -1,9 +1,6 @@
-import { Text, View } from "react-native";
+import HomeScreen from "@/screens/HomeScreen";
+import React from "react";
 
 export default function Index() {
-  return (
-    <View className="flex-1 justify-center items-center">
-      <Text>Edit</Text>
-    </View>
-  );
+  return <HomeScreen />;
 }
