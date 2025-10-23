@@ -5,6 +5,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
@@ -139,6 +140,7 @@ const fxRates: FxRate[] = [
 
 
 const HomeScreen = () => {
+  const router = useRouter();
   const [currency, setCurrency] = useState<CurrencyOption>(currencies[0]);
   const [showCurrencySheet, setShowCurrencySheet] = useState(false);
   const [balanceHidden, setBalanceHidden] = useState(false);
@@ -157,8 +159,14 @@ const HomeScreen = () => {
     setShowCurrencySheet(false);
   };
 
+  const handleQuickActionPress = (action: QuickAction) => {
+    if (action.id === "expense-income") {
+      router.push("/(app)/expense-planning");
+    }
+  };
+
   return (
-    <MainContainer className="bg-light">
+    <MainContainer edges={['top']} className="bg-light pb-0">
       <View className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -279,6 +287,7 @@ const HomeScreen = () => {
                 {quickActions.map((action) => (
                   <Pressable
                     key={action.id}
+                    onPress={() => handleQuickActionPress(action)}
                     className={cn(
                       "flex-row items-center gap-2 rounded-full border border-grayLight px-3 py-2 ",
                       action.background,

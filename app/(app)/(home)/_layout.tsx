@@ -60,8 +60,8 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
               onPress={onPress}
               onLongPress={onLongPress}
               className={cn(
-                "mx-1 flex-1 flex-row items-center justify-center rounded-full py-2",
-                isFocused ? "bg-white px-4" : "px-2",
+                "mx-1  flex-row items-center justify-center rounded-full py-2",
+                isFocused ? "bg-white px-4 min-w-[90px]" : "px-2",
               )}
             >
               <Ionicons
@@ -87,6 +87,12 @@ const HomeLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarStyle:{
+          justifyContent:'center',
+          borderWidth:2,
+          borderColor:'white',
+          backgroundColor:"red"
+        }
       }}
       tabBar={(props) => <HomeTabBar {...props} />}
     >
@@ -100,6 +106,11 @@ const HomeLayout = () => {
         name="history"
         options={{
           title: "History",
+          tabBarLabelStyle:{
+          },
+          tabBarItemStyle:{
+            
+          }
         }}
       />
       <Tabs.Screen
@@ -130,12 +141,14 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
     paddingTop: 12,
+    backgroundColor:"white"
   },
   container: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent:'space-between',
     backgroundColor: COLORS.primary_400,
-    borderRadius: 999,
+    borderRadius: 1000,
     padding: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
