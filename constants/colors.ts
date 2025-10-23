@@ -9,6 +9,7 @@ const COLORS = {
   secondary_100: "#EBF9F3",
   light: "#FDFCFB",
   lightMuted: "#FAFAFA",
+  lightBg: "#EFEFEF",
   tertiary: "#2C2C2C",
   grayLight: "#EFEFEF",
   peach: "#BE5E1A",
