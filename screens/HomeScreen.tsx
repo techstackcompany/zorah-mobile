@@ -40,12 +40,7 @@ type FxRate = {
   flags: [ImageSource, ImageSource];
 };
 
-type BottomNavItem = {
-  id: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  active?: boolean;
-};
+
 
 const currencies: CurrencyOption[] = [
   {
@@ -142,13 +137,6 @@ const fxRates: FxRate[] = [
   },
 ];
 
-const bottomNavItems: BottomNavItem[] = [
-  { id: "home", label: "Home", icon: "home", active: true },
-  { id: "history", label: "History", icon: "time-outline" },
-  { id: "portfolio", label: "Briefcase", icon: "briefcase-outline" },
-  { id: "analytics", label: "Analytics", icon: "stats-chart" },
-  { id: "profile", label: "Profile", icon: "person-circle-outline" },
-];
 
 const HomeScreen = () => {
   const [currency, setCurrency] = useState<CurrencyOption>(currencies[0]);
