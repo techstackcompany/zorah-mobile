@@ -160,8 +160,11 @@ const ExpensePlanningScreen = () => {
                     <Text weight="semibold" className="text-sm text-textColor">
                       {PERIOD_LABEL}
                     </Text>
-                    
-                    <Image source={require('@/assets/icons/calendar.svg')} style={{width:24, height:24}} />
+
+                    <Image
+                      source={require("@/assets/icons/calendar.svg")}
+                      style={{ width: 24, height: 24 }}
+                    />
                   </Pressable>
                 </View>
 
@@ -207,8 +210,11 @@ const ExpensePlanningScreen = () => {
                   {EMPTY_SUBTITLE}
                 </Text>
               </View>
-
-              <TouchableOpacity activeOpacity={0.7} style={styles.floatingButton} onPress={() => {}}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.floatingButton}
+                onPress={() => router.push("/add-expense")}
+              >
                 <Ionicons name="add" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -318,7 +324,7 @@ const styles = StyleSheet.create({
   placeholderLinePrimary: {
     height: 8,
     borderRadius: 12,
-    backgroundColor:  COLORS.lightBg,
+    backgroundColor: COLORS.lightBg,
     width: "90%",
   },
   placeholderLineSecondary: {
