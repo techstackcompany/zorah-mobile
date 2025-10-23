@@ -7,9 +7,9 @@ import {
 
 interface Props extends PropsWithChildren, SafeAreaViewProps {}
 
-const MainContainer = ({ children, className }: Props) => {
+const MainContainer = ({ children, className, ...props }: Props) => {
   return (
-    <SafeAreaView  className={cn("flex-1 bg-white pb-10", className)}>
+    <SafeAreaView {...props} className={cn("flex-1 bg-white pb-10", className)}>
       {children}
     </SafeAreaView>
   );
