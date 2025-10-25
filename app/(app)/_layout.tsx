@@ -6,6 +6,7 @@ const AppLayout = () => {
     <Stack.Screen name="(home)" options={{headerShown: false}}/>
     <Stack.Screen name="expense-planning"  options={{ title:'Expense Planning' }}/>
     <Stack.Screen name="add-expense"   options={{ title:'Add Expense' }}/>
+    <Stack.Screen name="add-income"   options={{ title:'Add Income' }}/>
     </Stack>;
 };
 
