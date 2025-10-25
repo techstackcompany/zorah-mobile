@@ -18,44 +18,44 @@ import {
   View,
 } from "react-native";
 
-type ExpenseCategoryKey = "transport" | "food" | "call" | "pos";
+type IncomeCategoryKey = "salary" | "investment" | "allowance" | "bonus";
 
-type ExpenseCategory = {
-  key: ExpenseCategoryKey;
+type IncomeCategory = {
+  key: IncomeCategoryKey;
   label: string;
   icon: ImageSource;
   accent: string;
   tint: string;
 };
 
-const EXPENSE_CATEGORIES: readonly ExpenseCategory[] = [
+const INCOME_CATEGORIES: readonly IncomeCategory[] = [
   {
-    key: "transport",
-    label: "Transport",
-    icon: require("@/assets/images/home/transport.png"),
-    accent: "#8E5BE7",
-    tint: "#F1E8FF",
+    key: "salary",
+    label: "Salary",
+    icon: require("@/assets/images/home/salary.png"),
+    accent: "#1A43BE",
+    tint: "#E9EEFF",
   },
   {
-    key: "food",
-    label: "Food",
-    icon: require("@/assets/images/home/food.png"),
-    accent: "#E9781A",
-    tint: "#FFE9D8",
-  },
-  {
-    key: "call",
-    label: "Call",
-    icon: require("@/assets/images/home/call.png"),
+    key: "investment",
+    label: "Investment",
+    icon: require("@/assets/images/home/investment.png"),
     accent: "#2FA89A",
     tint: "#E6F5F3",
   },
   {
-    key: "pos",
-    label: "Pos \n Charges",
+    key: "allowance",
+    label: "Allowance",
     icon: require("@/assets/images/home/bonus.png"),
-    accent: "#1A43BE",
-    tint: "#E9EEFF",
+    accent: "#E9781A",
+    tint: "#FFE9D8",
+  },
+  {
+    key: "bonus",
+    label: "Bonus",
+    icon: require("@/assets/images/home/bonus.png"),
+    accent: "#8E5BE7",
+    tint: "#F1E8FF",
   },
 ] as const;
 
@@ -142,11 +142,11 @@ const formatAmountValue = (
   return `₦ ${formattedInteger}`;
 };
 
-const AddExpenseScreen = () => {
+const AddIncomeScreen = () => {
   const router = useRouter();
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] =
-    useState<ExpenseCategoryKey>("transport");
+    useState<IncomeCategoryKey>("salary");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
@@ -239,75 +239,77 @@ const AddExpenseScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Category</Text>
                 <CategorySelector
-                  categories={EXPENSE_CATEGORIES}
+                  categories={INCOME_CATEGORIES}
                   selectedKey={selectedCategory}
                   onSelect={setSelectedCategory}
                 />
               </View>
 
-            <View>
-              <Text className="text-sm text-textColor/70">Payment method</Text>
-              <Pressable
-                onPress={openPaymentModal}
-                className={cn(
-                  "mt-2 flex-row items-center justify-between rounded-2xl border bg-white px-4 py-4",
-                  focusedField === "payment"
-                    ? "border-primary_400"
-                    : "border-gray-200",
-                )}
-              >
-                <Text
+              <View>
+                <Text className="text-sm text-textColor/70">
+                  Payment method
+                </Text>
+                <Pressable
+                  onPress={openPaymentModal}
                   className={cn(
-                    "text-base",
-                    paymentMethod ? "text-textColor" : "text-textColor/50",
+                    "mt-2 flex-row items-center justify-between rounded-2xl border bg-white px-4 py-4",
+                    focusedField === "payment"
+                      ? "border-primary_400"
+                      : "border-gray-200",
                   )}
                 >
-                  {paymentMethod || "Select payment method"}
-                </Text>
+                  <Text
+                    className={cn(
+                      "text-base",
+                      paymentMethod ? "text-textColor" : "text-textColor/50",
+                    )}
+                  >
+                    {paymentMethod || "Select payment method"}
+                  </Text>
 
-                <Ionicons
-                  name={isPaymentModalVisible ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color={COLORS.textColor}
+                  <Ionicons
+                    name={isPaymentModalVisible ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={COLORS.textColor}
+                  />
+                </Pressable>
+              </View>
+
+              <View>
+                <Text className="text-sm text-textColor/70">Date</Text>
+                <DatePickerField
+                  value={date}
+                  onChange={(formatted) => {
+                    setDate(formatted);
+                  }}
+                  isFocused={focusedField === "date"}
+                  onFocusChange={(focused) =>
+                    setFocusedField(focused ? "date" : null)
+                  }
                 />
-              </Pressable>
-            </View>
+              </View>
 
-            <View>
-              <Text className="text-sm text-textColor/70">Date</Text>
-              <DatePickerField
-                value={date}
-                onChange={(formatted, _raw) => {
-                  setDate(formatted);
-                }}
-                isFocused={focusedField === "date"}
-                onFocusChange={(focused) =>
-                  setFocusedField(focused ? "date" : null)
-                }
-              />
-            </View>
-
-            <View>
-              <Text className="text-sm text-textColor/70">
-                Description (Optional)
-              </Text>
-              <TextInput
-                placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                onFocus={() => setFocusedField("description")}
-                onBlur={() => setFocusedField(null)}
-                className={cn(
-                  "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 text-base font-nunitoMedium",
-                  focusedField === "description"
-                    ? "border-primary_400"
-                    : "border-gray-200",
-                )}
-              />
-            </View>
+              <View>
+                <Text className="text-sm text-textColor/70">
+                  Description (Optional)
+                </Text>
+                <TextInput
+                  placeholder="What did you receive the money for? (e.g., Salary for September)"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  onFocus={() => setFocusedField("description")}
+                  onBlur={() => setFocusedField(null)}
+                  className={cn(
+                    "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 text-base font-nunitoMedium",
+                    focusedField === "description"
+                      ? "border-primary_400"
+                      : "border-gray-200",
+                  )}
+                />
+              </View>
             </View>
           </ScrollView>
           <View className="px-6 pb-6">
@@ -316,7 +318,7 @@ const AddExpenseScreen = () => {
               className="items-center justify-center rounded-2xl bg-primary_400 py-4"
             >
               <Text weight="semibold" className="text-base text-white">
-                Add New Expense
+                Add New Income
               </Text>
             </Pressable>
           </View>
@@ -370,4 +372,4 @@ const AddExpenseScreen = () => {
   );
 };
 
-export default AddExpenseScreen;
+export default AddIncomeScreen;

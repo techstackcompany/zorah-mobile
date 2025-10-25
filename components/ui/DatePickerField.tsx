@@ -2,9 +2,8 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 type DatePickerFieldProps = {
   value: string;
@@ -60,7 +59,6 @@ const parseDateString = (value: string) => {
 };
 
 
-//TODO I want the calendar to be closed if something other than this element is clicked
 const DatePickerField = ({
   value,
   onChange,
@@ -72,24 +70,50 @@ const DatePickerField = ({
   const [calendarCursor, setCalendarCursor] = useState(
     () => parseDateString(value) ?? new Date(),
   );
+  const selectButtonRef = useRef<View>(null);
+  const [triggerLayout, setTriggerLayout] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const selectedDateValue = useMemo(
     () => parseDateString(value),
     [value],
   );
 
-  const toggleCalendar = useCallback(() => {
-    if (isCalendarOpen) {
-      setIsCalendarOpen(false);
-      onFocusChange?.(false);
+  const closeCalendar = useCallback(() => {
+    if (!isCalendarOpen) {
       return;
     }
+    setIsCalendarOpen(false);
+    onFocusChange?.(false);
+  }, [isCalendarOpen, onFocusChange]);
 
+  const openCalendar = useCallback(() => {
     const baseDate = selectedDateValue ?? new Date();
     setCalendarCursor(baseDate);
-    setIsCalendarOpen(true);
-    onFocusChange?.(true);
-  }, [isCalendarOpen, selectedDateValue, onFocusChange]);
+    if (selectButtonRef.current) {
+      selectButtonRef.current.measureInWindow((x, y, width, height) => {
+        setTriggerLayout({ x, y, width, height });
+        setIsCalendarOpen(true);
+        onFocusChange?.(true);
+      });
+    } else {
+      setTriggerLayout(null);
+      setIsCalendarOpen(true);
+      onFocusChange?.(true);
+    }
+  }, [selectedDateValue, onFocusChange]);
+
+  const toggleCalendar = useCallback(() => {
+    if (isCalendarOpen) {
+      closeCalendar();
+    } else {
+      openCalendar();
+    }
+  }, [isCalendarOpen, closeCalendar, openCalendar]);
 
   const goToPreviousMonth = useCallback(() => {
     setCalendarCursor((prev) => {
@@ -144,21 +168,105 @@ const DatePickerField = ({
     (selected: Date) => {
       onChange(formatDate(selected), selected);
       setCalendarCursor(selected);
-      setIsCalendarOpen(false);
-      onFocusChange?.(false);
+      closeCalendar();
     },
-    [onChange, onFocusChange],
+    [onChange, closeCalendar],
   );
 
   const today = new Date();
+  const isActive = isFocused || isCalendarOpen;
+  const calendarContent = (
+    <>
+      <View className="flex-row items-center justify-between">
+        <Pressable onPress={goToPreviousMonth} hitSlop={8}>
+          <Ionicons name="chevron-back" size={18} color={COLORS.textColor} />
+        </Pressable>
+        <Text weight="semibold" className="text-base text-textColor">
+          {monthLabel}
+        </Text>
+        <Pressable onPress={goToNextMonth} hitSlop={8}>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={COLORS.textColor}
+          />
+        </Pressable>
+      </View>
+
+      <View className="mt-3 flex-row justify-between">
+        {WEEKDAYS.map((weekday) => (
+          <Text key={weekday} className="w-9 text-center text-xs text-textColor/50">
+            {weekday}
+          </Text>
+        ))}
+      </View>
+
+      <View className="mt-2 flex-row flex-wrap">
+        {calendarDays.map(({ key, label, date: cellDate }) => {
+          if (!cellDate) {
+            return (
+              <View
+                key={key}
+                style={{ width: "14.2857%" }}
+                className="mb-2 h-9 items-center justify-center"
+              />
+            );
+          }
+
+          const isSelected =
+            selectedDateValue &&
+            selectedDateValue.getFullYear() === cellDate.getFullYear() &&
+            selectedDateValue.getMonth() === cellDate.getMonth() &&
+            selectedDateValue.getDate() === cellDate.getDate();
+
+          const isToday =
+            today.getFullYear() === cellDate.getFullYear() &&
+            today.getMonth() === cellDate.getMonth() &&
+            today.getDate() === cellDate.getDate();
+
+          return (
+            <Pressable
+              key={key}
+              style={{ width: "14.2857%" }}
+              className="mb-2 items-center"
+              onPress={() => handleDateSelection(cellDate)}
+              accessibilityRole="button"
+              accessibilityLabel={`Select ${formatDate(cellDate)}`}
+            >
+              <View
+                className={cn(
+                  "h-9 w-9 items-center justify-center rounded-full",
+                  isSelected ? "bg-primary_400" : "bg-transparent",
+                  isToday && !isSelected
+                    ? "border border-primary_400"
+                    : "border border-transparent",
+                )}
+              >
+                <Text
+                  weight="medium"
+                  className={cn(
+                    "text-sm",
+                    isSelected ? "text-white" : "text-textColor",
+                  )}
+                >
+                  {label}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </>
+  );
 
   return (
     <>
       <Pressable
+        ref={selectButtonRef}
         onPress={toggleCalendar}
         className={cn(
-          "mt-2 flex-row items-center justify-between rounded-2xl border bg-white px-4 py-4",
-          isFocused ? "border-primary_400" : "border-gray-200",
+          "mt-2 flex-row items-center justify-between rounded-xl border bg-white px-4 py-4",
+          isActive ? "border-primary_400" : "border-grayLight",
         )}
         accessibilityRole="button"
         accessibilityLabel="Select date"
@@ -166,102 +274,67 @@ const DatePickerField = ({
         <Text
           className={cn(
             "text-base",
-            value ? "text-textColor" : "text-textColor/50",
+            value ? "text-textColor" : "text-textColor/40",
           )}
         >
           {value || placeholder}
         </Text>
-        <Image source={require('@/assets/icons/calendar.svg')} style={{width:24, height:24}}/>
+        <Ionicons
+          name={isCalendarOpen ? "chevron-up" : "chevron-down"}
+          size={20}
+          color="#2A3A50"
+        />
       </Pressable>
 
-      {isCalendarOpen ? (
-        <View className="absolute mt-24 z-30 rounded-3xl border border-gray-200 bg-white p-4 shadow-lg">
-          <View className="flex-row items-center justify-between">
-            <Pressable onPress={goToPreviousMonth} hitSlop={8}>
-              <Ionicons name="chevron-back" size={18} color={COLORS.textColor} />
-            </Pressable>
-            <Text weight="semibold" className="text-base text-textColor">
-              {monthLabel}
-            </Text>
-            <Pressable onPress={goToNextMonth} hitSlop={8}>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={COLORS.textColor}
-              />
-            </Pressable>
-          </View>
+      <Modal
+        transparent
+        visible={isCalendarOpen}
+        animationType="fade"
+        onRequestClose={closeCalendar}
+      >
+        <View style={styles.overlay}>
+          <Pressable
+            style={styles.backdrop}
+            onPress={closeCalendar}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss calendar"
+          />
 
-          <View className="mt-3 flex-row justify-between">
-            {WEEKDAYS.map((weekday) => (
-              <Text
-                key={weekday}
-                className="w-9 text-center text-xs text-textColor/50"
-              >
-                {weekday}
-              </Text>
-            ))}
-          </View>
-
-          <View className="mt-2 flex-row flex-wrap">
-            {calendarDays.map(({ key, label, date: cellDate }) => {
-              if (!cellDate) {
-                return (
-                  <View
-                    key={key}
-                    style={{ width: "14.2857%" }}
-                    className="mb-2 h-9 items-center justify-center"
-                  />
-                );
-              }
-
-              const isSelected =
-                selectedDateValue &&
-                selectedDateValue.getFullYear() === cellDate.getFullYear() &&
-                selectedDateValue.getMonth() === cellDate.getMonth() &&
-                selectedDateValue.getDate() === cellDate.getDate();
-
-              const isToday =
-                today.getFullYear() === cellDate.getFullYear() &&
-                today.getMonth() === cellDate.getMonth() &&
-                today.getDate() === cellDate.getDate();
-
-              return (
-                <Pressable
-                  key={key}
-                  style={{ width: "14.2857%" }}
-                  className="mb-2 items-center"
-                  onPress={() => handleDateSelection(cellDate)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select ${formatDate(cellDate)}`}
-                >
-                  <View
-                    className={cn(
-                      "h-9 w-9 items-center justify-center rounded-full",
-                      isSelected ? "bg-primary_400" : "bg-transparent",
-                      isToday && !isSelected
-                        ? "border border-primary_400"
-                        : "border border-transparent",
-                    )}
-                  >
-                    <Text
-                      weight="medium"
-                      className={cn(
-                        "text-sm",
-                        isSelected ? "text-white" : "text-textColor",
-                      )}
-                    >
-                      {label}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+          {triggerLayout ? (
+            <View
+              className="rounded-3xl border border-gray-200 bg-white p-4 shadow-lg"
+              style={[
+                styles.dropdown,
+                {
+                  top: triggerLayout.y + triggerLayout.height,
+                  left: triggerLayout.x,
+                  width: triggerLayout.width,
+                },
+              ]}
+            >
+              {calendarContent}
+            </View>
+          ) : (
+            <View className="mx-6 rounded-3xl border border-gray-200 bg-white p-4 shadow-lg">
+              {calendarContent}
+            </View>
+          )}
         </View>
-      ) : null}
+      </Modal>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  dropdown: {
+    position: "absolute",
+  },
+});
 
 export default DatePickerField;

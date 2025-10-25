@@ -7,6 +7,7 @@ const COLORS = {
   primary_100: "#F6FAFF",
   primary_200:'#EAEFFF',
   secondary_100: "#EBF9F3",
+  secondary_200:"#B7FFD5",
   light: "#FDFCFB",
   lightMuted: "#FAFAFA",
   lightBg: "#EFEFEF",
@@ -14,6 +15,9 @@ const COLORS = {
   grayLight: "#EFEFEF",
   peach: "#BE5E1A",
   peachTint: "#FFEBE2",
+  orange:'#F8924F',
+  purple:'#6165D7',
+  purpleLight:'#EAEFFF'
 };
 
 export default COLORS;
