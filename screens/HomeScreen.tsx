@@ -164,8 +164,7 @@ const HomeScreen = () => {
   };
 
   return (
-    <>//TODO I only want the backgroundColor to be this color on this screen alone. all other screens it should default to white
-      <StatusBar backgroundColor={COLORS.primary_200} />
+    <>
       <MainContainer edges={["top"]} className="bg-light pb-0">
         <View className="flex-1">
           <ScrollView

@@ -1,7 +1,7 @@
 import { useSession } from "@/contexts/auth-context/useSession";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { StatusBar } from "react-native";
 
 function RootNavigator() {
   const { isAuthenticated, isLoading, isVerified, signOut } = useSession();
@@ -13,7 +13,7 @@ function RootNavigator() {
   if (isLoading) return null;
   return (
     <>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar style="dark" backgroundColor="white"  translucent={false}/>
       <Stack screenOptions={{ headerShown: false }}>
         {/* Public/Unauthenticated */}
 
