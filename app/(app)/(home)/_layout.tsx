@@ -13,7 +13,8 @@ const TAB_CONFIG: Record<
   { label: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
   index: { label: "Home", icon: "home" },
-  history: { label: "History", icon: "time-outline" },
+  history: { label: "Budget", icon: "time-outline" },
+  budget: { label: "Budget", icon: "time-outline" },
   portfolio: { label: "Briefcase", icon: "briefcase-outline" },
   analytics: { label: "Analytics", icon: "stats-chart" },
   profile: { label: "Profile", icon: "person-circle-outline" },
@@ -56,12 +57,14 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
               key={route.key}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : undefined}
-              accessibilityLabel={descriptors[route.key].options.tabBarAccessibilityLabel}
+              accessibilityLabel={
+                descriptors[route.key].options.tabBarAccessibilityLabel
+              }
               onPress={onPress}
               onLongPress={onLongPress}
               className={cn(
                 "mx-1  flex-row items-center justify-center rounded-full py-2",
-                isFocused ? "bg-white px-4 min-w-[90px]" : "px-2",
+                isFocused ? "min-w-[90px] bg-white px-4" : "px-2",
               )}
             >
               <Ionicons
@@ -70,7 +73,10 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
                 color={isFocused ? COLORS.primary_400 : "#FFFFFF"}
               />
               {isFocused ? (
-                <Text weight="semibold" className="ml-2 text-sm text-primary_400">
+                <Text
+                  weight="semibold"
+                  className="ml-2 text-sm text-primary_400"
+                >
                   {tabItem.label}
                 </Text>
               ) : null}
@@ -87,12 +93,12 @@ const HomeLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle:{
-          justifyContent:'center',
-          borderWidth:2,
-          borderColor:'white',
-          backgroundColor:"red"
-        }
+        tabBarStyle: {
+          justifyContent: "center",
+          borderWidth: 2,
+          borderColor: "white",
+          backgroundColor: "red",
+        },
       }}
       tabBar={(props) => <HomeTabBar {...props} />}
     >
@@ -103,14 +109,11 @@ const HomeLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="budget"
         options={{
-          title: "History",
-          tabBarLabelStyle:{
-          },
-          tabBarItemStyle:{
-            
-          }
+          title: "Budget Manager",
+          tabBarLabelStyle: {},
+          tabBarItemStyle: {},
         }}
       />
       <Tabs.Screen
@@ -141,12 +144,12 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor:"white"
+    backgroundColor: "white",
   },
   container: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent:'space-between',
+    justifyContent: "space-between",
     backgroundColor: COLORS.primary_400,
     borderRadius: 1000,
     padding: 12,
