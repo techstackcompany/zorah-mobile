@@ -2,6 +2,7 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
@@ -58,6 +59,8 @@ const parseDateString = (value: string) => {
   return parsed;
 };
 
+
+//TODO I want the calendar to be closed if something other than this element is clicked
 const DatePickerField = ({
   value,
   onChange,
@@ -168,15 +171,11 @@ const DatePickerField = ({
         >
           {value || placeholder}
         </Text>
-        <Ionicons
-          name="calendar-clear-outline"
-          size={20}
-          color={COLORS.textColor}
-        />
+        <Image source={require('@/assets/icons/calendar.svg')} style={{width:24, height:24}}/>
       </Pressable>
 
       {isCalendarOpen ? (
-        <View className="mt-2 rounded-3xl border border-gray-200 bg-white p-4 shadow-lg">
+        <View className="absolute mt-24 z-30 rounded-3xl border border-gray-200 bg-white p-4 shadow-lg">
           <View className="flex-row items-center justify-between">
             <Pressable onPress={goToPreviousMonth} hitSlop={8}>
               <Ionicons name="chevron-back" size={18} color={COLORS.textColor} />
