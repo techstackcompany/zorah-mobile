@@ -6,8 +6,8 @@ import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { ImageSource } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -57,6 +57,15 @@ type DateRange = {
 type OptionalDateRange = {
   start: Date | null;
   end: Date | null;
+};
+
+type LocalParams = {
+  id?: string;
+  name?: string;
+  amount?: string;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 const sanitizeAmountInput = (value: string) => {
@@ -118,7 +127,7 @@ const formatAmountInput = (value: string, forceFixedDecimals = false) => {
 const startOfWeek = (reference: Date) => {
   const date = new Date(reference);
   const day = date.getDay();
-  const diff = day === 0 ? -6 : 1 - day; 
+  const diff = day === 0 ? -6 : 1 - day;
   date.setDate(date.getDate() + diff);
   date.setHours(0, 0, 0, 0);
   return date;
@@ -194,18 +203,74 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
-const CreateBudgetScreen = () => {
+const isBudgetCategoryKey = (
+  value: string | undefined,
+): value is BudgetCategoryKey => {
+  return Boolean(value && BUDGET_CATEGORIES.some((item) => item.key === value));
+};
+
+const parseInitialAmount = (value?: string) => {
+  if (!value) {
+    return "";
+  }
+
+  const digitsOnly = value.replace(/[^0-9.]/g, "");
+  if (!digitsOnly) {
+    return "";
+  }
+
+  const [integerPartRaw = "", decimals = ""] = digitsOnly.split(".");
+  const integerPart = integerPartRaw.replace(/^0+(?=\d)/, "") || "0";
+  const cleanedDecimals = decimals.slice(0, 2);
+  return cleanedDecimals ? `${integerPart}.${cleanedDecimals}` : integerPart;
+};
+
+const parseInitialRange = (start?: string, end?: string): DateRange | null => {
+  if (!start || !end) {
+    return null;
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return null;
+  }
+
+  const [normalizedStart, normalizedEnd] =
+    startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
+
+  normalizedStart.setHours(0, 0, 0, 0);
+  normalizedEnd.setHours(23, 59, 59, 999);
+
+  return {
+    start: normalizedStart,
+    end: normalizedEnd,
+  };
+};
+
+const EditBudgetScreen = () => {
   const router = useRouter();
-  const [budgetName, setBudgetName] = useState("");
-  const [amount, setAmount] = useState("");
+  const params = useLocalSearchParams<LocalParams>();
+
+  const initialRange =
+    parseInitialRange(params.startDate, params.endDate) ??
+    getPresetRange("this_month");
+
+  const [budgetName, setBudgetName] = useState(params.name ?? "Food & Drinks");
+  const [amount, setAmount] = useState(() =>
+    params.amount ? parseInitialAmount(params.amount) : "80000",
+  );
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [selectedCategory, setSelectedCategory] =
-    useState<BudgetCategoryKey>("food");
-  const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>("this_month");
-  const [selectedRange, setSelectedRange] = useState<DateRange>(() =>
-    getPresetRange("this_month"),
+    useState<BudgetCategoryKey>(
+      isBudgetCategoryKey(params.category) ? params.category : "food",
+    );
+  const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>(
+    params.startDate && params.endDate ? "custom" : "this_month",
   );
+  const [selectedRange, setSelectedRange] = useState<DateRange>(initialRange);
   const [isPeriodModalVisible, setIsPeriodModalVisible] = useState(false);
   const [isCustomModalVisible, setIsCustomModalVisible] = useState(false);
   const [customRangeDraft, setCustomRangeDraft] = useState<OptionalDateRange>({
@@ -255,6 +320,27 @@ const CreateBudgetScreen = () => {
     setIsCustomModalVisible(false);
   };
 
+  const handleSubmit = () => {
+    if (!selectedRange) {
+      return;
+    }
+
+    const payload = {
+      id: params.id ?? "new-budget",
+      name: budgetName.trim(),
+      amount: Number(amount).toFixed(2),
+      category: selectedCategory,
+      periodKey,
+      range: {
+        start: selectedRange.start.toISOString(),
+        end: selectedRange.end.toISOString(),
+      },
+    };
+
+    console.log("Update budget payload:", payload);
+    router.back();
+  };
+
   const isSubmitDisabled =
     !budgetName.trim() ||
     !amount ||
@@ -273,8 +359,6 @@ const CreateBudgetScreen = () => {
         keyboardVerticalOffset={Platform.select({ ios: 64, android: 0 })}
       >
         <View className="flex-1">
-         
-
           <ScrollView
             className="flex-1 px-6 pt-4"
             keyboardShouldPersistTaps="handled"
@@ -354,22 +438,10 @@ const CreateBudgetScreen = () => {
 
           <View className="px-6 pb-6">
             <Button
-              title="Create Budget"
+              title="Update Budget"
               disabled={isSubmitDisabled}
               className="w-full"
-              onPress={() => {
-                const payload = {
-                  name: budgetName.trim(),
-                  amount: Number(amount).toFixed(2),
-                  category: selectedCategory,
-                  periodKey,
-                  range: {
-                    start: selectedRange.start.toISOString(),
-                    end: selectedRange.end.toISOString(),
-                  },
-                };
-                console.log("Create budget payload:", payload);
-              }}
+              onPress={handleSubmit}
             />
           </View>
         </View>
@@ -426,7 +498,7 @@ const CreateBudgetScreen = () => {
           closeIconColor="#fff"
           className="h-[500px]"
         >
-          <View className="gap-4  h-full">
+          <View className="h-full gap-4">
             <View>
               <Text className="text-sm text-textColor/70">Start Date</Text>
               <DatePickerField
@@ -464,4 +536,5 @@ const CreateBudgetScreen = () => {
   );
 };
 
-export default CreateBudgetScreen;
+export default EditBudgetScreen;
+

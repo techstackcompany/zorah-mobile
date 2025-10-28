@@ -53,7 +53,7 @@ const CategorySelector = <K extends string>({
             </View>
             <Text
               weight="bold"
-              className="text-center text-sm leading-tight text-textColor"
+              className="text-center text-xs leading-tight text-textColor"
             >
               {category.label}
             </Text>

@@ -3,7 +3,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,7 +22,7 @@ const TAB_CONFIG: Record<
 
 const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const { bottom } = useSafeAreaInsets();
-
+  const path = usePathname();
   return (
     <View style={[styles.wrapper, { paddingBottom: bottom + 20 }]}>
       <View style={styles.container}>
@@ -89,18 +89,22 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 };
 
 const HomeLayout = () => {
+  const path = usePathname();
+  const shouldHideTabBar = path.startsWith("/budget/") && path !== "/budget";
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          justifyContent: "center",
-          borderWidth: 2,
-          borderColor: "white",
-          backgroundColor: "red",
-        },
+        tabBarStyle: shouldHideTabBar
+          ? { display: "none" }
+          : {
+              justifyContent: "center",
+              borderWidth: 2,
+              borderColor: "white",
+              backgroundColor: "red",
+            },
       }}
-      tabBar={(props) => <HomeTabBar {...props} />}
+      tabBar={(props) => (shouldHideTabBar ? null : <HomeTabBar {...props} />)}
     >
       <Tabs.Screen
         name="index"

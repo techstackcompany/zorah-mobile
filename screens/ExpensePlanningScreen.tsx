@@ -22,7 +22,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, G } from "react-native-svg";
+import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 
 type TabKey = "expense" | "income";
 
@@ -103,7 +103,7 @@ const EXPENSE_SUMMARY = {
     {
       key: "transport",
       label: "Transport",
-      percentage: 28,
+      percentage: 18,
       color: "#FDBA4D",
       trackColor: "#FFF1DD",
       icon: "bus-outline" as const,
@@ -133,7 +133,7 @@ const EXPENSE_SUMMARY = {
   ] as ExpenseSegment[],
 };
 
-const CHART_SIZE = 220;
+const CHART_SIZE = 250;
 const CHART_RADIUS = 95;
 const CHART_STROKE_WIDTH = 40;
 const CHART_OUTER_DIAMETER = CHART_RADIUS * 2 + CHART_STROKE_WIDTH;
@@ -143,7 +143,7 @@ const ExpensePlanningScreen = () => {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>("expense");
-  const [isLoading] = useState(true);
+  const [isLoading] = useState(false);
   const [isCategoryCollapsed, setIsCategoryCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const rotation = useRef(
@@ -207,33 +207,53 @@ const ExpensePlanningScreen = () => {
     () => formatCurrency(EXPENSE_SUMMARY.total),
     [],
   );
-
   const chartSegments = useMemo(() => {
     if (!expenseSegments.length) {
       return null;
     }
 
     let cumulativeOffset = 0;
+    let cumulativeAngle = -Math.PI / 2;
 
     return expenseSegments.map((segment) => {
       const segmentLength = (segment.percentage / 100) * CHART_CIRCUMFERENCE;
+      const segmentAngle = (segment.percentage / 100) * (Math.PI * 2);
+      const midpointAngle = cumulativeAngle + segmentAngle / 2;
+      const labelRadius = CHART_RADIUS;
+      const labelX =
+        CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
+      const labelY =
+        CHART_SIZE / 2 + labelRadius * Math.sin(midpointAngle);
 
       const element = (
-        <Circle
-          key={segment.key}
-          cx={CHART_SIZE / 2}
-          cy={CHART_SIZE / 2}
-          r={CHART_RADIUS}
-          stroke={segment.color}
-          strokeWidth={CHART_STROKE_WIDTH}
-          strokeDasharray={`${segmentLength} ${CHART_CIRCUMFERENCE}`}
-          strokeDashoffset={cumulativeOffset}
-          strokeLinecap="round"
-          fill="transparent"
-        />
+        <React.Fragment key={segment.key}>
+          <Circle
+            cx={CHART_SIZE / 2}
+            cy={CHART_SIZE / 2}
+            r={CHART_RADIUS}
+            stroke={segment.color}
+            strokeWidth={CHART_STROKE_WIDTH}
+            strokeDasharray={`${segmentLength} ${CHART_CIRCUMFERENCE}`}
+            strokeDashoffset={cumulativeOffset}
+            strokeLinecap="round"
+            fill="transparent"
+          />
+          <SvgText
+            x={labelX}
+            y={labelY}
+            fill={COLORS.textColor}
+            fontSize={12}
+            fontWeight="600"
+            textAnchor="middle"
+            alignmentBaseline="middle"
+          >
+            {segment.percentage}%
+          </SvgText>
+        </React.Fragment>
       );
 
       cumulativeOffset -= segmentLength;
+      cumulativeAngle += segmentAngle;
 
       return element;
     });
@@ -326,15 +346,13 @@ const ExpensePlanningScreen = () => {
                       <View style={styles.chartSvgWrapper}>
                         <Svg width={CHART_SIZE} height={CHART_SIZE}>
                           <G
-                            transform={`rotate(-90 ${CHART_SIZE / 2} ${
-                              CHART_SIZE / 2
-                            })`}
+                         
                           >
                             <Circle
                               cx={CHART_SIZE / 2}
                               cy={CHART_SIZE / 2}
                               r={CHART_RADIUS}
-                              stroke="#EFF1F6"
+                              stroke='red'
                               strokeWidth={CHART_STROKE_WIDTH}
                               fill="transparent"
                             />
@@ -358,19 +376,6 @@ const ExpensePlanningScreen = () => {
                         </Text>
                       </View>
 
-                      {expenseSegments.map((segment) => (
-                        <View
-                          key={`${segment.key}-label`}
-                          style={[styles.chartLabel, segment.labelPosition]}
-                        >
-                          <Text
-                            weight="semibold"
-                            className="text-xs text-textColor"
-                          >
-                            {segment.percentage}%
-                          </Text>
-                        </View>
-                      ))}
                     </View>
                   ) : (
                     <View style={styles.chartEmptyState}>
@@ -510,6 +515,8 @@ const ExpensePlanningScreen = () => {
 };
 
 export default ExpensePlanningScreen;
+
+
 
 const styles = StyleSheet.create({
   headerButton: {

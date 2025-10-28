@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 

@@ -13,8 +13,7 @@ function RootNavigator() {
   if (isLoading) return null;
   return (
     <>
-      <StatusBar style="dark" backgroundColor="white"  translucent={false}/>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, statusBarStyle:"dark" }}>
         {/* Public/Unauthenticated */}
 
         {/* Fully ready → app group */}
