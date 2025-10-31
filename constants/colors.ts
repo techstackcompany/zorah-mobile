@@ -7,6 +7,7 @@ const COLORS = {
   primary_100: "#F6FAFF",
   primary_200:'#EAEFFF',
   secondary_100: "#EBF9F3",
+  secondary_150: "#DDFFE5",
   secondary_200:"#B7FFD5",
   light: "#FDFCFB",
   lightMuted: "#FAFAFA",
