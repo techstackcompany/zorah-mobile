@@ -4,7 +4,7 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, ImageSource } from "expo-image";
+import { Image, ImageBackground, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -39,6 +39,17 @@ type FxRate = {
   change: number;
   price: string;
   flags: [ImageSource, ImageSource];
+};
+
+type RecentTransactionItem = {
+  id: string;
+  title: string;
+  category: string;
+  amount: number;
+  timeAgo: string;
+  type: "income" | "expense";
+  icon: ImageSource;
+  accent: string;
 };
 
 const currencies: CurrencyOption[] = [
@@ -136,11 +147,55 @@ const fxRates: FxRate[] = [
   },
 ];
 
+const recentTransactions: RecentTransactionItem[] = [
+  {
+    id: "salary-credit",
+    title: "Salary Credit",
+    category: "Income",
+    amount: 400_650,
+    timeAgo: "10 min ago",
+    type: "income",
+    icon: require("@/assets/images/home/salary.png"),
+    accent: "#EEF5FF",
+  },
+  {
+    id: "investment",
+    title: "Investment",
+    category: "Income",
+    amount: 150_000,
+    timeAgo: "1 hour ago",
+    type: "income",
+    icon: require("@/assets/images/home/investment.png"),
+    accent: "#F9EBFF",
+  },
+  {
+    id: "shoprite-grocery",
+    title: "Shoprite Grocery",
+    category: "Food & Drinks",
+    amount: -1_650,
+    timeAgo: "1 hour ago",
+    type: "expense",
+    icon: require("@/assets/images/home/shopping.png"),
+    accent: "#FDECEF",
+  },
+  {
+    id: "uber-ride",
+    title: "Uber Ride",
+    category: "Transportation",
+    amount: -2_080,
+    timeAgo: "2 hours ago",
+    type: "expense",
+    icon: require("@/assets/images/home/transport.png"),
+    accent: "#ECFFF4",
+  },
+];
+
 const HomeScreen = () => {
   const router = useRouter();
   const [currency, setCurrency] = useState<CurrencyOption>(currencies[0]);
   const [showCurrencySheet, setShowCurrencySheet] = useState(false);
   const [balanceHidden, setBalanceHidden] = useState(false);
+  const [showEmptyTransactions, setShowEmptyTransactions] = useState(true);
 
   const formattedBalance = useMemo(() => {
     if (balanceHidden) {
@@ -155,11 +210,21 @@ const HomeScreen = () => {
     setCurrency(option);
     setShowCurrencySheet(false);
   };
-
   const handleQuickActionPress = (action: QuickAction) => {
-    if (action.id === "expense-income") {
-      router.push("/(app)/expense-planning");
+    switch (action.id) {
+      case "expense-income":
+        router.push("/(app)/expense-planning");
+        break;
+      case "more":
+        router.push("/(app)/more");
+        break;
+      default:
+        break;
     }
+  };
+
+  const handleToggleRecentTransactions = () => {
+    setShowEmptyTransactions((prev) => !prev);
   };
 
   return (
@@ -322,9 +387,9 @@ const HomeScreen = () => {
                 </View>
               </View>
 
-              <View className="mt-8 rounded-3xl bg-secondary_100 px-5 py-5">
+              <ImageBackground style={{marginTop:32, borderRadius:18,padding:14, backgroundColor:COLORS.secondary_200}}  source={require('@/assets/images/home/fold-pattern.png')}>
                 <View className="mb-3 flex-row items-center gap-3">
-                  <View className="h-10 w-10 items-center justify-center rounded-full bg-white/70">
+                  <View className="h-10 w-10 items-center justify-center rounded-full  bg-white/70">
                     <Ionicons
                       name="bulb"
                       size={24}
@@ -339,7 +404,7 @@ const HomeScreen = () => {
                   Set aside ₦500 daily for emergencies. Small amounts add up to
                   big savings over time!
                 </Text>
-              </View>
+              </ImageBackground>
 
               <View className="mt-8 rounded-3xl bg-white px-5 py-5">
                 <View className="flex-row items-center justify-between">
@@ -424,23 +489,91 @@ const HomeScreen = () => {
                 </View>
               </View>
               <View className="mt-8">
-                <Text weight="semibold" className="text-lg">
-                  Recent Transactions
-                </Text>
+              <View className="flex-row items-center justify-between">
+
+                <Pressable
+                  onPress={handleToggleRecentTransactions}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text weight="semibold" className="text-lg">
+                    Recent Transactions
+                  </Text>
+                </Pressable>
+                <Pressable onPress={()=>router.navigate('/transactions')}>
+                  <Text className="text-primary_400" weight="semibold">See all</Text>
+                </Pressable>
+              </View>
                 <View className="mt-4 rounded-xl bg-white px-5 py-5 shadow-sm">
-                  <View className="mt-4 items-center justify-center">
-                    <Image
-                      source={require("@/assets/images/home/no-recent-trans.svg")}
-                      style={{ width: 170, height: 162 }}
-                      contentFit="contain"
-                    />
-                    <Text weight="semibold" className="mt-4 text-base">
-                      No recent transactions
-                    </Text>
-                    <Text className="mt-1 text-center text-xs text-textColor/60">
-                      All transactions will appear here
-                    </Text>
-                  </View>
+                  {showEmptyTransactions ? (
+                    <View className="mt-4 items-center justify-center">
+                      <Image
+                        source={require("@/assets/images/home/no-recent-trans.svg")}
+                        style={{ width: 170, height: 162 }}
+                        contentFit="contain"
+                      />
+                      <Text weight="semibold" className="mt-4 text-base">
+                        No recent transactions
+                      </Text>
+                      <Text className="mt-1 text-center text-xs text-textColor/60">
+                        All transactions will appear here
+                      </Text>
+                    </View>
+                  ) : (
+                    <View>
+                      {recentTransactions.map((transaction, index) => {
+                        const amountDisplay = `${transaction.amount >= 0 ? "" : "-"}₦${Math.abs(transaction.amount).toLocaleString("en-NG", {
+                          maximumFractionDigits: 0,
+                          minimumFractionDigits: 0,
+                        })}`;
+                        const amountColor =
+                          transaction.type === "income"
+                            ? COLORS.secondary_500
+                            : "#D14343";
+                        return (
+                          <View
+                            key={transaction.id}
+                            className={cn(
+                              "flex-row items-center py-3",
+                              index !== recentTransactions.length - 1 &&
+                                "border-b border-grayLight",
+                            )}
+                          >
+                            <View
+                              className="mr-4 size-10 items-center justify-center rounded-full"
+                              style={{ backgroundColor: transaction.accent }}
+                            >
+                              <Image
+                                source={transaction.icon}
+                                style={{ width: 24, height: 24 }}
+                                contentFit="contain"
+                              />
+                            </View>
+                            <View className="flex-1">
+                              <Text weight="semibold" className="text-sm">
+                                {transaction.title}
+                              </Text>
+                              <Text className="mt-1 text-xs text-textColor/60">
+                                {transaction.category}
+                              </Text>
+                            </View>
+                            <View className="items-end">
+                              <Text
+                                weight="semibold"
+                                className="text-sm"
+                                style={{ color: amountColor }}
+                              >
+                                {amountDisplay}
+                              </Text>
+                              <Text className="mt-1 text-xs text-textColor/50">
+                                {transaction.timeAgo}
+                              </Text>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
