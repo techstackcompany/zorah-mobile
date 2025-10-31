@@ -1,8 +1,8 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
-import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { Image, ImageSource } from "expo-image";
 import { Tabs, usePathname } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -10,14 +10,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TAB_CONFIG: Record<
   string,
-  { label: string; icon: keyof typeof Ionicons.glyphMap }
+  { label: string; iconSource: ImageSource }
 > = {
-  index: { label: "Home", icon: "home" },
-  history: { label: "Budget", icon: "time-outline" },
-  budget: { label: "Budget", icon: "time-outline" },
-  portfolio: { label: "Briefcase", icon: "briefcase-outline" },
-  analytics: { label: "Analytics", icon: "stats-chart" },
-  profile: { label: "Profile", icon: "person-circle-outline" },
+  index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
+  budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
+  portfolio: {
+    label: "Investment",
+    iconSource: require("@/assets/icons/investment.svg"),
+  },
+  analytics: {
+    label: "Fx Rates",
+    iconSource: require("@/assets/icons/fxRates.svg"),
+  },
+  profile: {
+    label: "Account",
+    iconSource: require("@/assets/icons/profile.svg"),
+  },
 };
 
 const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
@@ -30,7 +38,7 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
           const isFocused = state.index === index;
           const tabItem = TAB_CONFIG[route.name] ?? {
             label: route.name,
-            icon: "ellipse-outline" as keyof typeof Ionicons.glyphMap,
+            iconSource: require("@/assets/icons/more.svg"),
           };
 
           const onPress = () => {
@@ -63,14 +71,17 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
               onPress={onPress}
               onLongPress={onLongPress}
               className={cn(
-                "mx-1  flex-row items-center justify-center rounded-full py-2",
+                "mx-1 flex-row items-center justify-center rounded-full py-2",
                 isFocused ? "min-w-[90px] bg-white px-4" : "px-2",
               )}
             >
-              <Ionicons
-                name={tabItem.icon}
-                size={22}
-                color={isFocused ? COLORS.primary_400 : "#FFFFFF"}
+              <Image
+                source={tabItem.iconSource}
+                style={[
+                  styles.icon,
+                  { tintColor: isFocused ? COLORS.primary_400 : "#FFFFFF" },
+                ]}
+                contentFit="contain"
               />
               {isFocused ? (
                 <Text
@@ -162,5 +173,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 8,
+  },
+  icon: {
+    width: 22,
+    height: 22,
   },
 });
