@@ -17,6 +17,7 @@ const COLORS = {
   peach: "#BE5E1A",
   peachTint: "#FFEBE2",
   orange:'#F8924F',
+  amber:'#D59007',
   purple:'#6165D7',
   purpleLight:'#EAEFFF'
 };
