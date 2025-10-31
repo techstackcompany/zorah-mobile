@@ -140,7 +140,7 @@ const HomeLayout = () => {
       <Tabs.Screen
         name="analytics"
         options={{
-          title: "Analytics",
+          title: "FX Rates",
         }}
       />
       <Tabs.Screen

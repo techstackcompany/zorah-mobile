@@ -1,6 +1,7 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
+import AmountInput from "@/components/ui/AmountInput";
 import CategorySelector from "@/components/ui/CategorySelector";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -67,81 +68,6 @@ const PAYMENT_METHODS = [
   "Cash",
 ];
 
-const sanitizeAmountInput = (input: string): string => {
-  const cleaned = input.replace(/[^0-9.]/g, "");
-
-  if (!cleaned) {
-    return "";
-  }
-
-  const hasTrailingDot = cleaned.endsWith(".");
-  const [integerPartRaw = "", ...fractionParts] = cleaned.split(".");
-  let integerPart = integerPartRaw.replace(/^0+(?=\d)/, "");
-
-  if (integerPart === "" && integerPartRaw !== "") {
-    integerPart = "0";
-  }
-
-  let fractionPart = fractionParts.join("");
-  if (fractionPart.length > 2) {
-    fractionPart = fractionPart.slice(0, 2);
-  }
-
-  if (!integerPart && !fractionPart && !hasTrailingDot) {
-    return "";
-  }
-
-  let normalized = integerPart;
-
-  if (!normalized && (fractionPart || hasTrailingDot)) {
-    normalized = "0";
-  }
-
-  if (fractionPart) {
-    normalized = `${normalized}.${fractionPart}`;
-  } else if (hasTrailingDot) {
-    normalized = `${normalized}.`;
-  }
-
-  return normalized;
-};
-
-const formatAmountValue = (
-  rawValue: string,
-  { forceFixedDecimals = false }: { forceFixedDecimals?: boolean } = {},
-): string => {
-  if (!rawValue) {
-    return "";
-  }
-
-  const hasTrailingDot =
-    !forceFixedDecimals && rawValue.endsWith(".") && !rawValue.includes("..");
-  const [integerPartRaw = "", decimalPartRaw = ""] = rawValue.split(".");
-  const integerPartForParsing =
-    integerPartRaw && integerPartRaw !== "." ? integerPartRaw : "0";
-
-  const integerNumber = Number(integerPartForParsing);
-  const formattedInteger = integerNumber.toLocaleString("en-NG");
-
-  if (hasTrailingDot && !decimalPartRaw) {
-    return `₦ ${formattedInteger}.`;
-  }
-
-  if (decimalPartRaw) {
-    const limitedDecimals = decimalPartRaw.slice(0, 2);
-    const decimals = forceFixedDecimals
-      ? limitedDecimals.padEnd(2, "0")
-      : limitedDecimals;
-    return `₦ ${formattedInteger}.${decimals}`;
-  }
-
-  if (forceFixedDecimals) {
-    return `₦ ${formattedInteger}.00`;
-  }
-
-  return `₦ ${formattedInteger}`;
-};
-
 const AddExpenseScreen = () => {
   const router = useRouter();
   const [amount, setAmount] = useState("");
@@ -152,10 +78,6 @@ const AddExpenseScreen = () => {
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
-
-  const onChangeAmount = useCallback((value: string) => {
-    setAmount(sanitizeAmountInput(value));
-  }, []);
 
   const openPaymentModal = useCallback(() => {
     setIsPaymentModalVisible(true);
@@ -187,17 +109,6 @@ const AddExpenseScreen = () => {
     });
   }, [amount, selectedCategory, paymentMethod, date, description]);
 
-  const isAmountFocused = focusedField === "amount";
-  const amountDisplay = useMemo(() => {
-    if (!amount) {
-      return "";
-    }
-
-    return formatAmountValue(amount, {
-      forceFixedDecimals: !isAmountFocused,
-    });
-  }, [amount, isAmountFocused]);
-
   return (
     <MainContainer className="bg-light" edges={[]}>
       <KeyboardAvoidingView
@@ -214,27 +125,16 @@ const AddExpenseScreen = () => {
             contentContainerStyle={{ paddingBottom: 32 }}
           >
             <View className="mt-4 gap-6">
-              <View
-                className={cn(
-                  "rounded-2xl  border border-gray-200  bg-white px-4 py-4",
-                  focusedField === "amount"
-                    ? "border-primary_400"
-                    : "border-gray-200",
-                )}
-              >
-                <Text className="text-sm text-textColor/70">Amount</Text>
-                <View className="mt-2">
-                  <TextInput
-                    value={amount ? amountDisplay : ""}
-                    onChangeText={onChangeAmount}
-                    placeholder="₦ 0.00"
-                    keyboardType="decimal-pad"
-                    onFocus={() => setFocusedField("amount")}
-                    onBlur={() => setFocusedField(null)}
-                    className="py-0 font-nunitoSemibold text-4xl text-textColor"
-                  />
-                </View>
-              </View>
+              <AmountInput
+                value={amount}
+                onChangeValue={setAmount}
+                onFocus={() => setFocusedField("amount")}
+                onBlur={() =>
+                  setFocusedField((prev) =>
+                    prev === "amount" ? null : prev,
+                  )
+                }
+              />
 
               <View>
                 <Text className="text-sm text-textColor/70">Category</Text>

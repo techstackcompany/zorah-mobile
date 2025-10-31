@@ -74,6 +74,10 @@ const AppLayout = () => {
         name="transactions/details"
         options={{ title: "Transaction History" }}
       />
+      <Stack.Screen
+        name="notifications/index"
+        options={{ title: "Notifications" }}
+      />
     </Stack>
   );
 };

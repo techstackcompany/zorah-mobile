@@ -213,17 +213,16 @@ const ExpensePlanningScreen = () => {
     }
 
     let cumulativeOffset = 0;
-    let cumulativeAngle = -Math.PI / 2;
 
     return expenseSegments.map((segment) => {
       const segmentLength = (segment.percentage / 100) * CHART_CIRCUMFERENCE;
       const segmentAngle = (segment.percentage / 100) * (Math.PI * 2);
-      const midpointAngle = cumulativeAngle + segmentAngle / 2;
+      const startAngle =
+        ((-cumulativeOffset) / CHART_CIRCUMFERENCE) * (Math.PI * 2);
+      const midpointAngle = startAngle + segmentAngle / 2;
       const labelRadius = CHART_RADIUS;
-      const labelX =
-        CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
-      const labelY =
-        CHART_SIZE / 2 + labelRadius * Math.sin(midpointAngle);
+      const labelX = CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
+      const labelY = CHART_SIZE / 2 + labelRadius * Math.sin(midpointAngle);
 
       const element = (
         <React.Fragment key={segment.key}>
@@ -253,7 +252,6 @@ const ExpensePlanningScreen = () => {
       );
 
       cumulativeOffset -= segmentLength;
-      cumulativeAngle += segmentAngle;
 
       return element;
     });
@@ -344,15 +342,16 @@ const ExpensePlanningScreen = () => {
                   ) : isExpenseTab ? (
                     <View style={styles.chartContainer}>
                       <View style={styles.chartSvgWrapper}>
-                        <Svg width={CHART_SIZE} height={CHART_SIZE}>
-                          <G
-                         
-                          >
+                        <Svg
+                          width={CHART_SIZE}
+                          height={CHART_SIZE}
+                        >
+                          <G>
                             <Circle
                               cx={CHART_SIZE / 2}
                               cy={CHART_SIZE / 2}
                               r={CHART_RADIUS}
-                              stroke='#eee'
+                              stroke="#eee"
                               strokeWidth={CHART_STROKE_WIDTH}
                               fill="transparent"
                             />
@@ -375,7 +374,6 @@ const ExpensePlanningScreen = () => {
                           {totalAmountLabel}
                         </Text>
                       </View>
-
                     </View>
                   ) : (
                     <View style={styles.chartEmptyState}>
@@ -484,7 +482,10 @@ const ExpensePlanningScreen = () => {
           </View>
         </View>
       </ScrollView>
-       <View style={{paddingBottom:bottom }} className="absolute bottom-0  left-0 right-0 bg-white">
+      <View
+        style={{ paddingBottom: bottom }}
+        className="absolute bottom-0  left-0 right-0 bg-white"
+      >
         <View style={styles.emptyState}>
           <Text weight="semibold" className="text-lg text-textColor/80">
             {emptyStateContent.title}
@@ -495,14 +496,13 @@ const ExpensePlanningScreen = () => {
         </View>
         <TouchableOpacity
           activeOpacity={0.7}
-          style={[styles.floatingButton, {    bottom: 16 + bottom,
-}]}
+          style={[styles.floatingButton, { bottom: 16 + bottom }]}
           onPress={() => router.push(addEntryRoute)}
         >
           <Ionicons name="add" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-      
+
       <TouchableOpacity
         activeOpacity={0.8}
         style={[styles.floatingButton, { bottom: 16 + bottom }]}
@@ -515,8 +515,6 @@ const ExpensePlanningScreen = () => {
 };
 
 export default ExpensePlanningScreen;
-
-
 
 const styles = StyleSheet.create({
   headerButton: {
@@ -685,7 +683,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 24,
   },
-   emptyState: {
+  emptyState: {
     paddingVertical: 20,
     marginEnd: 40,
     alignItems: "center",

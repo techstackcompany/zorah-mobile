@@ -4,11 +4,12 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
+import AmountInput from "@/components/ui/AmountInput";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ImageSource } from "expo-image";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -57,62 +58,6 @@ type DateRange = {
 type OptionalDateRange = {
   start: Date | null;
   end: Date | null;
-};
-
-const sanitizeAmountInput = (value: string) => {
-  const cleaned = value.replace(/[^0-9.]/g, "");
-  if (!cleaned) {
-    return "";
-  }
-
-  const hasTrailingDot = cleaned.endsWith(".");
-  const [integerPartRaw = "", ...fractionParts] = cleaned.split(".");
-  let integerPart = integerPartRaw.replace(/^0+(?=\d)/, "");
-  if (!integerPart && integerPartRaw) {
-    integerPart = "0";
-  }
-
-  let fractionPart = fractionParts.join("");
-  if (fractionPart.length > 2) {
-    fractionPart = fractionPart.slice(0, 2);
-  }
-
-  if (!integerPart && !fractionPart && !hasTrailingDot) {
-    return "";
-  }
-
-  return hasTrailingDot
-    ? `${integerPart || "0"}.`
-    : fractionPart
-      ? `${integerPart || "0"}.${fractionPart}`
-      : integerPart || "0";
-};
-
-const formatAmountInput = (value: string, forceFixedDecimals = false) => {
-  if (!value) {
-    return "";
-  }
-
-  const hasTrailingDot = value.endsWith(".") && !forceFixedDecimals;
-  const [integerPartRaw = "", decimalsRaw = ""] = value.split(".");
-  const integerValue =
-    integerPartRaw && integerPartRaw !== "." ? Number(integerPartRaw) : 0;
-  const formattedInteger = integerValue.toLocaleString("en-NG");
-
-  if (hasTrailingDot && !decimalsRaw) {
-    return `₦ ${formattedInteger}.`;
-  }
-
-  if (decimalsRaw) {
-    const decimals = forceFixedDecimals
-      ? decimalsRaw.slice(0, 2).padEnd(2, "0")
-      : decimalsRaw.slice(0, 2);
-    return `₦ ${formattedInteger}.${decimals}`;
-  }
-
-  return forceFixedDecimals
-    ? `₦ ${formattedInteger}.00`
-    : `₦ ${formattedInteger}`;
 };
 
 const startOfWeek = (reference: Date) => {
@@ -199,7 +144,6 @@ const CreateBudgetScreen = () => {
   const [budgetName, setBudgetName] = useState("");
   const [amount, setAmount] = useState("");
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
-  const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<BudgetCategoryKey>("food");
   const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>("this_month");
@@ -212,13 +156,6 @@ const CreateBudgetScreen = () => {
     start: null,
     end: null,
   });
-
-  const amountDisplay = useMemo(() => {
-    if (!amount) {
-      return "";
-    }
-    return formatAmountInput(amount, !isAmountFocused);
-  }, [amount, isAmountFocused]);
 
   const handleSelectPeriod = (key: BudgetPeriodKey) => {
     if (key === "custom") {
@@ -299,23 +236,11 @@ const CreateBudgetScreen = () => {
                 />
               </View>
 
-              <View
-                className={`rounded-2xl border bg-white px-4 py-4 ${
-                  isAmountFocused ? "border-primary_400" : "border-gray-200"
-                }`}
-              >
-                <Text className="text-sm text-textColor/70">Amount</Text>
-                <TextInput
-                  value={amountDisplay}
-                  onChangeText={(text) => setAmount(sanitizeAmountInput(text))}
-                  placeholder="₦ 0.00"
-                  keyboardType="decimal-pad"
-                  onFocus={() => setIsAmountFocused(true)}
-                  onBlur={() => setIsAmountFocused(false)}
-                  className="mt-2 py-0 font-nunitoSemibold text-4xl text-textColor"
-                  placeholderTextColor="rgba(42,58,80,0.35)"
-                />
-              </View>
+              <AmountInput
+                value={amount}
+                onChangeValue={setAmount}
+                placeholderTextColor="rgba(42,58,80,0.35)"
+              />
 
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
