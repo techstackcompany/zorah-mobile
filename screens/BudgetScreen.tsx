@@ -109,8 +109,7 @@ const BudgetScreen = () => {
   const formattedRemaining = formatCurrency(remaining);
   const clampedProgress = Math.min(Math.max(percentUsed, 0), 100);
   const progressDashoffset =
-    PROGRESS_CIRCUMFERENCE -
-    (clampedProgress / 100) * PROGRESS_CIRCUMFERENCE;
+    PROGRESS_CIRCUMFERENCE - (clampedProgress / 100) * PROGRESS_CIRCUMFERENCE;
 
   const handleOpenActions = (category: BudgetCategory) => {
     setActiveCategory(category);
@@ -123,7 +122,7 @@ const BudgetScreen = () => {
   };
 
   return (
-    <MainContainer edges={[]} className="bg-light">
+    <MainContainer edges={[]} className="pb-0">
       <ScrollView
         className="flex-1"
         contentContainerClassName="pb-24"
@@ -274,13 +273,12 @@ const BudgetScreen = () => {
                 0,
               );
               return (
-                <Pressable
+                <View
                   key={category.id}
-                  onPress={() => handleOpenActions(category)}
-                  className="rounded-3xl border border-grayLight/50 bg-white p-4"
+                  className="rounded-3xl border border-grayLight bg-white p-4"
                 >
                   <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-start gap-4  w-full">
+                    <View className="w-full flex-row items-start  gap-4">
                       <View className="h-14 w-14 items-center justify-center rounded-2xl bg-primary_100">
                         <Image
                           source={category.icon}
@@ -311,7 +309,10 @@ const BudgetScreen = () => {
                           {meta.label}
                         </Text>
                       </View>
-                      <Pressable className="ml-auto">
+                      <Pressable
+                        className="ml-auto"
+                        onPress={() => handleOpenActions(category)}
+                      >
                         <Image
                           source={require("@/assets/icons/more.svg")}
                           style={{ width: 24, height: 24 }}
@@ -321,16 +322,7 @@ const BudgetScreen = () => {
                   </View>
 
                   <View className="mt-4">
-                    <View className="flex-row items-center justify-between">
-                      <Text className="text-sm text-secondary_400">
-                        {formatCurrency(category.spent)} of{" "}
-                        {formatCurrency(category.allocated)}
-                      </Text>
-                      <Text className="text-sm text-textColor/90">
-                        {formatCurrency(remainingValue)} left
-                      </Text>
-                    </View>
-                    <View className="mt-2 h-2 rounded-full bg-gray-200">
+                    <View className="mb-2 h-2 rounded-full bg-gray-200">
                       <View
                         className="h-full rounded-full"
                         style={{
@@ -342,8 +334,18 @@ const BudgetScreen = () => {
                         }}
                       />
                     </View>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-sm text-secondary_500">
+                        {formatCurrency(category.spent)} of{" "}
+                        {formatCurrency(category.allocated)}
+                      </Text>
+                      <Text className="text-sm text-textColor/90">
+                        {formatCurrency(remainingValue)}{" "}
+                        <Text className="text-textColor/70">left</Text>
+                      </Text>
+                    </View>
                   </View>
-                </Pressable>
+                </View>
               );
             })}
           </View>
@@ -356,34 +358,44 @@ const BudgetScreen = () => {
               padding: 20,
               borderRadius: 24,
             }}
-            source={require("@/assets/images/home/smart_budget_tips_bg.png")}
+            source={require("@/assets/images/home/fold-pattern.png")}
           >
-            <Text
-              weight="semibold"
-              className="text-base"
-              style={{ color: COLORS.primary_400 }}
-            >
-              Smart Budget Tips
-            </Text>
+            <View className="flex-row items-center gap-3">
+              <Image
+                source={require("@/assets/icons/clock.svg")}
+                style={{ width: 20, height: 20 }}
+              />
+              <Text weight="bold" className="text-lg">
+                Smart Budget Tips
+              </Text>
+            </View>
             <View className="mt-3 space-y-3">
-              <View className="flex-row items-start gap-3">
+              <View className="flex-row items-start gap-2">
                 <View
-                  className="mt-1 h-2 w-2 rounded-full"
-                  style={{ backgroundColor: COLORS.primary_400 }}
+                  className="mt-1.5 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: COLORS.secondary_500 }}
                 />
-                <Text className="flex-1 text-sm text-textColor/80">
-                  Reduce food expenses by ₦5,000. You’re spending ₦20,000 more
-                  than similar users. Try cooking at home 2 more days weekly.
+                <Text className="mb-3 flex-1 text-sm text-textColor/80">
+                  <Text className="mb-1 text-base">
+                    Reduce food expenses by ₦5,000
+                  </Text>
+                  {"\n"}
+                  You’re spending ₦20,000 more than similar users. Try cooking
+                  at home 2 more days weekly.
                 </Text>
               </View>
               <View className="flex-row items-start gap-3">
                 <View
-                  className="mt-1 h-2 w-2 rounded-full"
-                  style={{ backgroundColor: COLORS.primary_400 }}
+                  className="mt-1.5 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: COLORS.secondary_500 }}
                 />
                 <Text className="flex-1 text-sm text-textColor/80">
-                  Set up Down budget. December is party season! Create a
-                  separate budget for events and overspending.
+                  <Text className="mb-1 text-base">
+                    Set up Down Owambe budget
+                  </Text>
+                  {"\n"}
+                  December is party season! Create a separate budget for events
+                  and overspending.
                 </Text>
               </View>
             </View>

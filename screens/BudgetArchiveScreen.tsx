@@ -94,7 +94,7 @@ const BudgetArchiveScreen = () => {
   const hasArchivedBudgets = ARCHIVED_BUDGETS.length > 0;
 
   return (
-    <MainContainer edges={[]} className="bg-white">
+    <MainContainer edges={[]} className="bg-lightMuted">
       <ScrollView
         className="flex-1"
         contentContainerClassName="px-6 pb-24"
@@ -102,7 +102,7 @@ const BudgetArchiveScreen = () => {
       >
         {hasArchivedBudgets ? (
           <>
-            <View className="mt-6 rounded-3xl border border-grayLight/40 bg-white p-4 shadow-sm shadow-[#1018280D]">
+            {/* <View className="mt-6 rounded-3xl border border-grayLight/40 bg-white p-4 shadow-sm shadow-[#1018280D]">
               <Text className="text-xs uppercase text-textColor/60">
                 Archive Summary
               </Text>
@@ -125,7 +125,7 @@ const BudgetArchiveScreen = () => {
                   </Text>
                 </View>
               </View>
-            </View>
+            </View> */}
 
             <View className="mt-8">
               <Text weight="semibold" className="text-lg text-textColor">
@@ -147,43 +147,47 @@ const BudgetArchiveScreen = () => {
                   return (
                     <Pressable
                       key={budget.id}
-                      className="rounded-3xl border border-grayLight/50 bg-white p-4"
+                      className="rounded-3xl border border-grayLight/90 bg-white p-4"
                       onPress={() => handleOpenActions(budget)}
                     >
                       <View className="flex-row items-start gap-4">
-                        <View className="h-14 w-14 items-center justify-center rounded-2xl bg-primary_100">
+                        
+
+                        <View className="flex-1">
+                          <View className="flex-row items-start gap-2 h-12">
+                            <View className="h-full aspect-square items-center justify-center rounded-full bg-primary_100">
                           <Image
                             source={budget.icon}
-                            style={{ width: 28, height: 28 }}
+                            style={{ width: 24, height: 24 }}
                             contentFit="contain"
                           />
                         </View>
-
-                        <View className="flex-1">
-                          <View className="flex-row items-start gap-2">
-                            <View className="flex-1">
+                            <View className="justify-between h-full">
                               <Text
                                 weight="semibold"
                                 className="text-base text-textColor"
                               >
                                 {budget.name}
                               </Text>
-                              <Text className="mt-1 text-xs text-textColor/50">
+                              <Text className=" text-xs text-textColor/50">
                                 {budget.archivedDate}
                               </Text>
                             </View>
                             <View
-                              className="rounded-full px-3 py-1"
-                              style={{ backgroundColor: meta.badgeBg }}
+                              className="me-auto rounded-full px-3 py-1"
+                              style={{ backgroundColor: COLORS.secondary_150 }}
                             >
                               <Text
                                 className="text-xs"
-                                style={{ color: meta.textColor }}
+                                style={{ color: COLORS.secondary_500 }}
                               >
                                 {meta.label}
                               </Text>
                             </View>
-                            <Pressable onPress={() => handleOpenActions(budget)}>
+                            <Pressable
+
+                              onPress={() => handleOpenActions(budget)}
+                            >
                               <Image
                                 source={require("@/assets/icons/more.svg")}
                                 style={{ width: 24, height: 24 }}
@@ -192,16 +196,7 @@ const BudgetArchiveScreen = () => {
                           </View>
 
                           <View className="mt-4">
-                            <View className="flex-row items-center justify-between">
-                              <Text className="text-sm text-secondary_400">
-                                {formatCurrency(budget.spent)} of{" "}
-                                {formatCurrency(budget.allocated)}
-                              </Text>
-                              <Text className="text-sm text-textColor/90">
-                                {formatCurrency(remainingValue)} left
-                              </Text>
-                            </View>
-                            <View className="mt-2 h-2 rounded-full bg-gray-200">
+                            <View className="mb-2 h-2 rounded-full bg-gray-200">
                               <View
                                 className="h-full rounded-full"
                                 style={{
@@ -210,6 +205,15 @@ const BudgetArchiveScreen = () => {
                                 }}
                               />
                             </View>
+                                <View className="flex-row items-center justify-between">
+                                  <Text className="text-sm text-secondary_500">
+                                    {formatCurrency(budget.spent)} of{" "}
+                                    {formatCurrency(budget.allocated)}
+                                  </Text>
+                                  <Text className="text-sm text-textColor ">
+                                    {formatCurrency(remainingValue)} <Text className="text-textColor/70">left </Text>
+                                  </Text>
+                                </View>
                           </View>
                         </View>
                       </View>
