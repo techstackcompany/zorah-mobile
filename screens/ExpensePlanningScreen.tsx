@@ -352,7 +352,7 @@ const ExpensePlanningScreen = () => {
                               cx={CHART_SIZE / 2}
                               cy={CHART_SIZE / 2}
                               r={CHART_RADIUS}
-                              stroke='red'
+                              stroke='#eee'
                               strokeWidth={CHART_STROKE_WIDTH}
                               fill="transparent"
                             />
