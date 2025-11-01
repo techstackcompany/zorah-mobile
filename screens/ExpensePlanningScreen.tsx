@@ -296,6 +296,7 @@ const ExpensePlanningScreen = () => {
               );
             })}
           </View>
+          //Todo make this card reusable and reuse on screens that use it
           <View style={styles.card}>
             <Pressable
               className="flex-row items-center justify-between"

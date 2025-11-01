@@ -213,10 +213,13 @@ const HomeScreen = () => {
   const handleQuickActionPress = (action: QuickAction) => {
     switch (action.id) {
       case "expense-income":
-        router.push("/(app)/expense-planning");
+        router.push("/expense-planning");
+        break;
+      case "goals":
+        router.push("/savings-goals");
         break;
       case "more":
-        router.push("/(app)/more");
+        router.push("/more");
         break;
       default:
         break;
