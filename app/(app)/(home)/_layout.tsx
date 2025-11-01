@@ -14,11 +14,11 @@ const TAB_CONFIG: Record<
 > = {
   index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
-  portfolio: {
+  investment: {
     label: "Investment",
     iconSource: require("@/assets/icons/investment.svg"),
   },
-  analytics: {
+  fxRates: {
     label: "Fx Rates",
     iconSource: require("@/assets/icons/fxRates.svg"),
   },
@@ -101,7 +101,7 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
 const HomeLayout = () => {
   const path = usePathname();
-  const shouldHideTabBar = path.startsWith("/budget/") && path !== "/budget";
+  const shouldHideTabBar = path.startsWith("/budget/") || path.startsWith("/investment/") ;
   return (
     <Tabs
       screenOptions={{
@@ -132,15 +132,16 @@ const HomeLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="portfolio"
+        name="investment"
         options={{
           title: "Briefcase",
         }}
       />
       <Tabs.Screen
-        name="analytics"
+        name="fxRates"
         options={{
           title: "FX Rates",
+          headerShown:true
         }}
       />
       <Tabs.Screen

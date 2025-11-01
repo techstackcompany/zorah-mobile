@@ -21,30 +21,14 @@ const AppLayout = () => {
         name="track-spending"
         options={{ title: "Track Spending" }}
       />
-      <Stack.Screen
-        name="ai-assistant"
-        options={{ title: "AI Assistant" }}
-      />
-      <Stack.Screen
-        name="investment/add"
-        options={{ title: "Add Investment" }}
-      />
-      <Stack.Screen
-        name="investment/details"
-        options={{ title: "Investment Details" }}
-      />
+      <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
+
       <Stack.Screen
         name="profile/edit-profile"
         options={{ title: "Edit Profile" }}
       />
-      <Stack.Screen
-        name="profile/banks"
-        options={{ title: "Linked Banks" }}
-      />
-      <Stack.Screen
-        name="profile/add-bank"
-        options={{ title: "Add Bank" }}
-      />
+      <Stack.Screen name="profile/banks" options={{ title: "Linked Banks" }} />
+      <Stack.Screen name="profile/add-bank" options={{ title: "Add Bank" }} />
       <Stack.Screen
         name="debt-tracker/index"
         options={{ title: "Debt & Lending Tracker" }}
@@ -57,7 +41,10 @@ const AppLayout = () => {
         name="debt-tracker/record"
         options={{ title: "Record Debt" }}
       />
-      <Stack.Screen name="fund-wallet/index" options={{ title: "Fund Wallet" }} />
+      <Stack.Screen
+        name="fund-wallet/index"
+        options={{ title: "Fund Wallet" }}
+      />
       <Stack.Screen
         name="fund-wallet/bank-transfer"
         options={{ title: "Bank Transfer" }}
