@@ -10,14 +10,33 @@ import {
   getIconName,
 } from "@/constants/investments";
 import { Ionicons } from "@expo/vector-icons";
-import { ImageBackground } from "expo-image";
+import { Image, ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 
-const DONUT_RADIUS = 95;
-const DONUT_THICKNESS = 26;
+const DONUT_RADIUS = 89;
+const DONUT_THICKNESS = 40;
+
+const CURRENCY_SYMBOL = formatCurrency(0).replace(/[\d.,\s]/g, "");
+
+const formatCompactPortfolioValue = (value: number) => {
+  const absValue = Math.abs(value);
+  if (absValue >= 1_000_000_000) {
+    const compact = (absValue / 1_000_000_000).toFixed(1).replace(/\.0$/, "");
+    return `${CURRENCY_SYMBOL}${compact}B`;
+  }
+  if (absValue >= 1_000_000) {
+    const compact = (absValue / 1_000_000).toFixed(1).replace(/\.0$/, "");
+    return `${CURRENCY_SYMBOL}${compact}M`;
+  }
+  if (absValue >= 1_000) {
+    const compact = (absValue / 1_000).toFixed(1).replace(/\.0$/, "");
+    return `${CURRENCY_SYMBOL}${compact}K`;
+  }
+  return formatCurrency(value);
+};
 
 const InvestmentPortfolioScreen = () => {
   const router = useRouter();
@@ -57,6 +76,11 @@ const InvestmentPortfolioScreen = () => {
     [selectedCategory],
   );
 
+  const compactTotalValue = useMemo(
+    () => formatCompactPortfolioValue(totalValue),
+    [totalValue],
+  );
+
   const handleOpenDetails = (id: string) => {
     router.push({
       pathname: "/investment/details",
@@ -94,62 +118,78 @@ const InvestmentPortfolioScreen = () => {
             Across {INVESTMENT_HOLDINGS.length} investments
           </Text>
         </ImageBackground>
-//Todo make the fontSize bigger
-        <CollapsibleCard  title="Portfolio Allocation" headerBottomBorder>
-          <View style={styles.sectionActions} className="w-full">
-            <Pressable accessibilityRole="button">
-              <Ionicons name="chevron-back" size={16} color="#8A94A6" />
-            </Pressable>
-            <View className="flex-row  items-center">
-              <Text weight="semibold" className="mx-3 text-sm text-textColor">
-                September 2025
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                style={styles.calendarButton}
-              >
-                <Ionicons name="calendar-outline" size={16} color="#8A94A6" />
+        <CollapsibleCard
+          title={
+            <Text weight="semibold" className="text-lg text-textColor">
+              Portfolio Allocation
+            </Text>
+          }
+          headerBottomBorder
+        >
+          <View className="p-5">
+            <View style={styles.sectionActions}>
+              <Pressable accessibilityRole="button">
+                <Ionicons name="chevron-back" size={16} color="#8A94A6" />
+              </Pressable>
+              <View className="flex-row  items-center">
+                <Text weight="semibold" className="mx-3 text-sm text-textColor">
+                  September 2025
+                </Text>
+                <Pressable accessibilityRole="button">
+                  <Image
+                    source={require("@/assets/icons/calendar.svg")}
+                    style={styles.calendarIcon}
+                  />
+                </Pressable>
+              </View>
+              <Pressable accessibilityRole="button">
+                <Ionicons name="chevron-forward" size={16} color="#8A94A6" />
               </Pressable>
             </View>
-            <Pressable accessibilityRole="button">
-              <Ionicons name="chevron-forward" size={16} color="#8A94A6" />
-            </Pressable>
-          </View>
-          <View style={styles.donutWrapper}>
-            <PieChart
-              data={pieData}
-              donut
-              radius={DONUT_RADIUS}
-              innerRadius={DONUT_RADIUS - DONUT_THICKNESS}
-              innerCircleColor="#FFFFFF"
-              centerLabelComponent={() => (
-                <View style={styles.centerLabel}>
-                  <Text className="text-xs text-textColor/60">Investment</Text>
-                  <Text weight="bold" className="text-lg text-textColor">
-                    {formatCurrency(totalValue)}
-                  </Text>
-                </View>
-              )}
-            />
-          </View>
-
-          <View style={styles.legendGrid}>
-            {INVESTMENT_CATEGORIES.map((category) => (
-              <View key={category.id} style={styles.legendItem}>
-                <View
-                  style={[
-                    styles.legendDot,
-                    { backgroundColor: category.color },
-                  ]}
+            <View className="flex-row items-center">
+              <View style={styles.donutWrapper}>
+                <PieChart
+                  data={pieData}
+                  donut
+                  showText
+                  
+                  textColor="#FFFFFF"
+                  textSize={11}
+                  radius={DONUT_RADIUS}
+                  innerRadius={DONUT_RADIUS - DONUT_THICKNESS}
+                  innerCircleColor="#FFFFFF"
+                  centerLabelComponent={() => (
+                    <View style={styles.centerLabel}>
+                      <Text className="text-xs text-textColor/60">
+                        Investment
+                      </Text>
+                      <Text weight="bold" className="text-lg text-textColor">
+                        {compactTotalValue}
+                      </Text>
+                    </View>
+                  )}
                 />
-                <Text className="flex-1 text-xs text-textColor/70">
-                  {category.label}
-                </Text>
-                <Text className="ml-2 text-xs text-textColor/70">
-                  {formatPercentage(category.percentage)}
-                </Text>
               </View>
-            ))}
+
+              <View style={styles.legendGrid}>
+                {INVESTMENT_CATEGORIES.map((category) => (
+                  <View key={category.id} style={styles.legendItem}>
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: category.color },
+                      ]}
+                    />
+                    <Text className="text-xs text-textColor/70">
+                      {category.label}
+                    </Text>
+                    {/* <Text className="ml-2 text-xs text-textColor/70">
+                      {formatPercentage(category.percentage)}
+                    </Text> */}
+                  </View>
+                ))}
+              </View>
+            </View>
           </View>
         </CollapsibleCard>
 
@@ -335,16 +375,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 20,
   },
-  calendarButton: {
-    marginLeft: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#F3F5FA",
-    alignItems: "center",
-    justifyContent: "center",
+
+  calendarIcon: {
+    width: 20,
+    height: 20,
   },
   donutWrapper: {
     marginTop: 24,
@@ -356,12 +391,10 @@ const styles = StyleSheet.create({
   },
   legendGrid: {
     marginTop: 12,
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 12,
+    marginLeft:12
   },
   legendItem: {
-    width: "48%",
     flexDirection: "row",
     alignItems: "center",
   },

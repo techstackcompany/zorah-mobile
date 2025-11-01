@@ -84,14 +84,13 @@ const FxRatesScreen = () => {
     activeRateChange >= 0 ? "#E9F7EC" : "#FFE6EA";
 
   return (
-    <MainContainer edges={["top"]} className="bg-lightMuted">
+    <MainContainer edges={[]} className="bg-lightMuted pb-0">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
         <View style={styles.summaryCard}>
           <View>
-            <Text className="text-sm text-textColor/60">FX Rate</Text>
             <Text weight="bold" className="mt-1 text-2xl text-textColor">
               {activeTrend.slice(0, 3)}/{activeTrend.slice(3)}
             </Text>

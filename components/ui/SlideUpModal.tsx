@@ -37,7 +37,7 @@ const SlideUpModal = ({
   headerBackgroundColor = COLORS.primary_400,
   headerTextColor = "#222",
   closeIconColor,
-  height = 'auto',
+  height = "auto",
   className,
 }: SlideUpModalProps) => {
   // Shared animation values
@@ -88,7 +88,9 @@ const SlideUpModal = ({
           <View
             style={[styles.header, { backgroundColor: headerBackgroundColor }]}
           >
-            <Text style={[styles.title, { color: headerTextColor }]}>{title}</Text>
+            <Text style={[styles.title, { color: headerTextColor }]}>
+              {title}
+            </Text>
             <TouchableOpacity onPress={onClose} hitSlop={20}>
               <Ionicons
                 name="close"
@@ -136,7 +138,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 16,
-    fontFamily: "LoraBold",
+    fontSize: 14,
+    fontFamily: "NunitoMedium",
   },
 });

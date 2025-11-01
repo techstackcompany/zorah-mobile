@@ -1,19 +1,13 @@
 import MainContainer from "@/components/layouts/MainContainer";
+import CollapsibleCard from "@/components/ui/CollapsibleCard";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -144,33 +138,12 @@ const ExpensePlanningScreen = () => {
   const { bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>("expense");
   const [isLoading] = useState(false);
-  const [isCategoryCollapsed, setIsCategoryCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const rotation = useRef(
-    new Animated.Value(isCategoryCollapsed ? 1 : 0),
-  ).current;
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 800);
   }, []);
-
-  useEffect(() => {
-    Animated.timing(rotation, {
-      toValue: isCategoryCollapsed ? 1 : 0,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-  }, [isCategoryCollapsed, rotation]);
-
-  const chevronRotation = useMemo(
-    () =>
-      rotation.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["0deg", "180deg"],
-      }),
-    [rotation],
-  );
 
   const tabConfig = useMemo(
     () => TAB_ITEMS.find((item) => item.key === activeTab)!,
@@ -296,102 +269,78 @@ const ExpensePlanningScreen = () => {
               );
             })}
           </View>
-          //Todo make this card reusable and reuse on screens that use it
-          <View style={styles.card}>
-            <Pressable
-              className="flex-row items-center justify-between"
-              onPress={() => setIsCategoryCollapsed((prev) => !prev)}
-            >
-              <Text weight="semibold" className="text-base text-textColor">
-                {tabConfig.categoryTitle}
+          <CollapsibleCard headerBottomBorder title={tabConfig.categoryTitle} style={styles.card}>
+            <View className="flex-row items-center justify-between p-5">
+              <Text weight="medium" className="text-sm text-textColor/70">
+                {tabConfig.breakdownTitle}
               </Text>
-              <Animated.View
-                style={{ transform: [{ rotate: chevronRotation }] }}
-              >
-                <Ionicons
-                  name="chevron-up"
-                  size={20}
-                  color={COLORS.textColor}
+              <Pressable style={styles.periodPill}>
+                <Text weight="semibold" className="text-sm text-textColor">
+                  {PERIOD_LABEL}
+                </Text>
+
+                <Image
+                  source={require("@/assets/icons/calendar.svg")}
+                  style={{ width: 24, height: 24 }}
                 />
-              </Animated.View>
-            </Pressable>
-            {!isCategoryCollapsed && (
-              <>
-                <View style={styles.divider} />
+              </Pressable>
+            </View>
 
-                <View className="mt-5 flex-row items-center justify-between">
-                  <Text weight="medium" className="text-sm text-textColor/70">
-                    {tabConfig.breakdownTitle}
-                  </Text>
-                  <Pressable style={styles.periodPill}>
-                    <Text weight="semibold" className="text-sm text-textColor">
-                      {PERIOD_LABEL}
+            <View style={styles.chartWrapper}>
+              {isLoading ? (
+                <View style={styles.chartSkeleton}>
+                  <View style={styles.chartSkeletonRing} />
+                </View>
+              ) : isExpenseTab ? (
+                <View style={styles.chartContainer}>
+                  <View style={styles.chartSvgWrapper}>
+                    <Svg
+                      width={CHART_SIZE}
+                      height={CHART_SIZE}
+                    >
+                      <G>
+                        <Circle
+                          cx={CHART_SIZE / 2}
+                          cy={CHART_SIZE / 2}
+                          r={CHART_RADIUS}
+                          stroke="#eee"
+                          strokeWidth={CHART_STROKE_WIDTH}
+                          fill="transparent"
+                        />
+                        {chartSegments}
+                      </G>
+                    </Svg>
+                  </View>
+
+                  <View style={styles.chartCenter}>
+                    <Text
+                      weight="medium"
+                      className="text-xs text-textColor/60"
+                    >
+                      Total spend
                     </Text>
-
-                    <Image
-                      source={require("@/assets/icons/calendar.svg")}
-                      style={{ width: 24, height: 24 }}
-                    />
-                  </Pressable>
+                    <Text
+                      weight="bold"
+                      className="mt-1 text-xl text-textColor"
+                    >
+                      {totalAmountLabel}
+                    </Text>
+                  </View>
                 </View>
-
-                <View style={styles.chartWrapper}>
-                  {isLoading ? (
-                    <View style={styles.chartSkeleton}>
-                      <View style={styles.chartSkeletonRing} />
-                    </View>
-                  ) : isExpenseTab ? (
-                    <View style={styles.chartContainer}>
-                      <View style={styles.chartSvgWrapper}>
-                        <Svg
-                          width={CHART_SIZE}
-                          height={CHART_SIZE}
-                        >
-                          <G>
-                            <Circle
-                              cx={CHART_SIZE / 2}
-                              cy={CHART_SIZE / 2}
-                              r={CHART_RADIUS}
-                              stroke="#eee"
-                              strokeWidth={CHART_STROKE_WIDTH}
-                              fill="transparent"
-                            />
-                            {chartSegments}
-                          </G>
-                        </Svg>
-                      </View>
-
-                      <View style={styles.chartCenter}>
-                        <Text
-                          weight="medium"
-                          className="text-xs text-textColor/60"
-                        >
-                          Total spend
-                        </Text>
-                        <Text
-                          weight="bold"
-                          className="mt-1 text-xl text-textColor"
-                        >
-                          {totalAmountLabel}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <View style={styles.chartEmptyState}>
-                      <Ionicons
-                        name="pie-chart-outline"
-                        size={36}
-                        color={COLORS.textColor}
-                      />
-                      <Text className="mt-3 text-sm text-textColor/60">
-                        Insights for this period will appear here.
-                      </Text>
-                    </View>
-                  )}
+              ) : (
+                <View style={styles.chartEmptyState}>
+                  <Ionicons
+                    name="pie-chart-outline"
+                    size={36}
+                    color={COLORS.textColor}
+                  />
+                  <Text className="mt-3 text-sm text-textColor/60">
+                    Insights for this period will appear here.
+                  </Text>
                 </View>
-              </>
-            )}
-          </View>
+              )}
+            </View>
+          </CollapsibleCard>
 
           <View className="mt-8">
             <Text weight="semibold" className="text-base text-textColor">
@@ -554,10 +503,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginTop: 24,
-    borderRadius: 16,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 24,
-    paddingVertical: 28,
   },
   divider: {
     marginTop: 18,

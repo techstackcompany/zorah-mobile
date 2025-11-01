@@ -3,7 +3,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Dimensions, Modal, Pressable, StyleSheet, View } from "react-native";
 
 type DatePickerFieldProps = {
   value: string;
@@ -11,6 +11,7 @@ type DatePickerFieldProps = {
   onFocusChange?: (focused: boolean) => void;
   isFocused?: boolean;
   placeholder?: string;
+  renderSelectIcon?: (isCalendarOpen: boolean) => React.ReactNode;
 };
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
@@ -38,11 +39,7 @@ const parseDateString = (value: string) => {
   const fullYear =
     yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
 
-  if (
-    Number.isNaN(day) ||
-    Number.isNaN(monthIndex) ||
-    Number.isNaN(fullYear)
-  ) {
+  if (Number.isNaN(day) || Number.isNaN(monthIndex) || Number.isNaN(fullYear)) {
     return null;
   }
 
@@ -58,13 +55,13 @@ const parseDateString = (value: string) => {
   return parsed;
 };
 
-
 const DatePickerField = ({
   value,
   onChange,
   onFocusChange,
   isFocused = false,
   placeholder = "DD/MM/YY",
+  renderSelectIcon,
 }: DatePickerFieldProps) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarCursor, setCalendarCursor] = useState(
@@ -77,11 +74,12 @@ const DatePickerField = ({
     width: number;
     height: number;
   } | null>(null);
+  const [calendarSize, setCalendarSize] = useState<{
+    height: number;
+    width: number;
+  } | null>(null);
 
-  const selectedDateValue = useMemo(
-    () => parseDateString(value),
-    [value],
-  );
+  const selectedDateValue = useMemo(() => parseDateString(value), [value]);
 
   const closeCalendar = useCallback(() => {
     if (!isCalendarOpen) {
@@ -152,6 +150,58 @@ const DatePickerField = ({
     });
   }, [calendarCursor]);
 
+  const dropdownPositionStyle = useMemo(() => {
+    if (!triggerLayout) {
+      return null;
+    }
+
+    const windowHeight = Dimensions.get("window").height;
+    const calendarHeight = calendarSize?.height ?? 0;
+    const margin = 8;
+    const spaceBelow =
+      windowHeight - (triggerLayout.y + triggerLayout.height);
+    const spaceAbove = triggerLayout.y;
+    const left = triggerLayout.x;
+    const width = triggerLayout.width;
+
+    if (calendarHeight > 0) {
+      const fitsBelow = spaceBelow >= calendarHeight + margin;
+      const fitsAbove = spaceAbove >= calendarHeight + margin;
+
+      if (fitsBelow || (!fitsAbove && spaceBelow >= spaceAbove)) {
+        const safeTop = Math.min(
+          windowHeight - calendarHeight - margin,
+          triggerLayout.y + triggerLayout.height,
+        );
+        return {
+          top: Math.max(margin, safeTop),
+          left,
+          width,
+        };
+      }
+
+      const safeTop = Math.max(
+        margin,
+        triggerLayout.y - calendarHeight,
+      );
+      return {
+        top: safeTop,
+        left,
+        width,
+      };
+    }
+
+    const defaultTop = Math.min(
+      windowHeight - margin,
+      triggerLayout.y + triggerLayout.height,
+    );
+    return {
+      top: Math.max(margin, defaultTop),
+      left,
+      width,
+    };
+  }, [triggerLayout, calendarSize]);
+
   const monthLabel = useMemo(() => {
     const displayDate = new Date(
       calendarCursor.getFullYear(),
@@ -185,17 +235,16 @@ const DatePickerField = ({
           {monthLabel}
         </Text>
         <Pressable onPress={goToNextMonth} hitSlop={8}>
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={COLORS.textColor}
-          />
+          <Ionicons name="chevron-forward" size={18} color={COLORS.textColor} />
         </Pressable>
       </View>
 
       <View className="mt-3 flex-row justify-between">
         {WEEKDAYS.map((weekday) => (
-          <Text key={weekday} className="w-9 text-center text-xs text-textColor/50">
+          <Text
+            key={weekday}
+            className="w-9 text-center text-xs text-textColor/50"
+          >
             {weekday}
           </Text>
         ))}
@@ -258,7 +307,13 @@ const DatePickerField = ({
       </View>
     </>
   );
-
+  const selectBtnIcon = renderSelectIcon?.(isCalendarOpen) || (
+    <Ionicons
+      name={isCalendarOpen ? "chevron-up" : "chevron-down"}
+      size={20}
+      color="#2A3A50"
+    />
+  );
   return (
     <>
       <Pressable
@@ -279,11 +334,7 @@ const DatePickerField = ({
         >
           {value || placeholder}
         </Text>
-        <Ionicons
-          name={isCalendarOpen ? "chevron-up" : "chevron-down"}
-          size={20}
-          color="#2A3A50"
-        />
+        {selectBtnIcon}
       </Pressable>
 
       <Modal
@@ -305,12 +356,21 @@ const DatePickerField = ({
               className="rounded-3xl border border-gray-200 bg-white p-4 shadow-lg"
               style={[
                 styles.dropdown,
-                {
-                  top: triggerLayout.y + triggerLayout.height,
-                  left: triggerLayout.x,
-                  width: triggerLayout.width,
-                },
+                dropdownPositionStyle,
               ]}
+              onLayout={(event) => {
+                const { height, width } = event.nativeEvent.layout;
+                setCalendarSize((previous) => {
+                  if (
+                    previous &&
+                    previous.height === height &&
+                    previous.width === width
+                  ) {
+                    return previous;
+                  }
+                  return { height, width };
+                });
+              }}
             >
               {calendarContent}
             </View>

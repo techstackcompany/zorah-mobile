@@ -6,7 +6,7 @@ import {
   INVESTMENT_HOLDINGS,
   formatCurrency,
 } from "@/constants/investments";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
@@ -28,32 +28,35 @@ const InvestmentDetailsScreen = () => {
     [holding.categoryId],
   );
 
-  const changeColor =
-    holding.change >= 0 ? COLORS.secondary_500 : "#D83A56";
+  const changeColor = holding.change >= 0 ? COLORS.secondary_500 : "#D83A56";
 
   return (
-    <MainContainer edges={["top"]} className="bg-lightMuted">
-      <View style={styles.container}>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryHeader}>
-            <View>
-              <Text weight="bold" className="text-xl text-textColor">
-                {holding.name}
-              </Text>
-              <Text className="mt-1 text-xs text-textColor/60">
-                {holding.quantityLabel}
-              </Text>
-            </View>
+    <MainContainer edges={[]} className="bg-lightMuted  p-6">
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryHeader}>
+          <View>
+            <Text weight="bold" className="text-xl text-textColor">
+              {holding.name}
+            </Text>
+            <Text className="mt-1 text-xs text-textColor/60">
+              {holding.change > 0 ? (
+                <Feather
+                  name="arrow-up"
+                  size={12}
+                  color={COLORS.secondary_500}
+                />
+              ) : (
+                <Feather name="arrow-down" size={12} color="black" />
+              )}{" "}
+              {holding.quantityLabel}
+            </Text>
+          </View>
+          <View>
             <View
               style={[
                 styles.statusBadge,
                 {
-                  backgroundColor:
-                    holding.status === "active" ? "#E7F7F0" : "#F5F6FA",
-                  borderColor:
-                    holding.status === "active"
-                      ? "rgba(50,163,77,0.25)"
-                      : "rgba(90,104,120,0.18)",
+                  backgroundColor: "white",
                 },
               ]}
             >
@@ -63,20 +66,13 @@ const InvestmentDetailsScreen = () => {
                 style={{
                   color:
                     holding.status === "active"
-                      ? COLORS.secondary_500
+                      ? COLORS.primary_400
                       : "#5B6473",
                 }}
               >
                 {holding.status === "active" ? "Active" : "Inactive"}
               </Text>
             </View>
-          </View>
-
-          <View style={styles.amountBlock}>
-            <Text className="text-xs text-textColor/60">Amount Invested</Text>
-            <Text weight="bold" className="mt-1 text-2xl text-textColor">
-              {formatCurrency(holding.amount)}
-            </Text>
             <View style={styles.changeRow}>
               <Ionicons
                 name={holding.change >= 0 ? "trending-up" : "trending-down"}
@@ -94,43 +90,53 @@ const InvestmentDetailsScreen = () => {
             </View>
           </View>
         </View>
-
-        <View style={styles.detailCard}>
-          <Text weight="semibold" className="text-sm text-textColor">
-            Investment Details
-          </Text>
-
-          <View style={styles.detailRow}>
-            <Text className="text-xs text-textColor/50">Investment Type</Text>
+        <View>
+          <View style={styles.detailCard}>
             <Text weight="semibold" className="text-sm text-textColor">
-              {category.label}
+              Investment Details
             </Text>
-          </View>
 
-          <View style={styles.detailRow}>
-            <Text className="text-xs text-textColor/50">Platform Provider</Text>
-            <Text weight="semibold" className="text-sm text-textColor">
-              {holding.provider}
-            </Text>
-          </View>
+            <View style={styles.detailRow}>
+              <Text className="text-sm text-textColor/50">Investment Type</Text>
+              <Text weight="semibold" className="text-sm text-textColor">
+                {category.label}
+              </Text>
+            </View>
 
-          <View style={styles.detailRow}>
-            <Text className="text-xs text-textColor/50">Purchase Date</Text>
-            <Text weight="semibold" className="text-sm text-textColor">
-              {new Date(holding.purchaseDate).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </View>
-        </View>
+            <View style={styles.detailRow}>
+              <Text className="text-sm text-textColor/50">
+                Platform Provider
+              </Text>
+              <Text weight="semibold" className="text-sm text-textColor">
+                {holding.provider}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text className="text-sm text-textColor/50">
+                Amount Investment
+              </Text>
+              <Text weight="semibold" className="text-sm text-textColor">
+                {formatCurrency(holding.amount)}
+              </Text>
+            </View>
 
-        <View style={styles.notesCard}>
-          <Text className="text-xs text-textColor/50">Notes</Text>
-          <Text className="mt-2 text-sm text-textColor/80 leading-5">
-            {holding.notes}
-          </Text>
+            <View style={styles.detailRow}>
+              <Text className="text-sm text-textColor/50">Purchase Date</Text>
+              <Text weight="semibold" className="text-sm text-textColor">
+                {new Date(holding.purchaseDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+            <View style={styles.notesCard}>
+              <Text className="text-sm text-textColor">Notes</Text>
+              <Text className="mt-2 rounded-xl bg-lightMuted p-3 text-sm leading-5 text-textColor">
+                {holding.notes}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </MainContainer>
@@ -138,33 +144,24 @@ const InvestmentDetailsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    gap: 20,
-  },
   summaryCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    padding: 20,
+    overflow: "hidden",
     gap: 18,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    paddingBottom: 16,
   },
   summaryHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: COLORS.primary_100,
+    padding: 16,
   },
   statusBadge: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 3,
     borderRadius: 16,
-    borderWidth: 1,
   },
   amountBlock: {
     gap: 4,
@@ -177,8 +174,8 @@ const styles = StyleSheet.create({
   detailCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    padding: 20,
     gap: 16,
+    paddingHorizontal: 16,
   },
   detailRow: {
     flexDirection: "row",
@@ -187,10 +184,7 @@ const styles = StyleSheet.create({
   },
   notesCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
   },
 });
 
 export default InvestmentDetailsScreen;
-

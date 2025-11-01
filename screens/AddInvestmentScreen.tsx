@@ -3,8 +3,11 @@ import AmountInput from "@/components/ui/AmountInput";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
-import { PROVIDER_GROUPS, INVESTMENT_TYPES } from "@/constants/investments";
+import COLORS from "@/constants/colors";
+import { INVESTMENT_TYPES, PROVIDER_GROUPS } from "@/constants/investments";
 import { cn } from "@/lib/utils";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -39,7 +42,7 @@ const AddInvestmentScreen = () => {
   }, [router]);
 
   return (
-    <MainContainer edges={["top"]} className="bg-lightMuted">
+    <MainContainer edges={[]} className="bg-lightMuted pb-0">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -75,7 +78,9 @@ const AddInvestmentScreen = () => {
                 placeholderTextColor="#9AA5B1"
                 className={cn(
                   "mt-2 rounded-2xl border bg-white px-4 py-4 text-base text-textColor",
-                  focusedField === "name" ? "border-primary_400" : "border-gray-200",
+                  focusedField === "name"
+                    ? "border-primary_400"
+                    : "border-gray-200",
                 )}
                 onFocus={() => setFocusedField("name")}
                 onBlur={() =>
@@ -106,11 +111,22 @@ const AddInvestmentScreen = () => {
                 >
                   {investmentType || "Select Type"}
                 </Text>
+                <Ionicons
+                  name={
+                    focusedField === "investmentType"
+                      ? "chevron-up"
+                      : "chevron-down"
+                  }
+                  size={20}
+                  color="#2A3A50"
+                />
               </Pressable>
             </View>
 
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">Platform Provider</Text>
+              <Text className="text-sm text-textColor/70">
+                Platform Provider
+              </Text>
               <Pressable
                 onPress={() => {
                   setProviderModalVisible(true);
@@ -131,11 +147,20 @@ const AddInvestmentScreen = () => {
                 >
                   {provider || "Select Provider"}
                 </Text>
+                <Ionicons
+                  name={
+                    focusedField === "provider" ? "chevron-up" : "chevron-down"
+                  }
+                  size={20}
+                  color="#2A3A50"
+                />
               </Pressable>
             </View>
 
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">Amount Invested</Text>
+              <Text className="mb-1.5 text-sm text-textColor/70">
+                Amount Invested
+              </Text>
               <AmountInput
                 value={amount}
                 onChangeValue={setAmount}
@@ -155,6 +180,12 @@ const AddInvestmentScreen = () => {
                   setFocusedField(focused ? "purchaseDate" : null)
                 }
                 isFocused={focusedField === "purchaseDate"}
+                renderSelectIcon={() => (
+                    <Image
+                      source={require("@/assets/icons/calendar.svg")}
+                      style={{ width: 20, height: 20 }}
+                    />
+                )}
               />
             </View>
 
@@ -167,13 +198,17 @@ const AddInvestmentScreen = () => {
                   setFocusedField(focused ? "dueDate" : null)
                 }
                 isFocused={focusedField === "dueDate"}
+                renderSelectIcon={() => (
+                  <Image
+                    source={require("@/assets/icons/calendar.svg")}
+                    style={{ width: 20, height: 20, }}
+                  />
+                )}
               />
             </View>
 
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">
-                Note (Optional)
-              </Text>
+              <Text className="text-sm text-textColor/70">Note (Optional)</Text>
               <TextInput
                 value={notes}
                 onChangeText={setNotes}
@@ -208,8 +243,9 @@ const AddInvestmentScreen = () => {
           setFocusedField(null);
         }}
         title="Investment Type"
-        headerBackgroundColor="#1643F5"
+        headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
+        className="px-3 py-2"
       >
         <View className="space-y-3">
           {INVESTMENT_TYPES.map((type) => {
@@ -224,8 +260,10 @@ const AddInvestmentScreen = () => {
                 }}
                 accessibilityRole="button"
                 className={cn(
-                  "rounded-2xl border px-4 py-4",
-                  isSelected ? "border-primary_400 bg-primary_400/5" : "border-gray-200",
+                  "rounded-2xl  px-2 py-4",
+                  isSelected
+                    ? "border-primary_400 bg-primary_400/5"
+                    : "border-gray-200",
                 )}
               >
                 <Text
@@ -250,13 +288,13 @@ const AddInvestmentScreen = () => {
           setFocusedField(null);
         }}
         title="Select Provider"
-        headerBackgroundColor="#1643F5"
+        headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
       >
-        <View className="space-y-6">
+        <View className="gap-4">
           {PROVIDER_GROUPS.map((group) => (
             <View key={group.id}>
-              <Text weight="semibold" className="text-xs uppercase text-textColor/50">
+              <Text weight="semibold" className="text-sm  text-textColor">
                 {group.label}
               </Text>
               <View className="mt-3 flex-row flex-wrap gap-3">
@@ -272,7 +310,7 @@ const AddInvestmentScreen = () => {
                       }}
                       accessibilityRole="button"
                       className={cn(
-                        "rounded-full border px-4 py-3",
+                        "rounded-lg border px-4 py-3",
                         isSelected
                           ? "border-primary_400 bg-primary_400/5"
                           : "border-gray-200",
@@ -300,4 +338,3 @@ const AddInvestmentScreen = () => {
 };
 
 export default AddInvestmentScreen;
-

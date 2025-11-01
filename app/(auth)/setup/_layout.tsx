@@ -17,7 +17,7 @@ const Layout = () => {
         ),
       }}
     >
-      <Stack.Screen name="choose-language" />
+      {/* <Stack.Screen name="choose-language" /> */}
       <Stack.Screen
         name="monthly-income"
         options={{ headerLeft: () => null, headerBackVisible: false }}
