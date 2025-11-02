@@ -79,6 +79,8 @@ const MoreScreen = () => {
       router.push("/(app)/(home)/analytics");
     } else if (feature.id === "debt-tracker") {
       router.push("/(app)/debt-tracker");
+    } else if (feature.id === "tax-management") {
+      router.push("/(app)/tax-management");
     } else if (feature.id === "notifications") {
       router.push("/(app)/notifications");
     }
