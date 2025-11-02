@@ -8,10 +8,7 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const TAB_CONFIG: Record<
-  string,
-  { label: string; iconSource: ImageSource }
-> = {
+const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
   investment: {
@@ -101,7 +98,8 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
 const HomeLayout = () => {
   const path = usePathname();
-  const shouldHideTabBar = path.startsWith("/budget/") || path.startsWith("/investment/") ;
+  const shouldHideTabBar =
+    path.startsWith("/budget/") || path.startsWith("/investment/");
   return (
     <Tabs
       screenOptions={{
@@ -141,13 +139,15 @@ const HomeLayout = () => {
         name="fxRates"
         options={{
           title: "FX Rates",
-          headerShown:true
+          headerShown: true,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Account",
+          headerShown: true,
+          headerShadowVisible: false,
         }}
       />
     </Tabs>
