@@ -22,6 +22,14 @@ const AppLayout = () => {
         options={{ title: "Track Spending" }}
       />
       <Stack.Screen
+        name="bill-reminder/index"
+        options={{ title: "Bills Reminder" }}
+      />
+      <Stack.Screen
+        name="bill-reminder/add-bill"
+        options={{ title: "Add Bill" }}
+      />
+      <Stack.Screen
         name="savings-goals"
         options={{ headerShown:false}}
       />

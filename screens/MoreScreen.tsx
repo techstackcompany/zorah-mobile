@@ -76,11 +76,13 @@ const MoreScreen = () => {
     } else if (feature.id === "ai-assistant") {
       router.push("/(app)/ai-assistant");
     } else if (feature.id === "black-market-fx") {
-      router.push("/(app)/(home)/analytics");
+      router.push("/fxRates");
     } else if (feature.id === "debt-tracker") {
       router.push("/(app)/debt-tracker");
     } else if (feature.id === "tax-management") {
       router.push("/(app)/tax-management");
+    } else if (feature.id === "bill-reminder") {
+      router.push("/(app)/bill-reminder");
     } else if (feature.id === "notifications") {
       router.push("/(app)/notifications");
     }
