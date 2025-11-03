@@ -35,7 +35,7 @@ const ForgotPasswordScreen = () => {
     if (!validate()) return;
 
     console.log("Forgot password phone:", phone);
-    // TODO: Hook into OTP flow once available.
+    router.push("/(auth)/forgot-password-otp");
   };
 
   return (
@@ -100,10 +100,10 @@ const ForgotPasswordScreen = () => {
       <Button title="Next" onPress={handleSubmit} className="mt-2 w-full" />
 
       <View className="mt-8 flex-row justify-center">
-        <Text className="text-sm text-tertiary opacity-60">Continue by </Text>
+        <Text weight="bold" className=" text-tertiary opacity-60">Continue by </Text>
         <Link asChild href="/signIn">
           <Pressable>
-            <Text weight="semibold" className="text-sm text-primary_400">
+            <Text weight="bold" className=" text-primary_400">
               Signing In
             </Text>
           </Pressable>
