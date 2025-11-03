@@ -1,22 +1,39 @@
+import COLORS from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import { Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import COLORS from "@/constants/colors";
 
 const SavingsGoalsLayout = () => {
   const router = useRouter();
-
+  const handleCreateGoal = () => {
+    router.navigate("/savings-goals/create");
+  };
   return (
     <Stack
       screenOptions={{
         statusBarStyle: "dark",
+        headerShadowVisible: false,
       }}
     >
       <Stack.Screen
         name="index"
         options={{
-          headerShown: false,
+          title: "Savings Goals",
+          headerRight: () => (
+            <Pressable
+              onPress={handleCreateGoal}
+              className="h-10 w-10 items-center justify-center rounded-full "
+              accessibilityRole="button"
+              accessibilityLabel="Create Goal"
+            >
+              <Image
+                source={require("@/assets/icons/add-budget.svg")}
+                style={{ width: 24, height: 24 }}
+              />
+            </Pressable>
+          ),
         }}
       />
       <Stack.Screen
@@ -35,16 +52,13 @@ const SavingsGoalsLayout = () => {
         name="create"
         options={{
           headerTitle: "Create Goal",
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/savings-goals/create")}
-              className="h-10 w-10 items-center justify-center rounded-full"
-              accessibilityRole="button"
-              accessibilityLabel="Create another goal"
-            >
-              <Ionicons name="add" size={24} color={COLORS.primary_400} />
-            </Pressable>
-          ),
+         
+        }}
+      />
+      <Stack.Screen
+        name="edit"
+        options={{
+          headerTitle: "Edit Goal",
         }}
       />
     </Stack>

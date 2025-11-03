@@ -106,6 +106,7 @@ type AmountInputProps = Omit<TextInputProps, "value" | "onChangeText"> & {
   isFocused?: boolean;
   currencySymbol?: string;
   forceFixedDecimalsOnBlur?: boolean;
+  labelCLassName?:string
 };
 
 const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
@@ -122,6 +123,7 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
       forceFixedDecimalsOnBlur = true,
       keyboardType,
       placeholder = "₦ 0.00",
+      labelCLassName,
       ...rest
     },
     ref,
@@ -165,7 +167,7 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
           containerClassName,
         )}
       >
-        <Text className="text-sm text-textColor/70">{label}</Text>
+        <Text className={cn("text-sm text-textColor/70", labelCLassName)}>{label}</Text>
         <View className={cn("mt-2", inputWrapperClassName)}>
           <TextInput
             ref={ref}

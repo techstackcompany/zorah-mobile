@@ -1,68 +1,57 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
+import CategorySelector, {
+  type CategoryItem,
+} from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
-import COLORS from "@/constants/colors";
 import { formatCurrency } from "@/constants/investments";
 import { cn } from "@/lib/utils";
-import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   TextInput,
   View,
 } from "react-native";
 
-type GoalCategoryOption = {
-  id: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  background: string;
-  accent: string;
-};
+type GoalCategory = "education" | "home" | "travel" | "car";
 
-const GOAL_CATEGORIES: GoalCategoryOption[] = [
+const GOAL_CATEGORIES: readonly CategoryItem<GoalCategory>[] = [
   {
-    id: "education",
+    key: "education",
     label: "Education",
-    icon: "school-outline",
-    background: "#EFF3FF",
-    accent: COLORS.primary_400,
+    icon: require("@/assets/images/savings_goals/education.png"),
   },
   {
-    id: "home",
+    key: "home",
     label: "Home",
-    icon: "home-outline",
-    background: "#F2F6FF",
-    accent: "#2F66F6",
+    icon: require("@/assets/images/savings_goals/home.png"),
   },
   {
-    id: "travel",
+    key: "travel",
     label: "Travel",
-    icon: "airplane-outline",
-    background: "#EFFEFA",
-    accent: COLORS.secondary_500,
+    icon: require("@/assets/images/savings_goals/travel.png"),
   },
   {
-    id: "car",
+    key: "car",
     label: "Car",
-    icon: "car-outline",
-    background: "#FFF5E8",
-    accent: "#F8924F",
+    icon: require("@/assets/images/savings_goals/car.png"),
   },
-];
+] as const;
 
 const SavingsGoalCreateScreen = () => {
   const router = useRouter();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(GOAL_CATEGORIES[0].id);
+  const [category, setCategory] = useState<GoalCategory>(
+    GOAL_CATEGORIES[0].key,
+  );
   const [targetDate, setTargetDate] = useState("");
   const [note, setNote] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -106,7 +95,7 @@ const SavingsGoalCreateScreen = () => {
             keyboardShouldPersistTaps="handled"
           >
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">Goal name</Text>
+              <Text className="text-sm text-textColor">Goal name</Text>
               <TextInput
                 value={name}
                 onChangeText={setName}
@@ -127,60 +116,27 @@ const SavingsGoalCreateScreen = () => {
               <AmountInput
                 label="Target Amount"
                 value={amount}
+                labelCLassName="text-textColor"
                 onChangeValue={setAmount}
                 onFocus={() => setFocusedField("amount")}
                 onBlur={() => setFocusedField(null)}
               />
-              <Text className="mt-2 text-xs text-textColor/60">
+              {/* <Text className="mt-2 text-xs text-textColor/60">
                 Current: {formattedAmount}
-              </Text>
+              </Text> */}
             </View>
 
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">Goal Category</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12 }}
-                className="mt-3"
-              >
-                {GOAL_CATEGORIES.map((option) => {
-                  const isActive = option.id === category;
-                  return (
-                    <Pressable
-                      key={option.id}
-                      accessibilityRole="button"
-                      onPress={() => setCategory(option.id)}
-                      className={cn(
-                        "w-32 items-center rounded-2xl border px-4 py-4 bg-white",
-                        !isActive && "border-gray-200",
-                      )}
-                      style={{
-                        borderColor: isActive ? COLORS.primary_400 : "#E5E9F2",
-                        backgroundColor: isActive ? "#EFF3FF" : "#FFFFFF",
-                      }}
-                    >
-                      <View
-                        className="h-12 w-12 items-center justify-center rounded-2xl"
-                        style={{ backgroundColor: option.background }}
-                      >
-                        <Ionicons
-                          name={option.icon}
-                          size={22}
-                          color={option.accent}
-                        />
-                      </View>
-                      <Text className="mt-3 text-sm text-textColor">
-                        {option.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+              <Text className="text-sm text-textColor">Goal Category</Text>
+              <CategorySelector
+                categories={GOAL_CATEGORIES}
+                selectedKey={category}
+                onSelect={setCategory}
+              />
             </View>
 
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">Target Date</Text>
+              <Text className="text-sm text-textColor">Target Date</Text>
               <DatePickerField
                 value={targetDate}
                 onChange={(date) => setTargetDate(date)}
@@ -189,13 +145,16 @@ const SavingsGoalCreateScreen = () => {
                 }
                 isFocused={focusedField === "date"}
                 renderSelectIcon={() => (
-                  <Ionicons name="calendar-outline" size={20} color="#1D2939" />
+                  <Image
+                    source={require("@/assets/icons/calendar.svg")}
+                    style={{ width: 20, height: 20 }}
+                  />
                 )}
               />
             </View>
 
             <View className="mt-6">
-              <Text className="text-sm text-textColor/70">Note (Optional)</Text>
+              <Text className="text-sm text-textColor">Note (Optional)</Text>
               <TextInput
                 value={note}
                 onChangeText={setNote}

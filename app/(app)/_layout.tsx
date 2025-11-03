@@ -21,6 +21,10 @@ const AppLayout = () => {
         name="track-spending"
         options={{ title: "Track Spending" }}
       />
+      <Stack.Screen
+        name="savings-goals"
+        options={{ headerShown:false}}
+      />
       <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
 
       <Stack.Screen
