@@ -152,7 +152,6 @@ const InvestmentPortfolioScreen = () => {
                   data={pieData}
                   donut
                   showText
-                  
                   textColor="#FFFFFF"
                   textSize={11}
                   radius={DONUT_RADIUS}
@@ -217,9 +216,11 @@ const InvestmentPortfolioScreen = () => {
                     styles.categoryCard,
                     {
                       borderColor: isActive
-                        ? COLORS.primary_400
+                        ? category.color
                         : "rgba(206,210,221,0.6)",
-                      backgroundColor: isActive ? "#F4F7FF" : "#FFFFFF",
+                      backgroundColor: isActive
+                        ? `${category.color}1A`
+                        : "#FFFFFF",
                     },
                   ]}
                 >

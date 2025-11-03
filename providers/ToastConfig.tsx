@@ -1,6 +1,5 @@
 import COLORS from "@/constants/colors";
 import { Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import React from "react";
 import { BaseToast, ErrorToast, ToastConfig } from "react-native-toast-message";
 
@@ -12,7 +11,7 @@ const toastConfig: ToastConfig = {
        <Feather name="check-circle"  size={24} color="white" />
       )}
       style={{
-        backgroundColor: COLORS.primary, 
+        backgroundColor: COLORS.primary_400, 
         width: "100%",
         borderRadius: 8,
         alignItems: "center",
@@ -70,7 +69,7 @@ const toastConfig: ToastConfig = {
   info: (props) => ( <BaseToast
       {...props}
       renderLeadingIcon={() => (
-        <Entypo name="info" size={24} color={COLORS.primary} />
+        <Entypo name="info" size={24} color={COLORS.primary_400} />
       )}
       style={{
         width: "100%",

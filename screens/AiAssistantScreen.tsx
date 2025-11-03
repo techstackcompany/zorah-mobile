@@ -1,7 +1,9 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   Pressable,
@@ -56,12 +58,48 @@ const CATEGORIES: AssistantCategory[] = [
 ];
 
 const BREAKDOWN_DATA: BreakdownCategory[] = [
-  { id: "food", label: "Food & Dining", amount: "₦32,000", percentage: "32%", color: "#3152FF" },
-  { id: "transport", label: "Transportation", amount: "₦27,000", percentage: "32%", color: "#27AE60" },
-  { id: "shopping", label: "Shopping", amount: "₦43,000", percentage: "32%", color: "#F2994A" },
-  { id: "entertainment", label: "Entertainment", amount: "₦23,000", percentage: "32%", color: "#BB6BD9" },
-  { id: "bills", label: "Bills & Utilities", amount: "₦44,000", percentage: "32%", color: "#9B51E0" },
-  { id: "others", label: "Others", amount: "₦44,000", percentage: "32%", color: "#7E8DA0" },
+  {
+    id: "food",
+    label: "Food & Dining",
+    amount: "₦32,000",
+    percentage: "32%",
+    color: "#3152FF",
+  },
+  {
+    id: "transport",
+    label: "Transportation",
+    amount: "₦27,000",
+    percentage: "32%",
+    color: "#27AE60",
+  },
+  {
+    id: "shopping",
+    label: "Shopping",
+    amount: "₦43,000",
+    percentage: "32%",
+    color: "#F2994A",
+  },
+  {
+    id: "entertainment",
+    label: "Entertainment",
+    amount: "₦23,000",
+    percentage: "32%",
+    color: "#BB6BD9",
+  },
+  {
+    id: "bills",
+    label: "Bills & Utilities",
+    amount: "₦44,000",
+    percentage: "32%",
+    color: "#9B51E0",
+  },
+  {
+    id: "others",
+    label: "Others",
+    amount: "₦44,000",
+    percentage: "32%",
+    color: "#7E8DA0",
+  },
 ];
 
 const MESSAGES: Message[] = [
@@ -69,7 +107,8 @@ const MESSAGES: Message[] = [
     id: "intro",
     author: "assistant",
     timestamp: "5m ago",
-    title: "Hello! I'm Bobbie, your AI financial assistant. I'm here to help you manage your finance better. How can I assist you today?",
+    title:
+      "Hello! I'm Bobbie, your AI financial assistant. I'm here to help you manage your finance better. How can I assist you today?",
     bullets: [
       "Track your spending in real-time and show where your money goes 💸",
       "Set up budgets for categories like food, transport, or entertainment 🎯",
@@ -90,15 +129,6 @@ const MESSAGES: Message[] = [
     timestamp: "4m ago",
     body: "Hi Bobbie! Can you help me analyze my spending this month?",
   },
-  {
-    id: "breakdown",
-    author: "assistant",
-    timestamp: "5m ago",
-    breakdown: {
-      total: "₦160,000",
-      categories: BREAKDOWN_DATA,
-    },
-  },
 ];
 
 const AiAssistantScreen = () => {
@@ -106,7 +136,7 @@ const AiAssistantScreen = () => {
   const [draftMessage, setDraftMessage] = useState("");
 
   return (
-    <MainContainer edges={["top"]} className="bg-lightMuted">
+    <MainContainer edges={[]} className="bg-lightMuted">
       <View className="flex-1">
         <ScrollView
           style={styles.scrollView}
@@ -128,12 +158,12 @@ const AiAssistantScreen = () => {
                   accessibilityState={{ selected: isActive }}
                   style={[
                     styles.categoryChip,
-                    isActive ? styles.categoryChipActive : styles.categoryChipInactive,
+                    
                   ]}
                 >
                   <Text
                     weight={isActive ? "semibold" : "medium"}
-                    className={`text-xs ${isActive ? "text-textColor" : "text-textColor/60"}`}
+                    className={cn('text-primary_400 text-sm')}
                   >
                     {category.label}
                   </Text>
@@ -148,16 +178,23 @@ const AiAssistantScreen = () => {
                 return (
                   <View key={message.id} style={styles.assistantMessageRow}>
                     <View style={styles.avatar}>
-                      <Ionicons name="sparkles-outline" size={20} color="#32A34D" />
+                      <Image
+                        tintColor={COLORS.primary_400}
+                        source={require("@/assets/icons/ai_bot.svg")}
+                        style={{ width: 24, height: 24 }}
+                      />
                     </View>
                     <View style={styles.assistantBubble}>
                       {message.title ? (
-                        <Text weight="semibold" className="text-sm text-textColor">
+                        <Text
+                          weight="semibold"
+                          className="text-sm text-textColor"
+                        >
                           {message.title}
                         </Text>
                       ) : null}
                       {message.body ? (
-                        <Text className="mt-1 text-sm text-textColor/80 leading-5">
+                        <Text className="mt-1 text-sm leading-5 text-textColor/80">
                           {message.body}
                         </Text>
                       ) : null}
@@ -166,7 +203,7 @@ const AiAssistantScreen = () => {
                           {message.bullets.map((item) => (
                             <View key={item} style={styles.bulletItem}>
                               <View style={styles.bulletDot} />
-                              <Text className="flex-1 text-sm text-textColor/80 leading-5">
+                              <Text className="flex-1 text-sm leading-5 text-textColor/80">
                                 {item}
                               </Text>
                             </View>
@@ -175,14 +212,20 @@ const AiAssistantScreen = () => {
                       ) : null}
                       {message.breakdown ? (
                         <View style={styles.breakdownCard}>
-                          <Text weight="bold" className="text-sm text-textColor">
+                          <Text
+                            weight="bold"
+                            className="text-sm text-textColor"
+                          >
                             Expense Breakdown: {message.breakdown.total}
                           </Text>
                           <View style={styles.breakdownContent}>
                             <View style={styles.donutWrapper}>
                               <View style={styles.donutOuter}>
                                 <View style={styles.donutInner}>
-                                  <Text weight="bold" className="text-base text-textColor">
+                                  <Text
+                                    weight="bold"
+                                    className="text-base text-textColor"
+                                  >
                                     {message.breakdown.total}
                                   </Text>
                                   <Text className="mt-1 text-[10px] text-textColor/60">
@@ -193,15 +236,26 @@ const AiAssistantScreen = () => {
                             </View>
                             <View style={styles.breakdownList}>
                               {message.breakdown.categories.map((category) => (
-                                <View key={category.id} style={styles.breakdownListItem}>
+                                <View
+                                  key={category.id}
+                                  style={styles.breakdownListItem}
+                                >
                                   <View style={styles.categoryMeta}>
-                                    <View style={[styles.categoryColor, { backgroundColor: category.color }]} />
+                                    <View
+                                      style={[
+                                        styles.categoryColor,
+                                        { backgroundColor: category.color },
+                                      ]}
+                                    />
                                     <Text className="text-xs text-textColor/70">
                                       {category.label}
                                     </Text>
                                   </View>
                                   <View style={styles.categoryAmount}>
-                                    <Text weight="semibold" className="text-xs text-textColor">
+                                    <Text
+                                      weight="semibold"
+                                      className="text-xs text-textColor"
+                                    >
                                       {category.amount}
                                     </Text>
                                     <Text className="ml-2 text-[10px] text-textColor/60">
@@ -225,7 +279,9 @@ const AiAssistantScreen = () => {
               return (
                 <View key={message.id} style={styles.userMessageRow}>
                   <View style={styles.userBubble}>
-                    <Text className="text-sm text-white leading-5">{message.body}</Text>
+                    <Text className="text-sm leading-5 text-white">
+                      {message.body}
+                    </Text>
                   </View>
                   <Text className="mt-1 text-[10px] text-textColor/50">
                     {message.timestamp}
@@ -238,13 +294,16 @@ const AiAssistantScreen = () => {
 
         <View style={styles.composerContainer}>
           <View style={styles.inputWrapper}>
-            <Ionicons name="mic-outline" size={20} color="#8A94A6" />
             <TextInput
               value={draftMessage}
               onChangeText={setDraftMessage}
               placeholder="Ask Bobbie about your finances..."
               placeholderTextColor="#9AA5B1"
               style={styles.textInput}
+            />
+            <Image
+              source={require("@/assets/icons/mic.svg")}
+              style={{ width: 24, height: 24 }}
             />
           </View>
           <Pressable style={styles.sendButton} accessibilityRole="button">
@@ -273,15 +332,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 999,
-  },
-  categoryChipActive: {
     backgroundColor: "#FFFFFF",
-    shadowColor: "#1C274C",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
   },
+ 
   categoryChipInactive: {
     backgroundColor: "#E9EDF5",
   },
@@ -298,13 +351,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#E7F7F0",
+    backgroundColor: COLORS.secondary_200,
     alignItems: "center",
     justifyContent: "center",
   },
   assistantBubble: {
     flex: 1,
     borderRadius: 20,
+    borderBottomLeftRadius: 0,
     padding: 16,
     backgroundColor: "#FFFFFF",
   },
@@ -388,12 +442,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 18,
     backgroundColor: COLORS.primary_400,
+    borderBottomRightRadius: 0,
   },
   composerContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingBottom: 24,
     paddingTop: 16,
@@ -405,10 +458,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: "#E0E5EE",
     gap: 12,
+    flex: 1,
   },
   textInput: {
     flex: 1,
@@ -416,9 +470,7 @@ const styles = StyleSheet.create({
     color: COLORS.textColor,
   },
   sendButton: {
-    position: "absolute",
-    right: 32,
-    top: 20,
+    marginLeft: 16,
     width: 42,
     height: 42,
     borderRadius: 21,

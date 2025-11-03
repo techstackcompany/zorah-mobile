@@ -1,6 +1,6 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import Text from "@/components/ui/Text";
 import SlideUpModal from "@/components/ui/SlideUpModal";
+import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
   DEBT_STATUS_META,
@@ -11,8 +11,8 @@ import {
   MOCK_DEBTS,
   formatCurrency,
 } from "@/constants/debt";
-import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -25,7 +25,7 @@ import {
 
 type TabKey = "all" | DebtType;
 
-const STATUS_FILTERS: Array<{ key: DebtStatus; label: string }> = [
+const STATUS_FILTERS: { key: DebtStatus; label: string }[] = [
   { key: "outstanding", label: "Outstanding" },
   { key: "overdue", label: "Overdue" },
   { key: "settled", label: "Paid" },
@@ -119,9 +119,7 @@ const DebtTrackerScreen = () => {
         const month = now.getMonth();
         const year = now.getFullYear();
         const dueDate = new Date(record.dueDate);
-        return (
-          dueDate.getMonth() === month && dueDate.getFullYear() === year
-        );
+        return dueDate.getMonth() === month && dueDate.getFullYear() === year;
       }
 
       if (selectedDateFilter === "lastMonth") {
@@ -130,9 +128,7 @@ const DebtTrackerScreen = () => {
         const year =
           now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
         const dueDate = new Date(record.dueDate);
-        return (
-          dueDate.getMonth() === month && dueDate.getFullYear() === year
-        );
+        return dueDate.getMonth() === month && dueDate.getFullYear() === year;
       }
 
       return true;
@@ -171,7 +167,7 @@ const DebtTrackerScreen = () => {
   };
 
   return (
-    <MainContainer edges={["top"]} className="bg-lightMuted">
+    <MainContainer edges={[]} className="bg-lightMuted">
       <View className="flex-1">
         <ScrollView
           contentContainerStyle={styles.contentContainer}
@@ -182,15 +178,17 @@ const DebtTrackerScreen = () => {
               label="You Borrowed"
               amount={totals.borrowed}
               background="#E7F7F0"
-              icon="trending-down-outline"
+              icon="arrow-down"
               iconColor="#2FA89A"
+              accentColor={COLORS.secondary_500}
             />
             <SummaryCard
               label="You Lent"
               amount={totals.lent}
               background="#FFE9DD"
-              icon="trending-up-outline"
+              icon="arrow-up"
               iconColor="#E9781A"
+              accentColor={COLORS.coral}
             />
           </View>
 
@@ -205,7 +203,10 @@ const DebtTrackerScreen = () => {
                 style={styles.searchInput}
               />
               <Pressable accessibilityRole="button" hitSlop={8}>
-                <Ionicons name="mic-outline" size={18} color="#8A94A6" />
+                <Image
+                  source={require("@/assets/icons/mic.svg")}
+                  style={{ width: 24, height: 24 }}
+                />
               </Pressable>
             </View>
             <Pressable
@@ -213,7 +214,11 @@ const DebtTrackerScreen = () => {
               onPress={() => setShowFilterModal(true)}
               accessibilityRole="button"
             >
-              <Ionicons name="options-outline" size={18} color="#FFFFFF" />
+              <Ionicons
+                name="options-outline"
+                size={18}
+                color={COLORS.tertiary}
+              />
             </Pressable>
           </View>
 
@@ -264,12 +269,28 @@ const DebtTrackerScreen = () => {
                         {DEBT_TYPE_META[record.type].subLabel}
                       </Text>
                     </View>
+                    <View style={styles.amountRow}>
+                      <Text weight="bold" className="text-lg text-textColor">
+                        {formatCurrency(record.amount)}
+                      </Text>
+                      <Text className="text-xs text-textColor/60">
+                        Due:{" "}
+                        {new Date(record.dueDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    </View>
                   </View>
+                  
+                  <View className="items-end">
                   <View
                     style={[
                       styles.statusBadge,
                       {
-                        backgroundColor: DEBT_STATUS_META[record.status].background,
+                        backgroundColor:
+                          DEBT_STATUS_META[record.status].background,
                         borderColor: DEBT_STATUS_META[record.status].border,
                       },
                     ]}
@@ -277,32 +298,20 @@ const DebtTrackerScreen = () => {
                     <Text
                       weight="semibold"
                       className="text-[11px]"
-                      style={{ color: DEBT_STATUS_META[record.status].textColor }}
+                      style={{
+                        color: DEBT_STATUS_META[record.status].textColor,
+                      }}
                     >
                       {DEBT_STATUS_META[record.status].label}
                     </Text>
                   </View>
-                </View>
-
-                <View style={styles.amountRow}>
-                  <Text weight="bold" className="text-lg text-textColor">
-                    {formatCurrency(record.amount)}
-                  </Text>
-                  <Text className="text-xs text-textColor/60">
-                    Due:{" "}
-                    {new Date(record.dueDate).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </Text>
-                </View>
-
                 <Pressable
                   disabled={record.status === "settled"}
                   style={[
                     styles.reminderButton,
-                    record.status === "settled" ? styles.reminderButtonDisabled : null,
+                    record.status === "settled"
+                      ? styles.reminderButtonDisabled
+                      : null,
                   ]}
                   onPress={() => {}}
                   accessibilityRole="button"
@@ -312,12 +321,20 @@ const DebtTrackerScreen = () => {
                     className="text-xs"
                     style={{
                       color:
-                        record.status === "settled" ? "#A0A8B2" : COLORS.primary_400,
+                        record.status === "settled"
+                          ? "#A0A8B2"
+                          : COLORS.primary_400,
                     }}
                   >
-                    {record.status === "settled" ? "Reminder Sent" : "Send Reminder"}
+                    {record.status === "settled"
+                      ? "Reminder Sent"
+                      : "Send Reminder"}
                   </Text>
                 </Pressable>
+
+                  </View>
+                </View>
+
               </Pressable>
             ))}
           </View>
@@ -356,7 +373,9 @@ const DebtTrackerScreen = () => {
                   key={status.key}
                   style={[
                     styles.filterChip,
-                    isSelected ? styles.filterChipActive : styles.filterChipInactive,
+                    isSelected
+                      ? styles.filterChipActive
+                      : styles.filterChipInactive,
                   ]}
                   onPress={() => handleToggleStatus(status.key)}
                   accessibilityRole="button"
@@ -389,7 +408,9 @@ const DebtTrackerScreen = () => {
                   key={filter.key}
                   style={[
                     styles.filterChip,
-                    isSelected ? styles.filterChipActive : styles.filterChipInactive,
+                    isSelected
+                      ? styles.filterChipActive
+                      : styles.filterChipInactive,
                   ]}
                   onPress={() => setSelectedDateFilter(filter.key)}
                   accessibilityRole="button"
@@ -441,6 +462,7 @@ type SummaryCardProps = {
   background: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
+  accentColor: string;
 };
 
 const SummaryCard = ({
@@ -449,18 +471,23 @@ const SummaryCard = ({
   background,
   icon,
   iconColor,
+  accentColor,
 }: SummaryCardProps) => {
   return (
     <View style={[styles.summaryCard, { backgroundColor: background }]}>
-      <View style={styles.summaryIcon}>
-        <Ionicons name={icon} size={18} color={iconColor} />
+      <View className="flex-row px-4 py-2.5">
+        <View>
+          <Ionicons name={icon} size={18} color={iconColor} />
+        </View>
+        <Text weight="semibold" className="text-sm text-textColor/60">
+          {label}
+        </Text>
       </View>
-      <Text weight="semibold" className="text-xs text-textColor/60">
-        {label}
-      </Text>
-      <Text weight="bold" className="text-lg text-textColor mt-1">
-        {formatCurrency(amount)}
-      </Text>
+      <View className="px-4 py-3" style={{ backgroundColor: accentColor }}>
+        <Text weight="bold" className="mt-1 text-lg text-white">
+          {formatCurrency(amount)}
+        </Text>
+      </View>
     </View>
   );
 };
@@ -477,19 +504,10 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    borderRadius: 18,
+    overflow: "hidden",
   },
-  summaryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
+
   searchRow: {
     marginTop: 20,
     flexDirection: "row",
@@ -499,14 +517,14 @@ const styles = StyleSheet.create({
   searchInputWrapper: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     gap: 10,
     height: 46,
     borderWidth: 1,
-    borderColor: "#E3E8EF",
+    borderColor: COLORS.grayLight,
   },
   searchInput: {
     flex: 1,
@@ -516,10 +534,12 @@ const styles = StyleSheet.create({
   filterButton: {
     width: 46,
     height: 46,
-    borderRadius: 23,
-    backgroundColor: COLORS.primary_400,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    backgroundColor: "white",
+    borderColor: COLORS.grayLight,
   },
   tabRow: {
     marginTop: 24,
@@ -578,16 +598,13 @@ const styles = StyleSheet.create({
   },
   amountRow: {
     marginTop: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
   reminderButton: {
     marginTop: 18,
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.primary_400,
-    paddingVertical: 10,
+    padding: 10,
     alignItems: "center",
   },
   reminderButtonDisabled: {
@@ -652,4 +669,3 @@ const styles = StyleSheet.create({
 });
 
 export default DebtTrackerScreen;
-

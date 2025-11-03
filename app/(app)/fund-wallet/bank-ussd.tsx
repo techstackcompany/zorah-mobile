@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 
 type BankOption = {
   id: string;
@@ -149,15 +150,15 @@ const BankUssdScreen = () => {
         height="70%"
         className="pt-2"
       >
-        <View className="rounded-2xl bg-grayLight/80 px-4 py-3">
+        <View className="rounded-2xl  px-4 py-3">
           <View className="flex-row items-center">
-            <Ionicons name="search-outline" size={18} color="#7B8794" />
+<Image source={require("@/assets/icons/search.svg")} style={{width:24, height:24}} />
             <TextInput
               value={searchTerm}
               onChangeText={setSearchTerm}
               placeholder="Search bank name..."
               placeholderTextColor="#9AA5B1"
-              className="ml-2 flex-1 font-degular text-base text-textColor"
+              className="ml-2 flex-1 font-degular  text-textColor"
             />
           </View>
         </View>

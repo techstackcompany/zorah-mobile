@@ -2,6 +2,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, ImageBackground } from "expo-image";
 import React, { useMemo, useState } from "react";
 import {
   Pressable,
@@ -10,8 +11,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-
-const BAR_MAX_HEIGHT = 140;
+import { BarChart } from "react-native-gifted-charts";
 
 const TIMEFRAME_TABS = [
   { key: "daily", label: "Daily" },
@@ -63,10 +63,16 @@ type TrackSpendingData = {
   trendLabel: string;
   chart: { bars: ChartBar[] };
   mostSpending: MostSpendingItem[];
-  ai: { title: string; description: string };
   breakdown: BreakdownItem[];
   alerts: AlertItem[];
 };
+
+const AI_ASSISTANT_COPY = {
+  name: "Bobbie",
+  subtitle: "AI Assistance",
+  message:
+    "Oops, you've used 92% of your food budget. Plan more home meals to avoid overspending next month.",
+} as const;
 
 const currencyFormatter = new Intl.NumberFormat("en-NG", {
   style: "currency",
@@ -199,11 +205,6 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
       ],
     },
     mostSpending: BASE_MOST_SPENDING,
-    ai: {
-      title: "Bobbie AI Assistance",
-    description:
-      "Oops, you've used 90% of your food budget this week. Maybe it's time to cook more at home. Tap to get tips.",
-    },
     breakdown: BASE_BREAKDOWN,
     alerts: BASE_ALERTS,
   },
@@ -221,11 +222,6 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
       ],
     },
     mostSpending: BASE_MOST_SPENDING,
-    ai: {
-      title: "Bobbie AI Assistance",
-    description:
-      "Oops, you've spent 87% of your weekly transport budget. Consider switching to ride pooling for the rest of the week.",
-    },
     breakdown: BASE_BREAKDOWN,
     alerts: BASE_ALERTS,
   },
@@ -243,11 +239,6 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
       ],
     },
     mostSpending: BASE_MOST_SPENDING,
-    ai: {
-      title: "Bobbie AI Assistance",
-    description:
-      "Oops, you've used 92% of your monthly food budget. Plan more home meals to avoid overspending next month.",
-    },
     breakdown: BASE_BREAKDOWN,
     alerts: BASE_ALERTS,
   },
@@ -256,6 +247,13 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
 const TrackSpendingScreen = () => {
   const [activeTab, setActiveTab] = useState<TimeframeKey>("daily");
   const data = TRACK_SPENDING_DATA[activeTab];
+  const trendMatch = useMemo(() => {
+    const match = data.trendLabel.match(/^([+\-]?\d+(?:\.\d+)?%)(.*)$/);
+    if (!match) {
+      return null;
+    }
+    return { value: match[1], rest: match[2] };
+  }, [data.trendLabel]);
 
   const maxBarValue = useMemo(() => {
     const values = data.chart.bars.map((bar) => bar.value);
@@ -263,7 +261,7 @@ const TrackSpendingScreen = () => {
   }, [data.chart.bars]);
 
   return (
-    <MainContainer edges={["top"]} className="bg-lightMuted">
+    <MainContainer edges={[]} className="bg-lightMuted">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -298,41 +296,47 @@ const TrackSpendingScreen = () => {
             <Text weight="semibold" className="text-lg text-textColor">
               Spending Overview
             </Text>
-            <Text
-              weight="semibold"
-              className="text-xs text-secondary_500"
-            >
-              {data.trendLabel}
+            <Text weight="semibold" className="text-xs text-textColor">
+              {trendMatch ? (
+                <>
+                  <Text weight="semibold" className="text-secondary_500">
+                    {trendMatch.value}
+                  </Text>
+                  {trendMatch.rest}
+                </>
+              ) : (
+                data.trendLabel
+              )}
             </Text>
           </View>
-
-          <View className="mt-6 flex-row items-end justify-between px-1">
-            {data.chart.bars.map((bar) => {
-              const barHeight = Math.max(
-                (bar.value / maxBarValue) * BAR_MAX_HEIGHT,
-                6,
-              );
-
-              return (
-                <View
-                  key={bar.id}
-                  style={styles.barItem}
-                  className="items-center"
-                >
-                  <View style={styles.barTrack}>
-                    <View
-                      style={[
-                        styles.barFill,
-                        { height: barHeight, backgroundColor: bar.color },
-                      ]}
-                    />
-                  </View>
-                  <Text className="mt-2 text-xs text-textColor/60">
-                    {bar.label}
-                  </Text>
-                </View>
-              );
-            })}
+          <View className="mt-6 px-1">
+            <BarChart
+              data={data.chart.bars.map((bar) => ({
+                value: bar.value,
+                label: bar.label,
+                frontColor: bar.color,
+              }))}
+              maxValue={maxBarValue}
+              height={180}
+              barWidth={20}
+              spacing={18}
+              barBorderRadius={12}
+              yAxisThickness={0}
+              xAxisThickness={0}
+              disableScroll
+              isAnimated
+              labelWidth={24}
+              xAxisLabelTextStyle={{
+                fontFamily: "NunitoMedium",
+                fontSize: 12,
+                color: `${COLORS.textColor}60`,
+              }}
+              yAxisTextStyle={{
+                fontFamily: "NunitoMedium",
+                fontSize: 10,
+                color: `${COLORS.textColor}60`,
+              }}
+            />
           </View>
 
           <View className="mt-7">
@@ -344,41 +348,65 @@ const TrackSpendingScreen = () => {
               {data.mostSpending.map((item) => (
                 <View
                   key={item.id}
-                  style={[styles.mostSpendingCard, { backgroundColor: item.tint }]}
+                  style={[
+                    styles.mostSpendingCard,
+                    { backgroundColor: item.tint },
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.iconBadge,
-                      { backgroundColor: `${item.accent}15` as ViewStyle["backgroundColor"] },
-                    ]}
-                  >
-                    <Ionicons name={item.icon} size={18} color={item.accent} />
+                  <View className="i mb-4 flex-row justify-between">
+                    <View
+                      style={[
+                        styles.iconBadge,
+                        {
+                          borderColor: `${item.accent}`,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={18}
+                        color={item.accent}
+                      />
+                    </View>
+                    <Text
+                      weight="semibold"
+                      className="text-base text-textColor"
+                      style={{ color: item.accent }}
+                    >
+                      {item.change}
+                    </Text>
                   </View>
-                  <Text weight="bold" className="text-base text-textColor">
-                    {item.change}
-                  </Text>
-                  <Text className="mt-1 text-xs text-textColor/70">
-                    {item.label}
-                  </Text>
+                  <Text className="mt-1  text-textColor/70">{item.label}</Text>
                 </View>
               ))}
             </View>
           </View>
-
-          <View style={[styles.aiCard]}>
+          <ImageBackground
+            style={[styles.aiCard]}
+            source={require("@/assets/images/home/fold-pattern.png")}
+          >
             <View style={styles.aiIcon}>
-              <Ionicons name="sparkles-outline" size={20} color="#2FA89A" />
+              <Image
+                source={require("@/assets/icons/ai_bot.svg")}
+                style={{ width: 24, height: 24 }}
+                tintColor={COLORS.textColor}
+              />
             </View>
             <View className="ml-3 flex-1">
-              <Text weight="semibold" className="text-sm text-textColor">
-                {data.ai.title}
-              </Text>
+              <View className="flex-row items-baseline">
+                <Text weight="bold" className="text-lg text-textColor">
+                  {AI_ASSISTANT_COPY.name}
+                </Text>
+                <Text weight="semibold" className="ml-1 text-sm text-textColor">
+                  {AI_ASSISTANT_COPY.subtitle}
+                </Text>
+              </View>
               <Text className="mt-1 text-xs text-textColor/70">
-                {data.ai.description}
+                {AI_ASSISTANT_COPY.message}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#8A94A6" />
-          </View>
+          </ImageBackground>
         </View>
 
         <View className="mt-6 rounded-3xl bg-white p-5">
@@ -396,7 +424,10 @@ const TrackSpendingScreen = () => {
                 >
                   <View className="flex-1 pr-4">
                     <View className="flex-row items-center">
-                      <Text weight="semibold" className="text-base text-textColor">
+                      <Text
+                        weight="semibold"
+                        className="text-base text-textColor"
+                      >
                         {item.label}
                       </Text>
                       <View
@@ -424,7 +455,10 @@ const TrackSpendingScreen = () => {
                     </Text>
                     <Text
                       className="mt-1 text-xs"
-                      style={{ color: item.variance >= 0 ? COLORS.secondary_500 : "#D83A56" }}
+                      style={{
+                        color:
+                          item.variance >= 0 ? COLORS.secondary_500 : "#D83A56",
+                      }}
                     >
                       {item.variance >= 0 ? "+" : "-"}
                       {formatCurrency(item.variance)}
@@ -441,16 +475,22 @@ const TrackSpendingScreen = () => {
             Spending Above Budget
           </Text>
 
-          <View className="mt-4 space-y-3">
+          <View className="mt-4 gap-3">
             {data.alerts.map((alert) => (
               <View
                 key={alert.id}
-                style={[styles.alertCard, { backgroundColor: alert.background }]}
+                style={[
+                  styles.alertCard,
+                  { backgroundColor: alert.background },
+                ]}
               >
                 <View
                   style={[
                     styles.alertIcon,
-                    { backgroundColor: `${alert.accent}20` as ViewStyle["backgroundColor"] },
+                    {
+                      backgroundColor:
+                        `${alert.accent}20` as ViewStyle["backgroundColor"],
+                    },
                   ]}
                 >
                   <Ionicons name={alert.icon} size={20} color={alert.accent} />
@@ -459,7 +499,7 @@ const TrackSpendingScreen = () => {
                   <Text weight="bold" className="text-sm text-textColor">
                     {alert.label}
                   </Text>
-                  <Text className="mt-1 text-xs text-textColor/70 leading-4">
+                  <Text className="mt-1 text-xs leading-4 text-textColor/70">
                     {alert.description}
                   </Text>
                 </View>
@@ -499,21 +539,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  barItem: {
-    width: 32,
-  },
-  barTrack: {
-    width: 24,
-    height: BAR_MAX_HEIGHT,
-    borderRadius: 999,
-    backgroundColor: "#EEF1F6",
-    justifyContent: "flex-end",
-    overflow: "hidden",
-  },
-  barFill: {
-    width: "100%",
-    borderRadius: 999,
-  },
   mostSpendingCard: {
     width: "48%",
     borderRadius: 18,
@@ -528,12 +553,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    borderWidth: 1,
   },
   aiCard: {
     marginTop: 18,
-    borderRadius: 20,
+    borderRadius: 12,
     padding: 16,
-    backgroundColor: "#E7F7F0",
+    backgroundColor: COLORS.secondary_200,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -541,7 +567,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: `${COLORS.secondary_400}70`,
     alignItems: "center",
     justifyContent: "center",
   },

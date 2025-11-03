@@ -70,7 +70,7 @@ const currencyFormatter = new Intl.NumberFormat("en-NG", {
 
 const formatCurrency = (value: number) => currencyFormatter.format(value);
 
-type ExpenseSegment = {
+type PlanningSegment = {
   key: string;
   label: string;
   percentage: number;
@@ -81,50 +81,92 @@ type ExpenseSegment = {
   labelPosition: Partial<Record<"top" | "bottom" | "left" | "right", number>>;
 };
 
-const EXPENSE_SUMMARY = {
-  total: 93210,
-  segments: [
-    {
-      key: "food-primary",
-      label: "Food & Drink",
-      percentage: 50,
-      color: "#5D5FFE",
-      trackColor: "#E6E7FF",
-      icon: "fast-food-outline" as const,
-      iconBackground: "#F6F5FF",
-      labelPosition: { bottom: 36, left: 24 },
-    },
-    {
-      key: "transport",
-      label: "Transport",
-      percentage: 18,
-      color: "#FDBA4D",
-      trackColor: "#FFF1DD",
-      icon: "bus-outline" as const,
-      iconBackground: "#FFF7E7",
-      labelPosition: { top: 42, right: 36 },
-    },
-    {
-      key: "calls",
-      label: "Calls",
-      percentage: 15,
-      color: "#3EB489",
-      trackColor: "#E5F6F0",
-      icon: "call-outline" as const,
-      iconBackground: "#E7F8F1",
-      labelPosition: { top: 62, left: 26 },
-    },
-    {
-      key: "data",
-      label: "Data",
-      percentage: 7,
-      color: "#E261F3",
-      trackColor: "#FBE9FF",
-      icon: "wifi-outline" as const,
-      iconBackground: "#F9ECFF",
-      labelPosition: { bottom: 58, right: 26 },
-    },
-  ] as ExpenseSegment[],
+type SummaryData = {
+  total: number;
+  segments: PlanningSegment[];
+};
+
+const SUMMARY_DATA: Record<TabKey, SummaryData> = {
+  expense: {
+    total: 93210,
+    segments: [
+      {
+        key: "food-primary",
+        label: "Food & Drink",
+        percentage: 50,
+        color: "#5D5FFE",
+        trackColor: "#E6E7FF",
+        icon: "fast-food-outline",
+        iconBackground: "#F6F5FF",
+        labelPosition: { bottom: 36, left: 24 },
+      },
+      {
+        key: "transport",
+        label: "Transport",
+        percentage: 18,
+        color: "#FDBA4D",
+        trackColor: "#FFF1DD",
+        icon: "bus-outline",
+        iconBackground: "#FFF7E7",
+        labelPosition: { top: 42, right: 36 },
+      },
+      {
+        key: "calls",
+        label: "Calls",
+        percentage: 15,
+        color: "#3EB489",
+        trackColor: "#E5F6F0",
+        icon: "call-outline",
+        iconBackground: "#E7F8F1",
+        labelPosition: { top: 62, left: 26 },
+      },
+      {
+        key: "data",
+        label: "Data",
+        percentage: 7,
+        color: "#E261F3",
+        trackColor: "#FBE9FF",
+        icon: "wifi-outline",
+        iconBackground: "#F9ECFF",
+        labelPosition: { bottom: 58, right: 26 },
+      },
+    ],
+  },
+  income: {
+    total: 126500,
+    segments: [
+      {
+        key: "salary-primary",
+        label: "Salary",
+        percentage: 55,
+        color: "#3EB489",
+        trackColor: "#E5F6F0",
+        icon: "cash-outline",
+        iconBackground: "#E7F8F1",
+        labelPosition: { bottom: 36, left: 24 },
+      },
+      {
+        key: "freelance",
+        label: "Freelance",
+        percentage: 25,
+        color: "#5D5FFE",
+        trackColor: "#E6E7FF",
+        icon: "briefcase-outline",
+        iconBackground: "#F6F5FF",
+        labelPosition: { top: 42, right: 36 },
+      },
+      {
+        key: "investments",
+        label: "Investments",
+        percentage: 20,
+        color: "#FDBA4D",
+        trackColor: "#FFF1DD",
+        icon: "trending-up-outline",
+        iconBackground: "#FFF7E7",
+        labelPosition: { bottom: 58, right: 26 },
+      },
+    ],
+  },
 };
 
 const CHART_SIZE = 250;
@@ -137,7 +179,7 @@ const ExpensePlanningScreen = () => {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>("expense");
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = useCallback(() => {
@@ -151,22 +193,23 @@ const ExpensePlanningScreen = () => {
   );
 
   const emptyStateContent = EMPTY_STATE_MESSAGES[activeTab];
+  const currentSummary = useMemo(() => SUMMARY_DATA[activeTab], [activeTab]);
 
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
 
-  const expenseSegments = useMemo(() => {
-    if (!isExpenseTab) {
+  const summarySegments = useMemo(() => {
+    if (!currentSummary.segments.length) {
       return [];
     }
 
-    let remaining = EXPENSE_SUMMARY.total;
+    let remaining = currentSummary.total;
 
-    return EXPENSE_SUMMARY.segments.map((segment, index, array) => {
+    return currentSummary.segments.map((segment, index, array) => {
       const amount =
         index === array.length - 1
           ? remaining
-          : Math.round((EXPENSE_SUMMARY.total * segment.percentage) / 100);
+          : Math.round((currentSummary.total * segment.percentage) / 100);
       remaining -= amount;
 
       return {
@@ -174,24 +217,24 @@ const ExpensePlanningScreen = () => {
         amount,
       };
     });
-  }, [isExpenseTab]);
+  }, [currentSummary]);
 
   const totalAmountLabel = useMemo(
-    () => formatCurrency(EXPENSE_SUMMARY.total),
-    [],
+    () => formatCurrency(currentSummary.total),
+    [currentSummary],
   );
   const chartSegments = useMemo(() => {
-    if (!expenseSegments.length) {
+    if (!summarySegments.length) {
       return null;
     }
 
     let cumulativeOffset = 0;
 
-    return expenseSegments.map((segment) => {
+    return summarySegments.map((segment) => {
       const segmentLength = (segment.percentage / 100) * CHART_CIRCUMFERENCE;
       const segmentAngle = (segment.percentage / 100) * (Math.PI * 2);
       const startAngle =
-        ((-cumulativeOffset) / CHART_CIRCUMFERENCE) * (Math.PI * 2);
+        (-cumulativeOffset / CHART_CIRCUMFERENCE) * (Math.PI * 2);
       const midpointAngle = startAngle + segmentAngle / 2;
       const labelRadius = CHART_RADIUS;
       const labelX = CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
@@ -228,10 +271,10 @@ const ExpensePlanningScreen = () => {
 
       return element;
     });
-  }, [expenseSegments]);
+  }, [summarySegments]);
 
   return (
-    <MainContainer className="bg-lightMuted" edges={["bottom"]}>
+    <MainContainer className="bg-lightMuted pb-0" edges={[]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -269,12 +312,19 @@ const ExpensePlanningScreen = () => {
               );
             })}
           </View>
-          <CollapsibleCard headerBottomBorder title={tabConfig.categoryTitle} style={styles.card}>
+          <CollapsibleCard
+            headerBottomBorder
+            title={tabConfig.categoryTitle}
+            style={styles.card}
+          >
             <View className="flex-row items-center justify-between p-5">
               <Text weight="medium" className="text-sm text-textColor/70">
                 {tabConfig.breakdownTitle}
               </Text>
-              <Pressable style={styles.periodPill}>
+              <Pressable
+                style={styles.periodPill}
+                onPress={() => setIsLoading(!isLoading)}
+              >
                 <Text weight="semibold" className="text-sm text-textColor">
                   {PERIOD_LABEL}
                 </Text>
@@ -289,15 +339,16 @@ const ExpensePlanningScreen = () => {
             <View style={styles.chartWrapper}>
               {isLoading ? (
                 <View style={styles.chartSkeleton}>
-                  <View style={styles.chartSkeletonRing} />
+                  <View style={styles.chartSkeletonRing}>
+                    <Text weight="bold" className="text-lg">
+                      {formatCurrency(0)}
+                    </Text>
+                  </View>
                 </View>
-              ) : isExpenseTab ? (
+              ) : summarySegments.length ? (
                 <View style={styles.chartContainer}>
                   <View style={styles.chartSvgWrapper}>
-                    <Svg
-                      width={CHART_SIZE}
-                      height={CHART_SIZE}
-                    >
+                    <Svg width={CHART_SIZE} height={CHART_SIZE}>
                       <G>
                         <Circle
                           cx={CHART_SIZE / 2}
@@ -313,16 +364,10 @@ const ExpensePlanningScreen = () => {
                   </View>
 
                   <View style={styles.chartCenter}>
-                    <Text
-                      weight="medium"
-                      className="text-xs text-textColor/60"
-                    >
-                      Total spend
+                    <Text weight="medium" className="text-xs text-textColor/60">
+                      Total {tabConfig.label.toLowerCase()}
                     </Text>
-                    <Text
-                      weight="bold"
-                      className="mt-1 text-xl text-textColor"
-                    >
+                    <Text weight="bold" className="mt-1 text-xl text-textColor">
                       {totalAmountLabel}
                     </Text>
                   </View>
@@ -360,9 +405,9 @@ const ExpensePlanningScreen = () => {
                     </View>
                   ))}
                 </View>
-              ) : isExpenseTab ? (
+              ) : summarySegments.length ? (
                 <View className="gap-6">
-                  {expenseSegments.map((segment) => (
+                  {summarySegments.map((segment) => (
                     <View
                       key={segment.key}
                       className="flex-row items-center gap-4"
@@ -424,7 +469,8 @@ const ExpensePlanningScreen = () => {
               ) : (
                 <View style={styles.rankingEmptyState}>
                   <Text className="text-sm text-textColor/60">
-                    Switch to the expense tab to view category rankings.
+                    Add an entry to see your {tabConfig.label.toLowerCase()}{" "}
+                    rankings.
                   </Text>
                 </View>
               )}
@@ -432,26 +478,28 @@ const ExpensePlanningScreen = () => {
           </View>
         </View>
       </ScrollView>
-      <View
-        style={{ paddingBottom: bottom }}
-        className="absolute bottom-0  left-0 right-0 bg-white"
-      >
-        <View style={styles.emptyState}>
-          <Text weight="semibold" className="text-lg text-textColor/80">
-            {emptyStateContent.title}
-          </Text>
-          <Text className="mt-1 text-sm text-textColor/50">
-            {emptyStateContent.subtitle}
-          </Text>
-        </View>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={[styles.floatingButton, { bottom: 16 + bottom }]}
-          onPress={() => router.push(addEntryRoute)}
+      {isLoading && (
+        <View
+          style={{ paddingBottom: bottom }}
+          className="absolute bottom-0  left-0 right-0 bg-white"
         >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+          <View style={styles.emptyState}>
+            <Text weight="semibold" className="text-lg text-textColor/80">
+              {emptyStateContent.title}
+            </Text>
+            <Text className="mt-1 text-sm text-textColor/50">
+              {emptyStateContent.subtitle}
+            </Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.floatingButton, { bottom: 16 + bottom }]}
+            onPress={() => router.push(addEntryRoute)}
+          >
+            <Ionicons name="add" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <TouchableOpacity
         activeOpacity={0.8}
@@ -575,6 +623,8 @@ const styles = StyleSheet.create({
     borderWidth: CHART_STROKE_WIDTH,
     borderColor: COLORS.lightBg,
     backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   rankingCard: {
     marginTop: 16,

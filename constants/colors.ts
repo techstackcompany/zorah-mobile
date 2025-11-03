@@ -19,6 +19,7 @@ const COLORS = {
   orange:'#F8924F',
   amber:'#D59007',
   purple:'#6165D7',
+  coral: "#F36F56",
   purpleLight:'#EAEFFF'
 };
 
