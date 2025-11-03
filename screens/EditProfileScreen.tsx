@@ -49,7 +49,7 @@ const EditProfileScreen = () => {
             </Text>
           </View>
 
-          <View className="mt-6 space-y-6">
+          <View className="mt-6 gap-6">
             <FormField
               label="Name"
               value={form.name}

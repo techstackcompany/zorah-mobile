@@ -2,9 +2,11 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
 import React, { ReactNode, useMemo, useState } from "react";
 import {
@@ -46,7 +48,7 @@ const AccountScreen = () => {
   const [appearance, setAppearance] = useState(APPEARANCE_OPTIONS[0]);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
-
+  const { signOut } = useSession();
   const initials = useMemo(() => {
     return MOCK_USER.name
       .split(" ")
@@ -67,12 +69,22 @@ const AccountScreen = () => {
         contentContainerStyle={styles.contentContainer}
       >
         <View style={styles.avatarCard}>
-          <View style={styles.avatarCircle}>
+          <LinearGradient
+            colors={[COLORS.primary_400, COLORS.secondary_400]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 48,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Text weight="bold" className="text-3xl text-white">
               {initials}
             </Text>
-            
-          </View>
+          </LinearGradient>
           <Text weight="semibold" className="mt-5 text-xl text-textColor">
             {MOCK_USER.name}
           </Text>
@@ -114,7 +126,7 @@ const AccountScreen = () => {
             <AccountRow
               label="Transaction History"
               iconSource={require("@/assets/icons/transaction-history.svg")}
-              onPress={() => handleNavigate("/(app)/transactions/index")}
+              onPress={() => handleNavigate("/transactions")}
             />
           </View>
 
@@ -158,6 +170,7 @@ const AccountScreen = () => {
             <TouchableOpacity
               activeOpacity={0.7}
               style={styles.logoutButton}
+              onPress={signOut}
               accessibilityRole="button"
               className="active:bg-primary_200"
             >
@@ -307,7 +320,6 @@ const AccountRow = ({
       <Pressable
         accessibilityRole="button"
         onPress={onPress}
-        style={styles.rowWrapper}
       >
         {Content}
       </Pressable>
@@ -375,7 +387,6 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: COLORS.primary_400,
     alignItems: "center",
     justifyContent: "center",
   },

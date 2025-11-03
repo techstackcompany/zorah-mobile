@@ -70,7 +70,7 @@ const AddBankScreen = () => {
                     )}
                   >
                     {selected ? (
-                      <View className="h-2.5 w-2.5 rounded-[3px] bg-white" />
+                      <View className="h-2.5 w-2.5 rounded-[3px] bg-red-400" />
                     ) : null}
                   </View>
                   <Text weight="semibold" className="text-sm text-textColor">
