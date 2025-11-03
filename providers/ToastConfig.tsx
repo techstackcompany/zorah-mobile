@@ -69,7 +69,7 @@ const toastConfig: ToastConfig = {
   info: (props) => ( <BaseToast
       {...props}
       renderLeadingIcon={() => (
-        <Entypo name="info" size={24} color={COLORS.primary_400} />
+        <Entypo name="info" size={24} color={COLORS.primary} />
       )}
       style={{
         width: "100%",
