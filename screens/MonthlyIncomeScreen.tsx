@@ -51,7 +51,7 @@ const MonthlyIncomeScreen = () => {
       setIsSmsModalVisible(true);
       return;
     }
-    router.push("/(auth)/setup/your-banks");
+    router.navigate("/(auth)/setup/your-banks");
   };
 
   const handleAllowSmsAccess = async () => {

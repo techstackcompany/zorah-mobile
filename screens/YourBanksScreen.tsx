@@ -3,13 +3,19 @@ import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
 type Bank = {
   id: string;
   label: string;
+};
+
+type YourBanksScreenProps = {
+  initialSelected?: string[];
+  onSelectionChange?: (banks: string[]) => void;
 };
 
 const banks: Bank[] = [
@@ -27,16 +33,44 @@ const banks: Bank[] = [
   { id: "fcmb", label: "FCMB" },
 ];
 
-const YourBanksScreen = () => {
+const allowedBankIds = new Set(banks.map((bank) => bank.id));
+
+const sanitizeSelection = (selection: readonly string[] = []) =>
+  Array.from(
+    new Set(selection.filter((bankId) => allowedBankIds.has(bankId))),
+  );
+
+const arraysEqual = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((value, index) => value === b[index]);
+
+const YourBanksScreen = ({
+  initialSelected = [],
+  onSelectionChange,
+}: YourBanksScreenProps) => {
   const router = useRouter();
-  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
+  const sanitizedInitial = useMemo(
+    () => sanitizeSelection(initialSelected),
+    [initialSelected],
+  );
+  const [selectedBanks, setSelectedBanks] = useState<string[]>(sanitizedInitial);
+
+  useEffect(() => {
+    setSelectedBanks((prev) =>
+      arraysEqual(prev, sanitizedInitial) ? prev : sanitizedInitial,
+    );
+  }, [sanitizedInitial]);
 
   const toggleBank = (bankId: string) => {
-    setSelectedBanks((prev) =>
-      prev.includes(bankId)
+    setSelectedBanks((prev) => {
+      const next = prev.includes(bankId)
         ? prev.filter((id) => id !== bankId)
-        : [...prev, bankId],
-    );
+        : [...prev, bankId];
+      const sanitized = sanitizeSelection(next);
+      if (!arraysEqual(prev, sanitized)) {
+        onSelectionChange?.(sanitized);
+      }
+      return sanitized;
+    });
   };
 
   const handlePrevious = () => {
@@ -44,6 +78,7 @@ const YourBanksScreen = () => {
   };
 
   const handleNext = () => {
+    onSelectionChange?.(selectedBanks);
     router.push("/(auth)/setup/summary");
   };
 
@@ -72,13 +107,11 @@ const YourBanksScreen = () => {
                 >
                   <View
                     className={cn(
-                      "h-7 w-7 items-center justify-center rounded-md border border-grey",
-                      selected && "border-primary_400 border-2",
+                      "h-7 w-7 items-center justify-center rounded-md border border-grey bg-white",
+                      selected && "border-primary_400 border-2 bg-primary_400",
                     )}
                   >
-                    {/* {selected ? (
-                      <View className="h-2.5 w-2.5 rounded-[3px] bg-white" />
-                    ) : null} */}
+                    {selected ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
                   </View>
                   <Text weight="semibold" className="text-base text-textColor">
                     {bank.label}

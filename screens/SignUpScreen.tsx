@@ -40,8 +40,9 @@ const router = useRouter()
   const handleSubmit = () => {
     if (validate()) {
       console.log("Form submitted:", form);
+      
+      router.navigate('/setup/choose-language')
     }
-    router.navigate('/setup/choose-language')
   };
 
   return (

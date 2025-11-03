@@ -16,20 +16,11 @@ const ChooseLanguageScreen = () => {
       subtitle: "British English",
     },
     {
-      id: "yo",
-      title: "Yoruba",
-      subtitle: "Yoruba",
+      id: "fr",
+      title: "French",
+      subtitle: "French",
     },
-    {
-      id: "ha",
-      title: "Hausa",
-      subtitle: "Hausa",
-    },
-    {
-      id: "ig",
-      title: "Igbo",
-      subtitle: "Igbo",
-    },
+    
   ];
 
   const handleNext = () => {
@@ -60,7 +51,7 @@ const ChooseLanguageScreen = () => {
           </View>
 
           <View className="mt-auto pt-10">
-            <Button title="Next" onPress={handleNext} />
+            <Button title="Next" disabled={!selectedLanguage} onPress={handleNext} />
           </View>
         </View>
       </View>
