@@ -35,7 +35,6 @@ const SignUpScreen = () => {
   const { setUserData, signIn, setHasCompletedSetup, setSetupStep } =
     useSession();
   const registerMutation = useRegisterUserMutation();
-
   const isSubmitting = registerMutation.isPending;
 
   const validate = () => {
@@ -61,6 +60,7 @@ const SignUpScreen = () => {
         password: form.password,
       };
       const response = await registerMutation.mutateAsync(payload);
+      console.log('response', response)
       setUserData({
         ...response,
         phone: form.phone.trim(),

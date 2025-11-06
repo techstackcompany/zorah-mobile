@@ -75,6 +75,14 @@ const TaxDetailsScreen = () => {
     setReminderEnabled(false);
   };
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace("/(app)/tax-management");
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -83,7 +91,7 @@ const TaxDetailsScreen = () => {
           <Pressable
             style={styles.headerButton}
             accessibilityRole="button"
-            onPress={() => router.back()}
+            onPress={handleBackPress}
           >
             <Ionicons name="chevron-back" size={20} color={COLORS.textColor} />
           </Pressable>

@@ -180,6 +180,14 @@ const TaxManagementScreen = () => {
       })}`
     : null;
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace("/(app)/more");
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -188,7 +196,7 @@ const TaxManagementScreen = () => {
           <View style={styles.headerRow}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.back()}
+              onPress={handleBackPress}
               style={styles.headerButton}
             >
               <Ionicons name="chevron-back" size={20} color={COLORS.textColor} />

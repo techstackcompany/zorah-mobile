@@ -83,11 +83,19 @@ const AddTaxRecordScreen = () => {
     frequency !== "" &&
     incomeAmount.trim().length > 0;
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace("/(app)/tax-management");
+  };
+
   const handleSubmit = () => {
     if (!isFormValid) {
       return;
     }
-    router.back();
+    handleBackPress();
   };
 
   const summaryRows = useMemo(
@@ -120,7 +128,7 @@ const AddTaxRecordScreen = () => {
         >
           <View style={styles.headerRow}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={handleBackPress}
               accessibilityRole="button"
               style={styles.backButton}
             >
