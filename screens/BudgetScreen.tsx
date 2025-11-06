@@ -358,7 +358,7 @@ const BudgetScreen = () => {
               padding: 20,
               borderRadius: 24,
             }}
-            source={require("@/assets/images/home/fold-pattern.png")}
+            source={require("@/assets/images/bg-patterns/fold-pattern.png")}
           >
             <View className="flex-row items-center gap-3">
               <Image

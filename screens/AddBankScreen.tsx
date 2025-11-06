@@ -49,7 +49,7 @@ const AddBankScreen = () => {
             Bank Accounts
           </Text>
           <Text className="mt-2 text-sm text-textColor/60">
-            Select the bank you want to link with PocketMonie.
+            Select the bank you want to link with Zorah.
           </Text>
 
           <View className="mt-6 space-y-3">
@@ -83,7 +83,7 @@ const AddBankScreen = () => {
 
           <View style={styles.noteBox}>
             <Text className="text-xs text-textColor/60">
-              Bank notifications help PocketMonie identify new transactions
+              Bank notifications help Zorah identify new transactions
               automatically by reading bank SMS alerts.
             </Text>
           </View>
@@ -151,4 +151,3 @@ const styles = StyleSheet.create({
 });
 
 export default AddBankScreen;
-

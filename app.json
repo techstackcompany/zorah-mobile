@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "pocketMonie",
-    "slug": "pocketMonie",
+    "name": "Zorah",
+    "slug": "zorah",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pocketmonie",
+    "scheme": "zorah",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -29,7 +29,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "resizeMode": "cover"
+          "resizeMode": "cover",
+          "width": 240,
+          "backgroundColor": "#061D62"
         }
       ],
       "expo-secure-store"

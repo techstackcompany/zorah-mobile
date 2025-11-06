@@ -26,7 +26,7 @@ const BankAccountsScreen = () => {
             Linked Accounts
           </Text>
           <Text className="mt-2 text-sm text-textColor/60">
-            Manage the bank accounts that sync transactions into PocketMonie.
+            Manage the bank accounts that sync transactions into Zorah.
           </Text>
         </View>
 
@@ -117,4 +117,3 @@ const styles = StyleSheet.create({
 });
 
 export default BankAccountsScreen;
-

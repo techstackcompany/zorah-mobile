@@ -37,7 +37,7 @@ const slides: Slide[] = [
     subtitle: "Money Management",
     bgColor: COLORS.primary_100,
     description:
-      "PocketMonie helps you track budgets, set savings goals, and stay in control of your money.",
+      "Zorah helps you track budgets, set savings goals, and stay in control of your money.",
     image: require("../assets/images/onboarding/image1.png"),
   },
   {
@@ -47,7 +47,7 @@ const slides: Slide[] = [
     subtitle: "MarketPlace",
     bgColor: COLORS.secondary_100,
     description:
-      "Shop local, save more. PocketMonie MarketPlace brings you the best deals while supporting local vendors.",
+      "Shop local, save more. Zorah MarketPlace brings you the best deals while supporting local vendors.",
     image: require("../assets/images/onboarding/image2.png"),
   },
   {
@@ -58,7 +58,7 @@ const slides: Slide[] = [
     bgColor: COLORS.primary_100,
     imagePosition: "right bottom",
     description:
-      "Shop local, save more. PocketMonie MarketPlace brings you the best deals while supporting local vendors.",
+      "Shop local, save more. Zorah MarketPlace brings you the best deals while supporting local vendors.",
     image: require("../assets/images/onboarding/image3.png"),
   },
   {
