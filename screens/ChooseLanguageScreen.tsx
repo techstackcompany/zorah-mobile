@@ -2,12 +2,16 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SelectableCard from "@/components/setup/SelectableCard";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
+import { useSession } from "@/contexts/auth-context/useSession";
+import useSetUpStep from "@/hooks/useSetUpStep";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 
 const ChooseLanguageScreen = () => {
   const router = useRouter();
+  const { setSetupStep } = useSession();
+   
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const languages = [
     {
@@ -22,8 +26,10 @@ const ChooseLanguageScreen = () => {
     },
     
   ];
-
+  useSetUpStep(1)
+  
   const handleNext = () => {
+    setSetupStep(2);
     router.push("/(auth)/setup/monthly-income");
   };
 

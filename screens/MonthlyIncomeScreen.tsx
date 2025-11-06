@@ -5,6 +5,9 @@ import Button from "@/components/ui/Button";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
+import useSetUpStep from "@/hooks/useSetUpStep";
+import { ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { PermissionsAndroid, Platform, View } from "react-native";
@@ -34,12 +37,16 @@ const howItWorksPoints = [
 
 const MonthlyIncomeScreen = () => {
   const router = useRouter();
+  const { setSetupStep } = useSession();
   const [primarySource, setPrimarySource] = useState<string | undefined>();
   const [monthlyRange, setMonthlyRange] = useState<string | undefined>();
   const [hasShownSmsModal, setHasShownSmsModal] = useState(false);
   const [isSmsModalVisible, setIsSmsModalVisible] = useState(false);
 
+  useSetUpStep(2)
+
   const handlePrevious = () => {
+    setSetupStep(1);
     router.back();
   };
 
@@ -51,6 +58,7 @@ const MonthlyIncomeScreen = () => {
       setIsSmsModalVisible(true);
       return;
     }
+    setSetupStep(3);
     router.navigate("/(auth)/setup/your-banks");
   };
 
@@ -64,7 +72,7 @@ const MonthlyIncomeScreen = () => {
           {
             title: "Allow SMS Access",
             message:
-              "Pocketmonie reads your bank SMS alerts to log expenses automatically. Please grant access.",
+              "Zorah reads your bank SMS alerts to log expenses automatically. Please grant access.",
             buttonPositive: "Allow",
           },
         );
@@ -72,13 +80,15 @@ const MonthlyIncomeScreen = () => {
     } catch (error) {
       console.warn("Failed to request SMS permission:", error);
     }
-    router.push("/(auth)/setup/your-banks");
+    setSetupStep(3);
+    router.navigate("/(auth)/setup/your-banks");
   };
 
   const handleSkipSmsAccess = () => {
     setIsSmsModalVisible(false);
     setHasShownSmsModal(true);
-    router.push("/(auth)/setup/your-banks");
+    setSetupStep(3);
+    router.navigate("/(auth)/setup/your-banks");
   };
 
   return (
@@ -140,47 +150,43 @@ const MonthlyIncomeScreen = () => {
         className="gap-5"
       >
         <View
-          className="rounded-2xl px-5 py-4"
-          style={{
-            borderWidth: 1,
-            borderStyle: "dashed",
-            borderColor: COLORS.primary_400,
-            backgroundColor: "#fff",
-          }}
+          className="py-4"
+       
         >
           <Text className="text-sm leading-5 text-textColor/80">
-            Pocketmonie helps you log expenses automatically by reading only
+            Zorah helps you log expenses automatically by reading only
             bank transaction SMS alerts. We don&apos;t need your login details,
             and your data stays private on your device.
           </Text>
         </View>
 
-        <View
-          className="rounded-2xl px-5 py-5"
+        <ImageBackground
+        source={require('@/assets/images/bg-patterns/fold-pattern.png')}
+          className="rounded-2xl "
           style={{
-            borderWidth: 1,
-            borderColor: "rgba(26, 67, 190, 0.2)",
+           padding:20,
+          borderRadius:16,
             backgroundColor: "#F1F5FF",
           }}
         >
           <Text
             family="degular"
             weight="semibold"
-            className="text-base text-textColor"
+            className="text-xl text-textColor"
           >
             How it works:
           </Text>
           <View className="mt-4">
             {howItWorksPoints.map((point) => (
-              <View key={point} className="mb-3 flex-row items-start">
-                <View className="mt-1.5 h-2 w-2 rounded-full bg-primary_400" />
+              <View key={point} className="mb-4 flex-row items-start">
+                <View className="mt-1.5 h-2 w-2 rounded-full bg-textColor/90" />
                 <Text className="ml-3 flex-1 text-sm leading-5 text-textColor/80">
                   {point}
                 </Text>
               </View>
             ))}
           </View>
-        </View>
+        </ImageBackground>
 
         <Button title="Allow SMS Access" onPress={handleAllowSmsAccess} />
         <Button

@@ -14,13 +14,17 @@ export type AuthContextType = {
   hasOnboarded: boolean;
   isVerified: boolean;
   hasSetAffirmations: boolean;
-  userData:  Record<string, any> | null
+  hasCompletedSetup: boolean;
+  setupStep: number | null;
+  userData: Record<string, any> | null;
   isAuthenticated: boolean;
 
   // Setters
   setHasOnboarded: (value: boolean) => void;
   setIsVerified: (value: boolean) => void;
   setHasSetAffirmations: (value: boolean) => void;
+  setHasCompletedSetup: (value: boolean) => void;
+  setSetupStep: (value: number | null) => void;
   setUserData: (value: unknown | null) => void;
 
   // Loading
@@ -42,12 +46,20 @@ export function SessionProvider({ children }: PropsWithChildren) {
     useStorageState("hasSetAffirmations");
   const [[isLoadingUserData, userData], setUserDataRaw] =
     useStorageState("userData");
+  const [
+    [isLoadingCompletedSetup, hasCompletedSetupRaw],
+    setHasCompletedSetupRaw,
+  ] = useStorageState("hasCompletedSetup");
+  const [[isLoadingSetupStep, setupStep], setSetupStepRaw] =
+    useStorageState("setupStep");
 
   const isLoading =
     isLoadingSession ||
     isLoadingOnboarded ||
     isLoadingVerified ||
     isLoadingAffirmations ||
+    isLoadingCompletedSetup ||
+    isLoadingSetupStep ||
     isLoadingUserData;
 
   /* ---------------------------------------------
@@ -61,6 +73,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setIsVerified(null);
     setHasSetAffirmations(null);
     setUserDataRaw(null);
+    setHasCompletedSetupRaw(null);
+    setSetupStepRaw(null);
   };
 
   /* ---------------------------------------------
@@ -76,13 +90,20 @@ export function SessionProvider({ children }: PropsWithChildren) {
   };
 
   // Parse the stored JSON (if any)
-  let parsedUserData:  Record<string, any> | null = null;
+  let parsedUserData: Record<string, any> | null = null;
   if (typeof userData === "string") {
     try {
       parsedUserData = JSON.parse(userData);
     } catch {
       parsedUserData = null;
     }
+  }
+
+  const hasCompletedSetup = hasCompletedSetupRaw === "true";
+  let normalizedSetupStep: number | null = null;
+  if (typeof setupStep === "string") {
+    const parsed = Number.parseInt(setupStep, 10);
+    normalizedSetupStep = Number.isNaN(parsed) ? null : parsed;
   }
 
   /* ---------------------------------------------
@@ -96,12 +117,17 @@ export function SessionProvider({ children }: PropsWithChildren) {
     hasOnboarded: hasOnboarded === "true",
     isVerified: isVerified === "true",
     hasSetAffirmations: hasSetAffirmations === "true",
+    hasCompletedSetup,
+    setupStep: normalizedSetupStep,
     userData: parsedUserData,
     isAuthenticated: !!session,
 
     setHasOnboarded: (v) => setHasOnboarded(String(v)),
     setIsVerified: (v) => setIsVerified(String(v)),
     setHasSetAffirmations: (v) => setHasSetAffirmations(String(v)),
+    setHasCompletedSetup: (v) => setHasCompletedSetupRaw(String(v)),
+    setSetupStep: (v) =>
+      setSetupStepRaw(v == null || !Number.isFinite(v) ? null : String(v)),
     setUserData,
 
     isLoading,

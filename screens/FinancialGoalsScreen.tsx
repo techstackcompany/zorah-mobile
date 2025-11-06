@@ -2,6 +2,8 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import { useSession } from "@/contexts/auth-context/useSession";
+import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
@@ -56,14 +58,19 @@ const goals: Goal[] = [
 
 const FinancialGoalsScreen = () => {
   const router = useRouter();
+  const { setHasCompletedSetup, setSetupStep } = useSession();
   const [selectedGoals, setSelectedGoals] = React.useState<string[]>([]);
+  useSetUpStep(4);
 
   const handlePrevious = () => {
+    setSetupStep(3);
     router.back();
   };
 
   const handleFinish = () => {
-    router.push("/welcome");
+    setHasCompletedSetup(true);
+    setSetupStep(null);
+    router.replace("/");
   };
 
   return (
@@ -73,7 +80,7 @@ const FinancialGoalsScreen = () => {
           currentStep={4}
           totalSteps={4}
           title="Financial Goals"
-          description="What would you like to achieve with PocketMonie?"
+          description="What would you like to achieve with Zorah?"
         />
 
         <View className="flex-1 px-6 pb-6">

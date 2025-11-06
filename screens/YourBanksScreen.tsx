@@ -2,6 +2,8 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import { useSession } from "@/contexts/auth-context/useSession";
+import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -53,6 +55,8 @@ const YourBanksScreen = ({
     [initialSelected],
   );
   const [selectedBanks, setSelectedBanks] = useState<string[]>(sanitizedInitial);
+  const { setSetupStep } = useSession();
+  useSetUpStep(3)
 
   useEffect(() => {
     setSelectedBanks((prev) =>
@@ -74,11 +78,13 @@ const YourBanksScreen = ({
   };
 
   const handlePrevious = () => {
+    setSetupStep(2);
     router.back();
   };
 
   const handleNext = () => {
     onSelectionChange?.(selectedBanks);
+    setSetupStep(4);
     router.push("/(auth)/setup/summary");
   };
 
