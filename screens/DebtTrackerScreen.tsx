@@ -265,7 +265,12 @@ const DebtTrackerScreen = () => {
                       {record.name}
                     </Text>
                     <View style={styles.typeRow}>
-                      <Text className="text-xs text-textColor/60">
+                      <Text
+                        className="text-xs"
+                        style={{
+                          color: DEBT_STATUS_META[record.status].textColor,
+                        }}
+                      >
                         {DEBT_TYPE_META[record.type].subLabel}
                       </Text>
                     </View>
@@ -283,58 +288,56 @@ const DebtTrackerScreen = () => {
                       </Text>
                     </View>
                   </View>
-                  
-                  <View className="items-end">
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor:
-                          DEBT_STATUS_META[record.status].background,
-                        borderColor: DEBT_STATUS_META[record.status].border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      weight="semibold"
-                      className="text-[11px]"
-                      style={{
-                        color: DEBT_STATUS_META[record.status].textColor,
-                      }}
-                    >
-                      {DEBT_STATUS_META[record.status].label}
-                    </Text>
-                  </View>
-                <Pressable
-                  disabled={record.status === "settled"}
-                  style={[
-                    styles.reminderButton,
-                    record.status === "settled"
-                      ? styles.reminderButtonDisabled
-                      : null,
-                  ]}
-                  onPress={() => {}}
-                  accessibilityRole="button"
-                >
-                  <Text
-                    weight="semibold"
-                    className="text-xs"
-                    style={{
-                      color:
-                        record.status === "settled"
-                          ? "#A0A8B2"
-                          : COLORS.primary_400,
-                    }}
-                  >
-                    {record.status === "settled"
-                      ? "Reminder Sent"
-                      : "Send Reminder"}
-                  </Text>
-                </Pressable>
 
+                  <View className="items-end">
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor:
+                            DEBT_STATUS_META[record.status].background,
+                          borderColor: DEBT_STATUS_META[record.status].border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        weight="semibold"
+                        className="text-[11px]"
+                        style={{
+                          color: DEBT_STATUS_META[record.status].textColor,
+                        }}
+                      >
+                        {DEBT_STATUS_META[record.status].label}
+                      </Text>
+                    </View>
+                    <Pressable
+                      disabled={record.status === "settled"}
+                      style={[
+                        styles.reminderButton,
+                        record.status === "settled"
+                          ? styles.reminderButtonDisabled
+                          : null,
+                      ]}
+                      onPress={() => {}}
+                      accessibilityRole="button"
+                    >
+                      <Text
+                        weight="semibold"
+                        className="text-xs"
+                        style={{
+                          color:
+                            record.status === "settled"
+                              ? "#A0A8B2"
+                              : COLORS.primary_400,
+                        }}
+                      >
+                        {record.status === "settled"
+                          ? "Reminder Sent"
+                          : "Send Reminder"}
+                      </Text>
+                    </Pressable>
                   </View>
                 </View>
-
               </Pressable>
             ))}
           </View>
@@ -576,11 +579,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingVertical: 18,
     paddingHorizontal: 18,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
   },
   debtCardHeader: {
     flexDirection: "row",

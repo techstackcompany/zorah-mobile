@@ -146,7 +146,7 @@ const OtpVerificationScreen = () => {
           onPress={() => router.replace("/(auth)/forgot-password")}
         >
           <Text className="text-sm text-tertiary opacity-80">
-            Change my phone number
+            Change my email address
           </Text>
         </Pressable>
       </View>

@@ -670,11 +670,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 20,
-    shadowColor: "#000000",
-    shadowOpacity: 0.03,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 1,
+  
   },
   taxCardHeader: {
     flexDirection: "row",

@@ -4,13 +4,7 @@ import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
 import React, { ReactNode, useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  ViewStyle,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
 const TIMEFRAME_TABS = [
@@ -170,8 +164,8 @@ const BASE_ALERTS: AlertItem[] = [
     description:
       "You spent within your Food & Dining budget yesterday. Try to maintain this streak.",
     icon: "fast-food-outline",
-    accent: "#F8924F",
-    background: "#FFE9DD",
+    accent: "#E04646",
+    background: "#FFE5E5",
   },
   {
     id: "transport-alert",
@@ -179,8 +173,8 @@ const BASE_ALERTS: AlertItem[] = [
     description:
       "Your spending on Transportation has increased by 7% compared to last cycle.",
     icon: "car-outline",
-    accent: "#2D9CDB",
-    background: "#E8F4FF",
+    accent: "#E04646",
+    background: "#FFE5E5",
   },
 ];
 
@@ -223,8 +217,6 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
     },
     mostSpending: BASE_MOST_SPENDING,
     ai: {
-      //todo this ai part should be  static and it should be the same for every interval whether weekly, use this formatting, where the name is bolden
-
       title: (
         <View className="flex-row items-baseline">
           <Text weight="bold" className="text-lg text-textColor">
@@ -499,15 +491,22 @@ const TrackSpendingScreen = () => {
                   style={[
                     styles.alertIcon,
                     {
-                      backgroundColor:
-                        `${alert.accent}20` as ViewStyle["backgroundColor"],
+                      backgroundColor: "white",
                     },
                   ]}
                 >
-                  <Ionicons name={alert.icon} size={20} color={alert.accent} />
+                  <Ionicons
+                    name="trending-down-outline"
+                    size={20}
+                    color={alert.accent}
+                  />
                 </View>
                 <View className="ml-3 flex-1">
-                  <Text weight="bold" className="text-sm text-textColor">
+                  <Text
+                    weight="bold"
+                    className="text-sm "
+                    style={{ color: alert.accent }}
+                  >
                     {alert.label}
                   </Text>
                   <Text className="mt-1 text-xs leading-4 text-textColor/70">

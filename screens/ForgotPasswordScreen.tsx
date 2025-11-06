@@ -1,42 +1,82 @@
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
+import { useRequestPasswordResetMutation } from "@/src/api/hooks";
+import { ApiError } from "@/src/api/client";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Pressable,
   ScrollView,
   TextInput,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const ForgotPasswordScreen = () => {
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const requestResetMutation = useRequestPasswordResetMutation();
 
-  const validate = () => {
-    if (!phone.trim()) {
-      setError("Phone number is required");
+  const isSubmitting = requestResetMutation.isPending;
+
+  const validate = useCallback(() => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Email is required");
       return false;
     }
-    if (!/^[\d\s+()-]{6,20}$/.test(phone.trim())) {
-      setError("Enter a valid phone number");
+    if (!/\S+@\S+\.\S+/.test(trimmed)) {
+      setError("Enter a valid email address");
       return false;
     }
 
     setError(null);
     return true;
-  };
+  }, [email]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(async () => {
     if (!validate()) return;
 
-    console.log("Forgot password phone:", phone);
-    router.push("/(auth)/forgot-password-otp");
-  };
+    const trimmed = email.trim().toLowerCase();
+    try {
+      const response = await requestResetMutation.mutateAsync({
+        email: trimmed,
+      });
+      console.log("request-reset response:", response);
+      Toast.show({
+        type: "success",
+        text1: "Check your inbox",
+        text2: "We sent you a verification code.",
+      });
+      router.push({
+        pathname: "/(auth)/forgot-password-otp",
+        params: { email: trimmed },
+      });
+    } catch (error) {
+      const apiError = error as ApiError;
+      const serverMessage =
+        typeof apiError?.data === "object" &&
+        apiError.data !== null &&
+        "message" in apiError.data &&
+        typeof (apiError.data as { message?: string }).message === "string"
+          ? (apiError.data as { message?: string }).message
+          : undefined;
+      const message =
+        serverMessage ??
+        apiError?.message ??
+        "We could not send the reset code. Please try again.";
+      setError(message);
+      Toast.show({
+        type: "error",
+        text1: "Request failed",
+        text2: message,
+      });
+    }
+  }, [email, requestResetMutation, router, validate]);
 
   return (
     <ScrollView
@@ -63,13 +103,13 @@ const ForgotPasswordScreen = () => {
           Forgotten Password
         </Text>
         <Text className="text-center text-sm text-tertiary opacity-70">
-          Please enter your phone number below that we will have you to recover
-          your account
+          Please enter the email associated with your account so we can help you
+          recover it.
         </Text>
       </View>
 
       <View className="mb-6">
-        <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
+        <Text className="mb-2 text-sm text-tertiary">Email</Text>
         <View
           className={cn(
             "flex-row items-center rounded-2xl border bg-white px-4 py-3",
@@ -77,17 +117,16 @@ const ForgotPasswordScreen = () => {
             error && "border-red-500",
           )}
         >
-          <View className="mr-3 flex-row overflow-hidden rounded-md">
-            <View className="h-6 w-[10px] bg-[#008751]" />
-            <View className="h-6 w-[10px] bg-white" />
-            <View className="h-6 w-[10px] bg-[#008751]" />
-          </View>
           <TextInput
             className="flex-1 font-poppins text-base text-tertiary"
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="000 000 000"
-            keyboardType="phone-pad"
+            value={email}
+            onChangeText={(value) => {
+              setError(null);
+              setEmail(value);
+            }}
+            placeholder="example@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           />
@@ -97,7 +136,12 @@ const ForgotPasswordScreen = () => {
         ) : null}
       </View>
 
-      <Button title="Next" onPress={handleSubmit} className="mt-2 w-full" />
+      <Button
+        title="Next"
+        onPress={handleSubmit}
+        loading={isSubmitting}
+        className="mt-2 w-full"
+      />
 
       <View className="mt-8 flex-row justify-center">
         <Text weight="bold" className=" text-tertiary opacity-60">Continue by </Text>

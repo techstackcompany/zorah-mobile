@@ -26,13 +26,14 @@ const AppLayout = () => {
         options={{ title: "Bills Reminder" }}
       />
       <Stack.Screen
+        name="tax-management/index"
+        options={{ title: "Tax Management" }}
+      />
+      <Stack.Screen
         name="bill-reminder/add-bill"
         options={{ title: "Add Bill" }}
       />
-      <Stack.Screen
-        name="savings-goals"
-        options={{ headerShown:false}}
-      />
+      <Stack.Screen name="savings-goals" options={{ headerShown: false }} />
       <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
 
       <Stack.Screen

@@ -11,7 +11,7 @@ const Layout = () => {
         headerTitleAlign: "left",
         headerTitle: () => (
           <Image
-            source={require("@/assets/images/logo.svg")}
+            source={require("@/assets/images/logo.png")}
             style={{ width: 100, aspectRatio: 85 / 26 }}
           />
         ),
