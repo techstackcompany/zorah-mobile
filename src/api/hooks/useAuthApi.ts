@@ -51,12 +51,12 @@ export const useRegisterUserMutation = (
   });
 
 export const useLoginUserMutation = (
-  options?: MutationOptions<LoginUserResponse, LoginUserRequest>,
+  options?: UseMutationOptions<LoginUserResponse, ApiError, LoginUserRequest>,
 ) =>
-  useMutation<ApiEnvelope<LoginUserResponse>, ApiError, LoginUserRequest>({
+  useMutation<LoginUserResponse, ApiError, LoginUserRequest>({
     mutationKey: ["auth", "login"],
     mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<LoginUserResponse>>({
+      apiRequest<LoginUserResponse>({
         method: API_ENDPOINTS.auth.login.method,
         url: API_ENDPOINTS.auth.login.path,
         data: payload,
