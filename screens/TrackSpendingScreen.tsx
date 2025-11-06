@@ -3,7 +3,7 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
-import React, { useMemo, useState } from "react";
+import React, { ReactNode, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -63,16 +63,10 @@ type TrackSpendingData = {
   trendLabel: string;
   chart: { bars: ChartBar[] };
   mostSpending: MostSpendingItem[];
+  ai: { title: ReactNode; description: string };
   breakdown: BreakdownItem[];
   alerts: AlertItem[];
 };
-
-const AI_ASSISTANT_COPY = {
-  name: "Bobbie",
-  subtitle: "AI Assistance",
-  message:
-    "Oops, you've used 92% of your food budget. Plan more home meals to avoid overspending next month.",
-} as const;
 
 const currencyFormatter = new Intl.NumberFormat("en-NG", {
   style: "currency",
@@ -192,7 +186,7 @@ const BASE_ALERTS: AlertItem[] = [
 
 const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
   daily: {
-    trendLabel: "+7.1% vs last month",
+    trendLabel: "+7.1% vs yesterday",
     chart: {
       bars: [
         { id: "mon", label: "Mon", value: 42, color: "#E75A7C" },
@@ -205,6 +199,12 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
       ],
     },
     mostSpending: BASE_MOST_SPENDING,
+
+    ai: {
+      title: "Bobbie AI Assistance",
+      description:
+        "Oops, you've used 90% of your food budget this week. Maybe it's time to cook more at home. Tap to get tips.",
+    },
     breakdown: BASE_BREAKDOWN,
     alerts: BASE_ALERTS,
   },
@@ -222,6 +222,22 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
       ],
     },
     mostSpending: BASE_MOST_SPENDING,
+    ai: {
+      //todo this ai part should be  static and it should be the same for every interval whether weekly, use this formatting, where the name is bolden
+
+      title: (
+        <View className="flex-row items-baseline">
+          <Text weight="bold" className="text-lg text-textColor">
+            Bobbie
+          </Text>
+          <Text weight="semibold" className="ml-1 text-sm text-textColor">
+            AI Assistance
+          </Text>
+        </View>
+      ),
+      description:
+        "Oops, you've spent 87% of your weekly transport budget. Consider switching to ride pooling for the rest of the week.",
+    },
     breakdown: BASE_BREAKDOWN,
     alerts: BASE_ALERTS,
   },
@@ -239,6 +255,12 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
       ],
     },
     mostSpending: BASE_MOST_SPENDING,
+    ai: {
+      title: "Bobbie",
+
+      description:
+        "Oops, you've used 92% of your monthly food budget. Plan more home meals to avoid overspending next month.",
+    },
     breakdown: BASE_BREAKDOWN,
     alerts: BASE_ALERTS,
   },
@@ -247,13 +269,9 @@ const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
 const TrackSpendingScreen = () => {
   const [activeTab, setActiveTab] = useState<TimeframeKey>("daily");
   const data = TRACK_SPENDING_DATA[activeTab];
-  const trendMatch = useMemo(() => {
-    const match = data.trendLabel.match(/^([+\-]?\d+(?:\.\d+)?%)(.*)$/);
-    if (!match) {
-      return null;
-    }
-    return { value: match[1], rest: match[2] };
-  }, [data.trendLabel]);
+  const trendLabelParts = data.trendLabel.trim().split(" ");
+  const trendChange = trendLabelParts.shift() ?? "";
+  const trendRemainder = trendLabelParts.join(" ");
 
   const maxBarValue = useMemo(() => {
     const values = data.chart.bars.map((bar) => bar.value);
@@ -297,16 +315,10 @@ const TrackSpendingScreen = () => {
               Spending Overview
             </Text>
             <Text weight="semibold" className="text-xs text-textColor">
-              {trendMatch ? (
-                <>
-                  <Text weight="semibold" className="text-secondary_500">
-                    {trendMatch.value}
-                  </Text>
-                  {trendMatch.rest}
-                </>
-              ) : (
-                data.trendLabel
-              )}
+              <Text weight="semibold" className="text-xs text-secondary_500">
+                {trendChange}
+              </Text>
+              {trendRemainder ? ` ${trendRemainder}` : ""}
             </Text>
           </View>
           <View className="mt-6 px-1">
@@ -383,7 +395,7 @@ const TrackSpendingScreen = () => {
           </View>
           <ImageBackground
             style={[styles.aiCard]}
-            source={require("@/assets/images/home/fold-pattern.png")}
+            source={require("@/assets/images/bg-patterns/fold-pattern.png")}
           >
             <View style={styles.aiIcon}>
               <Image
@@ -393,16 +405,15 @@ const TrackSpendingScreen = () => {
               />
             </View>
             <View className="ml-3 flex-1">
-              <View className="flex-row items-baseline">
-                <Text weight="bold" className="text-lg text-textColor">
-                  {AI_ASSISTANT_COPY.name}
+              {typeof data.ai.title === "string" ? (
+                <Text weight="semibold" className="text-sm text-textColor">
+                  {data.ai.title}
                 </Text>
-                <Text weight="semibold" className="ml-1 text-sm text-textColor">
-                  {AI_ASSISTANT_COPY.subtitle}
-                </Text>
-              </View>
+              ) : (
+                data.ai.title
+              )}
               <Text className="mt-1 text-xs text-textColor/70">
-                {AI_ASSISTANT_COPY.message}
+                {data.ai.description}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#8A94A6" />

@@ -39,7 +39,7 @@ const toastConfig: ToastConfig = {
     <ErrorToast
       {...props}
       renderLeadingIcon={() => (
-      <MaterialIcons name="error" size={24} color="black" />
+      <MaterialIcons name="error" size={24} color="white" />
       )}
       style={{
         backgroundColor: "#D32F2F",
@@ -53,7 +53,7 @@ const toastConfig: ToastConfig = {
         {
           fontSize: 16,
           fontWeight:'600',
-          fontFamily: "LoraSemiBold",
+          fontFamily: "NunitoMedium",
           color: "#fff",
         },
       ]}

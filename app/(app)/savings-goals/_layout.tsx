@@ -1,5 +1,3 @@
-import COLORS from "@/constants/colors";
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
@@ -52,7 +50,6 @@ const SavingsGoalsLayout = () => {
         name="create"
         options={{
           headerTitle: "Create Goal",
-         
         }}
       />
       <Stack.Screen
