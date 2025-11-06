@@ -1,17 +1,22 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
+import { useRegisterUserMutation } from "@/src/api/hooks";
+import { ApiError } from "@/src/api/client";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const SignUpScreen = () => {
   const [form, setForm] = useState({
@@ -24,7 +29,15 @@ const SignUpScreen = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [agree, setAgree] = useState(false);
-const router = useRouter()
+  const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
+
+  const router = useRouter();
+  const { setUserData, signIn, setHasCompletedSetup, setSetupStep } =
+    useSession();
+  const registerMutation = useRegisterUserMutation();
+
+  const isSubmitting = registerMutation.isPending;
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.name.trim()) newErrors.name = "Please enter your name";
@@ -37,13 +50,65 @@ const router = useRouter()
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validate()) {
-      console.log("Form submitted:", form);
+  const handleSubmit = useCallback(async () => {
+    if (!validate()) return;
+
+    try {
+      setApiErrorMessage(null);
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      };
+      const response = await registerMutation.mutateAsync(payload);
+      setUserData({
+        ...response,
+        phone: form.phone.trim(),
+      });
+      setHasCompletedSetup(false);
+      setSetupStep(1);
+      signIn(response.token);
+      Toast.show({
+        type: "success",
+        text1: "Account created",
+        text2: response?.name
+          ? `Welcome, ${response.name}!`
+          : "Welcome to Zorah!",
+      });
       
-      router.navigate('/setup/choose-language')
+      router.replace("/setup/choose-language");
+    } catch (error) {
+      const apiError = error as ApiError;
+      const serverMessage =
+        typeof apiError?.data === "object" &&
+        apiError.data !== null &&
+        "message" in apiError.data &&
+        typeof (apiError.data as { message?: string }).message === "string"
+          ? (apiError.data as { message?: string }).message
+          : undefined;
+      const message =
+        serverMessage ??
+        apiError?.message ??
+        "We could not create your account.";
+      setApiErrorMessage(message);
+      Toast.show({
+        type: "error",
+        text1: "Sign up failed",
+        text2: message,
+      });
     }
-  };
+  }, [
+    form.email,
+    form.name,
+    form.password,
+    form.phone,
+    registerMutation,
+    router,
+    setUserData,
+    setHasCompletedSetup,
+    setSetupStep,
+    signIn,
+  ]);
 
   return (
     <ScrollView
@@ -68,7 +133,10 @@ const router = useRouter()
         <Text className="mb-2 text-sm text-tertiary">Name</Text>
         <TextInput
           value={form.name}
-          onChangeText={(t) => setForm({ ...form, name: t })}
+          onChangeText={(t) => {
+            setApiErrorMessage(null);
+            setForm({ ...form, name: t });
+          }}
           onFocus={() => setFocused("name")}
           onBlur={() => setFocused(null)}
           placeholder="Enter your full name"
@@ -88,7 +156,10 @@ const router = useRouter()
         <Text className="mb-2 text-sm text-tertiary">Email</Text>
         <TextInput
           value={form.email}
-          onChangeText={(t) => setForm({ ...form, email: t })}
+          onChangeText={(t) => {
+            setApiErrorMessage(null);
+            setForm({ ...form, email: t });
+          }}
           onFocus={() => setFocused("email")}
           onBlur={() => setFocused(null)}
           placeholder="example@email.com"
@@ -110,7 +181,10 @@ const router = useRouter()
         <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
         <TextInput
           value={form.phone}
-          onChangeText={(t) => setForm({ ...form, phone: t })}
+          onChangeText={(t) => {
+            setApiErrorMessage(null);
+            setForm({ ...form, phone: t });
+          }}
           onFocus={() => setFocused("phone")}
           onBlur={() => setFocused(null)}
           placeholder="Enter your phone number"
@@ -142,7 +216,10 @@ const router = useRouter()
         >
           <TextInput
             value={form.password}
-            onChangeText={(t) => setForm({ ...form, password: t })}
+            onChangeText={(t) => {
+              setApiErrorMessage(null);
+              setForm({ ...form, password: t });
+            }}
             onFocus={() => setFocused("password")}
             onBlur={() => setFocused(null)}
             placeholder="Create a Password"
@@ -164,7 +241,10 @@ const router = useRouter()
 
       {/* Terms */}
       <Pressable
-        onPress={() => setAgree(!agree)}
+        onPress={() => {
+          setApiErrorMessage(null);
+          setAgree(!agree);
+        }}
         className="mb-6 flex-row items-center"
       >
         <View
@@ -191,17 +271,27 @@ const router = useRouter()
       </Pressable>
 
       {/* Create Account Button */}
+      {apiErrorMessage ? (
+        <Text className="mb-3 text-center text-sm text-red-500">
+          {apiErrorMessage}
+        </Text>
+      ) : null}
       <Pressable
-        disabled={!agree}
+        disabled={!agree || isSubmitting}
         onPress={handleSubmit}
         className={cn(
           "mb-6 items-center justify-center rounded-xl py-4",
           agree ? "bg-primary_400" : "bg-primary_400/30",
+          isSubmitting && "opacity-80",
         )}
       >
-        <Text className="text-base font-semibold text-white">
-          Create Account
-        </Text>
+        {isSubmitting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text className="text-base font-semibold text-white">
+            Create Account
+          </Text>
+        )}
       </Pressable>
 
       {/* Divider */}

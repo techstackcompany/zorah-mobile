@@ -1,0 +1,1235 @@
+{
+	"info": {
+		"_postman_id": "2e36fbb1-b102-4bde-9fb8-c7305b0ef676",
+		"name": "Zorah",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49788907",
+		"_collection_link": "https://planetary-capsule-224739.postman.co/workspace/Prod~77ad7842-3b8b-4b2a-8331-4b0db5dee661/collection/30119290-2e36fbb1-b102-4bde-9fb8-c7305b0ef676?action=share&source=collection_link&creator=49788907"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Mark Wahlberg\",\n    \"email\": \"markwahlberg@gmail.com\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/register",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Check if the response was successful (HTTP status 200)",
+									"if (pm.response.code === 200) {",
+									"    // Parse the JSON response body",
+									"    const responseJson = pm.response.json();",
+									"",
+									"    // Check if the 'accessToken' and 'refreshToken' properties exist in the response",
+									"    if (responseJson && responseJson.accessToken && responseJson.refreshToken) {",
+									"",
+									"        // Set the 'accessToken' as an Environment variable",
+									"        pm.environment.set(\"accessToken\", responseJson.accessToken);",
+									"",
+									"        // Set the 'refreshToken' as an Environment variable",
+									"        pm.environment.set(\"refreshToken\", responseJson.refreshToken);",
+									"",
+									"        console.log(\"Tokens saved to environment!\");",
+									"    } else {",
+									"        console.log(\"Tokens not found in response.\");",
+									"    }",
+									"} else {",
+									"    console.log(\"Login failed. Status code: \" + pm.response.code);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDUyMjM4NSwiZXhwIjoxNzYwNTI1OTg1fQ.W_JsaQWN0sbqrytlQPwIMQg4lwgAqCfkpfMB7br2RIE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"johndoe@gmail.com\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/login",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}auth/profile",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set User pin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDQwNzgyMywiZXhwIjoxNzYyOTk5ODIzfQ.O-CJHiz7o7yIctjlU-7hU7aCrRCFvE8ioL-SF3Ghil0",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pin\": \"1234\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/set-pin",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"set-pin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify User Pin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pin\": \"1234\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/verify-pin",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"verify-pin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set Biomertics",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDQxMTY4MywiZXhwIjoxNzYzMDAzNjgzfQ.cJ97IUOY1dA_xZr-9iNAMIcNUdkRNsfBaLEaFO-aHm8",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enabled\": true\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/toggle-biometrics",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"toggle-biometrics"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request Reset Password",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"email\": \"sarahduke@gmail.com\" \n    }\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/request-reset",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"request-reset"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"e1147777c5a093080842e5904b9c0adf3ffe9a4d\",\n    \"newPassword\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/reset-password",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"reset-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Access Token",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\n       \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDQ0Mzg3MiwiZXhwIjoxNzYxMDQ4NjcyfQ.Qgw4edi_lgLxkq8yzcwdAXevD5kKcNNLlno6Ti44fZ4\"\n    }",
+							"options": {
+								"raw": {
+									"language": "html"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}auth/refresh-token",
+							"host": [
+								"{{baseURL}}auth"
+							],
+							"path": [
+								"refresh-token"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Expenses",
+			"item": [
+				{
+					"name": "Add Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 100,\n  \"category\": \"Food\", \n  \"description\": \"Test 80%\",\n  \"paymentMethod\": \"Cash\",\n  \"date\": \"2024-10-15\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}expenses/add-expense",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"add-expense"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/get-expense",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"get-expense"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/summary?type=monthly",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"summary"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "monthly"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Daily Expenses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/daily",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"daily"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Monthly Expenses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/monthly",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"monthly"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Budgets",
+			"item": [
+				{
+					"name": "Create Budgets",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"category\": \"Food\",\n  \"amount\": 1000,\n  \"period\": \"monthly\",\n  \"startDate\": \"2024-10-01\",\n  \"endDate\": \"2024-10-31\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}budgets/set-budget",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"set-budget"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Budget",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}budgets/get-budgets",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"get-budgets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}notifications/get-not",
+							"host": [
+								"{{baseURL}}notifications"
+							],
+							"path": [
+								"get-not"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Read Notification",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}notifications/68f0a8def064669d3524a6a5/read",
+							"host": [
+								"{{baseURL}}notifications"
+							],
+							"path": [
+								"68f0a8def064669d3524a6a5",
+								"read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"expoPushToken\": \"ExponentPushToken[eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjBiNDc0MTkzOTk5YWJmNjFiZWE2MyIsImlhdCI6MTc2MDYwNTMwMCwiZXhwIjoxNzYzMTk3MzAwfQ.JAmO0i_itOh0D-qQafOXaQqTYwhDn71dvR9PMtfEsOY]\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}notifications/register-token",
+							"host": [
+								"{{baseURL}}notifications"
+							],
+							"path": [
+								"register-token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjBiNDc0MTkzOTk5YWJmNjFiZWE2MyIsImlhdCI6MTc2MDYxMjEyNywiZXhwIjoxNzYwNjE1NzI3fQ.NZRtM3HElK4IP0a2pay0V2_uj58Ko-iuMyBjiJiDZBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"expoPushToken\": \"ExponentPushToken[92d9eb93-5647-4ccd-9397-89c6d7afe0e5]\",\n  \"title\": \"Budget nearing limit 🚨\",\n  \"body\": \"You've spent 84% of your Food budget this month!\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "POST https://flashily-unintegrable-holden.ngrok-free.dev/api/notifications/test",
+							"protocol": "POST https",
+							"host": [
+								"flashily-unintegrable-holden",
+								"ngrok-free",
+								"dev"
+							],
+							"path": [
+								"api",
+								"notifications",
+								"test"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Savings",
+			"item": [
+				{
+					"name": "Create SavingsGoal",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"December Owambe\",\n  \"targetAmount\": 100000,\n  \"deadline\": \"2025-12-01\",\n  \"description\": \"Asoebi savings for December\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}savings/create",
+							"host": [
+								"{{baseURL}}savings"
+							],
+							"path": [
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Contribution",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goalId\": \"68fa345f567155151a8eb7b1\",\n  \"amount\": 50000\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}savings/contribute",
+							"host": [
+								"{{baseURL}}savings"
+							],
+							"path": [
+								"contribute"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch All Goals",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}savings/get-goals",
+							"host": [
+								"{{baseURL}}savings"
+							],
+							"path": [
+								"get-goals"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Esusu",
+			"item": [
+				{
+					"name": "Create Esusu",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Lagos Ladies Esusu\",\n  \"contributionAmount\": 1000000,\n  \"frequency\": \"monthly\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}esusu/create",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Esusu Group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"groupId\": \"68f8b6f0c2ba8cc1040d05a9\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}esusu/join",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"join"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Esusu Group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}esusu/68f8b6f0c2ba8cc1040d05a9",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"68f8b6f0c2ba8cc1040d05a9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Esusu Contribution",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"groupId\": \"68f8b6f0c2ba8cc1040d05a9\",\n  \"amount\": 1000000\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}esusu/contribute",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"contribute"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Esusu Payouts",
+			"item": [
+				{
+					"name": "Process Payouts",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}esusu/payouts/process",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"payouts",
+								"process"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Retry Payout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}esusu/payouts/retry",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"payouts",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "View Payout History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}esusu/payouts/68f9f7b6064b3859dbf0de63/history",
+							"host": [
+								"{{baseURL}}esusu"
+							],
+							"path": [
+								"payouts",
+								"68f9f7b6064b3859dbf0de63",
+								"history"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Wallets",
+			"item": [
+				{
+					"name": "GetOrCreateWallet",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}wallet/create",
+							"host": [
+								"{{baseURL}}wallet"
+							],
+							"path": [
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deposit Funds",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"amount\": 5000000 }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}wallet/deposit",
+							"host": [
+								"{{baseURL}}wallet"
+							],
+							"path": [
+								"deposit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Withdraw Funds",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 20000\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}wallet/withdraw",
+							"host": [
+								"{{baseURL}}wallet"
+							],
+							"path": [
+								"withdraw"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Wallet Balance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}wallet/balance",
+							"host": [
+								"{{baseURL}}wallet"
+							],
+							"path": [
+								"balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}wallet/transactions",
+							"host": [
+								"{{baseURL}}wallet"
+							],
+							"path": [
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://16.171.32.108:4000/api/v1",
+							"protocol": "http",
+							"host": [
+								"16",
+								"171",
+								"32",
+								"108"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"v1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
