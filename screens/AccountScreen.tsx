@@ -18,21 +18,9 @@ import {
   View,
 } from "react-native";
 
-const MOCK_USER = {
-  name: "John Niyi",
-  email: "john.doe@example.com",
-  phone: "+234 812 345 6789",
-  status: "Verified",
-  linkedBanks: 3,
-  language: "English",
-  appearance: "Light Mode",
-};
-
 const LANGUAGE_OPTIONS = [
   { id: "english", label: "English", subLabel: "British English" },
-  { id: "yoruba", label: "Yoruba", subLabel: "Yoruba" },
-  { id: "hausa", label: "Hausa", subLabel: "Hausa" },
-  { id: "igbo", label: "Igbo", subLabel: "Igbo" },
+  { id: "french", label: "French", subLabel: "French" },
 ] as const;
 
 const APPEARANCE_OPTIONS = [
@@ -48,15 +36,119 @@ const AccountScreen = () => {
   const [appearance, setAppearance] = useState(APPEARANCE_OPTIONS[0]);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
-  const { signOut } = useSession();
-  const initials = useMemo(() => {
-    return MOCK_USER.name
-      .split(" ")
-      .map((part) => part.charAt(0))
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }, []);
+  const { signOut, userData, isVerified } = useSession();
+
+  const {
+    displayName,
+    displayEmail,
+    displayPhone,
+    initials,
+    statusLabel,
+    linkedBanksText,
+  } = useMemo(() => {
+    const fallbackName = "PocketMonie User";
+    const fallbackInitials = "PU";
+    const safeUser = (userData ?? {}) as Record<string, any>;
+    const nestedUser =
+      safeUser.user && typeof safeUser.user === "object"
+        ? (safeUser.user as Record<string, any>)
+        : null;
+
+    const pickString = (...values: unknown[]) => {
+      for (const value of values) {
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (trimmed) {
+            return trimmed;
+          }
+        }
+      }
+      return null;
+    };
+
+    const resolvedName =
+      pickString(
+        safeUser.name,
+        safeUser.fullName,
+        nestedUser?.name,
+        nestedUser?.fullName,
+      ) ?? fallbackName;
+
+    const resolvedEmail =
+      pickString(
+        safeUser.email,
+        nestedUser?.email,
+        safeUser.userEmail,
+        safeUser.contactEmail,
+      ) ?? "";
+
+    const resolvedPhone =
+      pickString(
+        safeUser.phone,
+        safeUser.phoneNumber,
+        nestedUser?.phone,
+        nestedUser?.phoneNumber,
+        safeUser.contactPhone,
+      ) ?? "";
+
+    const nameParts = resolvedName
+      .split(/\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    const computedInitials = nameParts
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("");
+
+    const linkedBanksSource =
+      safeUser.selectedBanks ??
+      nestedUser?.selectedBanks ??
+      safeUser.linkedBanks ??
+      nestedUser?.linkedBanks;
+
+    let linkedBanksCount = 0;
+    if (Array.isArray(linkedBanksSource)) {
+      linkedBanksCount = linkedBanksSource.filter(
+        (entry): entry is string =>
+          typeof entry === "string" && entry.trim().length > 0,
+      ).length;
+    } else if (typeof linkedBanksSource === "string") {
+      const trimmed = linkedBanksSource.trim();
+      if (trimmed) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            linkedBanksCount = parsed.filter(
+              (entry: unknown): entry is string =>
+                typeof entry === "string" && entry.trim().length > 0,
+            ).length;
+          } else {
+            linkedBanksCount = trimmed.split(",").filter(Boolean).length;
+          }
+        } catch {
+          linkedBanksCount = trimmed.split(",").filter(Boolean).length;
+        }
+      }
+    } else if (
+      typeof linkedBanksSource === "number" &&
+      Number.isFinite(linkedBanksSource)
+    ) {
+      linkedBanksCount = Math.max(0, Math.trunc(linkedBanksSource));
+    }
+
+    return {
+      displayName: resolvedName,
+      displayEmail: resolvedEmail,
+      displayPhone: resolvedPhone,
+      initials: computedInitials || fallbackInitials,
+      statusLabel: isVerified ? "Verified" : "Pending Verification",
+      linkedBanksText:
+        linkedBanksCount === 1
+          ? "1 Linked"
+          : `${linkedBanksCount} Linked`,
+    };
+  }, [isVerified, userData]);
 
   const handleNavigate = (path: string) => {
     router.push(path as RelativePathString);
@@ -86,10 +178,14 @@ const AccountScreen = () => {
             </Text>
           </LinearGradient>
           <Text weight="semibold" className="mt-5 text-xl text-textColor">
-            {MOCK_USER.name}
+            {displayName}
           </Text>
-          <Text className="mt-2  text-textColor/70">{MOCK_USER.email}</Text>
-          <Text className="mt-2  text-textColor/70">{MOCK_USER.phone}</Text>
+          <Text className="mt-2  text-textColor/70">
+            {displayEmail || "No email provided"}
+          </Text>
+          <Text className="mt-2  text-textColor/70">
+            {displayPhone || "No phone number provided"}
+          </Text>
         </View>
         <View className="gap-6 px-4">
           <View style={styles.sectionCard}>
@@ -105,22 +201,28 @@ const AccountScreen = () => {
               label="Status"
               iconSource={require("@/assets/icons/circle-check.svg")}
               value={
-                <View className="flex-row gap-1">
-                  <Image
-                    source={require("@/assets/icons/verified-check.svg")}
-                    style={{ width: 16, height: 16 }}
-                  />
-                  <Text className="text-sm text-primary_400">
-                    {MOCK_USER.status}
+                isVerified ? (
+                  <View className="flex-row gap-1">
+                    <Image
+                      source={require("@/assets/icons/verified-check.svg")}
+                      style={{ width: 16, height: 16 }}
+                    />
+                    <Text className="text-sm text-primary_400">
+                      {statusLabel}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-sm text-textColor/70">
+                    {statusLabel}
                   </Text>
-                </View>
+                )
               }
               valueVariant="status"
             />
             <AccountRow
               label="Bank Accounts"
               iconSource={require("@/assets/icons/bank.svg")}
-              value={`${MOCK_USER.linkedBanks} Linked`}
+              value={linkedBanksText}
               onPress={() => handleNavigate("/(app)/profile/banks")}
             />
             <AccountRow
@@ -154,7 +256,7 @@ const AccountScreen = () => {
             <SectionSubHeader subtitle="All Notification Settings" />
             <ToggleRow
               label="Allow Bank Notification"
-              description="Allow PocketMonie to access bank SMS alert"
+              description="Allow Zorah to access bank SMS alert"
               value={allowBankNotification}
               onChange={setAllowBankNotification}
             />

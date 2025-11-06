@@ -2,6 +2,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground, ImageSource } from "expo-image";
@@ -192,10 +193,51 @@ const recentTransactions: RecentTransactionItem[] = [
 
 const HomeScreen = () => {
   const router = useRouter();
+  const { userData } = useSession();
   const [currency, setCurrency] = useState<CurrencyOption>(currencies[0]);
   const [showCurrencySheet, setShowCurrencySheet] = useState(false);
   const [balanceHidden, setBalanceHidden] = useState(false);
   const [showEmptyTransactions, setShowEmptyTransactions] = useState(true);
+
+  const { initials, welcomeName } = useMemo(() => {
+    const fallback = { initials: "N", welcomeName: "Niyi" };
+
+    const rawName =
+      (typeof userData?.name === "string" && userData.name.trim()) ||
+      (typeof userData?.fullName === "string" && userData.fullName.trim()) ||
+      (typeof userData?.user === "object" &&
+      userData?.user !== null &&
+      typeof userData.user.name === "string"
+        ? userData.user.name.trim()
+        : "");
+
+    if (!rawName) {
+      return fallback;
+    }
+
+    const nameParts = rawName
+      .split(/\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (!nameParts.length) {
+      return fallback;
+    }
+
+    const firstName = nameParts[0];
+    const computedInitials = nameParts
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("");
+
+    const formattedFirstName =
+      firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+
+    return {
+      initials: computedInitials || firstName.charAt(0).toUpperCase(),
+      welcomeName: formattedFirstName || fallback.welcomeName,
+    };
+  }, [userData]);
 
   const formattedBalance = useMemo(() => {
     if (balanceHidden) {
@@ -205,6 +247,13 @@ const HomeScreen = () => {
   }, [balanceHidden, currency.symbol]);
 
   const balanceSubtitle = "12% From Last Month";
+  const currentDate = useMemo(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const month = now.toLocaleString("en-US", { month: "long" });
+    const year = now.getFullYear();
+    return `${day} ${month}, ${year}`;
+  }, []);
 
   const handleCurrencySelect = (option: CurrencyOption) => {
     setCurrency(option);
@@ -246,15 +295,15 @@ const HomeScreen = () => {
                       weight="semibold"
                       className="text-lg text-primary_400"
                     >
-                      N
+                      {initials}
                     </Text>
                   </View>
                   <View>
                     <Text weight="semibold" className="text-lg">
-                      Welcome Niyi! <Text>👋</Text>
+                      Welcome {welcomeName}! <Text>👋</Text>
                     </Text>
                     <Text weight="medium" className="text-sm text-textColor/60">
-                      5 September, 2025
+                      {currentDate}
                     </Text>
                   </View>
                 </View>
@@ -390,7 +439,7 @@ const HomeScreen = () => {
                 </View>
               </View>
 
-              <ImageBackground style={{marginTop:32, borderRadius:18,padding:14, backgroundColor:COLORS.secondary_200}}  source={require('@/assets/images/home/fold-pattern.png')}>
+              <ImageBackground style={{marginTop:32, borderRadius:18,padding:14, backgroundColor:COLORS.secondary_200}}  source={require('@/assets/images/bg-patterns/fold-pattern.png')}>
                 <View className="mb-3 flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-full  bg-white/70">
                     <Ionicons
