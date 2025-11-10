@@ -18,6 +18,34 @@ const AppLayout = () => {
       <Stack.Screen name="add-income" options={{ title: "Add Income" }} />
       <Stack.Screen name="more" options={{ title: "More" }} />
       <Stack.Screen
+        name="esusu/index"
+        options={{ title: "Esusu/Ajo" }}
+      />
+      <Stack.Screen
+        name="esusu/upgrade-account"
+        options={{ title: "Upgrade Account" }}
+      />
+      <Stack.Screen
+        name="esusu/tier3/personal-details"
+        options={{ title: "Personal Details" }}
+      />
+      <Stack.Screen
+        name="esusu/tier3/face-verification"
+        options={{ title: "Face Verification" }}
+      />
+      <Stack.Screen
+        name="esusu/tier3/scanning"
+        options={{ title: "Scanning" }}
+      />
+      <Stack.Screen
+        name="esusu/tier3/verified"
+        options={{ title: "Verified" }}
+      />
+      <Stack.Screen
+        name="esusu/tier3/success"
+        options={{ title: "Success" }}
+      />
+      <Stack.Screen
         name="track-spending"
         options={{ title: "Track Spending" }}
       />

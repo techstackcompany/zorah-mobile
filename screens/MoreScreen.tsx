@@ -1,7 +1,7 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
-import { Image, ImageSource } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, ImageSource } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import { Pressable, View } from "react-native";
@@ -79,6 +79,9 @@ const MoreScreen = () => {
       router.push("/fxRates");
     } else if (feature.id === "debt-tracker") {
       router.push("/(app)/debt-tracker");
+    } else if (feature.id === "savings-circles") {
+      console.log("esusu");
+      router.push("/esusu");
     } else if (feature.id === "tax-management") {
       router.push("/(app)/tax-management");
     } else if (feature.id === "bill-reminder") {
