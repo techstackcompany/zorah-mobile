@@ -78,6 +78,10 @@ const AppLayout = () => {
         name="notifications/index"
         options={{ title: "Notifications" }}
       />
+      <Stack.Screen
+        name="push-notification-test"
+        options={{ title: "Push Notification Test" }}
+      />
     </Stack>
   );
 };

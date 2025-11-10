@@ -1,5 +1,5 @@
 import { useSession } from "@/contexts/auth-context/useSession";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { RelativePathString, Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 
 function RootNavigator() {
@@ -23,7 +23,7 @@ function RootNavigator() {
     const targetRoute = stepRoutes[setupStep ?? 1] ?? stepRoutes[1];
     const currentPath = `/${segments.join("/") || ""}`.replace(/\/+$/, "") || "/";
     if (currentPath !== targetRoute) {
-      router.replace(targetRoute);
+      router.replace(targetRoute as RelativePathString);
     }
   }, [isAuthenticated, hasCompletedSetup, setupStep, segments, router, isLoading]);
 
@@ -37,7 +37,7 @@ function RootNavigator() {
         <Stack.Protected guard={isAuthenticated && hasCompletedSetup}>
           <Stack.Screen name="(app)" options={{ animation: "none" }} />
         </Stack.Protected>
-        <Stack.Protected guard={!isAuthenticated || !hasCompletedSetup}>
+        <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="(auth)" options={{ animation: "none" }} />
         </Stack.Protected>
       </Stack>

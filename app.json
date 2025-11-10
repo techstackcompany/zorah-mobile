@@ -20,11 +20,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.onerendzina.zorah"
     },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png",
-      "bundler": "metro"
-    },
+   
     "plugins": [
       "expo-router",
       [
@@ -36,6 +32,7 @@
           "backgroundColor": "#061D62"
         }
       ],
+      "expo-notifications",
       "expo-secure-store"
     ],
     "experiments": {
