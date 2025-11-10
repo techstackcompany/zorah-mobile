@@ -1,18 +1,45 @@
 import { SessionProvider } from "@/contexts/auth-context/SessionProvider";
+import PushNotificationsProvider from "@/contexts/push-notifications/PushNotificationsProvider";
 import RootNavigator from "@/navigation/RootNavigator";
 import FontProvider from "@/providers/FontProvider";
 import toastConfig from "@/providers/ToastConfig";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { QueryClient } from "@tanstack/react-query";
+import {
+  PersistQueryClientProvider,
+  createAsyncStoragePersister,
+} from "@tanstack/react-query-persist-client";
 import Toast from "react-native-toast-message";
 import "../global.css";
-import PushNotificationsProvider from "@/contexts/push-notifications/PushNotificationsProvider";
 
-export const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      cacheTime: 1000 * 60 * 60 * 24,
+      retry: 1,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
+const asyncStoragePersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: "pocketmonie-react-query",
+  throttleTime: 1000,
+});
 
 export default function RootLayout() {
-  
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: asyncStoragePersister,
+        maxAge: 1000 * 60 * 60 * 24,
+      }}
+    >
       <SessionProvider>
         <FontProvider>
           <PushNotificationsProvider>
@@ -21,6 +48,6 @@ export default function RootLayout() {
           <Toast config={toastConfig} />
         </FontProvider>
       </SessionProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
