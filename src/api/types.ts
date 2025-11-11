@@ -120,13 +120,31 @@ export interface CreateBudgetRequest {
   endDate: string;
 }
 
-export interface Budget extends CreateBudgetRequest {
-  id?: string;
+export interface Budget {
+  _id?: string;
+  user?: string;
+  category: string;
+  amount?: number;
+  Limit?: number; // API response uses "Limit" with capital L
+  period?: "weekly" | "monthly" | "yearly" | (string & {});
+  month?: number;
+  year?: number;
+  startDate?: string;
+  endDate?: string;
   spent?: number;
+  totalSpent?: number; // API response uses "totalSpent"
   remaining?: number;
+  percentageused?: string; // API response format: "0.00%"
+  status?: string; // API response format: "On track ✅"
   createdAt?: string;
   updatedAt?: string;
+  __v?: number;
   [key: string]: unknown;
+}
+
+export interface CreateBudgetResponse {
+  message: string;
+  budget: Budget;
 }
 
 /* ---------------------------------------------

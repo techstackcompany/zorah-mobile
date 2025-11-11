@@ -1,11 +1,11 @@
 import {
+  QueryKey,
   useMutation,
   UseMutationOptions,
   useQuery,
   UseQueryOptions,
-  QueryKey,
 } from "@tanstack/react-query";
-import { apiRequest, ApiError } from "../client";
+import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   AddExpenseRequest,
@@ -39,16 +39,16 @@ export const useAddExpenseMutation = (
     ...options,
   });
 
-export const useGetExpensesQuery = (
-  options?: QueryOptions<Expense[]>,
-) =>
+export const useGetExpensesQuery = (options?: QueryOptions<Expense[]>) =>
   useQuery<ApiEnvelope<Expense[]>, ApiError>({
     queryKey: ["expenses", "all"],
-    queryFn: () =>
-      apiRequest<ApiEnvelope<Expense[]>>({
+    queryFn: async () => {
+      const response = await apiRequest<ApiEnvelope<Expense[]>>({
         method: API_ENDPOINTS.expenses.getExpenses.method,
         url: API_ENDPOINTS.expenses.getExpenses.path,
-      }),
+      });
+      return response;
+    },
     ...options,
   });
 
@@ -58,18 +58,31 @@ export const useGetExpenseSummaryQuery = (
 ) =>
   useQuery<ApiEnvelope<ExpenseSummary>, ApiError>({
     queryKey: ["expenses", "summary", type],
-    queryFn: () =>
-      apiRequest<ApiEnvelope<ExpenseSummary>>({
+    queryFn: async () => {
+      const response = await apiRequest<ApiEnvelope<ExpenseSummary>>({
         method: API_ENDPOINTS.expenses.summary.method,
         url: API_ENDPOINTS.expenses.summary.path,
         params: { type },
-      }),
+      });
+
+      // The API might return either ApiEnvelope<ExpenseSummary> or a raw array
+      if (Array.isArray(response)) {
+        // Wrap array in an ApiEnvelope with a structure compatible with ExpenseSummary
+        // Note: This assumes `type` can be passed and total is sum of totals
+        const summary: ExpenseSummary = {
+          type,
+          total: response.reduce((acc, item) => acc + item.total, 0),
+          byCategory: response,
+        };
+        return { data: summary };
+      }
+
+      return response;
+    },
     ...options,
   });
 
-export const useGetDailyExpensesQuery = (
-  options?: QueryOptions<Expense[]>,
-) =>
+export const useGetDailyExpensesQuery = (options?: QueryOptions<Expense[]>) =>
   useQuery<ApiEnvelope<Expense[]>, ApiError>({
     queryKey: ["expenses", "daily"],
     queryFn: () =>
@@ -80,9 +93,7 @@ export const useGetDailyExpensesQuery = (
     ...options,
   });
 
-export const useGetMonthlyExpensesQuery = (
-  options?: QueryOptions<Expense[]>,
-) =>
+export const useGetMonthlyExpensesQuery = (options?: QueryOptions<Expense[]>) =>
   useQuery<ApiEnvelope<Expense[]>, ApiError>({
     queryKey: ["expenses", "monthly"],
     queryFn: () =>
