@@ -1,3 +1,4 @@
+import COLORS from "@/constants/colors";
 import { AxiosError, isAxiosError } from "axios";
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tw-merge";
@@ -9,7 +10,7 @@ export const cn = (...inputs: ClassValue[]) => {
 export const getErrorMessage = (
   error: Error | AxiosError | unknown,
   fallback?: string,
-) => {
+): string => {
   if (isAxiosError(error) && error.response?.data?.message) {
     return error.response.data.message;
   } else if (fallback) {
@@ -17,6 +18,7 @@ export const getErrorMessage = (
   } else if (error instanceof Error && error.message) {
     return error.message;
   }
+  return fallback ?? "An unknown error occurred";
 };
 
 export const validateEmail = (email: string) => {
@@ -37,10 +39,9 @@ export const validateName = (name: string) => {
   return name.trim().length >= 2;
 };
 
-
 export const maskEmail = (
   email: string,
-  opts: { showLocal?: number; showDomain?: number; mask?: string } = {}
+  opts: { showLocal?: number; showDomain?: number; mask?: string } = {},
 ): string => {
   const { showLocal = 3, showDomain = 2, mask = "***" } = opts;
   if (!email || typeof email !== "string") return "";
@@ -59,14 +60,198 @@ export const maskEmail = (
       ? domainName
       : domainName.slice(0, showDomain) + mask;
 
-  const tld = tldParts.join("."); 
+  const tld = tldParts.join(".");
 
   return `${visibleLocal}@${visibleDomain}${tld ? "." + tld : ""}`;
 };
 
+export const formatTime = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+};
 
-  export const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+/* ---------------------------------------------
+   User Data Utilities
+----------------------------------------------*/
+
+type ExtractUserDataOptions = {
+  fallbackName?: string;
+  fallbackInitials?: string;
+  includePhone?: boolean;
+};
+
+type ExtractedUserData = {
+  displayName: string;
+  displayEmail: string;
+  displayPhone?: string;
+  initials: string;
+};
+
+/**
+ * Helper function to pick the first non-empty string from multiple values
+ */
+function pickString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts and formats user data from userData object.
+ * Handles nested user objects and various field name variations.
+ */
+export function extractUserData(
+  userData: unknown,
+  options: ExtractUserDataOptions = {},
+): ExtractedUserData {
+  const {
+    fallbackName = "User",
+    fallbackInitials = "U",
+    includePhone = false,
+  } = options;
+
+  const safeUser = (userData ?? {}) as Record<string, unknown>;
+  const nestedUser =
+    safeUser.user && typeof safeUser.user === "object"
+      ? (safeUser.user as Record<string, unknown>)
+      : null;
+
+  // Extract name
+  const resolvedName =
+    pickString(
+      safeUser.name,
+      safeUser.fullName,
+      nestedUser?.name,
+      nestedUser?.fullName,
+    ) ?? fallbackName;
+
+  // Extract email
+  const resolvedEmail =
+    pickString(
+      safeUser.email,
+      nestedUser?.email,
+      safeUser.userEmail,
+      safeUser.contactEmail,
+    ) ?? "";
+
+  // Extract phone (optional)
+  const resolvedPhone = includePhone
+    ? (pickString(
+        safeUser.phone,
+        safeUser.phoneNumber,
+        nestedUser?.phone,
+        nestedUser?.phoneNumber,
+        safeUser.contactPhone,
+      ) ?? "")
+    : undefined;
+
+  // Compute initials from name
+  const nameParts = resolvedName
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const computedInitials =
+    nameParts.length >= 2
+      ? nameParts
+          .slice(0, 2)
+          .map((part) => part.charAt(0).toUpperCase())
+          .join("")
+      : (nameParts[0]?.[0]?.toUpperCase() ?? fallbackInitials);
+
+  return {
+    displayName: resolvedName,
+    displayEmail: resolvedEmail,
+    ...(includePhone && { displayPhone: resolvedPhone }),
+    initials: computedInitials,
   };
+}
+
+/* ---------------------------------------------
+   Color Utilities
+----------------------------------------------*/
+
+/**
+ * Converts hex color to RGB
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : { r: 0, g: 0, b: 0 };
+}
+
+/**
+ * Converts RGB to hex
+ */
+export function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * Lightens a color by a percentage
+ */
+export function lightenColor(hex: string, percent: number): string {
+  const rgb = hexToRgb(hex);
+  const factor = percent / 100;
+  const r = Math.round(rgb.r + (255 - rgb.r) * factor);
+  const g = Math.round(rgb.g + (255 - rgb.g) * factor);
+  const b = Math.round(rgb.b + (255 - rgb.b) * factor);
+  return rgbToHex(r, g, b);
+}
+
+/**
+ * Generates a consistent color variant for a group based on its name.
+ * Returns variants of primary or secondary colors only.
+ * @param groupName - The name of the group
+ * @returns Object with accentColor (for icon) and backgroundColor (lighter variant)
+ */
+export function getAccentColorForGroup(groupName: string): {
+  accentColor: string;
+  backgroundColor: string;
+} {
+  // Hash function to convert string to number
+  let hash = 0;
+  for (let i = 0; i < groupName.length; i++) {
+    hash = groupName.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  // Determine if using primary or secondary color (50/50 split)
+  const usePrimary = Math.abs(hash) % 2 === 0;
+  const baseColor = usePrimary ? COLORS.primary_400 : COLORS.secondary_400;
+
+  // Generate variant intensity (0-30% variation)
+  const variation = (Math.abs(hash) % 31) / 100; // 0-0.3
+
+  // Create accent color by slightly adjusting the base color
+  const baseRgb = hexToRgb(baseColor);
+  const accentR = Math.max(
+    0,
+    Math.min(255, baseRgb.r + (variation > 0.15 ? 20 : -20)),
+  );
+  const accentG = Math.max(
+    0,
+    Math.min(255, baseRgb.g + (variation > 0.15 ? 20 : -20)),
+  );
+  const accentB = Math.max(
+    0,
+    Math.min(255, baseRgb.b + (variation > 0.15 ? 20 : -20)),
+  );
+  const accentColor = rgbToHex(accentR, accentG, accentB);
+
+  // Generate lighter background color (70-85% lighter)
+  const lightnessPercent = 70 + (Math.abs(hash) % 16); // 70-85%
+  const backgroundColor = lightenColor(accentColor, lightnessPercent);
+
+  return { accentColor, backgroundColor };
+}
