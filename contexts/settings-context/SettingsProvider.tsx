@@ -1,68 +1,120 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useEffect, useState } from "react";
+import {
+  PropsWithChildren,
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-type Settings = {};
+type LanguageOption = {
+  id: string;
+  label: string;
+  subLabel: string;
+};
 
-type SettingsContextType = {
-  settings: Settings;
+type SettingsState = {
+  hasSeenTourVideo: boolean;
+  hasCompletedTour: boolean;
+  enableBiometrics: boolean;
+  faceIdEnabled: boolean;
+  fingerprintEnabled: boolean;
+  appLockEnabled: boolean;
+  appLockRequireFaceId: boolean;
+  privacyOverlayEnabled: boolean;
+  marketingEmails: boolean;
+  personalizedInsights: boolean;
+  shareAnonymizedData: boolean;
+  pushNotification: boolean;
+  language: LanguageOption;
+};
+
+type SettingsContextValue = {
+  settings: SettingsState;
   isLoaded: boolean;
-  updateSettings: (newSettings: Partial<Settings>) => Promise<void>;
-  resetSettings: () => Promise<void>;
+  updateSetting: <K extends keyof SettingsState>(
+    key: K,
+    value: SettingsState[K],
+  ) => void;
+  resetSettings: () => void;
 };
 
-const defaultSettings: Settings = {
+const defaultLanguage: LanguageOption = {
+  id: "english",
+  label: "English",
+  subLabel: "British English",
+};
+
+const defaultSettings: SettingsState = {
   hasSeenTourVideo: false,
-  hasCompletedTour:false,
+  hasCompletedTour: false,
+  enableBiometrics: false,
+  faceIdEnabled: false,
+  fingerprintEnabled: false,
+  appLockEnabled: false,
+  appLockRequireFaceId: false,
+  privacyOverlayEnabled: true,
+  marketingEmails: true,
+  personalizedInsights: true,
+  shareAnonymizedData: false,
+  pushNotification: true,
+  language: defaultLanguage,
 };
 
-export const SettingsContext = createContext<SettingsContextType | null>(null);
+export type { LanguageOption };
 
-export const SettingsProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
+export const SettingsContext = createContext<SettingsContextValue | null>(null);
+
+export function SettingsProvider({ children }: PropsWithChildren) {
   const [isLoaded, setIsLoaded] = useState(false);
-
-  const SETTINGS_KEY = "user_settings";
+  const [settings, setSettings] = useState<SettingsState>(defaultSettings);
 
   useEffect(() => {
-    (async () => {
+    const getSettings = async () => {
       try {
-        const stored = await AsyncStorage.getItem(SETTINGS_KEY);
-        if (stored) {
-          setSettings(JSON.parse(stored));
+        const settings = await AsyncStorage.getItem("settings");
+        if (settings) {
+          setSettings(JSON.parse(settings));
         }
-      } catch (err) {
-        console.error("Failed to load settings:", err);
+      } catch (error) {
+        console.log(error);
       } finally {
         setIsLoaded(true);
       }
-    })();
+    };
+    getSettings();
   }, []);
 
-  const updateSettings = async (newSettings: Partial<Settings>) => {
-    const updated = { ...settings, ...newSettings };
-    setSettings(updated);
-    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+  const updateSetting: SettingsContextValue["updateSetting"] = useCallback(
+    async (key, value) => {
+      setSettings((prev) => {
+        const newSettings = { ...prev, [key]: value };
+        AsyncStorage.setItem("settings", JSON.stringify(newSettings));
+        return newSettings;
+      });
+    },
+    [],
+  );
+
+  const resetSettings = () => {
+    setSettings(defaultSettings);
+    AsyncStorage.setItem("settings", JSON.stringify(defaultSettings));
   };
 
-  const resetSettings = async () => {
-    setSettings(defaultSettings);
-    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
-  };
+  const value = useMemo<SettingsContextValue>(
+    () => ({
+      settings,
+      isLoaded,
+      updateSetting,
+      resetSettings,
+    }),
+    [settings, isLoaded],
+  );
 
   return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        isLoaded,
-        updateSettings,
-        resetSettings,
-      }}
-    >
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );
-};
+}

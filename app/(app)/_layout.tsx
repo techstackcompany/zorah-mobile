@@ -110,6 +110,14 @@ const AppLayout = () => {
         name="push-notification-test"
         options={{ title: "Push Notification Test" }}
       />
+      <Stack.Screen
+        name="settings/biometrics"
+        options={{ title: "Biometric Login" }}
+      />
+      <Stack.Screen
+        name="settings/privacy"
+        options={{ title: "Privacy" }}
+      />
     </Stack>
   );
 };

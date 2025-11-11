@@ -1,5 +1,6 @@
-import { createContext, PropsWithChildren } from "react";
+import { createContext, PropsWithChildren, useCallback, useEffect } from "react";
 import { useStorageState } from "./useStorageState";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 
 /* ---------------------------------------------
    Auth Context & Types
@@ -53,6 +54,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoadingSetupStep, setupStep], setSetupStepRaw] =
     useStorageState("setupStep");
 
+  const {
+    data: profileResponse,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+  } = useGetUserProfileQuery({
+    enabled: Boolean(session),
+  });
+
   const isLoading =
     isLoadingSession ||
     isLoadingOnboarded ||
@@ -60,7 +69,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isLoadingAffirmations ||
     isLoadingCompletedSetup ||
     isLoadingSetupStep ||
-    isLoadingUserData;
+    isLoadingUserData ||
+    (session ? isProfileLoading && !isProfileError : false);
 
   /* ---------------------------------------------
      Authentication methods
@@ -81,13 +91,19 @@ export function SessionProvider({ children }: PropsWithChildren) {
      userData handling
   ----------------------------------------------*/
   // SecureStore only saves strings — so we’ll stringify JSON data before saving
-  const setUserData = (data: unknown | null) => {
+  const setUserData = useCallback((data: unknown | null) => {
     if (data === null) {
       setUserDataRaw(null);
     } else {
       setUserDataRaw(JSON.stringify(data));
     }
-  };
+  },[setUserDataRaw]);
+
+  useEffect(() => {
+    if (profileResponse?.data) {
+      setUserData(profileResponse.data);
+    }
+  }, [profileResponse, setUserData]);
 
   // Parse the stored JSON (if any)
   let parsedUserData: Record<string, any> | null = null;
