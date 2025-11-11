@@ -1,6 +1,13 @@
-import { createContext, PropsWithChildren, useCallback, useEffect } from "react";
-import { useStorageState } from "./useStorageState";
+import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { useGetUserProfileQuery } from "@/src/api/hooks";
+import { UserProfile } from "@/src/api/types";
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+} from "react";
+import { useStorageState } from "./useStorageState";
 
 /* ---------------------------------------------
    Auth Context & Types
@@ -17,7 +24,7 @@ export type AuthContextType = {
   hasSetAffirmations: boolean;
   hasCompletedSetup: boolean;
   setupStep: number | null;
-  userData: Record<string, any> | null;
+  userData: UserProfile | null;
   isAuthenticated: boolean;
 
   // Setters
@@ -77,7 +84,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   ----------------------------------------------*/
   const signIn = (session: string) => setSession(session);
 
-  const signOut = () => {
+  const signOut = useCallback(() => {
     setSession(null);
     // setHasOnboarded(null);
     setIsVerified(null);
@@ -85,19 +92,41 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setUserDataRaw(null);
     setHasCompletedSetupRaw(null);
     setSetupStepRaw(null);
-  };
+  }, [
+    setSession,
+    setIsVerified,
+    setHasSetAffirmations,
+    setUserDataRaw,
+    setHasCompletedSetupRaw,
+    setSetupStepRaw,
+  ]);
+
+  // Set up token refresh failure handler
+  useEffect(() => {
+    setTokenRefreshFailureHandler(() => {
+      signOut();
+    });
+
+    // Cleanup on unmount
+    return () => {
+      setTokenRefreshFailureHandler(() => {});
+    };
+  }, [signOut]);
 
   /* ---------------------------------------------
      userData handling
   ----------------------------------------------*/
   // SecureStore only saves strings — so we’ll stringify JSON data before saving
-  const setUserData = useCallback((data: unknown | null) => {
-    if (data === null) {
-      setUserDataRaw(null);
-    } else {
-      setUserDataRaw(JSON.stringify(data));
-    }
-  },[setUserDataRaw]);
+  const setUserData = useCallback(
+    (data: unknown | null) => {
+      if (data === null) {
+        setUserDataRaw(null);
+      } else {
+        setUserDataRaw(JSON.stringify(data));
+      }
+    },
+    [setUserDataRaw],
+  );
 
   useEffect(() => {
     if (profileResponse?.data) {
@@ -106,10 +135,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, [profileResponse, setUserData]);
 
   // Parse the stored JSON (if any)
-  let parsedUserData: Record<string, any> | null = null;
+  let parsedUserData: UserProfile | null = null;
   if (typeof userData === "string") {
     try {
-      parsedUserData = JSON.parse(userData);
+      const parsed = JSON.parse(userData);
+      // Validate that parsed data matches UserProfile structure
+      parsedUserData = parsed as UserProfile;
     } catch {
       parsedUserData = null;
     }
