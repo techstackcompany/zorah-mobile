@@ -1,7 +1,4 @@
-import {
-  registerForPushNotificationsAsync,
-  sendPushNotification,
-} from "@/lib/pushNotification";
+import { registerForPushNotificationsAsync } from "@/lib/pushNotification";
 import * as Notifications from "expo-notifications";
 import {
   PropsWithChildren,
@@ -52,8 +49,19 @@ export default function PushNotificationsProvider({
 
   useEffect(() => {
     registerForPushNotificationsAsync()
-      .then((token) => setExpoPushToken(token ?? ""))
-      .catch((error: any) => setExpoPushToken(`${error}`));
+      .then((token) => {
+        if (token) {
+          setExpoPushToken(token);
+          console.log("Push token stored in context:", token);
+        } else {
+          console.warn("Push notification registration returned null");
+          setExpoPushToken("");
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Error in push notification registration:", error);
+        setExpoPushToken("");
+      });
 
     const notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
@@ -62,8 +70,8 @@ export default function PushNotificationsProvider({
     );
 
     const responseListener =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
+      Notifications.addNotificationResponseReceivedListener(() => {
+        // Handle notification response if needed
       });
 
     return () => {
@@ -74,7 +82,7 @@ export default function PushNotificationsProvider({
 
   const sendTestNotification = useCallback(async () => {
     if (!expoPushToken) return;
-    await sendPushNotification(expoPushToken);
+    console.log("expoPushToken", expoPushToken);
   }, [expoPushToken]);
 
   const value = useMemo(
