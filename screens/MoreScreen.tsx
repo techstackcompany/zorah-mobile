@@ -80,7 +80,6 @@ const MoreScreen = () => {
     } else if (feature.id === "debt-tracker") {
       router.push("/(app)/debt-tracker");
     } else if (feature.id === "savings-circles") {
-      console.log("esusu");
       router.push("/esusu");
     } else if (feature.id === "tax-management") {
       router.push("/(app)/tax-management");

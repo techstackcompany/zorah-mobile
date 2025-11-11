@@ -3,7 +3,8 @@ import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { cn } from "@/lib/utils";
+import { useAppSettings } from "@/contexts/settings-context/useAppSettings";
+import { cn, extractUserData } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,20 +24,13 @@ const LANGUAGE_OPTIONS = [
   { id: "french", label: "French", subLabel: "French" },
 ] as const;
 
-const APPEARANCE_OPTIONS = [
-  { id: "light", label: "Light Mode" },
-  { id: "dark", label: "Dark Mode" },
-] as const;
-
 const AccountScreen = () => {
   const router = useRouter();
   const [allowBankNotification, setAllowBankNotification] = useState(true);
-  const [pushNotification, setPushNotification] = useState(true);
-  const [language, setLanguage] = useState(LANGUAGE_OPTIONS[0]);
-  const [appearance, setAppearance] = useState(APPEARANCE_OPTIONS[0]);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [showPinSetupModal, setShowPinSetupModal] = useState(false);
   const { signOut, userData, isVerified } = useSession();
+  const { settings, updateSetting } = useAppSettings();
 
   const {
     displayName,
@@ -46,60 +40,18 @@ const AccountScreen = () => {
     statusLabel,
     linkedBanksText,
   } = useMemo(() => {
-    const fallbackName = "PocketMonie User";
-    const fallbackInitials = "PU";
+    // Extract basic user data using utility function
+    const userDataExtracted = extractUserData(userData, {
+      fallbackName: "PocketMonie User",
+      fallbackInitials: "PU",
+      includePhone: true,
+    });
+
     const safeUser = (userData ?? {}) as Record<string, any>;
     const nestedUser =
       safeUser.user && typeof safeUser.user === "object"
         ? (safeUser.user as Record<string, any>)
         : null;
-
-    const pickString = (...values: unknown[]) => {
-      for (const value of values) {
-        if (typeof value === "string") {
-          const trimmed = value.trim();
-          if (trimmed) {
-            return trimmed;
-          }
-        }
-      }
-      return null;
-    };
-
-    const resolvedName =
-      pickString(
-        safeUser.name,
-        safeUser.fullName,
-        nestedUser?.name,
-        nestedUser?.fullName,
-      ) ?? fallbackName;
-
-    const resolvedEmail =
-      pickString(
-        safeUser.email,
-        nestedUser?.email,
-        safeUser.userEmail,
-        safeUser.contactEmail,
-      ) ?? "";
-
-    const resolvedPhone =
-      pickString(
-        safeUser.phone,
-        safeUser.phoneNumber,
-        nestedUser?.phone,
-        nestedUser?.phoneNumber,
-        safeUser.contactPhone,
-      ) ?? "";
-
-    const nameParts = resolvedName
-      .split(/\s+/)
-      .map((part) => part.trim())
-      .filter(Boolean);
-
-    const computedInitials = nameParts
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("");
 
     const linkedBanksSource =
       safeUser.selectedBanks ??
@@ -138,20 +90,36 @@ const AccountScreen = () => {
     }
 
     return {
-      displayName: resolvedName,
-      displayEmail: resolvedEmail,
-      displayPhone: resolvedPhone,
-      initials: computedInitials || fallbackInitials,
+      displayName: userDataExtracted.displayName,
+      displayEmail: userDataExtracted.displayEmail,
+      displayPhone: userDataExtracted.displayPhone ?? "",
+      initials: userDataExtracted.initials,
       statusLabel: isVerified ? "Verified" : "Pending Verification",
       linkedBanksText:
-        linkedBanksCount === 1
-          ? "1 Linked"
-          : `${linkedBanksCount} Linked`,
+        linkedBanksCount === 1 ? "1 Linked" : `${linkedBanksCount} Linked`,
     };
   }, [isVerified, userData]);
 
   const handleNavigate = (path: string) => {
     router.push(path as RelativePathString);
+  };
+
+  const handleBiometricToggle = (value: boolean) => {
+    if (value) {
+      // When enabling biometrics, show PIN setup prompt
+      setShowPinSetupModal(true);
+    } else {
+      // When disabling, directly update the setting
+      updateSetting("enableBiometrics", false);
+      updateSetting("faceIdEnabled", false);
+      updateSetting("fingerprintEnabled", false);
+    }
+  };
+
+  const handleSetPin = () => {
+    setShowPinSetupModal(false);
+    // Navigate to PIN setup screen
+    router.push("/(app)/settings/pin" as RelativePathString);
   };
 
   return (
@@ -244,7 +212,7 @@ const AccountScreen = () => {
                   className="ml-3 mr-auto rounded-full bg-white px-3 py-2
                  text-sm text-primary_400"
                 >
-                  {language.label}
+                  {settings.language.label}
                 </Text>
               }
               onPress={() => setShowLanguageModal(true)}
@@ -262,8 +230,18 @@ const AccountScreen = () => {
             />
             <ToggleRow
               label="Push Notification"
-              value={pushNotification}
-              onChange={setPushNotification}
+              value={settings.pushNotification}
+              onChange={(value) => updateSetting("pushNotification", value)}
+            />
+          </View>
+          <View style={styles.sectionCard}>
+            <SectionHeader title="Security" />
+            <SectionSubHeader subtitle="Authentication & Login Settings" />
+            <ToggleRow
+              label="Biometric Login"
+              description="Use fingerprint or face ID to sign in"
+              value={settings.enableBiometrics}
+              onChange={handleBiometricToggle}
             />
           </View>
           <View style={styles.sectionCard}>
@@ -297,14 +275,14 @@ const AccountScreen = () => {
       >
         <View className="space-y-2">
           {LANGUAGE_OPTIONS.map((option) => {
-            const isSelected = language.id === option.id;
+            const isSelected = settings.language.id === option.id;
             return (
               <Pressable
                 key={option.id}
                 style={styles.modalRow}
                 accessibilityRole="button"
                 onPress={() => {
-                  setLanguage(option);
+                  updateSetting("language", option);
                   setShowLanguageModal(false);
                 }}
               >
@@ -323,33 +301,67 @@ const AccountScreen = () => {
         </View>
       </SlideUpModal>
 
+      {/* PIN Setup Prompt Modal */}
       <SlideUpModal
-        visible={showAppearanceModal}
-        onClose={() => setShowAppearanceModal(false)}
-        title="Select Appearance"
-        headerBackgroundColor="#1643F5"
+        visible={showPinSetupModal}
+        onClose={() => {
+          setShowPinSetupModal(false);
+          // Reset toggle since PIN wasn't set
+          updateSetting("enableBiometrics", false);
+        }}
+        title="Set Up PIN"
+        headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
       >
-        <View className="space-y-2">
-          {APPEARANCE_OPTIONS.map((option) => {
-            const isSelected = appearance.id === option.id;
-            return (
-              <Pressable
-                key={option.id}
-                style={styles.modalRow}
-                accessibilityRole="button"
-                onPress={() => {
-                  setAppearance(option);
-                  setShowAppearanceModal(false);
-                }}
+        <View className="gap-4">
+          <View className="items-center">
+            <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-primary_100">
+              <Ionicons
+                name="lock-closed-outline"
+                size={32}
+                color={COLORS.primary_400}
+              />
+            </View>
+            <Text
+              weight="semibold"
+              className="text-center text-lg text-textColor"
+            >
+              PIN Required
+            </Text>
+            <Text className="mt-2 text-center text-sm text-textColor/70">
+              To enable biometric login, you need to set up a PIN first. This
+              PIN will be used as a backup authentication method.
+            </Text>
+          </View>
+
+          <View className="mt-4 gap-3">
+            <Pressable
+              onPress={handleSetPin}
+              className="rounded-2xl bg-primary_400 py-4"
+            >
+              <Text
+                weight="semibold"
+                className="text-center text-base text-white"
               >
-                <Text weight="semibold" className="text-sm text-textColor">
-                  {option.label}
-                </Text>
-                <SelectionDot selected={isSelected} />
-              </Pressable>
-            );
-          })}
+                Set Up PIN
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setShowPinSetupModal(false);
+                // Reset toggle since PIN wasn't set
+                updateSetting("enableBiometrics", false);
+              }}
+              className="rounded-2xl border border-gray-200 bg-white py-4"
+            >
+              <Text
+                weight="semibold"
+                className="text-center text-base text-textColor"
+              >
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </SlideUpModal>
     </MainContainer>
@@ -419,10 +431,7 @@ const AccountRow = ({
 
   if (onPress) {
     return (
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-      >
+      <Pressable accessibilityRole="button" onPress={onPress}>
         {Content}
       </Pressable>
     );

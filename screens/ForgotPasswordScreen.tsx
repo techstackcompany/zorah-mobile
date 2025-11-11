@@ -43,10 +43,9 @@ const ForgotPasswordScreen = () => {
 
     const trimmed = email.trim().toLowerCase();
     try {
-      const response = await requestResetMutation.mutateAsync({
+      await requestResetMutation.mutateAsync({
         email: trimmed,
       });
-      console.log("request-reset response:", response);
       Toast.show({
         type: "success",
         text1: "Check your inbox",

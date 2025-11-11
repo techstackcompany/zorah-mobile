@@ -60,7 +60,6 @@ const SignUpScreen = () => {
         password: form.password,
       };
       const response = await registerMutation.mutateAsync(payload);
-      console.log('response', response)
       setUserData({
         ...response,
         phone: form.phone.trim(),

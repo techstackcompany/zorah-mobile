@@ -3,7 +3,7 @@ import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { cn } from "@/lib/utils";
+import { cn, extractUserData } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
@@ -202,20 +202,16 @@ const HomeScreen = () => {
   const { initials, welcomeName } = useMemo(() => {
     const fallback = { initials: "N", welcomeName: "Niyi" };
 
-    const rawName =
-      (typeof userData?.name === "string" && userData.name.trim()) ||
-      (typeof userData?.fullName === "string" && userData.fullName.trim()) ||
-      (typeof userData?.user === "object" &&
-      userData?.user !== null &&
-      typeof userData.user.name === "string"
-        ? userData.user.name.trim()
-        : "");
+    const userDataExtracted = extractUserData(userData, {
+      fallbackName: "",
+      fallbackInitials: fallback.initials,
+    });
 
-    if (!rawName) {
+    if (!userDataExtracted.displayName) {
       return fallback;
     }
 
-    const nameParts = rawName
+    const nameParts = userDataExtracted.displayName
       .split(/\s+/)
       .map((part) => part.trim())
       .filter(Boolean);
@@ -225,16 +221,11 @@ const HomeScreen = () => {
     }
 
     const firstName = nameParts[0];
-    const computedInitials = nameParts
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("");
-
     const formattedFirstName =
       firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 
     return {
-      initials: computedInitials || firstName.charAt(0).toUpperCase(),
+      initials: userDataExtracted.initials,
       welcomeName: formattedFirstName || fallback.welcomeName,
     };
   }, [userData]);
@@ -439,7 +430,15 @@ const HomeScreen = () => {
                 </View>
               </View>
 
-              <ImageBackground style={{marginTop:32, borderRadius:18,padding:14, backgroundColor:COLORS.secondary_200}}  source={require('@/assets/images/bg-patterns/fold-pattern.png')}>
+              <ImageBackground
+                style={{
+                  marginTop: 32,
+                  borderRadius: 18,
+                  padding: 14,
+                  backgroundColor: COLORS.secondary_200,
+                }}
+                source={require("@/assets/images/bg-patterns/fold-pattern.png")}
+              >
                 <View className="mb-3 flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-full  bg-white/70">
                     <Ionicons
@@ -541,21 +540,22 @@ const HomeScreen = () => {
                 </View>
               </View>
               <View className="mt-8">
-              <View className="flex-row items-center justify-between">
-
-                <Pressable
-                  onPress={handleToggleRecentTransactions}
-                  accessibilityRole="button"
-                  hitSlop={8}
-                >
-                  <Text weight="semibold" className="text-lg">
-                    Recent Transactions
-                  </Text>
-                </Pressable>
-                <Pressable onPress={()=>router.navigate('/transactions')}>
-                  <Text className="text-primary_400" weight="semibold">See all</Text>
-                </Pressable>
-              </View>
+                <View className="flex-row items-center justify-between">
+                  <Pressable
+                    onPress={handleToggleRecentTransactions}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                  >
+                    <Text weight="semibold" className="text-lg">
+                      Recent Transactions
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => router.navigate("/transactions")}>
+                    <Text className="text-primary_400" weight="semibold">
+                      See all
+                    </Text>
+                  </Pressable>
+                </View>
                 <View className="mt-4 rounded-xl bg-white px-5 py-5 shadow-sm">
                   {showEmptyTransactions ? (
                     <View className="mt-4 items-center justify-center">
@@ -574,7 +574,9 @@ const HomeScreen = () => {
                   ) : (
                     <View>
                       {recentTransactions.map((transaction, index) => {
-                        const amountDisplay = `${transaction.amount >= 0 ? "" : "-"}₦${Math.abs(transaction.amount).toLocaleString("en-NG", {
+                        const amountDisplay = `${transaction.amount >= 0 ? "" : "-"}₦${Math.abs(
+                          transaction.amount,
+                        ).toLocaleString("en-NG", {
                           maximumFractionDigits: 0,
                           minimumFractionDigits: 0,
                         })}`;

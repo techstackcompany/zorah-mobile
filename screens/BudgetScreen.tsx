@@ -2,10 +2,12 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useGetBudgetsQuery } from "@/src/api/hooks";
+import { Budget } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground, ImageSource } from "expo-image";
-import React, { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 type BudgetCategory = {
@@ -87,8 +89,35 @@ const formatCurrency = (value: number) =>
     minimumFractionDigits: 0,
   })}`;
 
-const totalBudget = 315_000;
-const totalSpent = 271_170;
+// Map API category names to UI icons
+const CATEGORY_ICON_MAP: Record<string, ImageSource> = {
+  Food: require("@/assets/images/home/food.png"),
+  Entertainment: require("@/assets/images/home/call.png"),
+  Transport: require("@/assets/images/home/transport.png"),
+  Shopping: require("@/assets/images/home/shopping.png"),
+  Healthcare: require("@/assets/images/home/transport.png"),
+  Others: require("@/assets/images/home/bonus.png"),
+};
+
+// Format date from ISO string to DD/MM/YYYY
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Determine budget status based on spent vs allocated
+const getBudgetStatus = (
+  spent: number,
+  allocated: number,
+): "on-track" | "approaching" | "exceeded" => {
+  if (spent > allocated) return "exceeded";
+  const percentage = (spent / allocated) * 100;
+  if (percentage >= 80) return "approaching";
+  return "on-track";
+};
 
 const PROGRESS_SIZE = 200;
 const PROGRESS_STROKE_WIDTH = 12;
@@ -100,6 +129,94 @@ const BudgetScreen = () => {
   const [activeCategory, setActiveCategory] = useState<BudgetCategory | null>(
     null,
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch budgets from API
+  const {
+    data: budgetsData,
+    isLoading: isLoadingBudgets,
+    refetch: refetchBudgets,
+  } = useGetBudgetsQuery();
+
+  // Console logs for debugging
+  React.useEffect(() => {
+    console.log("=== GET BUDGETS QUERY ===");
+    console.log("Full response:", JSON.stringify(budgetsData, null, 2));
+    console.log("Is loading:", isLoadingBudgets);
+    console.log("========================\n");
+  }, [budgetsData, isLoadingBudgets]);
+
+  // Transform API budgets to UI format
+  const budgetCategories = useMemo(() => {
+    // Handle both wrapped (ApiEnvelope) and direct array responses
+    const budgetsArray = Array.isArray(budgetsData)
+      ? budgetsData
+      : (budgetsData as any)?.data || [];
+
+    if (!Array.isArray(budgetsArray) || budgetsArray.length === 0) {
+      return [];
+    }
+
+    return budgetsArray.map((budget: Budget) => {
+      // API uses "totalSpent" and "Limit" (capital L)
+      const spent = budget.totalSpent || budget.spent || 0;
+      const allocated = budget.Limit || budget.amount || 0;
+
+      // Use API status if available, otherwise calculate
+      let status: "on-track" | "approaching" | "exceeded";
+      if (budget.status) {
+        // Parse API status string like "On track ✅"
+        const statusLower = budget.status.toLowerCase();
+        if (statusLower.includes("exceeded") || statusLower.includes("over")) {
+          status = "exceeded";
+        } else if (
+          statusLower.includes("approaching") ||
+          statusLower.includes("warning")
+        ) {
+          status = "approaching";
+        } else {
+          status = "on-track";
+        }
+      } else {
+        status = getBudgetStatus(spent, allocated);
+      }
+
+      return {
+        id: budget._id || budget.category || "",
+        label: budget.category || "Unknown",
+        icon:
+          CATEGORY_ICON_MAP[budget.category] ||
+          require("@/assets/images/home/bonus.png"),
+        allocated,
+        spent,
+        status,
+        dueDate: budget.endDate ? formatDate(budget.endDate) : "",
+      };
+    });
+  }, [budgetsData]);
+
+  // Calculate totals from budgets
+  const { totalBudget, totalSpent } = useMemo(() => {
+    const budgetsArray = Array.isArray(budgetsData)
+      ? budgetsData
+      : (budgetsData as any)?.data || [];
+
+    if (!Array.isArray(budgetsArray)) {
+      return { totalBudget: 0, totalSpent: 0 };
+    }
+
+    // API uses "Limit" (capital L) and "totalSpent"
+    const total = budgetsArray.reduce(
+      (sum, budget: Budget) => sum + (budget.Limit || budget.amount || 0),
+      0,
+    );
+    const spent = budgetsArray.reduce(
+      (sum, budget: Budget) => sum + (budget.totalSpent || budget.spent || 0),
+      0,
+    );
+
+    return { totalBudget: total, totalSpent: spent };
+  }, [budgetsData]);
 
   const remaining = Math.max(totalBudget - totalSpent, 0);
   const percentUsed =
@@ -110,6 +227,15 @@ const BudgetScreen = () => {
   const clampedProgress = Math.min(Math.max(percentUsed, 0), 100);
   const progressDashoffset =
     PROGRESS_CIRCUMFERENCE - (clampedProgress / 100) * PROGRESS_CIRCUMFERENCE;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchBudgets();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleOpenActions = (category: BudgetCategory) => {
     setActiveCategory(category);
@@ -127,6 +253,9 @@ const BudgetScreen = () => {
         className="flex-1"
         contentContainerClassName="pb-24"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+        }
       >
         <View className="bg-purpleLight px-6 py-6">
           <View className="flex-row items-center justify-between">
@@ -265,90 +394,104 @@ const BudgetScreen = () => {
             Budget Category
           </Text>
 
-          <View className="mt-4 gap-4">
-            {budgetCategories.map((category) => {
-              const meta = statusMeta[category.status];
-              const remainingValue = Math.max(
-                category.allocated - category.spent,
-                0,
-              );
-              return (
-                <View
-                  key={category.id}
-                  className="rounded-3xl border border-grayLight bg-white p-4"
-                >
-                  <View className="flex-row items-center justify-between">
-                    <View className="w-full flex-row items-start  gap-4">
-                      <View className="h-14 w-14 items-center justify-center rounded-2xl bg-primary_100">
-                        <Image
-                          source={category.icon}
-                          style={{ width: 28, height: 28 }}
-                          contentFit="contain"
-                        />
-                      </View>
-                      <View>
-                        <Text
-                          weight="semibold"
-                          className="text-base text-textColor"
-                        >
-                          {category.label}
-                        </Text>
-                        <Text className="mt-1 text-xs text-textColor/50">
-                          {category.dueDate}
-                        </Text>
-                      </View>
-
-                      <View
-                        className="rounded-full px-3 py-1"
-                        style={{ backgroundColor: meta.badgeBg }}
-                      >
-                        <Text
-                          className="text-xs"
-                          style={{ color: meta.textColor }}
-                        >
-                          {meta.label}
-                        </Text>
-                      </View>
-                      <Pressable
-                        className="ml-auto"
-                        onPress={() => handleOpenActions(category)}
-                      >
-                        <Image
-                          source={require("@/assets/icons/more.svg")}
-                          style={{ width: 24, height: 24 }}
-                        />
-                      </Pressable>
-                    </View>
-                  </View>
-
-                  <View className="mt-4">
-                    <View className="mb-2 h-2 rounded-full bg-gray-200">
-                      <View
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${Math.min(
-                            (category.spent / category.allocated) * 100,
-                            100,
-                          )}%`,
-                          backgroundColor: meta.accentColor,
-                        }}
-                      />
-                    </View>
+          {isLoadingBudgets ? (
+            <View className="mt-4">
+              <Text className="text-center text-textColor/60">
+                Loading budgets...
+              </Text>
+            </View>
+          ) : budgetCategories.length === 0 ? (
+            <View className="mt-4">
+              <Text className="text-center text-textColor/60">
+                No budgets found. Create your first budget to get started.
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-4 gap-4">
+              {budgetCategories.map((category) => {
+                const meta = statusMeta[category.status];
+                const remainingValue = Math.max(
+                  category.allocated - category.spent,
+                  0,
+                );
+                return (
+                  <View
+                    key={category.id}
+                    className="rounded-3xl border border-grayLight bg-white p-4"
+                  >
                     <View className="flex-row items-center justify-between">
-                      <Text className="text-sm text-secondary_500">
-                        {formatCurrency(category.spent)} of{" "}
-                        {formatCurrency(category.allocated)}
-                      </Text>
-                      <Text className="text-sm text-textColor/90">
-                        {formatCurrency(remainingValue)}{" "}
-                        <Text className="text-textColor/70">left</Text>
-                      </Text>
+                      <View className="w-full flex-row items-start  gap-4">
+                        <View className="h-14 w-14 items-center justify-center rounded-2xl bg-primary_100">
+                          <Image
+                            source={category.icon}
+                            style={{ width: 28, height: 28 }}
+                            contentFit="contain"
+                          />
+                        </View>
+                        <View>
+                          <Text
+                            weight="semibold"
+                            className="text-base text-textColor"
+                          >
+                            {category.label}
+                          </Text>
+                          <Text className="mt-1 text-xs text-textColor/50">
+                            {category.dueDate}
+                          </Text>
+                        </View>
+
+                        <View
+                          className="rounded-full px-3 py-1"
+                          style={{ backgroundColor: meta.badgeBg }}
+                        >
+                          <Text
+                            className="text-xs"
+                            style={{ color: meta.textColor }}
+                          >
+                            {meta.label}
+                          </Text>
+                        </View>
+                        <Pressable
+                          className="ml-auto"
+                          onPress={() => handleOpenActions(category)}
+                        >
+                          <Image
+                            source={require("@/assets/icons/more.svg")}
+                            style={{ width: 24, height: 24 }}
+                          />
+                        </Pressable>
+                      </View>
+                    </View>
+
+                    <View className="mt-4">
+                      <View className="mb-2 h-2 rounded-full bg-gray-200">
+                        <View
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.min(
+                              (category.spent / category.allocated) * 100,
+                              100,
+                            )}%`,
+                            backgroundColor: meta.accentColor,
+                          }}
+                        />
+                      </View>
+                      <View className="flex-row items-center justify-between">
+                        <Text className="text-sm text-secondary_500">
+                          {formatCurrency(category.spent)} of{" "}
+                          {formatCurrency(category.allocated)}
+                        </Text>
+                        <Text className="text-sm text-textColor/90">
+                          {formatCurrency(remainingValue)}{" "}
+                          <Text className="text-textColor/70">left</Text>
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            })}
-          </View>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         <View className="mt-6 px-6">

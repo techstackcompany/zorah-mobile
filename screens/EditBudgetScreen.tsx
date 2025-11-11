@@ -274,7 +274,6 @@ const EditBudgetScreen = () => {
       },
     };
 
-    console.log("Update budget payload:", payload);
     router.back();
   };
 

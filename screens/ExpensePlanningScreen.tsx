@@ -1,8 +1,27 @@
+import {
+  CategoryRanking,
+  ExpenseChart,
+  ExpenseList,
+  TabSwitcher,
+  type ChartSegment,
+  type TabKey,
+} from "@/components/expense-planning";
+import {
+  CATEGORY_BG_COLOR_MAP,
+  CATEGORY_COLOR_MAP,
+  CATEGORY_ICON_MAP,
+  CATEGORY_TRACK_COLOR_MAP,
+  formatCurrency,
+  formatExpenseDate,
+} from "@/components/expense-planning/utils";
 import MainContainer from "@/components/layouts/MainContainer";
 import CollapsibleCard from "@/components/ui/CollapsibleCard";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { cn } from "@/lib/utils";
+import {
+  useGetExpenseSummaryQuery,
+  useGetExpensesQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -16,9 +35,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
-
-type TabKey = "expense" | "income";
 
 type TabContent = {
   key: TabKey;
@@ -60,132 +76,46 @@ const TAB_ITEMS: readonly TabContent[] = [
 ] as const;
 
 const PERIOD_LABEL = "2025 Sep";
-const SKELETON_ROWS = Array.from({ length: 3 }, (_, index) => index);
-
-const currencyFormatter = new Intl.NumberFormat("en-NG", {
-  style: "currency",
-  currency: "NGN",
-  minimumFractionDigits: 2,
-});
-
-const formatCurrency = (value: number) => currencyFormatter.format(value);
-
-type PlanningSegment = {
-  key: string;
-  label: string;
-  percentage: number;
-  color: string;
-  trackColor: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconBackground: string;
-  labelPosition: Partial<Record<"top" | "bottom" | "left" | "right", number>>;
-};
-
-type SummaryData = {
-  total: number;
-  segments: PlanningSegment[];
-};
-
-const SUMMARY_DATA: Record<TabKey, SummaryData> = {
-  expense: {
-    total: 93210,
-    segments: [
-      {
-        key: "food-primary",
-        label: "Food & Drink",
-        percentage: 50,
-        color: "#5D5FFE",
-        trackColor: "#E6E7FF",
-        icon: "fast-food-outline",
-        iconBackground: "#F6F5FF",
-        labelPosition: { bottom: 36, left: 24 },
-      },
-      {
-        key: "transport",
-        label: "Transport",
-        percentage: 18,
-        color: "#FDBA4D",
-        trackColor: "#FFF1DD",
-        icon: "bus-outline",
-        iconBackground: "#FFF7E7",
-        labelPosition: { top: 42, right: 36 },
-      },
-      {
-        key: "calls",
-        label: "Calls",
-        percentage: 15,
-        color: "#3EB489",
-        trackColor: "#E5F6F0",
-        icon: "call-outline",
-        iconBackground: "#E7F8F1",
-        labelPosition: { top: 62, left: 26 },
-      },
-      {
-        key: "data",
-        label: "Data",
-        percentage: 7,
-        color: "#E261F3",
-        trackColor: "#FBE9FF",
-        icon: "wifi-outline",
-        iconBackground: "#F9ECFF",
-        labelPosition: { bottom: 58, right: 26 },
-      },
-    ],
-  },
-  income: {
-    total: 126500,
-    segments: [
-      {
-        key: "salary-primary",
-        label: "Salary",
-        percentage: 55,
-        color: "#3EB489",
-        trackColor: "#E5F6F0",
-        icon: "cash-outline",
-        iconBackground: "#E7F8F1",
-        labelPosition: { bottom: 36, left: 24 },
-      },
-      {
-        key: "freelance",
-        label: "Freelance",
-        percentage: 25,
-        color: "#5D5FFE",
-        trackColor: "#E6E7FF",
-        icon: "briefcase-outline",
-        iconBackground: "#F6F5FF",
-        labelPosition: { top: 42, right: 36 },
-      },
-      {
-        key: "investments",
-        label: "Investments",
-        percentage: 20,
-        color: "#FDBA4D",
-        trackColor: "#FFF1DD",
-        icon: "trending-up-outline",
-        iconBackground: "#FFF7E7",
-        labelPosition: { bottom: 58, right: 26 },
-      },
-    ],
-  },
-};
-
-const CHART_SIZE = 250;
-const CHART_RADIUS = 95;
-const CHART_STROKE_WIDTH = 40;
-const CHART_OUTER_DIAMETER = CHART_RADIUS * 2 + CHART_STROKE_WIDTH;
-const CHART_CIRCUMFERENCE = 2 * Math.PI * CHART_RADIUS;
 
 const ExpensePlanningScreen = () => {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>("expense");
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch expense data
+  const {
+    data: expenseSummaryData,
+    isLoading: isSummaryLoading,
+    refetch: refetchSummary,
+  } = useGetExpenseSummaryQuery("monthly", {
+    enabled: activeTab === "expense",
+  });
+
+  const {
+    data: expensesData,
+    isLoading: isExpensesLoading,
+    error,
+    refetch: refetchExpenses,
+  } = useGetExpensesQuery({
+    enabled: activeTab === "expense",
+  });
+
+  console.log("error", error);
+
+  const isLoading =
+    activeTab === "expense" && (isSummaryLoading || isExpensesLoading);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 800);
-  }, []);
+    try {
+      if (activeTab === "expense") {
+        await Promise.all([refetchSummary(), refetchExpenses()]);
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [activeTab, refetchSummary, refetchExpenses]);
 
   const tabConfig = useMemo(
     () => TAB_ITEMS.find((item) => item.key === activeTab)!,
@@ -193,7 +123,71 @@ const ExpensePlanningScreen = () => {
   );
 
   const emptyStateContent = EMPTY_STATE_MESSAGES[activeTab];
-  const currentSummary = useMemo(() => SUMMARY_DATA[activeTab], [activeTab]);
+
+  // Transform API summary data to UI format
+  const currentSummary = useMemo(() => {
+    if (activeTab === "expense" && expenseSummaryData) {
+      // The API returns: { data: { type, total, byCategory: [...] } }
+      // React Query returns: { data: ApiEnvelope<ExpenseSummary> }
+      // So expenseSummaryData = { data: { type, total, byCategory: [...] } }
+
+      const summaryData = (expenseSummaryData as any)?.data;
+      const byCategory = summaryData?.byCategory;
+
+      // Check if we have the byCategory array
+      if (Array.isArray(byCategory) && byCategory.length > 0) {
+        // Calculate total - use the total from API or sum the categories
+        const total =
+          summaryData.total ||
+          byCategory.reduce(
+            (sum: number, item: any) => sum + (item.total || 0),
+            0,
+          );
+
+        // Transform to segments with percentages
+        const segments: ChartSegment[] = byCategory.map(
+          (item: any, index: number) => {
+            const categoryName = item.category || "Other";
+            const amount = item.total || 0;
+            const percentage = total > 0 ? (amount / total) * 100 : 0;
+
+            // Determine label position based on index
+            const labelPositions = [
+              { bottom: 36, left: 24 },
+              { top: 42, right: 36 },
+              { top: 62, left: 26 },
+              { bottom: 58, right: 26 },
+            ];
+            const labelPosition =
+              labelPositions[index % labelPositions.length] || {};
+
+            return {
+              key: `${categoryName}-${index}`,
+              label: categoryName,
+              percentage: Math.round(percentage),
+              color: CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE",
+              trackColor: CATEGORY_TRACK_COLOR_MAP[categoryName] || "#E6E7FF",
+              icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
+              iconBackground: CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF",
+              labelPosition,
+              amount, // Use the actual amount from the API
+            };
+          },
+        );
+
+        return {
+          total,
+          segments,
+        };
+      }
+    }
+
+    // Return empty data when no API data is available
+    return {
+      total: 0,
+      segments: [],
+    };
+  }, [activeTab, expenseSummaryData]);
 
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
@@ -219,60 +213,13 @@ const ExpensePlanningScreen = () => {
     });
   }, [currentSummary]);
 
-  const totalAmountLabel = useMemo(
-    () => formatCurrency(currentSummary.total),
-    [currentSummary],
-  );
-  const chartSegments = useMemo(() => {
-    if (!summarySegments.length) {
-      return null;
-    }
-
-    let cumulativeOffset = 0;
-
-    return summarySegments.map((segment) => {
-      const segmentLength = (segment.percentage / 100) * CHART_CIRCUMFERENCE;
-      const segmentAngle = (segment.percentage / 100) * (Math.PI * 2);
-      const startAngle =
-        (-cumulativeOffset / CHART_CIRCUMFERENCE) * (Math.PI * 2);
-      const midpointAngle = startAngle + segmentAngle / 2;
-      const labelRadius = CHART_RADIUS;
-      const labelX = CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
-      const labelY = CHART_SIZE / 2 + labelRadius * Math.sin(midpointAngle);
-
-      const element = (
-        <React.Fragment key={segment.key}>
-          <Circle
-            cx={CHART_SIZE / 2}
-            cy={CHART_SIZE / 2}
-            r={CHART_RADIUS}
-            stroke={segment.color}
-            strokeWidth={CHART_STROKE_WIDTH}
-            strokeDasharray={`${segmentLength} ${CHART_CIRCUMFERENCE}`}
-            strokeDashoffset={cumulativeOffset}
-            strokeLinecap="round"
-            fill="transparent"
-          />
-          <SvgText
-            x={labelX}
-            y={labelY}
-            fill={COLORS.textColor}
-            fontSize={12}
-            fontWeight="600"
-            textAnchor="middle"
-            alignmentBaseline="middle"
-          >
-            {segment.percentage}%
-          </SvgText>
-        </React.Fragment>
-      );
-
-      cumulativeOffset -= segmentLength;
-
-      return element;
-    });
-  }, [summarySegments]);
-
+  // Get expenses array for ExpenseList component
+  const expensesArray = useMemo(() => {
+    if (activeTab !== "expense") return [];
+    return Array.isArray(expensesData)
+      ? expensesData
+      : (expensesData as any)?.data || [];
+  }, [expensesData, activeTab]);
   return (
     <MainContainer className="bg-lightMuted pb-0" edges={[]}>
       <ScrollView
@@ -283,35 +230,11 @@ const ExpensePlanningScreen = () => {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="px-6">
-          <View style={styles.segmentWrapper}>
-            {TAB_ITEMS.map((item) => {
-              const isActive = item.key === activeTab;
-              return (
-                <Pressable
-                  key={item.key}
-                  onPress={() => setActiveTab(item.key)}
-                  style={[
-                    styles.segmentButton,
-                    isActive && styles.segmentButtonActive,
-                  ]}
-                  className={cn(
-                    "flex-1 items-center justify-center rounded-full py-3",
-                    isActive ? "bg-white" : undefined,
-                  )}
-                >
-                  <Text
-                    weight={isActive ? "semibold" : "medium"}
-                    className={cn(
-                      "text-base",
-                      isActive ? "text-textColor" : "text-textColor/60",
-                    )}
-                  >
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <TabSwitcher
+            tabs={TAB_ITEMS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
           <CollapsibleCard
             headerBottomBorder
             title={tabConfig.categoryTitle}
@@ -321,10 +244,7 @@ const ExpensePlanningScreen = () => {
               <Text weight="medium" className="text-sm text-textColor/70">
                 {tabConfig.breakdownTitle}
               </Text>
-              <Pressable
-                style={styles.periodPill}
-                onPress={() => setIsLoading(!isLoading)}
-              >
+              <Pressable style={styles.periodPill}>
                 <Text weight="semibold" className="text-sm text-textColor">
                   {PERIOD_LABEL}
                 </Text>
@@ -337,53 +257,13 @@ const ExpensePlanningScreen = () => {
             </View>
 
             <View style={styles.chartWrapper}>
-              {isLoading ? (
-                <View style={styles.chartSkeleton}>
-                  <View style={styles.chartSkeletonRing}>
-                    <Text weight="bold" className="text-lg">
-                      {formatCurrency(0)}
-                    </Text>
-                  </View>
-                </View>
-              ) : summarySegments.length ? (
-                <View style={styles.chartContainer}>
-                  <View style={styles.chartSvgWrapper}>
-                    <Svg width={CHART_SIZE} height={CHART_SIZE}>
-                      <G>
-                        <Circle
-                          cx={CHART_SIZE / 2}
-                          cy={CHART_SIZE / 2}
-                          r={CHART_RADIUS}
-                          stroke="#eee"
-                          strokeWidth={CHART_STROKE_WIDTH}
-                          fill="transparent"
-                        />
-                        {chartSegments}
-                      </G>
-                    </Svg>
-                  </View>
-
-                  <View style={styles.chartCenter}>
-                    <Text weight="medium" className="text-xs text-textColor/60">
-                      Total {tabConfig.label.toLowerCase()}
-                    </Text>
-                    <Text weight="bold" className="mt-1 text-xl text-textColor">
-                      {totalAmountLabel}
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.chartEmptyState}>
-                  <Ionicons
-                    name="pie-chart-outline"
-                    size={36}
-                    color={COLORS.textColor}
-                  />
-                  <Text className="mt-3 text-sm text-textColor/60">
-                    Insights for this period will appear here.
-                  </Text>
-                </View>
-              )}
+              <ExpenseChart
+                segments={summarySegments}
+                total={currentSummary.total}
+                totalLabel={`Total ${tabConfig.label.toLowerCase()}`}
+                isLoading={isLoading}
+                formatCurrency={formatCurrency}
+              />
             </View>
           </CollapsibleCard>
 
@@ -393,89 +273,35 @@ const ExpensePlanningScreen = () => {
             </Text>
 
             <View style={styles.rankingCard}>
-              {isLoading ? (
-                <View className="gap-5">
-                  {SKELETON_ROWS.map((row) => (
-                    <View key={row} className="flex-row items-center gap-4">
-                      <View style={styles.skeletonIcon} />
-                      <View className="flex-1 gap-2">
-                        <View style={styles.skeletonLinePrimary} />
-                        <View style={styles.skeletonLineSecondary} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : summarySegments.length ? (
-                <View className="gap-6">
-                  {summarySegments.map((segment) => (
-                    <View
-                      key={segment.key}
-                      className="flex-row items-center gap-4"
-                    >
-                      <View
-                        style={[
-                          styles.rankingIcon,
-                          { backgroundColor: segment.iconBackground },
-                        ]}
-                      >
-                        <Ionicons
-                          name={segment.icon}
-                          size={20}
-                          color={segment.color}
-                        />
-                      </View>
-
-                      <View className="flex-1">
-                        <View className="flex-row items-center justify-between">
-                          <Text
-                            weight="semibold"
-                            className="text-sm text-textColor"
-                          >
-                            {segment.label}
-                          </Text>
-                          <Text className="text-sm text-textColor/70">
-                            {segment.percentage}%
-                          </Text>
-                        </View>
-
-                        <View style={styles.progressRow}>
-                          <View
-                            style={[
-                              styles.progressTrack,
-                              { backgroundColor: segment.trackColor },
-                            ]}
-                          >
-                            <View
-                              style={[
-                                styles.progressFill,
-                                {
-                                  backgroundColor: segment.color,
-                                  width: `${segment.percentage}%`,
-                                },
-                              ]}
-                            />
-                          </View>
-                          <Text
-                            weight="semibold"
-                            className="text-sm text-textColor"
-                          >
-                            {formatCurrency(segment.amount)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.rankingEmptyState}>
-                  <Text className="text-sm text-textColor/60">
-                    Add an entry to see your {tabConfig.label.toLowerCase()}{" "}
-                    rankings.
-                  </Text>
-                </View>
-              )}
+              <CategoryRanking
+                segments={summarySegments}
+                isLoading={isLoading}
+                emptyMessage={`Add an entry to see your ${tabConfig.label.toLowerCase()} rankings.`}
+                formatCurrency={formatCurrency}
+              />
             </View>
           </View>
+
+          {/* Expense List Section */}
+          {activeTab === "expense" && (
+            <View className="mt-8">
+              <Text weight="semibold" className="text-base text-textColor">
+                Recent Expenses
+              </Text>
+
+              <View style={styles.expenseListCard}>
+                <ExpenseList
+                  expenses={expensesArray}
+                  isLoading={isExpensesLoading}
+                  categoryColorMap={CATEGORY_COLOR_MAP}
+                  categoryIconMap={CATEGORY_ICON_MAP}
+                  categoryBgMap={CATEGORY_BG_COLOR_MAP}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatExpenseDate}
+                />
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
       {isLoading && (
@@ -515,47 +341,8 @@ const ExpensePlanningScreen = () => {
 export default ExpensePlanningScreen;
 
 const styles = StyleSheet.create({
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0B1528",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  headerButtonPlaceholder: {
-    width: 44,
-    height: 44,
-  },
-  segmentWrapper: {
-    marginTop: 24,
-    flexDirection: "row",
-    backgroundColor: COLORS.lightBg,
-    borderRadius: 32,
-    padding: 4,
-  },
-  segmentButton: {
-    borderRadius: 28,
-  },
-  segmentButtonActive: {
-    shadowColor: "#182542",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 6,
-  },
   card: {
     marginTop: 24,
-  },
-  divider: {
-    marginTop: 18,
-    height: 1,
-    backgroundColor: "#EFF1F6",
   },
   periodPill: {
     flexDirection: "row",
@@ -571,113 +358,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chartContainer: {
-    width: CHART_SIZE,
-    height: CHART_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chartSvgWrapper: {
-    width: CHART_SIZE,
-    height: CHART_SIZE,
-  },
-  chartCenter: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.9)",
-  },
-  chartLabel: {
-    position: "absolute",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#C5C9D7",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  chartEmptyState: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 32,
-    backgroundColor: COLORS.lightBg,
-    borderRadius: 18,
-  },
-  chartSkeleton: {
-    width: CHART_SIZE,
-    height: CHART_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chartSkeletonRing: {
-    width: CHART_OUTER_DIAMETER,
-    height: CHART_OUTER_DIAMETER,
-    borderRadius: CHART_OUTER_DIAMETER / 2,
-    borderWidth: CHART_STROKE_WIDTH,
-    borderColor: COLORS.lightBg,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   rankingCard: {
     marginTop: 16,
     borderRadius: 28,
     backgroundColor: "#FFFFFF",
     padding: 24,
   },
-  skeletonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightBg,
-  },
-  skeletonLinePrimary: {
-    height: 8,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightBg,
-    width: "90%",
-  },
-  skeletonLineSecondary: {
-    height: 7,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightBg,
-    width: "60%",
-  },
-  rankingIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  progressRow: {
-    marginTop: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightBg,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 12,
-  },
-  rankingEmptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 24,
+  expenseListCard: {
+    marginTop: 16,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    padding: 24,
   },
   emptyState: {
     paddingVertical: 20,

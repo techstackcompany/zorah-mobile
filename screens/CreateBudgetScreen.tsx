@@ -1,14 +1,16 @@
 import MainContainer from "@/components/layouts/MainContainer";
+import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
 import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
-import AmountInput from "@/components/ui/AmountInput";
 import COLORS from "@/constants/colors";
+import { useCreateBudgetMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { ImageSource } from "expo-image";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -18,6 +20,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 type BudgetCategoryKey = "food" | "entertainment" | "transport" | "shopping";
 
@@ -42,11 +45,11 @@ const BUDGET_CATEGORIES = [
     label: "Shopping",
     icon: require("@/assets/images/home/shopping.png"),
   },
-] as const satisfies ReadonlyArray<{
+] as const satisfies readonly {
   key: BudgetCategoryKey;
   label: string;
   icon: ImageSource;
-}>;
+}[];
 
 type BudgetPeriodKey = "this_week" | "this_month" | "this_year" | "custom";
 
@@ -63,7 +66,7 @@ type OptionalDateRange = {
 const startOfWeek = (reference: Date) => {
   const date = new Date(reference);
   const day = date.getDay();
-  const diff = day === 0 ? -6 : 1 - day; 
+  const diff = day === 0 ? -6 : 1 - day;
   date.setDate(date.getDate() + diff);
   date.setHours(0, 0, 0, 0);
   return date;
@@ -139,8 +142,46 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
+// Map UI category keys to API category names
+const CATEGORY_MAP: Record<BudgetCategoryKey, string> = {
+  food: "Food",
+  entertainment: "Entertainment",
+  transport: "Transport",
+  shopping: "Shopping",
+};
+
+// Map UI period keys to API period values
+const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
+  this_week: "weekly",
+  this_month: "monthly",
+  this_year: "yearly",
+  custom: "monthly", // Default for custom, will be determined by date range
+};
+
+// Format date to YYYY-MM-DD
+const formatDateForAPI = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Determine period from date range
+const determinePeriodFromRange = (
+  range: DateRange,
+): "weekly" | "monthly" | "yearly" => {
+  const daysDiff = Math.ceil(
+    (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (daysDiff <= 7) return "weekly";
+  if (daysDiff <= 31) return "monthly";
+  return "yearly";
+};
+
 const CreateBudgetScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [budgetName, setBudgetName] = useState("");
   const [amount, setAmount] = useState("");
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
@@ -155,6 +196,37 @@ const CreateBudgetScreen = () => {
   const [customRangeDraft, setCustomRangeDraft] = useState<OptionalDateRange>({
     start: null,
     end: null,
+  });
+
+  const createBudgetMutation = useCreateBudgetMutation({
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+
+      Toast.show({
+        type: "success",
+        text1: "Budget Created",
+        text2: response.message || "Your budget has been created successfully.",
+      });
+
+      // Navigate back after a short delay
+      setTimeout(() => {
+        router.back();
+      }, 1500);
+    },
+    onError: (error) => {
+      console.log("=== CREATE BUDGET ERROR ===");
+      console.log("Error object:", error);
+      console.log("Error message:", error.message);
+      console.log("Error status:", error.status);
+      console.log("Error data:", error.data);
+      console.log("========================\n");
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to create budget. Please try again.",
+      });
+    },
   });
 
   const handleSelectPeriod = (key: BudgetPeriodKey) => {
@@ -200,7 +272,9 @@ const CreateBudgetScreen = () => {
     !selectedRange;
 
   const periodLabel = formatRangeLabel(selectedRange);
-  const canApplyCustom = Boolean(customRangeDraft.start && customRangeDraft.end);
+  const canApplyCustom = Boolean(
+    customRangeDraft.start && customRangeDraft.end,
+  );
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -210,8 +284,6 @@ const CreateBudgetScreen = () => {
         keyboardVerticalOffset={Platform.select({ ios: 64, android: 0 })}
       >
         <View className="flex-1">
-         
-
           <ScrollView
             className="flex-1 px-6 pt-4"
             keyboardShouldPersistTaps="handled"
@@ -228,8 +300,10 @@ const CreateBudgetScreen = () => {
                   onFocus={() => setIsBudgetNameFocused(true)}
                   onBlur={() => setIsBudgetNameFocused(false)}
                   placeholder="e.g., Food & Dining"
-                  className={`mt-2 rounded-2xl border bg-white px-4 py-4 text-base font-nunitoMedium text-textColor ${
-                    isBudgetNameFocused ? "border-primary_400" : "border-gray-200"
+                  className={`mt-2 rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base text-textColor ${
+                    isBudgetNameFocused
+                      ? "border-primary_400"
+                      : "border-gray-200"
                   }`}
                   placeholderTextColor="rgba(42, 58, 80, 0.4)"
                   returnKeyType="next"
@@ -280,20 +354,28 @@ const CreateBudgetScreen = () => {
           <View className="px-6 pb-6">
             <Button
               title="Create Budget"
-              disabled={isSubmitDisabled}
+              disabled={isSubmitDisabled || createBudgetMutation.isPending}
               className="w-full"
               onPress={() => {
+                // Determine period - use mapped value or determine from custom range
+                const apiPeriod =
+                  periodKey === "custom"
+                    ? determinePeriodFromRange(selectedRange)
+                    : PERIOD_MAP[periodKey];
+
                 const payload = {
-                  name: budgetName.trim(),
-                  amount: Number(amount).toFixed(2),
-                  category: selectedCategory,
-                  periodKey,
-                  range: {
-                    start: selectedRange.start.toISOString(),
-                    end: selectedRange.end.toISOString(),
-                  },
+                  category: CATEGORY_MAP[selectedCategory],
+                  amount: Number(amount),
+                  period: apiPeriod,
+                  startDate: formatDateForAPI(selectedRange.start),
+                  endDate: formatDateForAPI(selectedRange.end),
                 };
-                console.log("Create budget payload:", payload);
+
+                console.log("=== CREATE BUDGET REQUEST ===");
+                console.log("Payload:", JSON.stringify(payload, null, 2));
+                console.log("========================\n");
+
+                createBudgetMutation.mutate(payload);
               }}
             />
           </View>
@@ -316,7 +398,9 @@ const CreateBudgetScreen = () => {
               return (
                 <Pressable
                   key={option.key}
-                  onPress={() => handleSelectPeriod(option.key as BudgetPeriodKey)}
+                  onPress={() =>
+                    handleSelectPeriod(option.key as BudgetPeriodKey)
+                  }
                   className="flex-row items-center justify-between rounded-2xl px-4 py-4"
                 >
                   <Text
@@ -351,7 +435,7 @@ const CreateBudgetScreen = () => {
           closeIconColor="#fff"
           className="h-[500px]"
         >
-          <View className="gap-4  h-full">
+          <View className="h-full  gap-4">
             <View>
               <Text className="text-sm text-textColor/70">Start Date</Text>
               <DatePickerField

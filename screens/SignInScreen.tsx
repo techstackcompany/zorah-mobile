@@ -2,8 +2,8 @@ import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { setStorageItemAsync } from "@/contexts/auth-context/useStorageState";
 import { cn } from "@/lib/utils";
-import { useLoginUserMutation } from "@/src/api/hooks";
 import { ApiError } from "@/src/api/client";
+import { useLoginUserMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
@@ -36,7 +36,7 @@ const SignInScreen = () => {
 
   const isSubmitting = loginMutation.isPending;
 
-  const validate = () => {
+  const validate = useCallback(() => {
     const newErrors: { [key: string]: string } = {};
     if (!/\S+@\S+\.\S+/.test(form.email))
       newErrors.email = "Please enter a valid email";
@@ -44,7 +44,7 @@ const SignInScreen = () => {
       newErrors.password = "Please enter your password";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [form.email, form.password]);
 
   const handleSubmit = useCallback(async () => {
     if (!validate()) return;
@@ -56,41 +56,76 @@ const SignInScreen = () => {
         password: form.password,
       };
       const response = await loginMutation.mutateAsync(payload);
+
+      console.log("=== LOGIN RESPONSE ===");
+      console.log("Full response:", JSON.stringify(response, null, 2));
+      console.log("Response keys:", Object.keys(response || {}));
+      console.log("========================\n");
+
       const accessToken =
         typeof response.accessToken === "string" ? response.accessToken : null;
       if (!accessToken) {
         throw new Error("Missing access token from login response.");
       }
-      const refreshToken =
-        typeof response.refreshToken === "string" ? response.refreshToken : null;
-      const profile =
-        response &&
-        response.data &&
-        typeof response.data === "object" &&
-        !Array.isArray(response.data)
-          ? response.data
-          : null;
 
-      signIn(accessToken);
+      // Check multiple possible locations for refreshToken
+      const refreshToken =
+        typeof response.refreshToken === "string"
+          ? response.refreshToken
+          : typeof (response as any)?.data?.refreshToken === "string"
+            ? (response as any).data.refreshToken
+            : null;
+
+      console.log("Access token found:", !!accessToken);
+      console.log("Refresh token found:", !!refreshToken);
+
+      const profileCandidate =
+        response && typeof response === "object" ? (response as any) : null;
+      const profile =
+        profileCandidate && typeof profileCandidate.user === "object"
+          ? profileCandidate.user
+          : profileCandidate &&
+              typeof profileCandidate.data === "object" &&
+              !Array.isArray(profileCandidate.data)
+            ? profileCandidate.data
+            : null;
+
+      // Store tokens - refresh token FIRST to avoid race condition
       if (refreshToken) {
         await setStorageItemAsync("refreshToken", refreshToken);
+        console.log("✅ Refresh token stored successfully");
+      } else {
+        console.warn(
+          "⚠️ No refresh token in login response - token refresh will not work",
+        );
+        console.warn("Response structure:", {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          responseKeys: Object.keys(response || {}),
+        });
       }
+
+      signIn(accessToken);
+      console.log("✅ Access token stored successfully");
 
       if (profile) {
         setUserData(profile);
       }
 
       const computedIsVerified =
-        profile && typeof (profile as { isVerified?: unknown }).isVerified === "boolean"
+        profile &&
+        typeof (profile as { isVerified?: unknown }).isVerified === "boolean"
           ? Boolean((profile as { isVerified?: boolean }).isVerified)
           : true;
       setIsVerified(computedIsVerified);
 
       const computedHasCompletedSetup =
         profile &&
-        typeof (profile as { hasCompletedSetup?: unknown }).hasCompletedSetup ===
-          "boolean"
-          ? Boolean((profile as { hasCompletedSetup?: boolean }).hasCompletedSetup)
+        typeof (profile as { hasCompletedSetup?: unknown })
+          .hasCompletedSetup === "boolean"
+          ? Boolean(
+              (profile as { hasCompletedSetup?: boolean }).hasCompletedSetup,
+            )
           : true;
       setHasCompletedSetup(computedHasCompletedSetup);
 
@@ -128,6 +163,7 @@ const SignInScreen = () => {
         serverMessage ??
         apiError?.message ??
         "We could not sign you in. Please try again.";
+      console.log("message", message);
       setApiErrorMessage(message);
       Toast.show({
         type: "error",
@@ -145,6 +181,7 @@ const SignInScreen = () => {
     setSetupStep,
     setUserData,
     signIn,
+    validate,
   ]);
 
   return (
@@ -264,8 +301,6 @@ const SignInScreen = () => {
           Continue with Google
         </Text>
       </Pressable>
-
-      
 
       <Link asChild href={"/signUp"}>
         <Pressable className="mb-10 flex-row items-center justify-center gap-2">
