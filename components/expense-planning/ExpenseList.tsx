@@ -1,0 +1,115 @@
+import Text from "@/components/ui/Text";
+import COLORS from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import ExpenseListItem, { ExpenseItem } from "./ExpenseListItem";
+
+type ExpenseListProps = {
+  expenses: ExpenseItem[];
+  isLoading?: boolean;
+  categoryColorMap: Record<string, string>;
+  categoryIconMap: Record<string, keyof typeof Ionicons.glyphMap>;
+  categoryBgMap: Record<string, string>;
+  formatCurrency: (value: number) => string;
+  formatDate: (date: string) => string;
+};
+
+const SKELETON_ROWS = Array.from({ length: 3 }, (_, index) => index);
+
+const ExpenseList = ({
+  expenses,
+  isLoading = false,
+  categoryColorMap,
+  categoryIconMap,
+  categoryBgMap,
+  formatCurrency,
+  formatDate,
+}: ExpenseListProps) => {
+  if (isLoading) {
+    return (
+      <View className="gap-4">
+        {SKELETON_ROWS.map((row) => (
+          <View key={row} className="flex-row items-center gap-4">
+            <View style={styles.skeletonIcon} />
+            <View className="flex-1 gap-2">
+              <View style={styles.skeletonLinePrimary} />
+              <View style={styles.skeletonLineSecondary} />
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (expenses.length === 0) {
+    return (
+      <View style={styles.expenseEmptyState}>
+        <Ionicons
+          name="receipt-outline"
+          size={32}
+          color={COLORS.textColor}
+          style={{ opacity: 0.4 }}
+        />
+        <Text className="mt-3 text-sm text-textColor/60">
+          No expenses recorded yet. Add your first expense to get started.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-4">
+      {expenses.slice(0, 10).map((expense, index, array) => {
+        const isLast = index === array.length - 1;
+        const categoryName = expense.category || "Other";
+        const categoryColor = categoryColorMap[categoryName] || "#5D5FFE";
+        const categoryIcon = categoryIconMap[categoryName] || "cash-outline";
+        const categoryBg = categoryBgMap[categoryName] || "#F6F5FF";
+
+        const formattedDate = expense.date ? formatDate(expense.date) : "";
+
+        return (
+          <ExpenseListItem
+            key={expense._id || expense.id || index}
+            expense={expense}
+            isLast={isLast}
+            categoryColor={categoryColor}
+            categoryIcon={categoryIcon}
+            categoryBg={categoryBg}
+            formattedDate={formattedDate}
+            formatCurrency={formatCurrency}
+          />
+        );
+      })}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  skeletonIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#E9EDF5",
+  },
+  skeletonLinePrimary: {
+    height: 8,
+    borderRadius: 12,
+    backgroundColor: "#E9EDF5",
+    width: "90%",
+  },
+  skeletonLineSecondary: {
+    height: 7,
+    borderRadius: 12,
+    backgroundColor: "#E9EDF5",
+    width: "60%",
+  },
+  expenseEmptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+  },
+});
+
+export default ExpenseList;
