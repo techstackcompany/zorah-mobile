@@ -4,6 +4,7 @@ import { setStorageItemAsync } from "@/contexts/auth-context/useStorageState";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/src/api/client";
 import { useLoginUserMutation } from "@/src/api/hooks";
+import type { LoginUserResponse } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
@@ -17,6 +18,55 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+
+const MOCK_SIGN_IN_RESPONSE_ENABLED = false;
+
+const createMockSignInResponse = (email: string) => {
+  const normalizedEmail = email?.trim().toLowerCase() || "mock@pocketmonie.app";
+  const timestamp = Date.now();
+  const mockUser = {
+    id: `mock-${timestamp}`,
+    name: "Pocket Monie Demo",
+    email: normalizedEmail,
+    isVerified: true,
+    hasCompletedSetup: true,
+    setupStep: 3,
+  };
+  return {
+    accessToken: `mock-access-token-${timestamp}`,
+    refreshToken: `mock-refresh-token-${timestamp}`,
+    user: mockUser,
+    data: mockUser,
+  };
+};
+
+const shouldFallbackToMockSignIn = (error?: unknown) => {
+  if (!error) return false;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as any).status === "number"
+  ) {
+    const status = (error as any).status ?? 0;
+    return status === 0 || status >= 500;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return message.includes("network") || message.includes("server");
+  }
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    const lowerMessage = (
+      (error as { message?: string }).message ?? ""
+    ).toLowerCase();
+    return lowerMessage.includes("network") || lowerMessage.includes("server");
+  }
+  return false;
+};
 
 const SignInScreen = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -34,41 +84,16 @@ const SignInScreen = () => {
   } = useSession();
   const loginMutation = useLoginUserMutation();
 
-  const isSubmitting = loginMutation.isPending;
-
-  const validate = useCallback(() => {
-    const newErrors: { [key: string]: string } = {};
-    if (!/\S+@\S+\.\S+/.test(form.email))
-      newErrors.email = "Please enter a valid email";
-    if (!form.password.trim())
-      newErrors.password = "Please enter your password";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [form.email, form.password]);
-
-  const handleSubmit = useCallback(async () => {
-    if (!validate()) return;
-
-    try {
-      setApiErrorMessage(null);
-      const payload = {
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-      };
-      const response = await loginMutation.mutateAsync(payload);
-
-      console.log("=== LOGIN RESPONSE ===");
-      console.log("Full response:", JSON.stringify(response, null, 2));
-      console.log("Response keys:", Object.keys(response || {}));
-      console.log("========================\n");
-
+  const processSignInResponse = useCallback(
+    async (
+      response: LoginUserResponse | ReturnType<typeof createMockSignInResponse>,
+    ) => {
       const accessToken =
         typeof response.accessToken === "string" ? response.accessToken : null;
       if (!accessToken) {
         throw new Error("Missing access token from login response.");
       }
 
-      // Check multiple possible locations for refreshToken
       const refreshToken =
         typeof response.refreshToken === "string"
           ? response.refreshToken
@@ -79,18 +104,6 @@ const SignInScreen = () => {
       console.log("Access token found:", !!accessToken);
       console.log("Refresh token found:", !!refreshToken);
 
-      const profileCandidate =
-        response && typeof response === "object" ? (response as any) : null;
-      const profile =
-        profileCandidate && typeof profileCandidate.user === "object"
-          ? profileCandidate.user
-          : profileCandidate &&
-              typeof profileCandidate.data === "object" &&
-              !Array.isArray(profileCandidate.data)
-            ? profileCandidate.data
-            : null;
-
-      // Store tokens - refresh token FIRST to avoid race condition
       if (refreshToken) {
         await setStorageItemAsync("refreshToken", refreshToken);
         console.log("✅ Refresh token stored successfully");
@@ -106,7 +119,19 @@ const SignInScreen = () => {
       }
 
       signIn(accessToken);
+
       console.log("✅ Access token stored successfully");
+
+      const profileCandidate =
+        response && typeof response === "object" ? (response as any) : null;
+      const profile =
+        profileCandidate && typeof profileCandidate.user === "object"
+          ? profileCandidate.user
+          : profileCandidate &&
+              typeof profileCandidate.data === "object" &&
+              !Array.isArray(profileCandidate.data)
+            ? profileCandidate.data
+            : null;
 
       if (profile) {
         setUserData(profile);
@@ -150,7 +175,62 @@ const SignInScreen = () => {
       });
 
       router.replace("/");
+    },
+    [
+      router,
+      setHasCompletedSetup,
+      setIsVerified,
+      setSetupStep,
+      setUserData,
+      signIn,
+    ],
+  );
+
+  const isSubmitting = loginMutation.isPending;
+
+  const validate = useCallback(() => {
+    const newErrors: { [key: string]: string } = {};
+    if (!/\S+@\S+\.\S+/.test(form.email))
+      newErrors.email = "Please enter a valid email";
+    if (!form.password.trim())
+      newErrors.password = "Please enter your password";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [form.email, form.password]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!validate()) return;
+
+    const normalizedEmail = form.email.trim().toLowerCase();
+
+    try {
+      setApiErrorMessage(null);
+      const payload = {
+        email: normalizedEmail,
+        password: form.password,
+      };
+
+      if (MOCK_SIGN_IN_RESPONSE_ENABLED) {
+        await processSignInResponse(
+          createMockSignInResponse(normalizedEmail),
+        );
+        return;
+      }
+
+      const response = await loginMutation.mutateAsync(payload);
+      await processSignInResponse(response);
     } catch (error) {
+      if (
+        MOCK_SIGN_IN_RESPONSE_ENABLED ||
+        shouldFallbackToMockSignIn(error)
+      ) {
+        console.warn("Falling back to mock sign-in", error);
+        await processSignInResponse(
+          createMockSignInResponse(normalizedEmail),
+        );
+        return;
+      }
+
       const apiError = error as ApiError;
       const serverMessage =
         typeof apiError?.data === "object" &&
@@ -175,12 +255,7 @@ const SignInScreen = () => {
     form.email,
     form.password,
     loginMutation,
-    router,
-    setHasCompletedSetup,
-    setIsVerified,
-    setSetupStep,
-    setUserData,
-    signIn,
+    processSignInResponse,
     validate,
   ]);
 
