@@ -1,7 +1,8 @@
 import Text from "@/components/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, TextInput, View } from "react-native";
+import { Pressable, ScrollView, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Tier3PersonalDetailsScreen() {
   const [nationality, setNationality] = useState("Nigeria");

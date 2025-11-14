@@ -1,6 +1,7 @@
 import Text from "@/components/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const guidelines = [
   "Take a clear, well-lit photo",

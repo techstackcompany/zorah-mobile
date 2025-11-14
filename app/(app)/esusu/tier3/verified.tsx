@@ -1,6 +1,7 @@
 import Text from "@/components/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, SafeAreaView, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Tier3VerifiedScreen() {
   return (
