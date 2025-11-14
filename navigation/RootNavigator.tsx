@@ -39,7 +39,10 @@ function RootNavigator() {
     isLoading,
   ]);
 
-  if (isLoading) return null;
+  if (isLoading){
+    console.log('isLoading', isLoading)
+    return null
+  }
   return (
     <>
       <Stack screenOptions={{ headerShown: false, statusBarStyle: "dark" }}>

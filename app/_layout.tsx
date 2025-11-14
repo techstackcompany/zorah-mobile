@@ -5,6 +5,7 @@ import RootNavigator from "@/navigation/RootNavigator";
 import FontProvider from "@/providers/FontProvider";
 import toastConfig from "@/providers/ToastConfig";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import "../global.css";
 
@@ -16,9 +17,11 @@ export default function RootLayout() {
       <SessionProvider>
         <SettingsProvider>
           <FontProvider>
-            <PushNotificationsProvider>
-              <RootNavigator />
-            </PushNotificationsProvider>
+            <SafeAreaProvider>
+              {/* <PushNotificationsProvider> */}
+                <RootNavigator />
+              {/* </PushNotificationsProvider> */}
+            </SafeAreaProvider>
             <Toast config={toastConfig} />
           </FontProvider>
         </SettingsProvider>
