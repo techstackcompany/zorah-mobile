@@ -6,7 +6,6 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
 import { API_CONFIG } from "../config/api";
 import { API_ENDPOINTS } from "./endpoints";
 
@@ -21,12 +20,6 @@ const TOKEN_KEYS = ["accessToken", "session"];
 const REFRESH_TOKEN_KEY = "refreshToken";
 
 async function readFromStorage(key: string): Promise<string | null> {
-  if (Platform.OS === "web") {
-    if (typeof window === "undefined" || !("localStorage" in window)) {
-      return null;
-    }
-    return window.localStorage.getItem(key);
-  }
   try {
     return await SecureStore.getItemAsync(key);
   } catch {
@@ -35,12 +28,6 @@ async function readFromStorage(key: string): Promise<string | null> {
 }
 
 async function writeToStorage(key: string, value: string): Promise<void> {
-  if (Platform.OS === "web") {
-    if (typeof window !== "undefined" && "localStorage" in window) {
-      window.localStorage.setItem(key, value);
-    }
-    return;
-  }
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {
@@ -49,12 +36,6 @@ async function writeToStorage(key: string, value: string): Promise<void> {
 }
 
 async function removeFromStorage(key: string): Promise<void> {
-  if (Platform.OS === "web") {
-    if (typeof window !== "undefined" && "localStorage" in window) {
-      window.localStorage.removeItem(key);
-    }
-    return;
-  }
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {
