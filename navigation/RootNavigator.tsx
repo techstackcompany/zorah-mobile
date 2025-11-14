@@ -1,16 +1,20 @@
 import { useSession } from "@/contexts/auth-context/useSession";
-import { RelativePathString, Stack, useRouter, useSegments } from "expo-router";
+import {
+  RelativePathString,
+  Stack,
+  usePathname,
+  useRouter,
+  useSegments,
+} from "expo-router";
 import { useEffect } from "react";
 
 function RootNavigator() {
-  const {
-    isAuthenticated,
-    isLoading,
-    hasCompletedSetup,
-    setupStep,
-  } = useSession();
+  const { isAuthenticated, isLoading, hasCompletedSetup, setupStep } =
+    useSession();
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
+  console.log("pathname", pathname);
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || hasCompletedSetup) return;
@@ -21,25 +25,34 @@ function RootNavigator() {
       4: "/(auth)/setup/summary",
     };
     const targetRoute = stepRoutes[setupStep ?? 1] ?? stepRoutes[1];
-    const currentPath = `/${segments.join("/") || ""}`.replace(/\/+$/, "") || "/";
+    const currentPath =
+      `/${segments.join("/") || ""}`.replace(/\/+$/, "") || "/";
     if (currentPath !== targetRoute) {
       router.replace(targetRoute as RelativePathString);
     }
-  }, [isAuthenticated, hasCompletedSetup, setupStep, segments, router, isLoading]);
+  }, [
+    isAuthenticated,
+    hasCompletedSetup,
+    setupStep,
+    segments,
+    router,
+    isLoading,
+  ]);
 
   if (isLoading) return null;
   return (
     <>
-      <Stack screenOptions={{ headerShown: false, statusBarStyle:"dark" }}>
+      <Stack screenOptions={{ headerShown: false, statusBarStyle: "dark" }}>
         {/* Public/Unauthenticated */}
 
         {/* Fully ready → app group */}
         <Stack.Protected guard={isAuthenticated && hasCompletedSetup}>
           <Stack.Screen name="(app)" options={{ animation: "none" }} />
         </Stack.Protected>
-        <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Protected guard={!isAuthenticated || !hasCompletedSetup}>
           <Stack.Screen name="(auth)" options={{ animation: "none" }} />
         </Stack.Protected>
+        <Stack.Screen name="(test)" options={{ animation: "none" }} />
       </Stack>
     </>
   );

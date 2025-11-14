@@ -5,14 +5,13 @@ import Button from "@/components/ui/Button";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View } from "react-native";
 
 const ChooseLanguageScreen = () => {
   const router = useRouter();
   const { setSetupStep } = useSession();
-   
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+const [selectedLanguage, setSelectedLanguage] = useState("en");
   const languages = [
     {
       id: "en",
@@ -24,10 +23,9 @@ const ChooseLanguageScreen = () => {
       title: "French",
       subtitle: "French",
     },
-    
   ];
-  useSetUpStep(1)
-  
+  useSetUpStep(1);
+
   const handleNext = () => {
     setSetupStep(2);
     router.push("/(auth)/setup/monthly-income");
@@ -57,7 +55,11 @@ const ChooseLanguageScreen = () => {
           </View>
 
           <View className="mt-auto pt-10">
-            <Button title="Next" disabled={!selectedLanguage} onPress={handleNext} />
+            <Button
+              title="Next"
+              disabled={!selectedLanguage}
+              onPress={handleNext}
+            />
           </View>
         </View>
       </View>

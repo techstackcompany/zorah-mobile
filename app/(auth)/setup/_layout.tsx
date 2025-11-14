@@ -12,12 +12,15 @@ const Layout = () => {
         headerTitle: () => (
           <Image
             source={require("@/assets/images/logo.png")}
-            style={{ width: 100, aspectRatio: 85 / 26 }}
+            style={{ width: 100, aspectRatio: 997 / 250 }}
           />
         ),
       }}
     >
-      {/* <Stack.Screen name="choose-language" /> */}
+      <Stack.Screen
+        name="choose-language"
+        options={{ headerLeft: () => null, headerBackVisible: false }}
+      />
       <Stack.Screen
         name="monthly-income"
         options={{ headerLeft: () => null, headerBackVisible: false }}
