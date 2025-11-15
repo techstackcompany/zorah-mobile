@@ -98,7 +98,7 @@ const AppLayout = () => {
           name="biometrics"
           options={{ title: "Biometric Login", headerShown: false }}
         />
-        <Stack.Screen name="settings/privacy" options={{ title: "Privacy" }} />
+        <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
       </Stack>
     </UserInactivityProvider>
   );
