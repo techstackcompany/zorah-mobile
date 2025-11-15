@@ -1,33 +1,79 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
+import { extractUserData } from "@/lib/utils";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
-const INITIAL_DATA = {
-  name: "John Niyi",
-  email: "john.doe@example.com",
-  phone: "+234 812 345 6789",
-  note: "",
-};
-
 const EditProfileScreen = () => {
   const router = useRouter();
-  const [form, setForm] = useState(INITIAL_DATA);
+  const { userData } = useSession();
+
+  // Extract user data for initial form values
+  const { displayName, displayEmail, displayPhone, initials } = useMemo(() => {
+    return extractUserData(userData, {
+      fallbackName: "",
+      fallbackInitials: "U",
+      includePhone: true,
+    });
+  }, [userData]);
+
+  // Get note from userData if it exists
+  const initialNote = useMemo(() => {
+    const safeUser = (userData ?? {}) as Record<string, unknown>;
+    return (typeof safeUser.note === "string" ? safeUser.note : "") || "";
+  }, [userData]);
+
+  const [form, setForm] = useState({
+    name: displayName || "",
+    email: displayEmail || "",
+    phone: displayPhone || "",
+    note: initialNote,
+  });
+
+  // Update form when userData changes
+  useEffect(() => {
+    setForm({
+      name: displayName || "",
+      email: displayEmail || "",
+      phone: displayPhone || "",
+      note: initialNote,
+    });
+  }, [displayName, displayEmail, displayPhone, initialNote]);
 
   const handleChange = (key: keyof typeof form) => (value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
-    router.back();
+    // Check if there are changes
+    const hasChanges =
+      (form.name.trim() && form.name !== displayName) ||
+      (form.email.trim() && form.email !== displayEmail) ||
+      (form.phone.trim() && form.phone !== displayPhone) ||
+      form.note !== initialNote;
+
+    if (hasChanges) {
+      Alert.alert(
+        "Update Not Available",
+        "The mutation function is not available.",
+        [{ text: "OK" }],
+      );
+    } else {
+      // No changes, just go back
+      router.back();
+    }
   };
 
   return (
@@ -45,7 +91,7 @@ const EditProfileScreen = () => {
         >
           <View style={styles.avatar}>
             <Text weight="bold" className="text-xl text-white">
-              JD
+              {initials}
             </Text>
           </View>
 
@@ -77,15 +123,11 @@ const EditProfileScreen = () => {
             />
           </View>
 
-          <View style={styles.footer}>
-            <Text
-              weight="semibold"
-              className="text-base text-white"
-              onPress={handleSubmit}
-            >
+          <TouchableOpacity style={styles.footer} onPress={handleSubmit}>
+            <Text weight="semibold" className="text-base text-white">
               Save Changes
             </Text>
-          </View>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </MainContainer>
@@ -130,7 +172,7 @@ const FormField = ({
   </View>
 );
 
-const styles = {
+const styles = StyleSheet.create({
   avatar: {
     width: 72,
     height: 72,
@@ -158,7 +200,6 @@ const styles = {
     paddingVertical: 16,
     alignItems: "center",
   },
-};
+});
 
 export default EditProfileScreen;
-
