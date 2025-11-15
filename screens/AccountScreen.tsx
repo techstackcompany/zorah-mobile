@@ -3,14 +3,16 @@ import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { useAppSettings } from "@/contexts/settings-context/useAppSettings";
+import useAppSettings from "@/contexts/settings-context/useAppSettings";
 import { cn, extractUserData } from "@/lib/utils";
+import { useToggleBiometricsMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
 import React, { ReactNode, useMemo, useState } from "react";
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const LANGUAGE_OPTIONS = [
   { id: "english", label: "English", subLabel: "British English" },
@@ -29,8 +32,31 @@ const AccountScreen = () => {
   const [allowBankNotification, setAllowBankNotification] = useState(true);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showPinSetupModal, setShowPinSetupModal] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
   const { signOut, userData, isVerified } = useSession();
   const { settings, updateSetting } = useAppSettings();
+
+  const toggleBiometricsMutation = useToggleBiometricsMutation({
+    onSuccess: () => {
+      // Update local settings after API call succeeds
+      updateSetting("enableBiometrics", false);
+      updateSetting("faceIdEnabled", false);
+      updateSetting("fingerprintEnabled", false);
+      setShowDisableModal(false);
+      Toast.show({
+        type: "success",
+        text1: "Biometric Login Disabled",
+        text2: "You will need to enter your PIN to unlock the app.",
+      });
+    },
+    onError: (error) => {
+      Toast.show({
+        type: "error",
+        text1: "Failed to Disable",
+        text2: error.message || "Please try again.",
+      });
+    },
+  });
 
   const {
     displayName,
@@ -109,11 +135,14 @@ const AccountScreen = () => {
       // When enabling biometrics, show PIN setup prompt
       setShowPinSetupModal(true);
     } else {
-      // When disabling, directly update the setting
-      updateSetting("enableBiometrics", false);
-      updateSetting("faceIdEnabled", false);
-      updateSetting("fingerprintEnabled", false);
+      // When disabling, show confirmation modal
+      setShowDisableModal(true);
     }
+  };
+
+  const handleDisableBiometrics = () => {
+    // Call API to disable biometrics
+    toggleBiometricsMutation.mutate({ enabled: false });
   };
 
   const handleSetPin = () => {
@@ -237,6 +266,7 @@ const AccountScreen = () => {
           <View style={styles.sectionCard}>
             <SectionHeader title="Security" />
             <SectionSubHeader subtitle="Authentication & Login Settings" />
+
             <ToggleRow
               label="Biometric Login"
               description="Use fingerprint or face ID to sign in"
@@ -364,6 +394,50 @@ const AccountScreen = () => {
           </View>
         </View>
       </SlideUpModal>
+
+      {/* Disable Biometrics Confirmation Modal */}
+      <Modal
+        visible={showDisableModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDisableModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="warning-outline" size={32} color="#F59E0B" />
+              </View>
+              <Text weight="bold" className="mt-4 text-xl text-textColor">
+                Disable Biometrics Login?
+              </Text>
+              <Text className="mt-2 text-center text-sm text-textColor/70">
+                You will need to enter your PIN every time you open the app. Are
+                you sure you want to disable biometric login?
+              </Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowDisableModal(false)}
+              >
+                <Text weight="semibold" className="text-base text-textColor">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleDisableBiometrics}
+              >
+                <Text weight="semibold" className="text-base text-white">
+                  Disable
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </MainContainer>
   );
 };
@@ -570,6 +644,59 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+    backgroundColor: COLORS.primary_400,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    width: "100%",
+    maxWidth: 400,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#FEF3C7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButton: {
+    backgroundColor: COLORS.primary_100,
+    borderWidth: 1,
+    borderColor: COLORS.primary_200,
+  },
+  confirmButton: {
     backgroundColor: COLORS.primary_400,
   },
 });
