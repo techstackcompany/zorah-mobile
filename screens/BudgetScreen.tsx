@@ -16,48 +16,10 @@ type BudgetCategory = {
   icon: ImageSource;
   allocated: number;
   spent: number;
+  remaining?: number;
   status: "on-track" | "approaching" | "exceeded";
   dueDate: string;
 };
-
-const budgetCategories: BudgetCategory[] = [
-  {
-    id: "food",
-    label: "Food & Drinks",
-    icon: require("@/assets/images/home/food.png"),
-    allocated: 180_000,
-    spent: 165_420,
-    status: "on-track",
-    dueDate: "09/30/2025",
-  },
-  {
-    id: "entertainment",
-    label: "Entertainment",
-    icon: require("@/assets/images/home/call.png"),
-    allocated: 50_000,
-    spent: 55_000,
-    status: "exceeded",
-    dueDate: "09/22/2025",
-  },
-  {
-    id: "healthcare",
-    label: "Healthcare",
-    icon: require("@/assets/images/home/transport.png"),
-    allocated: 20_000,
-    spent: 15_600,
-    status: "on-track",
-    dueDate: "09/20/2025",
-  },
-  {
-    id: "others",
-    label: "Healthcare",
-    icon: require("@/assets/images/home/bonus.png"),
-    allocated: 12_000,
-    spent: 0,
-    status: "approaching",
-    dueDate: "09/29/2025",
-  },
-];
 
 const statusMeta: Record<
   BudgetCategory["status"],
@@ -157,17 +119,25 @@ const BudgetScreen = () => {
       return [];
     }
 
-    return budgetsArray.map((budget: Budget) => {
+    return budgetsArray.map((budget: any, index: number) => {
       // API uses "totalSpent" and "Limit" (capital L)
       const spent = budget.totalSpent || budget.spent || 0;
       const allocated = budget.Limit || budget.amount || 0;
+      const remaining =
+        budget.remaining !== undefined
+          ? budget.remaining
+          : Math.max(allocated - spent, 0);
 
       // Use API status if available, otherwise calculate
       let status: "on-track" | "approaching" | "exceeded";
       if (budget.status) {
-        // Parse API status string like "On track ✅"
+        // Parse API status string like "On track ✅" or "over budget 🚨"
         const statusLower = budget.status.toLowerCase();
-        if (statusLower.includes("exceeded") || statusLower.includes("over")) {
+        if (
+          statusLower.includes("exceeded") ||
+          statusLower.includes("over budget") ||
+          statusLower.includes("over")
+        ) {
           status = "exceeded";
         } else if (
           statusLower.includes("approaching") ||
@@ -182,13 +152,14 @@ const BudgetScreen = () => {
       }
 
       return {
-        id: budget._id || budget.category || "",
+        id: `${budget.category || "unknown"}-${index}`,
         label: budget.category || "Unknown",
         icon:
           CATEGORY_ICON_MAP[budget.category] ||
           require("@/assets/images/home/bonus.png"),
         allocated,
         spent,
+        remaining,
         status,
         dueDate: budget.endDate ? formatDate(budget.endDate) : "",
       };
@@ -408,15 +379,15 @@ const BudgetScreen = () => {
             </View>
           ) : (
             <View className="mt-4 gap-4">
-              {budgetCategories.map((category) => {
+              {budgetCategories.map((category, idx) => {
                 const meta = statusMeta[category.status];
-                const remainingValue = Math.max(
-                  category.allocated - category.spent,
-                  0,
-                );
+                const remainingValue =
+                  category.remaining !== undefined
+                    ? category.remaining
+                    : Math.max(category.allocated - category.spent, 0);
                 return (
                   <View
-                    key={category.id}
+                    key={idx}
                     className="rounded-3xl border border-grayLight bg-white p-4"
                   >
                     <View className="flex-row items-center justify-between">
