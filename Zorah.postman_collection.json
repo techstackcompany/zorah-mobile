@@ -94,11 +94,18 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseURL}}auth/login",
+							"raw": "http://16.171.32.108:4000/api/auth/login",
+							"protocol": "http",
 							"host": [
-								"{{baseURL}}auth"
+								"16",
+								"171",
+								"32",
+								"108"
 							],
+							"port": "4000",
 							"path": [
+								"api",
+								"auth",
 								"login"
 							]
 						}
@@ -505,6 +512,152 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get Single Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"691db2aa8776163b75fcf804"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"category\": \"Transport\",\n  \"amount\": 2000,\n  \"description\": \"Uber\",\n  \"date\": \"2025-02-10\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"691db2aa8776163b75fcf804"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/691db2838776163b75fcf7fc/archive",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"691db2838776163b75fcf7fc",
+								"archive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804/restore",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"691db2aa8776163b75fcf804",
+								"restore"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Expense",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804",
+							"host": [
+								"{{baseURL}}expenses"
+							],
+							"path": [
+								"691db2aa8776163b75fcf804"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -528,7 +681,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"category\": \"Food\",\n  \"amount\": 1000,\n  \"period\": \"monthly\",\n  \"startDate\": \"2024-10-01\",\n  \"endDate\": \"2024-10-31\"\n}",
+							"raw": "{\n  \"category\": \"Phone Bill\",\n  \"amount\": 40000,\n  \"period\": \"monthly\",\n  \"startDate\": \"2024-10-01\",\n  \"endDate\": \"2024-10-31\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -536,12 +689,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseURL}}budgets/set-budget",
+							"raw": "{{baseURL}}budgets/",
 							"host": [
 								"{{baseURL}}budgets"
 							],
 							"path": [
-								"set-budget"
+								""
 							]
 						}
 					},
@@ -569,6 +722,152 @@
 							],
 							"path": [
 								"get-budgets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get One Budget",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"68f218dd8e4469d09e75b72b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Budget",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"category\": \"Transport\",\n  \"amount\": 20000,\n  \"period\": \"weekly\",\n  \"startDate\": \"2024-10-01\",\n  \"endDate\": \"2024-10-31\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"68f218dd8e4469d09e75b72b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Budget",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b/archive",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"68f218dd8e4469d09e75b72b",
+								"archive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Archived Budget",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b/restore",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"68f218dd8e4469d09e75b72b",
+								"restore"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Budget",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b",
+							"host": [
+								"{{baseURL}}budgets"
+							],
+							"path": [
+								"68f218dd8e4469d09e75b72b"
 							]
 						}
 					},
@@ -833,6 +1132,100 @@
 								"get-goals"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Savings Goal",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://13.48.253.14:4000/api/savings/691db78febe58cfaa9f64bbd",
+							"protocol": "http",
+							"host": [
+								"13",
+								"48",
+								"253",
+								"14"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"savings",
+								"691db78febe58cfaa9f64bbd"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Savings Goals",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"iPhone 16 Pro\",\n  \"targetAmount\": 250000,\n  \"deadline\": \"2025-07-01\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}savings/691db78febe58cfaa9f64bbd",
+							"host": [
+								"{{baseURL}}savings"
+							],
+							"path": [
+								"691db78febe58cfaa9f64bbd"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
 					},
 					"response": []
 				}
@@ -1226,6 +1619,230 @@
 								"v1"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Income",
+			"item": [
+				{
+					"name": "Add Income",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " {\n    \"source\": \"Gift from Friend\",\n    \"amount\": 10000,\n    \"category\": \"gift\",\n    \"description\": \"Birthday money from a friend\",\n    \"date\": \"2025-11-07\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://13.48.253.14:4000/api/income/add-income",
+							"protocol": "http",
+							"host": [
+								"13",
+								"48",
+								"253",
+								"14"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"income",
+								"add-income"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Income",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}income/get-income",
+							"host": [
+								"{{baseURL}}income"
+							],
+							"path": [
+								"get-income"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Income",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}income/69142b5cc7d88da14b178a6a",
+							"host": [
+								"{{baseURL}}income"
+							],
+							"path": [
+								"69142b5cc7d88da14b178a6a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Income",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}income/69142b5cc7d88da14b178a6a",
+							"host": [
+								"{{baseURL}}income"
+							],
+							"path": [
+								"69142b5cc7d88da14b178a6a"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Seed Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://13.48.253.14:4000/api/categories?type=budget",
+							"protocol": "http",
+							"host": [
+								"13",
+								"48",
+								"253",
+								"14"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "budget"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "by-type",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://13.48.253.14:4000/api/categories/by-type?type=income",
+							"protocol": "http",
+							"host": [
+								"13",
+								"48",
+								"253",
+								"14"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"categories",
+								"by-type"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "income"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Kyc",
+			"item": [
+				{
+					"name": "Submit Kyc",
+					"request": {
+						"method": "GET",
+						"header": []
 					},
 					"response": []
 				}

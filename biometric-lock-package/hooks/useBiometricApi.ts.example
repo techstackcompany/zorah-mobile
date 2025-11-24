@@ -1,0 +1,103 @@
+/**
+ * Example API hooks for biometric lock functionality
+ * 
+ * Adapt these to match your API client structure
+ * Replace fetch calls with your API client (axios, etc.)
+ */
+
+import { useMutation } from "@tanstack/react-query";
+
+// Types
+export interface VerifyPinRequest {
+  pin: string;
+}
+
+export interface SetPinRequest {
+  pin: string;
+}
+
+export interface ToggleBiometricsRequest {
+  enabled: boolean;
+}
+
+/**
+ * Hook to verify user PIN
+ * Replace the fetch call with your API client
+ */
+export const useVerifyUserPinMutation = (options?: any) => {
+  return useMutation({
+    mutationKey: ["auth", "verifyPin"],
+    mutationFn: async (payload: VerifyPinRequest) => {
+      // TODO: Replace with your API client
+      const response = await fetch("/api/auth/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error("PIN verification failed");
+      }
+      
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+/**
+ * Hook to set user PIN
+ * Replace the fetch call with your API client
+ */
+export const useSetUserPinMutation = (options?: any) => {
+  return useMutation({
+    mutationKey: ["auth", "setPin"],
+    mutationFn: async (payload: SetPinRequest) => {
+      // TODO: Replace with your API client
+      const response = await fetch("/api/auth/set-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to set PIN");
+      }
+      
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+/**
+ * Hook to toggle biometric authentication
+ * Replace the fetch call with your API client
+ */
+export const useToggleBiometricsMutation = (options?: any) => {
+  return useMutation({
+    mutationKey: ["auth", "toggleBiometrics"],
+    mutationFn: async (payload: ToggleBiometricsRequest) => {
+      // TODO: Replace with your API client
+      const response = await fetch("/api/auth/toggle-biometrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to toggle biometrics");
+      }
+      
+      return response.json();
+    },
+    ...options,
+  });
+};
+
+
+
+
+
+
+
