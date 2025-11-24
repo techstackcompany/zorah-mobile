@@ -8,6 +8,8 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+
+
 const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
@@ -27,12 +29,20 @@ const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
 
 const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const { bottom } = useSafeAreaInsets();
-  const path = usePathname();
+
+  const visibleRoutes = state.routes.filter(
+    (route) => route.name !== "investment",
+  );
+  const focusedRoute = state.routes[state.index];
+  const focusedIndex = visibleRoutes.findIndex(
+    (route) => route.key === focusedRoute?.key,
+  );
+
   return (
     <View style={[styles.wrapper, { paddingBottom: bottom + 20 }]}>
       <View style={styles.container}>
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
+        {visibleRoutes.map((route, index) => {
+          const isFocused = index === focusedIndex;
           const tabItem = TAB_CONFIG[route.name] ?? {
             label: route.name,
             iconSource: require("@/assets/icons/more.svg"),
@@ -60,11 +70,6 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
           return (
             <Pressable
               key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : undefined}
-              accessibilityLabel={
-                descriptors[route.key].options.tabBarAccessibilityLabel
-              }
               onPress={onPress}
               onLongPress={onLongPress}
               className={cn(
@@ -104,6 +109,8 @@ const HomeLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
+        headerTitleStyle: { fontFamily: "NunitoSemibold" },
+        headerShadowVisible: false,
         tabBarStyle: shouldHideTabBar
           ? { display: "none" }
           : {
@@ -125,14 +132,13 @@ const HomeLayout = () => {
         name="budget"
         options={{
           title: "Budget Manager",
-          tabBarLabelStyle: {},
-          tabBarItemStyle: {},
         }}
       />
       <Tabs.Screen
         name="investment"
         options={{
           title: "Briefcase",
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -147,7 +153,6 @@ const HomeLayout = () => {
         options={{
           title: "Account",
           headerShown: true,
-          headerShadowVisible: false,
         }}
       />
     </Tabs>
