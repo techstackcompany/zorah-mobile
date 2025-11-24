@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 import { Image, ImageSource } from "expo-image";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 import Text from "./Text";
 
 type CategoryItem<K extends string> = {
   key: K;
   label: string;
-  icon: ImageSource;
+  icon: ImageSource | string; // Support both local images and remote URLs
 };
 
 type CategorySelectorProps<K extends string> = {
@@ -23,43 +23,51 @@ const CategorySelector = <K extends string>({
   onSelect,
   className,
 }: CategorySelectorProps<K>) => {
+  const renderItem = ({ item: category }: { item: CategoryItem<K> }) => {
+    const isActive = category.key === selectedKey;
+    return (
+      <Pressable
+        onPress={() => onSelect(category.key)}
+        className={cn(
+          "aspect-square w-26 items-center justify-center gap-2 rounded-xl border px-2 py-2",
+          isActive
+            ? "border-primary_400 bg-primary_200"
+            : "border-gray-200 bg-white",
+        )}
+        accessibilityRole="button"
+      >
+        <View className="items-center justify-center rounded-full">
+          <Image
+            source={
+              typeof category.icon === "string"
+                ? { uri: category.icon }
+                : category.icon
+            }
+            style={{ width: 24, height: 24 }}
+            contentFit="contain"
+          />
+        </View>
+        <Text
+          weight="bold"
+          className="text-center text-xs leading-tight text-textColor"
+        >
+          {category.label}
+        </Text>
+      </Pressable>
+    );
+  };
+
   return (
-    <View
-      className={cn(
-        "mt-3 flex-row justify-between gap-2 sm:gap-3",
-        className,
-      )}
-    >
-      {categories.map((category) => {
-        const isActive = category.key === selectedKey;
-        return (
-          <Pressable
-            key={category.key}
-            onPress={() => onSelect(category.key)}
-            className={cn(
-              "aspect-square flex-1 items-center justify-center gap-2 rounded-xl border py-2",
-              isActive
-                ? "border-primary_400 bg-primary_200"
-                : "border-gray-200 bg-white",
-            )}
-            accessibilityRole="button"
-          >
-            <View className="items-center justify-center rounded-full">
-              <Image
-                source={category.icon}
-                style={{ width: 24, height: 24 }}
-                contentFit="contain"
-              />
-            </View>
-            <Text
-              weight="bold"
-              className="text-center text-xs leading-tight text-textColor"
-            >
-              {category.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View className={cn("mt-3", className)}>
+      <FlatList
+        data={categories}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.key}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 0 }}
+        ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+      />
     </View>
   );
 };

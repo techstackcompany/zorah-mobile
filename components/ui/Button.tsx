@@ -19,9 +19,9 @@ type ButtonProps = PressableProps & {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-10",
-  md: "h-12",
-  lg: "h-16",
+  sm: "h-10 px-4",
+  md: "h-12 px-6",
+  lg: "h-16 px-8",
 };
 
 export default function Button({
@@ -34,7 +34,7 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const baseStyles = cn(
-    "rounded-xl items-center justify-center flex-row active:opacity-80",
+    "rounded-xl items-center justify-center flex-row active:opacity-8 ",
     sizes[size],
   );
 
