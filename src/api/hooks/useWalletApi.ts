@@ -85,11 +85,28 @@ export const useGetWalletTransactionsQuery = (
 ) =>
   useQuery<ApiEnvelope<WalletTransaction[]>, ApiError>({
     queryKey: ["wallet", "transactions"],
-    queryFn: () =>
-      apiRequest<ApiEnvelope<WalletTransaction[]>>({
+    queryFn: async () => {
+      const response = await apiRequest<
+        | ApiEnvelope<WalletTransaction[]>
+        | { success: boolean; transactions: WalletTransaction[] }
+      >({
         method: API_ENDPOINTS.wallet.transactions.method,
         url: API_ENDPOINTS.wallet.transactions.path,
-      }),
+      });
+
+      // Handle { success: true, transactions: [...] } structure
+      if (
+        response &&
+        typeof response === "object" &&
+        "transactions" in response &&
+        Array.isArray(response.transactions)
+      ) {
+        return { data: response.transactions };
+      }
+
+      // Handle ApiEnvelope structure
+      return response as ApiEnvelope<WalletTransaction[]>;
+    },
     ...options,
   });
 

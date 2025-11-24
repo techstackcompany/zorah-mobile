@@ -2,16 +2,14 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useDepositFundsMutation } from "@/src/api/hooks/useWalletApi";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  Share,
-  View,
-} from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
+import * as Clipboard from "expo-clipboard";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, Share, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 const transferDetails = {
   name: "Niyi Johnson Ademola",
@@ -38,9 +36,48 @@ const formatAmount = (rawValue?: string) => {
 
 const BankTransferScreen = () => {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   const formattedAmount = useMemo(() => formatAmount(amount), [amount]);
+
+  const depositMutation = useDepositFundsMutation({
+    onSuccess: (response) => {
+      // Invalidate wallet balance and transactions queries to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet", "transactions"] });
+
+      // Extract wallet and transaction from response
+      // Response structure: { message, success, transaction, wallet }
+      const transaction = (
+        response as unknown as {
+          transaction?: { reference?: string; status?: string };
+        }
+      ).transaction;
+      const transactionRef = transaction?.reference;
+
+      Toast.show({
+        type: "success",
+        text1: "Deposit Successful",
+        text2: transactionRef
+          ? `₦${Number(amount || 0).toLocaleString("en-NG")} deposited. Ref: ${transactionRef.slice(0, 8)}...`
+          : `₦${Number(amount || 0).toLocaleString("en-NG")} has been added to your wallet`,
+      });
+
+      // Navigate back to FundWalletScreen after a short delay
+      setTimeout(() => {
+        router.navigate("/(app)/fund-wallet");
+      }, 1500);
+    },
+    onError: (error) => {
+      Toast.show({
+        type: "error",
+        text1: "Deposit Failed",
+        text2: error.message || "Unable to process deposit. Please try again.",
+      });
+    },
+  });
 
   const handleShare = async () => {
     try {
@@ -48,19 +85,52 @@ const BankTransferScreen = () => {
       await Share.share({
         message: `Account Name: ${transferDetails.name}\nAccount Number: ${transferDetails.accountNumber}\nBank: ${transferDetails.bank}\nAmount: ${formattedAmount}`,
       });
-    } catch (error) {
+    } catch {
       Alert.alert("Share Failed", "Unable to open share options right now.");
     }
   };
 
   const handleCopy = async () => {
-    if (Platform.OS === "web" && "clipboard" in navigator) {
-      await navigator.clipboard.writeText(transferDetails.accountNumber);
-      Alert.alert("Copied", "Account number copied to clipboard.");
+    try {
+      await Clipboard.setStringAsync(transferDetails.accountNumber);
+      Toast.show({
+        type: "success",
+        text1: "Copied",
+        text2: "Account number copied to clipboard",
+      });
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Copy Failed",
+        text2: "Unable to copy account number. Please try again.",
+      });
+    }
+  };
+
+  const handleConfirmDeposit = () => {
+    const depositAmount = Number(amount || "0");
+
+    if (depositAmount <= 0) {
+      Alert.alert("Invalid Amount", "Please enter a valid amount to deposit.");
       return;
     }
 
-    Alert.alert("Copied", "Account number copied to clipboard.");
+    Alert.alert(
+      "Confirm Deposit",
+      `Are you sure you want to deposit ${formattedAmount}?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: () => {
+            depositMutation.mutate({ amount: depositAmount });
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -115,6 +185,43 @@ const BankTransferScreen = () => {
               </Text>
             </Pressable>
           </View>
+
+          <View className="mt-6">
+            <Text
+              weight="medium"
+              className="mb-3 text-center text-sm text-textColor/70"
+            >
+              After making the transfer, click the button below to confirm
+            </Text>
+            <Pressable
+              onPress={handleConfirmDeposit}
+              disabled={depositMutation.isPending}
+              className={`flex-row items-center justify-center rounded-xl py-4 ${
+                depositMutation.isPending ? "bg-primary_300" : "bg-primary_400"
+              }`}
+              accessibilityRole="button"
+            >
+              {depositMutation.isPending ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text weight="semibold" className="ml-2 text-white">
+                    Processing...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text weight="semibold" className="ml-2 text-white">
+                    I&apos;ve Made the Transfer
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          </View>
         </View>
       </MainContainer>
 
@@ -144,7 +251,10 @@ const BankTransferScreen = () => {
                   color={COLORS.primary_400}
                 />
               </View>
-              <Text className="mt-2 text-xs text-textColor/80" numberOfLines={1}>
+              <Text
+                className="mt-2 text-xs text-textColor/80"
+                numberOfLines={1}
+              >
                 {option.label}
               </Text>
             </Pressable>

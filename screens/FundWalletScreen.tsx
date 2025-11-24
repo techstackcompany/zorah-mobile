@@ -2,9 +2,14 @@ import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { RelativePathString, Stack, useRouter } from "expo-router";
-import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  RelativePathString,
+  Stack,
+  useFocusEffect,
+  useRouter,
+} from "expo-router";
+import React, { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 
 type PaymentMethod = {
@@ -36,6 +41,13 @@ const paymentMethods: PaymentMethod[] = [
 const FundWalletScreen = () => {
   const router = useRouter();
   const [rawAmount, setRawAmount] = useState("0");
+
+  // Reset amount whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setRawAmount("0");
+    }, []),
+  );
 
   const handleNavigate = (method: PaymentMethod) => {
     if (method.disabled || method.id === "card") {
@@ -89,9 +101,7 @@ const FundWalletScreen = () => {
                         <Ionicons
                           name={method.icon}
                           size={22}
-                          color={
-                            isDisabled ? "#A0A8B2" : COLORS.primary_400
-                          }
+                          color={isDisabled ? "#A0A8B2" : COLORS.primary_400}
                         />
                       </View>
                       <Text
