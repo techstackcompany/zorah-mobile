@@ -12,7 +12,9 @@ export interface EndpointConfig {
   isExternal?: boolean;
 }
 
-type DynamicEndpoint<TArgs extends unknown[]> = (...args: TArgs) => EndpointConfig;
+type DynamicEndpoint<TArgs extends unknown[]> = (
+  ...args: TArgs
+) => EndpointConfig;
 
 export const API_ENDPOINTS = {
   auth: {
@@ -21,24 +23,77 @@ export const API_ENDPOINTS = {
     profile: { method: HttpMethod.GET, path: "/auth/profile" },
     setPin: { method: HttpMethod.POST, path: "/auth/set-pin" },
     verifyPin: { method: HttpMethod.POST, path: "/auth/verify-pin" },
-    toggleBiometrics: { method: HttpMethod.POST, path: "/auth/toggle-biometrics" },
-    requestPasswordReset: { method: HttpMethod.POST, path: "/auth/request-reset" },
+    toggleBiometrics: {
+      method: HttpMethod.POST,
+      path: "/auth/toggle-biometrics",
+    },
+    requestPasswordReset: {
+      method: HttpMethod.POST,
+      path: "/auth/request-reset",
+    },
     resetPassword: { method: HttpMethod.POST, path: "/auth/reset-password" },
     refreshToken: { method: HttpMethod.POST, path: "/auth/refresh-token" },
   },
   expenses: {
     addExpense: { method: HttpMethod.POST, path: "/expenses/add-expense" },
     getExpenses: { method: HttpMethod.GET, path: "/expenses/get-expense" },
+    getExpense: ((expenseId: string) => ({
+      method: HttpMethod.GET,
+      path: `/expenses/${expenseId}`,
+    })) as DynamicEndpoint<[string]>,
+    updateExpense: ((expenseId: string) => ({
+      method: HttpMethod.PATCH,
+      path: `/expenses/${expenseId}`,
+    })) as DynamicEndpoint<[string]>,
     summary: { method: HttpMethod.GET, path: "/expenses/summary" },
     daily: { method: HttpMethod.GET, path: "/expenses/daily" },
     monthly: { method: HttpMethod.GET, path: "/expenses/monthly" },
   },
+  income: {
+    addIncome: { method: HttpMethod.POST, path: "/income/add-income" },
+    getIncomes: { method: HttpMethod.GET, path: "/income/get-income" },
+    getIncome: ((incomeId: string) => ({
+      method: HttpMethod.GET,
+      path: `/income/${incomeId}`,
+    })) as DynamicEndpoint<[string]>,
+    deleteIncome: ((incomeId: string) => ({
+      method: HttpMethod.DELETE,
+      path: `/income/${incomeId}`,
+    })) as DynamicEndpoint<[string]>,
+  },
   budgets: {
-    createBudget: { method: HttpMethod.POST, path: "/budgets/set-budget" },
+    createBudget: { method: HttpMethod.POST, path: "/budgets" },
     getBudgets: { method: HttpMethod.GET, path: "/budgets/get-budgets" },
+    getBudget: ((budgetId: string) => ({
+      method: HttpMethod.GET,
+      path: `/budgets/${budgetId}`,
+    })) as DynamicEndpoint<[string]>,
+    updateBudget: ((budgetId: string) => ({
+      method: HttpMethod.PATCH,
+      path: `/budgets/${budgetId}`,
+    })) as DynamicEndpoint<[string]>,
+    deleteBudget: ((budgetId: string) => ({
+      method: HttpMethod.DELETE,
+      path: `/budgets/${budgetId}`,
+    })) as DynamicEndpoint<[string]>,
+    archiveBudget: ((budgetId: string) => ({
+      method: HttpMethod.PATCH,
+      path: `/budgets/${budgetId}/archive`,
+    })) as DynamicEndpoint<[string]>,
+    restoreBudget: ((budgetId: string) => ({
+      method: HttpMethod.PATCH,
+      path: `/budgets/${budgetId}/restore`,
+    })) as DynamicEndpoint<[string]>,
+    getArchivedBudgets: {
+      method: HttpMethod.GET,
+      path: "/budgets/get-archived-budgets",
+    },
   },
   notifications: {
-    getNotifications: { method: HttpMethod.GET, path: "/notifications/get-not" },
+    getNotifications: {
+      method: HttpMethod.GET,
+      path: "/notifications/get-not",
+    },
     readNotification: ((notificationId: string) => ({
       method: HttpMethod.PATCH,
       path: `/notifications/${notificationId}/read`,
@@ -57,6 +112,14 @@ export const API_ENDPOINTS = {
     createGoal: { method: HttpMethod.POST, path: "/savings/create" },
     contribute: { method: HttpMethod.POST, path: "/savings/contribute" },
     getGoals: { method: HttpMethod.GET, path: "/savings/get-goals" },
+    getGoal: ((goalId: string) => ({
+      method: HttpMethod.GET,
+      path: `/savings/${goalId}`,
+    })) as DynamicEndpoint<[string]>,
+    updateGoal: ((goalId: string) => ({
+      method: HttpMethod.PUT,
+      path: `/savings/${goalId}`,
+    })) as DynamicEndpoint<[string]>,
   },
   esusu: {
     createGroup: { method: HttpMethod.POST, path: "/esusu/create" },
@@ -83,9 +146,15 @@ export const API_ENDPOINTS = {
     transactions: { method: HttpMethod.GET, path: "/wallet/transactions" },
     healthCheck: {
       method: HttpMethod.GET,
-      path: "http://16.171.32.108:4000/api/v1",
+      path: "http://13.48.253.14:4000/api/v1",
       isExternal: true,
     },
+  },
+  categories: {
+    getCategories: ((type: string) => ({
+      method: HttpMethod.GET,
+      path: `/categories?type=${type}`,
+    })) as DynamicEndpoint<[string]>,
   },
 } as const;
 

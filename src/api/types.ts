@@ -85,7 +85,16 @@ export interface AddExpenseRequest {
   date: string;
 }
 
+export interface UpdateExpenseRequest {
+  amount?: number;
+  category?: string;
+  description?: string;
+  paymentMethod?: string;
+  date?: string;
+}
+
 export interface Expense extends AddExpenseRequest {
+  _id?: string;
   id?: string;
   userId?: string;
   createdAt?: string;
@@ -101,11 +110,49 @@ export interface ExpenseSummary {
   type: string;
   total: number;
   currency?: string;
-  categories?: Array<{
+  categories?: {
     category: string;
     amount: number;
     percentage?: number;
-  }>;
+  }[];
+  [key: string]: unknown;
+}
+
+export interface DailyExpenseTotal {
+  _id: {
+    day: number;
+    month: number;
+    year: number;
+  };
+  total: number;
+}
+
+export interface MonthlyExpenseTotal {
+  _id: {
+    month: number;
+    year: number;
+  };
+  total: number;
+}
+
+/* ---------------------------------------------
+   Income
+----------------------------------------------*/
+export interface AddIncomeRequest {
+  source: string;
+  amount: number;
+  category: string;
+  description?: string;
+  date: string;
+}
+
+export interface Income extends AddIncomeRequest {
+  _id?: string;
+  id?: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
   [key: string]: unknown;
 }
 
@@ -126,7 +173,7 @@ export interface Budget {
   category: string;
   amount?: number;
   Limit?: number; // API response uses "Limit" with capital L
-  period?: "weekly" | "monthly" | "yearly" | (string & {});
+  period?: "weekly" | "monthly" | "yearly" | string;
   month?: number;
   year?: number;
   startDate?: string;
@@ -139,10 +186,32 @@ export interface Budget {
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
-  [key: string]: unknown;
+}
+
+export interface BudgetListItem {
+  _id: string;
+  category: string;
+  Limit: number;
+  totalSpent: number;
+  remaining: number;
+  percentageused: string;
+  status: string;
 }
 
 export interface CreateBudgetResponse {
+  message: string;
+  budget: Budget;
+}
+
+export interface UpdateBudgetRequest {
+  category: string;
+  amount: number;
+  period: "weekly" | "monthly" | "yearly" | (string & {});
+  startDate: string;
+  endDate: string;
+}
+
+export interface UpdateBudgetResponse {
   message: string;
   budget: Budget;
 }
@@ -181,17 +250,27 @@ export interface CreateSavingsGoalRequest {
 }
 
 export interface SavingsGoal extends CreateSavingsGoalRequest {
-  id?: string;
+  _id?: string;
+  id?: string; // For backward compatibility
+  user?: string;
   currentAmount?: number;
   status?: "active" | "completed" | "paused" | (string & {});
   createdAt?: string;
   updatedAt?: string;
+  __v?: number;
   [key: string]: unknown;
 }
 
 export interface ContributeToSavingsRequest {
   goalId: string;
   amount: number;
+}
+
+export interface UpdateSavingsGoalRequest {
+  title: string;
+  targetAmount: number;
+  deadline: string;
+  description?: string;
 }
 
 /* ---------------------------------------------
@@ -209,7 +288,7 @@ export interface JoinEsusuRequest {
 
 export interface EsusuGroup extends CreateEsusuRequest {
   id?: string;
-  members?: Array<Record<string, unknown>>;
+  members?: Record<string, unknown>[];
   createdAt?: string;
   updatedAt?: string;
   [key: string]: unknown;
@@ -246,12 +325,24 @@ export interface WalletBalance {
 }
 
 export interface WalletTransaction {
-  id?: string;
+  _id: string;
   amount: number;
-  type: "credit" | "debit" | (string & {});
+  type: "credit" | "debit" | string;
+  purpose:
+    | "deposit"
+    | "withdrawal"
+    | "savings"
+    | "esusu"
+    | "transfer"
+    | "esusu_contribution"
+    | "savings_contribution"
+    | "other";
   description?: string;
+  reference: string;
   createdAt?: string;
-  [key: string]: unknown;
+  updatedAt?: string;
+  user: string;
+  __v: number;
 }
 
 export interface WalletDetails {
@@ -261,4 +352,26 @@ export interface WalletDetails {
   createdAt?: string;
   updatedAt?: string;
   [key: string]: unknown;
+}
+
+/* ---------------------------------------------
+   Categories
+----------------------------------------------*/
+export type CategoryType = "income" | "expense" | "budget" | "savings";
+
+export interface CategorySubcategory {
+  _id: string;
+  name: string;
+  image: string;
+}
+
+export interface Category {
+  _id: string;
+  name: string;
+  type: CategoryType;
+  image: string;
+  subcategories: CategorySubcategory[];
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
