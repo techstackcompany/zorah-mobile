@@ -173,6 +173,74 @@ export function extractUserData(
 }
 
 /* ---------------------------------------------
+   Date Utilities
+----------------------------------------------*/
+
+/**
+ * Formats the current date as "Day Month, Year" (e.g., "15 January, 2025")
+ * @returns Formatted date string
+ */
+export function formatCurrentDate(): string {
+  const now = new Date();
+  const day = now.getDate();
+  const month = now.toLocaleString("en-US", { month: "long" });
+  const year = now.getFullYear();
+  return `${day} ${month}, ${year}`;
+}
+
+/* ---------------------------------------------
+   Currency Utilities
+----------------------------------------------*/
+
+/**
+ * Formats a number as currency with a custom symbol
+ * @param value - The numeric value to format
+ * @param symbol - The currency symbol to use (e.g., "₦", "$", "₵")
+ * @param locale - The locale for number formatting (default: "en-NG")
+ * @param options - Optional Intl.NumberFormatOptions
+ * @returns Formatted currency string (e.g., "₦1,234.56")
+ */
+export function formatCurrencyWithSymbol(
+  value: number,
+  symbol: string,
+  locale: string = "en-NG",
+  options: Intl.NumberFormatOptions = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  },
+): string {
+  const formatted = Number(value).toLocaleString(locale, options);
+  return `${symbol}${formatted}`;
+}
+
+/**
+ * Formats a number as Nigerian Naira currency (₦) with no decimal places
+ * @param value - The numeric value to format
+ * @returns Formatted currency string (e.g., "₦1,234")
+ */
+export function formatCurrency(value: number): string {
+  return `₦${value.toLocaleString("en-NG", {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  })}`;
+}
+
+/**
+ * Formats a transaction purpose string to a readable title
+ * Replaces underscores with spaces and capitalizes each word
+ * @param purpose - The transaction purpose (e.g., "savings_contribution")
+ * @returns Formatted title (e.g., "Savings Contribution")
+ */
+export function formatTransactionPurpose(purpose: string): string {
+  if (!purpose) return "";
+  
+  return purpose
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/* ---------------------------------------------
    Color Utilities
 ----------------------------------------------*/
 

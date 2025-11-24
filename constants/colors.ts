@@ -20,6 +20,7 @@ const COLORS = {
   amber:'#D59007',
   purple:'#6165D7',
   coral: "#F36F56",
+  error: "#EF4444",
   purpleLight:'#EAEFFF'
 };
 
