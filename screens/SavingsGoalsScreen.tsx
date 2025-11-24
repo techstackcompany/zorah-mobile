@@ -6,16 +6,19 @@ import COLORS from "@/constants/colors";
 import { formatCurrency } from "@/constants/investments";
 import {
   GOAL_CONTRIBUTIONS,
-  SAVINGS_GOALS,
   calculateGoalProgress,
   getStatusTone,
+  mapApiGoalToUiGoal,
 } from "@/constants/savings";
+import { useGetSavingsGoalsQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -27,19 +30,36 @@ const SavingsGoalsScreen = () => {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
+  // Fetch goals from API
+  const {
+    data: goalsData,
+    isLoading: isGoalsLoading,
+    error: goalsError,
+    refetch: refetchGoals,
+    isRefetching,
+  } = useGetSavingsGoalsQuery();
+
+  // Map API goals to UI format
+  const uiGoals = useMemo(() => {
+    if (!goalsData?.data || !Array.isArray(goalsData.data)) {
+      return [];
+    }
+    return goalsData.data.map(mapApiGoalToUiGoal);
+  }, [goalsData]);
+
   const totalSavings = useMemo(
-    () => SAVINGS_GOALS.reduce((sum, goal) => sum + goal.currentAmount, 0),
-    [],
+    () => uiGoals.reduce((sum, goal) => sum + goal.currentAmount, 0),
+    [uiGoals],
   );
 
-  const totalGoals = SAVINGS_GOALS.length;
+  const totalGoals = uiGoals.length;
 
   const selectedGoal = useMemo(
     () =>
       selectedGoalId
-        ? (SAVINGS_GOALS.find((goal) => goal.id === selectedGoalId) ?? null)
+        ? (uiGoals.find((goal) => goal.id === selectedGoalId) ?? null)
         : null,
-    [selectedGoalId],
+    [selectedGoalId, uiGoals],
   );
 
   const selectedGoalTone = useMemo(
@@ -74,11 +94,49 @@ const SavingsGoalsScreen = () => {
     setShowGoalModal(true);
   };
 
+  if (isGoalsLoading && !goalsData) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary_400} />
+          <Text className="mt-4 text-textColor/60">Loading your goals...</Text>
+        </View>
+      </MainContainer>
+    );
+  }
+
+  if (goalsError) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View style={styles.errorContainer}>
+          <Text weight="semibold" className="text-lg text-textColor">
+            Failed to load goals
+          </Text>
+          <Text className="mt-2 text-center text-textColor/60">
+            {goalsError.message || "Something went wrong. Please try again."}
+          </Text>
+          <Button
+            title="Retry"
+            className="mt-4"
+            onPress={() => refetchGoals()}
+          />
+        </View>
+      </MainContainer>
+    );
+  }
+
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
       <ScrollView
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetchGoals}
+            tintColor={COLORS.primary_400}
+          />
+        }
       >
         <ImageBackground
           source={require("@/assets/images/bg-patterns/noodle.svg")}
@@ -104,7 +162,22 @@ const SavingsGoalsScreen = () => {
         </View>
 
         <View style={styles.goalList}>
-          {SAVINGS_GOALS.map((goal) => {
+          {uiGoals.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text weight="semibold" className="text-lg text-textColor">
+                No goals yet
+              </Text>
+              <Text className="mt-2 text-center text-textColor/60">
+                Create your first savings goal to get started!
+              </Text>
+              <Button
+                title="Create Goal"
+                className="mt-4"
+                onPress={() => router.push("/savings-goals/create")}
+              />
+            </View>
+          ) : (
+            uiGoals.map((goal) => {
             const progress = calculateGoalProgress(
               goal.currentAmount,
               goal.targetAmount,
@@ -202,7 +275,8 @@ const SavingsGoalsScreen = () => {
                 </Text>
               </Pressable>
             );
-          })}
+            })
+          )}
         </View>
       </ScrollView>
       <SlideUpModal
@@ -542,6 +616,24 @@ const styles = StyleSheet.create({
   goalModalActionRow: {
     flexDirection: "row",
     gap: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    paddingHorizontal: 24,
   },
 });
 

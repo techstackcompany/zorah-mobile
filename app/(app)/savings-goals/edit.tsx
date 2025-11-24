@@ -1,8 +1,8 @@
-import SavingsGoalCreateScreen from "@/screens/SavingsGoalCreateScreen";
+import SavingsGoalEditScreen from "@/screens/SavingsGoalEditScreen";
 import React from "react";
 
 const EditGoalRoute = () => {
-  return <SavingsGoalCreateScreen />;
+  return <SavingsGoalEditScreen />;
 };
 
 export default EditGoalRoute;

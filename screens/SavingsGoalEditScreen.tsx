@@ -8,12 +8,16 @@ import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
 import { formatCurrency } from "@/constants/investments";
 import { cn } from "@/lib/utils";
-import { useCreateSavingsGoalMutation } from "@/src/api/hooks";
+import {
+  useGetSavingsGoalQuery,
+  useUpdateSavingsGoalMutation,
+} from "@/src/api/hooks";
 import { Image } from "expo-image";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -48,9 +52,11 @@ const GOAL_CATEGORIES: readonly CategoryItem<GoalCategory>[] = [
   },
 ] as const;
 
-const SavingsGoalCreateScreen = () => {
+const SavingsGoalEditScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<GoalCategory>(
@@ -61,9 +67,39 @@ const SavingsGoalCreateScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const createGoalMutation = useCreateSavingsGoalMutation({
+  // Fetch existing goal data
+  const {
+    data: goalData,
+    isLoading: isGoalLoading,
+    error: goalError,
+  } = useGetSavingsGoalQuery(id);
+
+  // Populate form when goal data is loaded
+  useEffect(() => {
+    if (goalData?.data) {
+      const goal = goalData.data;
+      setName(goal.title || "");
+      setAmount(goal.targetAmount?.toString() || "");
+      setNote(goal.description || "");
+
+      // Format deadline from ISO to DD/MM/YY for DatePickerField
+      if (goal.deadline) {
+        try {
+          const date = new Date(goal.deadline);
+          const day = date.getDate().toString().padStart(2, "0");
+          const month = (date.getMonth() + 1).toString().padStart(2, "0");
+          const year = date.getFullYear().toString().slice(-2);
+          setTargetDate(`${day}/${month}/${year}`);
+        } catch {
+          setTargetDate("");
+        }
+      }
+    }
+  }, [goalData]);
+
+  const updateGoalMutation = useUpdateSavingsGoalMutation(id || "", {
     onSuccess: (response) => {
-      console.log("=== CREATE SAVINGS GOAL SUCCESS ===");
+      console.log("=== UPDATE SAVINGS GOAL SUCCESS ===");
       console.log("Full response:", JSON.stringify(response, null, 2));
       console.log("Response data:", response?.data);
       console.log("========================\n");
@@ -74,15 +110,9 @@ const SavingsGoalCreateScreen = () => {
       setShowSuccess(true);
       Toast.show({
         type: "success",
-        text1: "Goal Created",
-        text2: "Your savings goal has been created successfully.",
+        text1: "Goal Updated",
+        text2: "Your savings goal has been updated successfully.",
       });
-
-      // Reset form
-      setName("");
-      setAmount("");
-      setTargetDate("");
-      setNote("");
 
       // Navigate back after a short delay
       setTimeout(() => {
@@ -91,7 +121,7 @@ const SavingsGoalCreateScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.log("=== CREATE SAVINGS GOAL ERROR ===");
+      console.log("=== UPDATE SAVINGS GOAL ERROR ===");
       console.log("Error object:", error);
       console.log("Error message:", error.message);
       console.log("Error status:", error.status);
@@ -101,7 +131,7 @@ const SavingsGoalCreateScreen = () => {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: error.message || "Failed to create goal. Please try again.",
+        text2: error.message || "Failed to update goal. Please try again.",
       });
     },
   });
@@ -112,6 +142,15 @@ const SavingsGoalCreateScreen = () => {
   );
 
   const handleSubmit = useCallback(() => {
+    if (!id) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Goal ID is missing. Please try again.",
+      });
+      return;
+    }
+
     Keyboard.dismiss();
 
     // Validate required fields
@@ -162,7 +201,8 @@ const SavingsGoalCreateScreen = () => {
       description: note.trim() || undefined,
     };
 
-    console.log("=== CREATE SAVINGS GOAL REQUEST ===");
+    console.log("=== UPDATE SAVINGS GOAL REQUEST ===");
+    console.log("Goal ID:", id);
     console.log("Payload being sent:", JSON.stringify(payload, null, 2));
     console.log("Original form values:", {
       name,
@@ -174,14 +214,48 @@ const SavingsGoalCreateScreen = () => {
     console.log("Formatted date:", formattedDate);
     console.log("========================\n");
 
-    createGoalMutation.mutate(payload);
-  }, [name, amount, targetDate, note, createGoalMutation]);
+    updateGoalMutation.mutate(payload);
+  }, [id, name, amount, targetDate, note, updateGoalMutation]);
 
   const isSubmitDisabled =
     !name ||
     !amount ||
     !targetDate ||
-    createGoalMutation.isPending;
+    updateGoalMutation.isPending ||
+    isGoalLoading;
+
+  // Loading state
+  if (isGoalLoading) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#5D5FFE" />
+          <Text className="mt-4 text-textColor/60">Loading goal...</Text>
+        </View>
+      </MainContainer>
+    );
+  }
+
+  // Error state
+  if (goalError || !goalData?.data) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View className="flex-1 items-center justify-center px-6">
+          <Text weight="semibold" className="text-lg text-textColor">
+            Failed to load goal
+          </Text>
+          <Text className="mt-2 text-center text-textColor/60">
+            {goalError?.message || "Goal not found. Please try again."}
+          </Text>
+          <Button
+            title="Go Back"
+            className="mt-4"
+            onPress={() => router.back()}
+          />
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -194,7 +268,7 @@ const SavingsGoalCreateScreen = () => {
           {showSuccess ? (
             <View className="bg-[#DFF5E5] px-6 py-4">
               <Text weight="semibold" className="text-sm text-textColor">
-                Goal created successfully
+                Goal updated successfully
               </Text>
             </View>
           ) : null}
@@ -231,9 +305,6 @@ const SavingsGoalCreateScreen = () => {
                 onFocus={() => setFocusedField("amount")}
                 onBlur={() => setFocusedField(null)}
               />
-              {/* <Text className="mt-2 text-xs text-textColor/60">
-                Current: {formattedAmount}
-              </Text> */}
             </View>
 
             <View className="mt-6">
@@ -286,7 +357,9 @@ const SavingsGoalCreateScreen = () => {
 
             <Button
               title={
-                createGoalMutation.isPending ? "Creating Goal..." : "Create Goal"
+                updateGoalMutation.isPending
+                  ? "Updating Goal..."
+                  : "Update Goal"
               }
               className="mt-10"
               onPress={handleSubmit}
@@ -299,4 +372,5 @@ const SavingsGoalCreateScreen = () => {
   );
 };
 
-export default SavingsGoalCreateScreen;
+export default SavingsGoalEditScreen;
+

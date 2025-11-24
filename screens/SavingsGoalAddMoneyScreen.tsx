@@ -5,44 +5,173 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
   PAYMENT_SOURCES,
-  SAVINGS_GOALS,
   calculateGoalProgress,
+  mapApiGoalToUiGoal,
 } from "@/constants/savings";
 import { formatCurrency } from "@/constants/investments";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
 import {
+  useContributeToSavingsMutation,
+  useGetSavingsGoalQuery,
+} from "@/src/api/hooks";
+import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const SavingsGoalAddMoneyScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [amount, setAmount] = useState("");
   const [selectedSource, setSelectedSource] = useState(PAYMENT_SOURCES[0].id);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Fetch goal data from API
+  const {
+    data: goalData,
+    isLoading: isGoalLoading,
+    error: goalError,
+  } = useGetSavingsGoalQuery(id);
+
+  // Map API goal to UI format
   const goal = useMemo(() => {
+    if (!goalData?.data) {
+      return null;
+    }
+    return mapApiGoalToUiGoal(goalData.data);
+  }, [goalData]);
+
+  const progress = useMemo(() => {
+    if (!goal) return 0;
+    return calculateGoalProgress(goal.currentAmount, goal.targetAmount);
+  }, [goal]);
+
+  const remaining = useMemo(() => {
+    if (!goal) return 0;
+    return Math.max(goal.targetAmount - goal.currentAmount, 0);
+  }, [goal]);
+
+  const contributeMutation = useContributeToSavingsMutation({
+    onSuccess: (response) => {
+      console.log("=== CONTRIBUTE TO SAVINGS GOAL SUCCESS ===");
+      console.log("Full response:", JSON.stringify(response, null, 2));
+      console.log("Response data:", response?.data);
+      console.log("========================\n");
+
+      // Invalidate savings goals queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["savings"] });
+
+      setShowSuccess(true);
+      Toast.show({
+        type: "success",
+        text1: "Contribution Added",
+        text2: "Your contribution has been added successfully.",
+      });
+
+      // Reset form
+      setAmount("");
+
+      // Navigate back after a short delay
+      setTimeout(() => {
+        setShowSuccess(false);
+        router.back();
+      }, 1500);
+    },
+    onError: (error) => {
+      console.log("=== CONTRIBUTE TO SAVINGS GOAL ERROR ===");
+      console.log("Error object:", error);
+      console.log("Error message:", error.message);
+      console.log("Error status:", error.status);
+      console.log("Error data:", error.data);
+      console.log("========================\n");
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to add contribution. Please try again.",
+      });
+    },
+  });
+
+  const handleSubmit = useCallback(() => {
+    if (!id) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Goal ID is missing. Please try again.",
+      });
+      return;
+    }
+
+    Keyboard.dismiss();
+
+    // Validate amount
+    if (!amount || Number(amount) <= 0) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Amount",
+        text2: "Please enter a valid contribution amount.",
+      });
+      return;
+    }
+
+    const numericAmount = Number(amount);
+
+    const payload = {
+      goalId: id,
+      amount: numericAmount,
+    };
+
+    console.log("=== CONTRIBUTE TO SAVINGS GOAL REQUEST ===");
+    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
+    console.log("Payment source:", selectedSource);
+    console.log("========================\n");
+
+    contributeMutation.mutate(payload);
+  }, [id, amount, selectedSource, contributeMutation]);
+
+  // Loading state
+  if (isGoalLoading) {
     return (
-      SAVINGS_GOALS.find((item) => item.id === id) ?? SAVINGS_GOALS[0]
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={COLORS.primary_400} />
+          <Text className="mt-4 text-textColor/60">Loading goal...</Text>
+        </View>
+      </MainContainer>
     );
-  }, [id]);
+  }
 
-  const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount);
-  const remaining = Math.max(goal.targetAmount - goal.currentAmount, 0);
-
-  const handleSubmit = () => {
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      router.back();
-    }, 1500);
-  };
+  // Error state
+  if (goalError || !goal) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View className="flex-1 items-center justify-center px-6">
+          <Text weight="semibold" className="text-lg text-textColor">
+            Failed to load goal
+          </Text>
+          <Text className="mt-2 text-center text-textColor/60">
+            {goalError?.message || "Goal not found. Please try again."}
+          </Text>
+          <Button
+            title="Go Back"
+            className="mt-4"
+            onPress={() => router.back()}
+          />
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -144,10 +273,14 @@ const SavingsGoalAddMoneyScreen = () => {
             </View>
 
             <Button
-              title="Add Money"
+              title={
+                contributeMutation.isPending
+                  ? "Adding Money..."
+                  : "Add Money"
+              }
               className="mt-8"
               onPress={handleSubmit}
-              disabled={!amount}
+              disabled={!amount || contributeMutation.isPending}
             />
           </ScrollView>
         </View>
