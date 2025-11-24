@@ -30,7 +30,7 @@ const featureItems: FeatureItem[] = [
   },
   {
     id: "black-market-fx",
-    label: "Black Market FX Rates",
+    label: "FX Rates",
     icon: require("@/assets/icons/black_market_fx.svg"),
   },
   {
