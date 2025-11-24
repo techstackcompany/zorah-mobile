@@ -6,12 +6,14 @@ import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useCreateBudgetMutation } from "@/src/api/hooks";
+import {
+  useCreateBudgetMutation,
+  useGetCategoriesQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -21,35 +23,6 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-
-type BudgetCategoryKey = "food" | "entertainment" | "transport" | "shopping";
-
-const BUDGET_CATEGORIES = [
-  {
-    key: "food",
-    label: "Food",
-    icon: require("@/assets/images/home/food.png"),
-  },
-  {
-    key: "entertainment",
-    label: "Entertainment",
-    icon: require("@/assets/images/home/entertainment.png"),
-  },
-  {
-    key: "transport",
-    label: "Transport",
-    icon: require("@/assets/images/home/transport.png"),
-  },
-  {
-    key: "shopping",
-    label: "Shopping",
-    icon: require("@/assets/images/home/shopping.png"),
-  },
-] as const satisfies readonly {
-  key: BudgetCategoryKey;
-  label: string;
-  icon: ImageSource;
-}[];
 
 type BudgetPeriodKey = "this_week" | "this_month" | "this_year" | "custom";
 
@@ -142,14 +115,6 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
-// Map UI category keys to API category names
-const CATEGORY_MAP: Record<BudgetCategoryKey, string> = {
-  food: "Food",
-  entertainment: "Entertainment",
-  transport: "Transport",
-  shopping: "Shopping",
-};
-
 // Map UI period keys to API period values
 const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
   this_week: "weekly",
@@ -182,11 +147,21 @@ const determinePeriodFromRange = (
 const CreateBudgetScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: categoriesData } = useGetCategoriesQuery("budget");
+  const budgetCategories = useMemo(() => {
+    return categoriesData?.data?.subcategories.map((category) => ({
+      key: category.name,
+      label: category.name,
+      icon: category.image,
+    }));
+  }, [categoriesData]);
+  const firstCategory = budgetCategories?.[0]?.key;
   const [budgetName, setBudgetName] = useState("");
   const [amount, setAmount] = useState("");
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
-  const [selectedCategory, setSelectedCategory] =
-    useState<BudgetCategoryKey>("food");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    firstCategory || "",
+  );
   const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>("this_month");
   const [selectedRange, setSelectedRange] = useState<DateRange>(() =>
     getPresetRange("this_month"),
@@ -269,7 +244,8 @@ const CreateBudgetScreen = () => {
     !amount ||
     Number.isNaN(Number(amount)) ||
     Number(amount) <= 0 ||
-    !selectedRange;
+    !selectedRange ||
+    !selectedCategory;
 
   const periodLabel = formatRangeLabel(selectedRange);
   const canApplyCustom = Boolean(
@@ -319,9 +295,9 @@ const CreateBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
                 <CategorySelector
-                  categories={BUDGET_CATEGORIES}
+                  categories={budgetCategories || []}
                   selectedKey={selectedCategory}
-                  onSelect={setSelectedCategory}
+                  onSelect={(key) => setSelectedCategory(key)}
                   className="mt-3"
                 />
               </View>
@@ -364,7 +340,7 @@ const CreateBudgetScreen = () => {
                     : PERIOD_MAP[periodKey];
 
                 const payload = {
-                  category: CATEGORY_MAP[selectedCategory],
+                  category: selectedCategory,
                   amount: Number(amount),
                   period: apiPeriod,
                   startDate: formatDateForAPI(selectedRange.start),

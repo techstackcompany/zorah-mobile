@@ -2,20 +2,36 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { formatCurrency } from "@/lib/utils";
+import {
+  useGetArchivedBudgetsQuery,
+  useGetCategoriesQuery,
+  useRestoreBudgetMutation,
+} from "@/src/api/hooks";
+import { BudgetListItem } from "@/src/api/types";
+import { useQueryClient } from "@tanstack/react-query";
 import { Image, ImageSource } from "expo-image";
-import React, { useCallback, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
+} from "react-native";
+import Toast from "react-native-toast-message";
 
 type ArchiveStatus = "on-track" | "approaching" | "exceeded";
 
 type ArchivedBudget = {
   id: string;
   name: string;
-  icon: ImageSource;
+  icon: string | ImageSource;
   status: ArchiveStatus;
   archivedDate: string;
   allocated: number;
   spent: number;
+  remaining: number;
 };
 
 const STATUS_META: Record<
@@ -42,56 +58,211 @@ const STATUS_META: Record<
   },
 };
 
-const ARCHIVED_BUDGETS: ArchivedBudget[] = [
-  {
-    id: "archived-food",
-    name: "Food & Drinks",
-    icon: require("@/assets/images/home/food.png"),
-    status: "on-track",
-    archivedDate: "01/09/2025",
-    allocated: 80_000,
-    spent: 65_420,
-  },
-];
+type ArchiveAction = {
+  label: string;
+  enabled: boolean;
+  action: () => void;
+};
 
-const ARCHIVE_ACTIONS = [
-  { label: "Edit", enabled: true },
-  { label: "Delete", enabled: true },
-  { label: "Archive", enabled: false },
-] as const;
+const getBudgetStatus = (spent: number, allocated: number): ArchiveStatus => {
+  if (spent > allocated) return "exceeded";
+  const percentage = (spent / allocated) * 100;
+  if (percentage >= 80) return "approaching";
+  return "on-track";
+};
 
-const formatCurrency = (value: number) =>
-  `₦${value.toLocaleString("en-NG", {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  })}`;
+const transformArchivedBudgets = (
+  budgetsData: BudgetListItem[],
+  subcategories: { key: string; label: string; icon: string }[],
+) => {
+  return budgetsData.map((budget: BudgetListItem) => {
+    const spent = budget.totalSpent || 0;
+    const allocated = budget.Limit || 0;
+    const remaining =
+      budget.remaining !== undefined
+        ? budget.remaining
+        : Math.max(allocated - spent, 0);
+
+    let status: ArchiveStatus;
+    if (budget.status) {
+      const statusLower = budget.status.toLowerCase();
+      if (
+        statusLower.includes("exceeded") ||
+        statusLower.includes("over budget") ||
+        statusLower.includes("over")
+      ) {
+        status = "exceeded";
+      } else if (
+        statusLower.includes("approaching") ||
+        statusLower.includes("warning")
+      ) {
+        status = "approaching";
+      } else {
+        status = "on-track";
+      }
+    } else {
+      status = getBudgetStatus(spent, allocated);
+    }
+
+    // Format archived date - if API returns dates, use them
+    // For now, we'll use a placeholder since BudgetListItem doesn't have dates
+    let archivedDate = "Archived";
+    // If the API response has dates, we can format them like this:
+    // if (budget.updatedAt) {
+    //   const date = new Date(budget.updatedAt);
+    //   archivedDate = date.toLocaleDateString("en-GB", {
+    //     day: "2-digit",
+    //     month: "2-digit",
+    //     year: "numeric",
+    //   });
+    // }
+
+    return {
+      id: budget._id,
+      name: budget.category || "Unknown",
+      icon:
+        subcategories?.find(
+          (subcategory) => subcategory.key === budget.category,
+        )?.icon || "",
+      status,
+      archivedDate,
+      allocated,
+      spent,
+      remaining,
+    };
+  });
+};
+
+const useSubcategories = () => {
+  const { data: subcategoriesData } = useGetCategoriesQuery("budget");
+  return useMemo(() => {
+    if (!subcategoriesData) return [];
+    const categories =
+      Array.isArray(subcategoriesData) || !("data" in subcategoriesData)
+        ? subcategoriesData
+        : subcategoriesData.data;
+
+    // Handle both array and single object responses
+    const categoriesArray = Array.isArray(categories)
+      ? categories
+      : categories
+        ? [categories]
+        : [];
+
+    return (
+      categoriesArray
+        ?.flatMap((cat) =>
+          cat.subcategories?.map((sub) => ({
+            key: sub.name || sub._id,
+            label: sub.name || "",
+            icon: sub.image || "",
+          })),
+        )
+        .filter(Boolean) || []
+    );
+  }, [subcategoriesData]);
+};
 
 const BudgetArchiveScreen = () => {
   const [selectedBudget, setSelectedBudget] = useState<ArchivedBudget | null>(
     null,
   );
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
-
-  const archiveTotal = ARCHIVED_BUDGETS.reduce(
-    (acc, budget) => {
-      acc.allocated += budget.allocated;
-      acc.spent += budget.spent;
-      return acc;
-    },
-    { allocated: 0, spent: 0 },
+  const [budgetIdToRestore, setBudgetIdToRestore] = useState<string | null>(
+    null,
   );
 
-  const handleOpenActions = useCallback((budget: ArchivedBudget) => {
+  const queryClient = useQueryClient();
+  const {
+    data: archivedBudgetsData,
+    isLoading: isLoadingArchived,
+    refetch: refetchArchived,
+  } = useGetArchivedBudgetsQuery();
+  const subcategories = useSubcategories();
+
+  const archivedBudgets = useMemo(() => {
+    if (!archivedBudgetsData) return [];
+    const rawBudgets = Array.isArray(archivedBudgetsData)
+      ? archivedBudgetsData
+      : archivedBudgetsData.data || [];
+
+    return transformArchivedBudgets(rawBudgets, subcategories);
+  }, [archivedBudgetsData, subcategories]);
+
+  const restoreBudgetMutation = useRestoreBudgetMutation(
+    budgetIdToRestore || undefined,
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["budgets"] });
+        queryClient.invalidateQueries({ queryKey: ["budgets", "archived"] });
+        Toast.show({ type: "success", text1: "Budget restored successfully" });
+        setBudgetIdToRestore(null);
+        setSelectedBudget(null);
+        setIsActionSheetOpen(false);
+      },
+      onError: (error) => {
+        console.log("error", error.message);
+        Toast.show({ type: "error", text1: "Failed to restore budget" });
+        setBudgetIdToRestore(null);
+      },
+    },
+  );
+
+  // Trigger restore mutation when budgetIdToRestore is set
+  useEffect(() => {
+    if (budgetIdToRestore && !restoreBudgetMutation.isPending) {
+      restoreBudgetMutation.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budgetIdToRestore]);
+
+  const handleRestoreBudget = (budgetId: string) => {
+    setBudgetIdToRestore(budgetId);
+  };
+
+  const archiveTotal = useMemo(
+    () =>
+      archivedBudgets.reduce(
+        (acc, budget) => {
+          acc.allocated += budget.allocated;
+          acc.spent += budget.spent;
+          return acc;
+        },
+        { allocated: 0, spent: 0 },
+      ),
+    [archivedBudgets],
+  );
+
+  const handleOpenActions = (budget: ArchivedBudget) => {
     setSelectedBudget(budget);
     setIsActionSheetOpen(true);
-  }, []);
+  };
 
-  const closeActionSheet = useCallback(() => {
+  const closeActionSheet = () => {
     setIsActionSheetOpen(false);
     setSelectedBudget(null);
-  }, []);
+  };
 
-  const hasArchivedBudgets = ARCHIVED_BUDGETS.length > 0;
+  const actions: ArchiveAction[] = useMemo(() => {
+    if (!selectedBudget) return [];
+    return [
+      {
+        label: "Restore",
+        enabled: true,
+        action: () => {
+          setIsActionSheetOpen(false);
+          handleRestoreBudget(selectedBudget.id);
+        },
+      },
+      {
+        label: "Delete",
+        enabled: false, // Delete can be added later if needed
+        action: () => {},
+      },
+    ];
+  }, [selectedBudget]);
+
+  const hasArchivedBudgets = archivedBudgets.length > 0;
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted">
@@ -99,8 +270,21 @@ const BudgetArchiveScreen = () => {
         className="flex-1"
         contentContainerClassName="px-6 pb-24"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoadingArchived}
+            onRefresh={refetchArchived}
+          />
+        }
       >
-        {hasArchivedBudgets ? (
+        {isLoadingArchived ? (
+          <View className="mt-8 flex-1 items-center justify-center py-12">
+            <ActivityIndicator size="large" color={COLORS.primary_400} />
+            <Text className="mt-4 text-textColor/60">
+              Loading archived budgets...
+            </Text>
+          </View>
+        ) : hasArchivedBudgets ? (
           <>
             {/* <View className="mt-6 rounded-3xl border border-grayLight/40 bg-white p-4 shadow-sm shadow-[#1018280D]">
               <Text className="text-xs uppercase text-textColor/60">
@@ -133,16 +317,21 @@ const BudgetArchiveScreen = () => {
               </Text>
 
               <View className="mt-4 gap-4">
-                {ARCHIVED_BUDGETS.map((budget) => {
+                {archivedBudgets.map((budget) => {
                   const meta = STATUS_META[budget.status];
-                  const remainingValue = Math.max(
-                    budget.allocated - budget.spent,
-                    0,
-                  );
+                  const remainingValue =
+                    budget.remaining ||
+                    Math.max(budget.allocated - budget.spent, 0);
                   const progress =
                     budget.allocated <= 0
                       ? 0
                       : Math.min((budget.spent / budget.allocated) * 100, 100);
+
+                  // Handle icon - can be local require() or remote URL
+                  const iconSource =
+                    typeof budget.icon === "string"
+                      ? { uri: budget.icon }
+                      : budget.icon;
 
                   return (
                     <Pressable
@@ -151,18 +340,16 @@ const BudgetArchiveScreen = () => {
                       onPress={() => handleOpenActions(budget)}
                     >
                       <View className="flex-row items-start gap-4">
-                        
-
                         <View className="flex-1">
-                          <View className="flex-row items-start gap-2 h-12">
-                            <View className="h-full aspect-square items-center justify-center rounded-full bg-primary_100">
-                          <Image
-                            source={budget.icon}
-                            style={{ width: 24, height: 24 }}
-                            contentFit="contain"
-                          />
-                        </View>
-                            <View className="justify-between h-full">
+                          <View className="h-12 flex-row items-start gap-2">
+                            <View className="aspect-square h-full items-center justify-center rounded-full bg-primary_100">
+                              <Image
+                                source={iconSource}
+                                style={{ width: 24, height: 24 }}
+                                contentFit="contain"
+                              />
+                            </View>
+                            <View className="h-full justify-between">
                               <Text
                                 weight="semibold"
                                 className="text-base text-textColor"
@@ -185,7 +372,6 @@ const BudgetArchiveScreen = () => {
                               </Text>
                             </View>
                             <Pressable
-
                               onPress={() => handleOpenActions(budget)}
                             >
                               <Image
@@ -205,15 +391,16 @@ const BudgetArchiveScreen = () => {
                                 }}
                               />
                             </View>
-                                <View className="flex-row items-center justify-between">
-                                  <Text className="text-sm text-secondary_500">
-                                    {formatCurrency(budget.spent)} of{" "}
-                                    {formatCurrency(budget.allocated)}
-                                  </Text>
-                                  <Text className="text-sm text-textColor ">
-                                    {formatCurrency(remainingValue)} <Text className="text-textColor/70">left </Text>
-                                  </Text>
-                                </View>
+                            <View className="flex-row items-center justify-between">
+                              <Text className="text-sm text-secondary_500">
+                                {formatCurrency(budget.spent)} of{" "}
+                                {formatCurrency(budget.allocated)}
+                              </Text>
+                              <Text className="text-sm text-textColor ">
+                                {formatCurrency(remainingValue)}{" "}
+                                <Text className="text-textColor/70">left </Text>
+                              </Text>
+                            </View>
                           </View>
                         </View>
                       </View>
@@ -261,16 +448,27 @@ const BudgetArchiveScreen = () => {
         className="px-0"
       >
         <View className="gap-2">
-          {ARCHIVE_ACTIONS.map((action) => (
+          {actions.map((action) => (
             <Pressable
               key={action.label}
               disabled={!action.enabled}
-              onPress={action.enabled ? closeActionSheet : undefined}
+              onPress={() => {
+                action.action();
+                if (action.enabled) {
+                  closeActionSheet();
+                }
+              }}
               className={`rounded-2xl bg-white px-4 py-3 ${
                 action.enabled ? "" : "opacity-40"
               }`}
             >
-              <Text className="text-base text-textColor">{action.label}</Text>
+              <Text
+                className={`text-base ${
+                  action.enabled ? "text-textColor" : "text-textColor/40"
+                }`}
+              >
+                {action.label}
+              </Text>
             </Pressable>
           ))}
         </View>

@@ -1,16 +1,22 @@
 import MainContainer from "@/components/layouts/MainContainer";
+import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
 import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
-import AmountInput from "@/components/ui/AmountInput";
 import COLORS from "@/constants/colors";
+import {
+  useGetBudgetQuery,
+  useUpdateBudgetMutation,
+} from "@/src/api/hooks/useBudgetApi";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { ImageSource } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +24,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 type BudgetCategoryKey = "food" | "entertainment" | "transport" | "shopping";
 
@@ -42,11 +49,11 @@ const BUDGET_CATEGORIES = [
     label: "Shopping",
     icon: require("@/assets/images/home/shopping.png"),
   },
-] as const satisfies ReadonlyArray<{
+] as const satisfies readonly {
   key: BudgetCategoryKey;
   label: string;
   icon: ImageSource;
-}>;
+}[];
 
 type BudgetPeriodKey = "this_week" | "this_month" | "this_year" | "custom";
 
@@ -148,10 +155,62 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
+// Map UI category keys to API category names
+const CATEGORY_MAP: Record<BudgetCategoryKey, string> = {
+  food: "Food",
+  entertainment: "Entertainment",
+  transport: "Transport",
+  shopping: "Shopping",
+};
+
+// Reverse map: API category names to UI keys
+const REVERSE_CATEGORY_MAP: Record<string, BudgetCategoryKey> = {
+  Food: "food",
+  Entertainment: "entertainment",
+  Transport: "transport",
+  Shopping: "shopping",
+};
+
+// Map UI period keys to API period values
+const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
+  this_week: "weekly",
+  this_month: "monthly",
+  this_year: "yearly",
+  custom: "monthly", // Default for custom, will be determined by date range
+};
+
+// Reverse map: API period values to UI keys
+const REVERSE_PERIOD_MAP: Record<string, BudgetPeriodKey> = {
+  weekly: "this_week",
+  monthly: "this_month",
+  yearly: "this_year",
+};
+
 const isBudgetCategoryKey = (
   value: string | undefined,
 ): value is BudgetCategoryKey => {
   return Boolean(value && BUDGET_CATEGORIES.some((item) => item.key === value));
+};
+
+// Format date to YYYY-MM-DD
+const formatDateForAPI = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Determine period from date range
+const determinePeriodFromRange = (
+  range: DateRange,
+): "weekly" | "monthly" | "yearly" => {
+  const daysDiff = Math.ceil(
+    (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (daysDiff <= 7) return "weekly";
+  if (daysDiff <= 31) return "monthly";
+  return "yearly";
 };
 
 const parseInitialAmount = (value?: string) => {
@@ -196,30 +255,135 @@ const parseInitialRange = (start?: string, end?: string): DateRange | null => {
 
 const EditBudgetScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<LocalParams>();
+  const budgetId = params.id;
 
-  const initialRange =
-    parseInitialRange(params.startDate, params.endDate) ??
-    getPresetRange("this_month");
+  const {
+    data: budget,
+    isLoading: isLoadingBudget,
+    error: budgetError,
+  } = useGetBudgetQuery(budgetId);
 
-  const [budgetName, setBudgetName] = useState(params.name ?? "Food & Drinks");
-  const [amount, setAmount] = useState(() =>
-    params.amount ? parseInitialAmount(params.amount) : "80000",
+  const initialRange = useMemo(() => {
+    if (budget?.startDate && budget?.endDate) {
+      const range = parseInitialRange(
+        budget.startDate as string,
+        budget.endDate as string,
+      );
+      if (range) return range;
+    }
+    if (params.startDate && params.endDate) {
+      const range = parseInitialRange(params.startDate, params.endDate);
+      if (range) return range;
+    }
+    return getPresetRange("this_month");
+  }, [budget?.startDate, budget?.endDate, params.startDate, params.endDate]);
+
+  const [budgetName, setBudgetName] = useState(
+    budget?.category || params.name || "Food & Drinks",
   );
+  const [amount, setAmount] = useState(() => {
+    if (budget?.amount || budget?.Limit) {
+      return parseInitialAmount(String(budget.amount || budget.Limit));
+    }
+    if (params.amount) {
+      return parseInitialAmount(params.amount);
+    }
+    return "80000";
+  });
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
-  const [selectedCategory, setSelectedCategory] =
-    useState<BudgetCategoryKey>(
-      isBudgetCategoryKey(params.category) ? params.category : "food",
-    );
-  const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>(
-    params.startDate && params.endDate ? "custom" : "this_month",
+  const [selectedCategory, setSelectedCategory] = useState<BudgetCategoryKey>(
+    () => {
+      const apiCategory =
+        (budget?.category as string) || (params.category as string);
+      if (apiCategory && REVERSE_CATEGORY_MAP[apiCategory]) {
+        return REVERSE_CATEGORY_MAP[apiCategory];
+      }
+      if (isBudgetCategoryKey(apiCategory)) {
+        return apiCategory;
+      }
+      return "food";
+    },
   );
+  const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>(() => {
+    if (budget?.period && REVERSE_PERIOD_MAP[budget.period]) {
+      return REVERSE_PERIOD_MAP[budget.period];
+    }
+    if (budget?.startDate && budget?.endDate) {
+      return "custom";
+    }
+    if (params.startDate && params.endDate) {
+      return "custom";
+    }
+    return "this_month";
+  });
   const [selectedRange, setSelectedRange] = useState<DateRange>(initialRange);
   const [isPeriodModalVisible, setIsPeriodModalVisible] = useState(false);
   const [isCustomModalVisible, setIsCustomModalVisible] = useState(false);
   const [customRangeDraft, setCustomRangeDraft] = useState<OptionalDateRange>({
     start: null,
     end: null,
+  });
+
+  useEffect(() => {
+    if (budget) {
+      if (budget.category) {
+        const mappedCategory = REVERSE_CATEGORY_MAP[budget.category];
+        if (mappedCategory) {
+          setSelectedCategory(mappedCategory);
+        }
+        setBudgetName(budget.category);
+      }
+      if (budget.amount || budget.Limit) {
+        setAmount(parseInitialAmount(String(budget.amount || budget.Limit)));
+      }
+      if (budget.startDate && budget.endDate) {
+        const range = parseInitialRange(budget.startDate, budget.endDate);
+        if (range) {
+          setSelectedRange(range);
+          if (budget.period && REVERSE_PERIOD_MAP[budget.period]) {
+            setPeriodKey(REVERSE_PERIOD_MAP[budget.period]);
+          } else {
+            setPeriodKey("custom");
+          }
+        }
+      }
+    }
+  }, [budget]);
+
+  const updateBudgetMutation = useUpdateBudgetMutation(budgetId, {
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["budgets", "detail", budgetId],
+      });
+
+      Toast.show({
+        type: "success",
+        text1: "Budget Updated",
+        text2: response.message || "Your budget has been updated successfully.",
+      });
+
+      // Navigate back after a short delay
+      setTimeout(() => {
+        router.back();
+      }, 1500);
+    },
+    onError: (error) => {
+      console.log("=== UPDATE BUDGET ERROR ===");
+      console.log("Error object:", error);
+      console.log("Error message:", error.message);
+      console.log("Error status:", error.status);
+      console.log("Error data:", error.data);
+      console.log("========================\n");
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to update budget. Please try again.",
+      });
+    },
   });
 
   const handleSelectPeriod = (key: BudgetPeriodKey) => {
@@ -258,23 +422,28 @@ const EditBudgetScreen = () => {
   };
 
   const handleSubmit = () => {
-    if (!selectedRange) {
+    if (!selectedRange || !budgetId) {
       return;
     }
 
+    // Determine period - use mapped value or determine from custom range
+    const apiPeriod =
+      periodKey === "custom"
+        ? determinePeriodFromRange(selectedRange)
+        : PERIOD_MAP[periodKey];
+
+    // Use budgetName if it's been edited, otherwise use the mapped category
+    const categoryName = budgetName.trim() || CATEGORY_MAP[selectedCategory];
+
     const payload = {
-      id: params.id ?? "new-budget",
-      name: budgetName.trim(),
-      amount: Number(amount).toFixed(2),
-      category: selectedCategory,
-      periodKey,
-      range: {
-        start: selectedRange.start.toISOString(),
-        end: selectedRange.end.toISOString(),
-      },
+      category: categoryName,
+      amount: Number(amount),
+      period: apiPeriod,
+      startDate: formatDateForAPI(selectedRange.start),
+      endDate: formatDateForAPI(selectedRange.end),
     };
 
-    router.back();
+    updateBudgetMutation.mutate(payload);
   };
 
   const isSubmitDisabled =
@@ -282,10 +451,49 @@ const EditBudgetScreen = () => {
     !amount ||
     Number.isNaN(Number(amount)) ||
     Number(amount) <= 0 ||
-    !selectedRange;
+    !selectedRange ||
+    !budgetId ||
+    updateBudgetMutation.isPending;
 
   const periodLabel = formatRangeLabel(selectedRange);
-  const canApplyCustom = Boolean(customRangeDraft.start && customRangeDraft.end);
+  const canApplyCustom = Boolean(
+    customRangeDraft.start && customRangeDraft.end,
+  );
+
+  // Show loading state
+  if (isLoadingBudget) {
+    return (
+      <MainContainer className="bg-light" edges={[]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={COLORS.primary_400} />
+          <Text className="mt-4 text-textColor/60">Loading budget...</Text>
+        </View>
+      </MainContainer>
+    );
+  }
+
+  // Show error state
+  if (budgetError || !budget) {
+    return (
+      <MainContainer className="bg-light" edges={[]}>
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={COLORS.error}
+          />
+          <Text className="mt-4 text-center text-base text-textColor">
+            {budgetError?.message || "Failed to load budget"}
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={() => router.back()}
+            className="mt-6"
+          />
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -311,14 +519,16 @@ const EditBudgetScreen = () => {
                   onFocus={() => setIsBudgetNameFocused(true)}
                   onBlur={() => setIsBudgetNameFocused(false)}
                   placeholder="e.g., Food & Dining"
-                  className={`mt-2 rounded-2xl border bg-white px-4 py-4 text-base font-nunitoMedium text-textColor ${
-                    isBudgetNameFocused ? "border-primary_400" : "border-gray-200"
+                  className={`mt-2 rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base text-textColor ${
+                    isBudgetNameFocused
+                      ? "border-primary_400"
+                      : "border-gray-200"
                   }`}
                   placeholderTextColor="rgba(42, 58, 80, 0.4)"
                   returnKeyType="next"
                 />
               </View>
-
+    
               <AmountInput
                 value={amount}
                 onChangeValue={setAmount}
@@ -387,7 +597,9 @@ const EditBudgetScreen = () => {
               return (
                 <Pressable
                   key={option.key}
-                  onPress={() => handleSelectPeriod(option.key as BudgetPeriodKey)}
+                  onPress={() =>
+                    handleSelectPeriod(option.key as BudgetPeriodKey)
+                  }
                   className="flex-row items-center justify-between rounded-2xl px-4 py-4"
                 >
                   <Text

@@ -1,13 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import CreateBudgetScreen from '@/screens/CreateBudgetScreen'
+import CreateBudgetScreen from "@/screens/CreateBudgetScreen";
+import React from "react";
 
 const create = () => {
-  return (
-  <CreateBudgetScreen/>
-  )
-}
+  return <CreateBudgetScreen />;
+};
 
-export default create
-
-const styles = StyleSheet.create({})
+export default create;
