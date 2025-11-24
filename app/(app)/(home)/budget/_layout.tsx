@@ -21,6 +21,8 @@ const BudgetLayout = () => {
       screenOptions={{
         statusBarStyle: "dark",
         headerBackTitleStyle: { fontFamily: "NunitoMedium" },
+        headerTitleStyle: { fontFamily: "NunitoSemibold" },
+        headerShadowVisible: false,
       }}
     >
       <Stack.Screen

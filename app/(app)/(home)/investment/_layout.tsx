@@ -14,6 +14,7 @@ const PortfolioLayout = () => {
     <Stack
       screenOptions={{
         statusBarStyle: "dark",
+        headerTitleStyle: { fontFamily: "NunitoSemibold" },
       }}
     >
       <Stack.Screen

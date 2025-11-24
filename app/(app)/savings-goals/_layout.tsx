@@ -13,6 +13,8 @@ const SavingsGoalsLayout = () => {
       screenOptions={{
         statusBarStyle: "dark",
         headerShadowVisible: false,
+        headerTitleStyle: { fontFamily: "NunitoSemibold" },
+      
       }}
     >
       <Stack.Screen

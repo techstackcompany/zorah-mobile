@@ -22,7 +22,19 @@ const AppLayout = () => {
           options={{ title: "Expense Planning" }}
         />
         <Stack.Screen name="add-expense" options={{ title: "Add Expense" }} />
+        <Stack.Screen
+          name="expenses/details"
+          options={{ title: "Expense Details" }}
+        />
+        <Stack.Screen
+          name="expenses/edit"
+          options={{ title: "Edit Expense" }}
+        />
         <Stack.Screen name="add-income" options={{ title: "Add Income" }} />
+        <Stack.Screen
+          name="income/details"
+          options={{ title: "Income Details" }}
+        />
         <Stack.Screen name="more" options={{ title: "More" }} />
 
         <Stack.Screen
