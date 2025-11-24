@@ -6,10 +6,12 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
+import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { ImageSource } from "expo-image";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,66 +20,96 @@ import {
   TextInput,
   View,
 } from "react-native";
-
-type IncomeCategoryKey = "salary" | "investment" | "allowance" | "bonus";
+import Toast from "react-native-toast-message";
 
 type IncomeCategory = {
-  key: IncomeCategoryKey;
+  key: string;
   label: string;
-  icon: ImageSource;
-  accent: string;
-  tint: string;
+  icon: ImageSource | string;
 };
 
-const INCOME_CATEGORIES: readonly IncomeCategory[] = [
-  {
-    key: "salary",
-    label: "Salary",
-    icon: require("@/assets/images/home/salary.png"),
-    accent: "#1A43BE",
-    tint: "#E9EEFF",
-  },
-  {
-    key: "investment",
-    label: "Investment",
-    icon: require("@/assets/images/home/investment.png"),
-    accent: "#2FA89A",
-    tint: "#E6F5F3",
-  },
-  {
-    key: "allowance",
-    label: "Allowance",
-    icon: require("@/assets/images/home/bonus.png"),
-    accent: "#E9781A",
-    tint: "#FFE9D8",
-  },
-  {
-    key: "bonus",
-    label: "Bonus",
-    icon: require("@/assets/images/home/bonus.png"),
-    accent: "#8E5BE7",
-    tint: "#F1E8FF",
-  },
-] as const;
-
-const PAYMENT_METHODS = [
-  "Bank Transfer",
-  "Debit Card",
-  "Credit Card",
-  "Mobile Money",
-  "Cash",
-];
+const PAYMENT_METHODS = ["Cash", "Card", "Transfer", "Wallet"];
 
 const AddIncomeScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState<IncomeCategoryKey>("salary");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+
+  // Fetch categories from API
+  const {
+    data: categoriesData,
+    isLoading: isCategoriesLoading,
+    error: categoriesError,
+  } = useGetCategoriesQuery("income");
+
+  // Map API categories to UI format
+  const incomeCategories = useMemo<IncomeCategory[]>(() => {
+    if (!categoriesData?.data?.subcategories) {
+      return [];
+    }
+
+    return categoriesData.data.subcategories.map((subcategory) => ({
+      key: subcategory.name,
+      label: subcategory.name,
+      icon: subcategory.image || "", // Use API image URL
+    }));
+  }, [categoriesData]);
+
+  // Set default selected category when categories are loaded
+  useEffect(() => {
+    if (incomeCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(incomeCategories[0].key);
+    }
+  }, [incomeCategories, selectedCategory]);
+
+  const addIncomeMutation = useAddIncomeMutation({
+    onSuccess: (response) => {
+      console.log("=== ADD INCOME SUCCESS ===");
+      console.log("Full response:", JSON.stringify(response, null, 2));
+      console.log("Response data:", response?.data);
+      console.log("========================\n");
+
+      // Invalidate income queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+
+      Toast.show({
+        type: "success",
+        text1: "Income Added",
+        text2: "Your income has been recorded successfully.",
+      });
+
+      // Reset form
+      setAmount("");
+      setPaymentMethod("");
+      setDate("");
+      setDescription("");
+
+      // Navigate back after a short delay
+      setTimeout(() => {
+        router.back();
+      }, 1500);
+    },
+    onError: (error) => {
+      console.log("=== ADD INCOME ERROR ===");
+      console.log("Error object:", error);
+      console.log("Error message:", error.message);
+      console.log("Error status:", error.status);
+      console.log("Error data:", error.data);
+      console.log("========================\n");
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to add income. Please try again.",
+      });
+    },
+  });
 
   const openPaymentModal = useCallback(() => {
     setIsPaymentModalVisible(true);
@@ -96,18 +128,85 @@ const AddIncomeScreen = () => {
   }, []);
 
   const handleSubmit = useCallback(() => {
+    // Validate required fields
+    if (!amount || Number(amount) <= 0) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Amount",
+        text2: "Please enter a valid income amount.",
+      });
+      return;
+    }
+
+    if (!date) {
+      Toast.show({
+        type: "error",
+        text1: "Date Required",
+        text2: "Please select a date for this income.",
+      });
+      return;
+    }
+
+    if (!paymentMethod) {
+      Toast.show({
+        type: "error",
+        text1: "Payment Method Required",
+        text2: "Please select a payment method.",
+      });
+      return;
+    }
+
+    if (!selectedCategory) {
+      Toast.show({
+        type: "error",
+        text1: "Category Required",
+        text2: "Please select a category.",
+      });
+      return;
+    }
+
     const numericAmount = Number(amount);
-    const resolvedAmount = Number.isNaN(numericAmount)
-      ? "0.00"
-      : numericAmount.toFixed(2);
-    console.log({
-      amount: resolvedAmount,
-      category: selectedCategory,
+
+    // Format date to YYYY-MM-DD
+    // DatePickerField returns DD/MM/YY format
+    let formattedDate = date;
+    if (date.includes("/")) {
+      const [day, month, yearStr] = date.split("/");
+      // Handle 2-digit year (YY) - assume 20XX for years 00-99
+      const fullYear =
+        yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
+      formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+
+    const payload = {
+      source: paymentMethod, // Payment method maps to "source" in API
+      amount: numericAmount,
+      category: selectedCategory.toLowerCase(), // API expects lowercase category
+      description: description.trim() || undefined,
+      date: formattedDate,
+    };
+
+    console.log("=== ADD INCOME REQUEST ===");
+    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
+    console.log("Original form values:", {
+      amount,
+      selectedCategory,
       paymentMethod,
       date,
       description,
     });
-  }, [amount, selectedCategory, paymentMethod, date, description]);
+    console.log("Formatted date:", formattedDate);
+    console.log("========================\n");
+
+    addIncomeMutation.mutate(payload);
+  }, [
+    amount,
+    selectedCategory,
+    paymentMethod,
+    date,
+    description,
+    addIncomeMutation,
+  ]);
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -136,11 +235,27 @@ const AddIncomeScreen = () => {
 
               <View>
                 <Text className="text-sm text-textColor/70">Category</Text>
-                <CategorySelector
-                  categories={INCOME_CATEGORIES}
-                  selectedKey={selectedCategory}
-                  onSelect={setSelectedCategory}
-                />
+                {isCategoriesLoading ? (
+                  <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
+                    <Text className="text-textColor/50">Loading categories...</Text>
+                  </View>
+                ) : categoriesError ? (
+                  <View className="mt-3 items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-8">
+                    <Text className="text-red-600">
+                      Failed to load categories. Please try again.
+                    </Text>
+                  </View>
+                ) : incomeCategories.length > 0 ? (
+                  <CategorySelector
+                    categories={incomeCategories}
+                    selectedKey={selectedCategory}
+                    onSelect={setSelectedCategory}
+                  />
+                ) : (
+                  <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
+                    <Text className="text-textColor/50">No categories available</Text>
+                  </View>
+                )}
               </View>
 
               <View>
@@ -213,10 +328,18 @@ const AddIncomeScreen = () => {
           <View className="px-6 pb-6">
             <Pressable
               onPress={handleSubmit}
-              className="items-center justify-center rounded-2xl bg-primary_400 py-4"
+              disabled={addIncomeMutation.isPending}
+              className={cn(
+                "items-center justify-center rounded-2xl py-4",
+                addIncomeMutation.isPending
+                  ? "bg-primary_400/60"
+                  : "bg-primary_400",
+              )}
             >
               <Text weight="semibold" className="text-base text-white">
-                Add New Income
+                {addIncomeMutation.isPending
+                  ? "Adding Income..."
+                  : "Add New Income"}
               </Text>
             </Pressable>
           </View>
