@@ -1,6 +1,7 @@
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { UserProfile } from "@/src/api/types";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
   PropsWithChildren,
@@ -45,6 +46,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
    SessionProvider
 ----------------------------------------------*/
 export function SessionProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const [[isLoadingSession, session], setSession] = useStorageState("session");
   const [[isLoadingOnboarded, hasOnboarded], setHasOnboarded] =
     useStorageState("hasOnboarded");
@@ -85,6 +87,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = (session: string) => setSession(session);
 
   const signOut = useCallback(() => {
+    // Clear all React Query cache to prevent showing previous user's data
+    queryClient.clear();
+
+    // Clear session and user data
     setSession(null);
     // setHasOnboarded(null);
     setIsVerified(null);
@@ -93,6 +99,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setHasCompletedSetupRaw(null);
     setSetupStepRaw(null);
   }, [
+    queryClient,
     setSession,
     setIsVerified,
     setHasSetAffirmations,
@@ -179,6 +186,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     isLoading,
   };
-
+  console.log(session);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
