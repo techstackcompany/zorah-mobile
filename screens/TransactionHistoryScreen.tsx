@@ -2,13 +2,17 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency, formatTransactionPurpose } from "@/lib/utils";
+import { useGetWalletTransactionsQuery } from "@/src/api/hooks";
+import { WalletTransaction } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   TextInput,
   View,
@@ -36,144 +40,6 @@ type TransactionSection = {
 };
 
 type TransactionTab = "all" | "income" | "expense";
-
-const transactionSections: TransactionSection[] = [
-  {
-    id: "sep-2025",
-    title: "Sep 2025",
-    items: [
-      {
-        id: "txn-jollof",
-        title: "Jollof Rice at Mama Cass",
-        description: "Lunch with colleagues",
-        account: "GTBank",
-        timeAgo: "2h ago",
-        amount: -2500,
-        type: "expense",
-        icon: require("@/assets/images/home/food.png"),
-        accent: "#FDECEF",
-      },
-      {
-        id: "txn-uber",
-        title: "Uber to Victoria Island",
-        account: "Opay",
-        timeAgo: "4h ago",
-        amount: -1800,
-        type: "expense",
-        icon: require("@/assets/images/home/transport.png"),
-        accent: "#EEF2FF",
-      },
-    ],
-  },
-  {
-    id: "yesterday",
-    title: "Yesterday",
-    items: [
-      {
-        id: "txn-salary",
-        title: "Salary Payment",
-        account: "Zenith Bank",
-        timeAgo: "1d ago",
-        amount: 333000,
-        type: "income",
-        icon: require("@/assets/images/home/salary.png"),
-        accent: "#E6F5F3",
-      },
-      {
-        id: "txn-bonus",
-        title: "Bonus Payout",
-        account: "GTBank",
-        timeAgo: "1d ago",
-        amount: 88900,
-        type: "income",
-        icon: require("@/assets/images/home/bonus.png"),
-        accent: "#FFF7E6",
-      },
-      {
-        id: "txn-pos",
-        title: "POS Withdrawal",
-        account: "Cash",
-        timeAgo: "1d ago",
-        amount: -15800,
-        type: "expense",
-        icon: require("@/assets/images/home/shopping.png"),
-        accent: "#FDECEF",
-      },
-      {
-        id: "txn-nepa",
-        title: "NEPA Bill",
-        account: "Zenith Bank",
-        timeAgo: "1d ago",
-        amount: -11200,
-        type: "expense",
-        icon: require("@/assets/images/home/call.png"),
-        accent: "#E8EFFF",
-      },
-    ],
-  },
-  {
-    id: "friday",
-    title: "Friday",
-    items: [
-      {
-        id: "txn-wedding",
-        title: "Wedding Aso-ebi",
-        account: "Kuda",
-        timeAgo: "2d ago",
-        amount: -25000,
-        type: "expense",
-        icon: require("@/assets/images/home/entertainment.png"),
-        accent: "#FFF0F1",
-      },
-      {
-        id: "txn-shoprite",
-        title: "Shoprite Groceries",
-        account: "GTBank",
-        timeAgo: "2d ago",
-        amount: -15750,
-        type: "expense",
-        icon: require("@/assets/images/home/food.png"),
-        accent: "#FFF2E9",
-      },
-    ],
-  },
-  {
-    id: "thursday",
-    title: "Thursday",
-    items: [
-      {
-        id: "txn-cinema",
-        title: "Cinema Ticket - Mufasa Lion King",
-        account: "Opay",
-        timeAgo: "3d ago",
-        amount: -15800,
-        type: "expense",
-        icon: require("@/assets/images/home/entertainment.png"),
-        accent: "#FEEBF7",
-      },
-      {
-        id: "txn-checkup",
-        title: "Medical Checkup",
-        account: "Cash",
-        timeAgo: "3d ago",
-        amount: -15800,
-        type: "expense",
-        icon: require("@/assets/images/home/transport.png"),
-        accent: "#E5F4FF",
-      },
-      {
-        id: "txn-food-drink",
-        title: "Food & Drink",
-        account: "Opay",
-        timeAgo: "3d ago",
-        amount: -11200,
-        type: "expense",
-        icon: require("@/assets/images/home/food.png"),
-        accent: "#FFF2E9",
-      },
-    ],
-  },
-];
 
 const transactionTabs: { id: TransactionTab; label: string }[] = [
   { id: "all", label: "All" },
@@ -222,12 +88,6 @@ type FilterCategoryId = (typeof filterCategories)[number]["id"];
 type FilterDateRangeId = (typeof filterDateRanges)[number]["id"];
 type FilterAccountId = (typeof filterAccounts)[number]["id"];
 
-const formatCurrency = (value: number) =>
-  `₦${value.toLocaleString("en-NG", {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  })}`;
-
 const formatAmountWithSign = (value: number) => {
   if (value === 0) {
     return formatCurrency(0);
@@ -236,13 +96,226 @@ const formatAmountWithSign = (value: number) => {
   return `${prefix}${formatCurrency(Math.abs(value))}`;
 };
 
-const buildSections = (tab: TransactionTab) => {
-  return transactionSections
+// Helper function to format time ago
+const formatTimeAgo = (dateString?: string): string => {
+  if (!dateString) return "Just now";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "Just now";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800)
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+// Helper function to format date for section title
+const formatSectionDate = (dateString?: string): string => {
+  if (!dateString) return "Unknown";
+
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Unknown";
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const transactionDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+
+    if (transactionDate.getTime() === today.getTime()) {
+      return "Today";
+    }
+    if (transactionDate.getTime() === yesterday.getTime()) {
+      return "Yesterday";
+    }
+
+    // Check if it's within the last 7 days
+    const daysDiff = Math.floor(
+      (today.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (daysDiff < 7 && daysDiff > 0) {
+      const dayNames = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      return dayNames[date.getDay()];
+    }
+
+    // Otherwise return month and year
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "Unknown";
+  }
+};
+
+// Helper function to get default icon and accent based on transaction type
+const getTransactionIcon = (
+  type: "credit" | "debit",
+): {
+  icon: ImageSource;
+  accent: string;
+} => {
+  if (type === "credit") {
+    return {
+      icon: require("@/assets/images/home/salary.png"),
+      accent: "#EEF5FF",
+    };
+  }
+  return {
+    icon: require("@/assets/images/home/shopping.png"),
+    accent: "#FDECEF",
+  };
+};
+
+// Transform API transaction to UI transaction
+const transformTransactionForUI = (
+  txn: WalletTransaction,
+): TransactionItem & { createdAt?: string } => {
+  const isCredit = txn.type === "credit";
+  const { icon, accent } = getTransactionIcon(txn.type as "credit" | "debit");
+  const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
+
+  const title =
+    txn.description ||
+    (txn.purpose
+      ? formatTransactionPurpose(txn.purpose)
+      : isCredit
+        ? "Credit"
+        : "Debit");
+
+  return {
+    id: txn._id,
+    title,
+    description: undefined,
+    account: "Wallet",
+    timeAgo: formatTimeAgo(txn.createdAt),
+    amount,
+    type: isCredit ? "income" : "expense",
+    icon,
+    accent,
+    createdAt: txn.createdAt,
+  };
+};
+
+const groupTransactionsByDate = (
+  transactions: (TransactionItem & { createdAt?: string })[],
+): TransactionSection[] => {
+  const grouped = new Map<
+    string,
+    (TransactionItem & { createdAt?: string })[]
+  >();
+
+  transactions.forEach((txn) => {
+    // Use createdAt to group by date
+    const dateKey = txn.createdAt
+      ? new Date(txn.createdAt).toISOString().split("T")[0]
+      : "unknown";
+    if (!grouped.has(dateKey)) {
+      grouped.set(dateKey, []);
+    }
+    grouped.get(dateKey)!.push(txn);
+  });
+
+  return Array.from(grouped.entries())
+    .map(([dateKey, items]) => {
+      // Get the date from the first transaction's createdAt
+      const firstDate = items[0]?.createdAt || dateKey;
+      return {
+        id: dateKey,
+        title: formatSectionDate(firstDate),
+        items: items
+          .map(({ createdAt, ...item }) => item) // Remove createdAt from final items
+          .sort((a, b) => {
+            // Sort by timeAgo (most recent first)
+            const aTime = a.timeAgo;
+            const bTime = b.timeAgo;
+            if (aTime.includes("ago") && !bTime.includes("ago")) return -1;
+            if (!aTime.includes("ago") && bTime.includes("ago")) return 1;
+            return 0;
+          }),
+      };
+    })
+    .sort((a, b) => {
+      // Sort sections: "Today" first, then "Yesterday", then by date
+      if (a.title === "Today") return -1;
+      if (b.title === "Today") return 1;
+      if (a.title === "Yesterday") return -1;
+      if (b.title === "Yesterday") return 1;
+      return 0;
+    });
+};
+
+const filterTransactionsBySearch = (
+  items: TransactionItem[],
+  searchTerm: string,
+): TransactionItem[] => {
+  if (!searchTerm.trim()) {
+    return items;
+  }
+
+  const searchLower = searchTerm.toLowerCase().trim();
+
+  return items.filter((item) => {
+    // Search in title
+    if (item.title.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+
+    // Search in description
+    if (item.description?.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+
+    // Search in account
+    if (item.account.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+
+    // Search in amount (format: ₦1,234)
+    const amountStr = formatCurrency(Math.abs(item.amount));
+    if (amountStr.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+
+    // Search in raw amount number
+    if (Math.abs(item.amount).toString().includes(searchLower)) {
+      return true;
+    }
+
+    return false;
+  });
+};
+
+const buildSections = (
+  sections: TransactionSection[],
+  tab: TransactionTab,
+  searchTerm: string,
+) => {
+  return sections
     .map((section) => {
-      const items =
+      // First filter by tab
+      let items =
         tab === "all"
           ? section.items
           : section.items.filter((item) => item.type === tab);
+
+      // Then filter by search term
+      items = filterTransactionsBySearch(items, searchTerm);
 
       if (!items.length) {
         return null;
@@ -287,7 +360,28 @@ const TransactionHistoryScreen = () => {
     "all",
   ]);
 
-  const sections = useMemo(() => buildSections(activeTab), [activeTab]);
+  const {
+    data: transactionsData,
+    isLoading: isLoadingTransactions,
+    refetch: refetchTransactions,
+  } = useGetWalletTransactionsQuery();
+
+  const transactionSections = useMemo(() => {
+    if (!transactionsData?.data || !Array.isArray(transactionsData.data)) {
+      return [];
+    }
+
+    const transactions = transactionsData.data;
+    if (transactions.length === 0) return [];
+
+    const transformed = transactions.map(transformTransactionForUI);
+    return groupTransactionsByDate(transformed);
+  }, [transactionsData]);
+
+  const sections = useMemo(
+    () => buildSections(transactionSections, activeTab, searchTerm),
+    [transactionSections, activeTab, searchTerm],
+  );
 
   const backgroundClass =
     activeTab === "income"
@@ -344,7 +438,7 @@ const TransactionHistoryScreen = () => {
     <Pressable
       onPress={onPress}
       className={cn(
-        "flex-row items-center rounded-lg border border-grayLight/80 px-4 gap-2",
+        "flex-row items-center gap-2 rounded-lg border border-grayLight/80 px-4",
         compact ? "py-2" : "py-3",
         active ? "bg-primary_100" : "bg-white",
       )}
@@ -383,15 +477,6 @@ const TransactionHistoryScreen = () => {
                   placeholder="Search transactions..."
                   placeholderTextColor="#A0A8B2"
                   className="ml-3 flex-1 font-degular text-xl text-textColor"
-                />
-                <Image
-                  source={require("@/assets/icons/mic.svg")}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    tintColor: COLORS.primary_400,
-                  }}
-                  contentFit="contain"
                 />
               </View>
               <Pressable
@@ -434,6 +519,7 @@ const TransactionHistoryScreen = () => {
                     <Text
                       weight="semibold"
                       className={cn(
+                        "",
                         isActive ? "text-textColor" : "text-textColor/60",
                       )}
                     >
@@ -449,98 +535,130 @@ const TransactionHistoryScreen = () => {
             className="mt-6 flex-1"
             contentContainerStyle={{ paddingBottom: 120 }}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoadingTransactions}
+                onRefresh={refetchTransactions}
+              />
+            }
           >
             <View className="px-6">
-              {sections.map((section) => (
-                <View
-                  key={section.id}
-                  className="mb-6 rounded-lg border border-grayLight bg-white "
-                >
-                  <View className="mb-3 flex-row items-end justify-between  border-b border-grayLight p-4">
-                    <View className="">
-                      <Text
-                        weight="semibold"
-                        className="text-base text-textColor"
-                      >
-                        {section.title}
-                      </Text>
-                      <Text className="text-xs text-textColor/60">
-                        {section.summary.transactionCount}{" "}
-                        {section.summary.transactionCount === 1
-                          ? "transaction"
-                          : "transactions"}
-                      </Text>
-                    </View>
-                    <View className="items-end">
-                      <Text
-                        weight="semibold"
-                        className="text-base text-textColor"
-                        style={{ color: section.summary.color }}
-                      >
-                        {formatCurrency(section.summary.total)}
-                      </Text>
-                      <Text className="text-sm">{section.summary.label}</Text>
-                    </View>
-                  </View>
-
-                  <View className="gap-3">
-                    {section.items.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        onPress={() => handleTransactionPress(item.id)}
-                        className="flex-row items-center rounded-3xl bg-white px-4 py-4"
-                      >
-                        <View
-                          className="mr-3 size-12 items-center justify-center rounded-full"
-                          style={{ backgroundColor: item.accent }}
-                        >
-                          <Image
-                            source={item.icon}
-                            style={{ width: 26, height: 26 }}
-                            contentFit="contain"
-                          />
-                        </View>
-                        <View className="flex-1 pe-2">
-                          <Text
-                            weight="semibold"
-                            numberOfLines={1}
-                            className="text-lg"
-                          >
-                            {item.title}
-                          </Text>
-                          <Text className="mt-1 text-sm text-textColor/60">
-                            {item.account} • {item.timeAgo}
-                          </Text>
-                          {item.description ? (
-                            <Text
-                              italic
-                              className="mt-1 text-xs text-textColor/60"
-                            >
-                              {item.description}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <View className="items-end">
-                          <Text
-                            weight="semibold"
-                            className={cn(
-                              "text-base",
-                              item.type === "income"
-                                ? "text-secondary_500"
-                                : "text-[#D14343]",
-                            )}
-                          >
-                            {formatAmountWithSign(item.amount)}
-                          </Text>
-                          <Text className="mt-1 text-xs text-textColor/40">
-                            {item.type === "income" ? "Income" : "Expense"}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    ))}
-                  </View>
+              {isLoadingTransactions && sections.length === 0 ? (
+                <View className="mt-8 items-center justify-center py-8">
+                  <ActivityIndicator size="large" color={COLORS.primary_400} />
+                  <Text className="mt-4 text-textColor/60">
+                    Loading transactions...
+                  </Text>
                 </View>
-              ))}
+              ) : sections.length === 0 ? (
+                <View className="mt-8 items-center justify-center py-8">
+                  <Image
+                    source={require("@/assets/images/home/no-recent-trans.svg")}
+                    style={{ width: 170, height: 162 }}
+                    contentFit="contain"
+                  />
+                  <Text
+                    weight="semibold"
+                    className="mt-4 text-base text-textColor"
+                  >
+                    No transactions found
+                  </Text>
+                  <Text className="mt-1 text-center text-sm text-textColor/60">
+                    Your transaction history will appear here
+                  </Text>
+                </View>
+              ) : (
+                sections.map((section) => (
+                  <View
+                    key={section.id}
+                    className="mb-6 rounded-lg border border-grayLight bg-white "
+                  >
+                    <View className="mb-3 flex-row items-end justify-between  border-b border-grayLight p-4">
+                      <View className="">
+                        <Text
+                          weight="semibold"
+                          className="text-base text-textColor"
+                        >
+                          {section.title}
+                        </Text>
+                        <Text className="text-xs text-textColor/60">
+                          {section.summary.transactionCount}{" "}
+                          {section.summary.transactionCount === 1
+                            ? "transaction"
+                            : "transactions"}
+                        </Text>
+                      </View>
+                      <View className="items-end">
+                        <Text
+                          weight="semibold"
+                          className="text-base text-textColor"
+                          style={{ color: section.summary.color }}
+                        >
+                          {formatCurrency(section.summary.total)}
+                        </Text>
+                        <Text className="text-sm">{section.summary.label}</Text>
+                      </View>
+                    </View>
+
+                    <View className="gap-3">
+                      {section.items.map((item) => (
+                        <Pressable
+                          key={item.id}
+                          onPress={() => handleTransactionPress(item.id)}
+                          className="flex-row items-center rounded-3xl bg-white px-4 py-4"
+                        >
+                          <View
+                            className="mr-3 size-12 items-center justify-center rounded-full"
+                            style={{ backgroundColor: item.accent }}
+                          >
+                            <Image
+                              source={item.icon}
+                              style={{ width: 26, height: 26 }}
+                              contentFit="contain"
+                            />
+                          </View>
+                          <View className="flex-1 pe-2">
+                            <Text
+                              weight="semibold"
+                              numberOfLines={1}
+                              className="text-lg capitalize"
+                            >
+                              {item.title}
+                            </Text>
+                            <Text className="mt-1 text-sm text-textColor/60">
+                              {item.account} • {item.timeAgo}
+                            </Text>
+                            {item.description ? (
+                              <Text
+                                italic
+                                className="mt-1 text-xs text-textColor/60"
+                              >
+                                {item.description}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <View className="items-end">
+                            <Text
+                              weight="semibold"
+                              className={cn(
+                                "text-base",
+                                item.type === "income"
+                                  ? "text-secondary_500"
+                                  : "text-[#D14343]",
+                              )}
+                            >
+                              {formatAmountWithSign(item.amount)}
+                            </Text>
+                            <Text className="mt-1 text-xs text-textColor/40">
+                              {item.type === "income" ? "Income" : "Expense"}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ))
+              )}
             </View>
           </ScrollView>
         </View>
