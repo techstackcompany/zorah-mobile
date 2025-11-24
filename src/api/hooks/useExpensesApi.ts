@@ -10,9 +10,12 @@ import { API_ENDPOINTS } from "../endpoints";
 import {
   AddExpenseRequest,
   ApiEnvelope,
+  DailyExpenseTotal,
   Expense,
   ExpenseSummary,
   ExpenseSummaryFilter,
+  MonthlyExpenseTotal,
+  UpdateExpenseRequest,
 } from "../types";
 
 type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
@@ -39,6 +42,26 @@ export const useAddExpenseMutation = (
     ...options,
   });
 
+export const useUpdateExpenseMutation = (
+  expenseId: string | undefined,
+  options?: MutationOptions<Expense, UpdateExpenseRequest>,
+) =>
+  useMutation<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>({
+    mutationKey: ["expenses", "update", expenseId],
+    mutationFn: (payload) => {
+      if (!expenseId) {
+        throw new Error("Expense ID is required");
+      }
+      const endpoint = API_ENDPOINTS.expenses.updateExpense(expenseId);
+      return apiRequest<ApiEnvelope<Expense>>({
+        method: endpoint.method,
+        url: endpoint.path,
+        data: payload,
+      });
+    },
+    ...options,
+  });
+
 export const useGetExpensesQuery = (options?: QueryOptions<Expense[]>) =>
   useQuery<ApiEnvelope<Expense[]>, ApiError>({
     queryKey: ["expenses", "all"],
@@ -49,6 +72,27 @@ export const useGetExpensesQuery = (options?: QueryOptions<Expense[]>) =>
       });
       return response;
     },
+    ...options,
+  });
+
+export const useGetExpenseQuery = (
+  expenseId: string | undefined,
+  options?: QueryOptions<Expense>,
+) =>
+  useQuery<ApiEnvelope<Expense>, ApiError>({
+    queryKey: ["expenses", "detail", expenseId],
+    queryFn: async () => {
+      if (!expenseId) {
+        throw new Error("Expense ID is required");
+      }
+      const endpoint = API_ENDPOINTS.expenses.getExpense(expenseId);
+      const response = await apiRequest<ApiEnvelope<Expense>>({
+        method: endpoint.method,
+        url: endpoint.path,
+      });
+      return response;
+    },
+    enabled: !!expenseId,
     ...options,
   });
 
@@ -82,24 +126,48 @@ export const useGetExpenseSummaryQuery = (
     ...options,
   });
 
-export const useGetDailyExpensesQuery = (options?: QueryOptions<Expense[]>) =>
-  useQuery<ApiEnvelope<Expense[]>, ApiError>({
+export const useGetDailyExpensesQuery = (
+  options?: QueryOptions<DailyExpenseTotal[]>,
+) =>
+  useQuery<ApiEnvelope<DailyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "daily"],
-    queryFn: () =>
-      apiRequest<ApiEnvelope<Expense[]>>({
+    queryFn: async () => {
+      const response = await apiRequest<
+        ApiEnvelope<DailyExpenseTotal[]> | DailyExpenseTotal[]
+      >({
         method: API_ENDPOINTS.expenses.daily.method,
         url: API_ENDPOINTS.expenses.daily.path,
-      }),
+      });
+
+      // Handle case where API returns array directly
+      if (Array.isArray(response)) {
+        return { data: response };
+      }
+
+      return response;
+    },
     ...options,
   });
 
-export const useGetMonthlyExpensesQuery = (options?: QueryOptions<Expense[]>) =>
-  useQuery<ApiEnvelope<Expense[]>, ApiError>({
+export const useGetMonthlyExpensesQuery = (
+  options?: QueryOptions<MonthlyExpenseTotal[]>,
+) =>
+  useQuery<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "monthly"],
-    queryFn: () =>
-      apiRequest<ApiEnvelope<Expense[]>>({
+    queryFn: async () => {
+      const response = await apiRequest<
+        ApiEnvelope<MonthlyExpenseTotal[]> | MonthlyExpenseTotal[]
+      >({
         method: API_ENDPOINTS.expenses.monthly.method,
         url: API_ENDPOINTS.expenses.monthly.path,
-      }),
+      });
+
+      // Handle case where API returns array directly
+      if (Array.isArray(response)) {
+        return { data: response };
+      }
+
+      return response;
+    },
     ...options,
   });

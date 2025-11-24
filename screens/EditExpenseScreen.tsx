@@ -5,14 +5,19 @@ import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { cn, getErrorMessage } from "@/lib/utils";
-import { useAddExpenseMutation, useGetCategoriesQuery } from "@/src/api/hooks";
+import { cn } from "@/lib/utils";
+import {
+  useGetCategoriesQuery,
+  useGetExpenseQuery,
+  useUpdateExpenseMutation,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { ImageSource } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -36,9 +41,27 @@ const PAYMENT_METHODS = [
   "Cash",
 ];
 
-const AddExpenseScreen = () => {
+// Helper function to format date from API (YYYY-MM-DD) to UI format (DD/MM/YYYY)
+const formatDateForInput = (dateString: string | undefined): string => {
+  if (!dateString) return "";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return "";
+  }
+};
+
+const EditExpenseScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const params = useLocalSearchParams<{ id?: string }>();
+  const expenseId = params.id;
+
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -47,12 +70,35 @@ const AddExpenseScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
 
+  // Fetch expense data
+  const {
+    data: expenseData,
+    isLoading: isExpenseLoading,
+    error: expenseError,
+  } = useGetExpenseQuery(expenseId, {
+    onError: (error) => {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to load expense details.",
+      });
+    },
+  });
+
   // Fetch categories from API
   const {
     data: categoriesData,
     isLoading: isCategoriesLoading,
     error: categoriesError,
   } = useGetCategoriesQuery("expense");
+
+  // Extract expense from response
+  const expense = useMemo(() => {
+    if (!expenseData) return null;
+    return Array.isArray(expenseData)
+      ? expenseData[0]
+      : expenseData.data || expenseData;
+  }, [expenseData]);
 
   // Map API categories to UI format
   const expenseCategories = useMemo<ExpenseCategory[]>(() => {
@@ -63,35 +109,41 @@ const AddExpenseScreen = () => {
     return categoriesData.data.subcategories.map((subcategory) => ({
       key: subcategory.name,
       label: subcategory.name,
-      icon: subcategory.image || "", // Use API image URL
+      icon: subcategory.image || "",
     }));
   }, [categoriesData]);
 
+  // Pre-populate form fields when expense data loads
+  useEffect(() => {
+    if (expense) {
+      setAmount(expense.amount?.toString() || "");
+      setSelectedCategory(expense.category || "");
+      setPaymentMethod(expense.paymentMethod || "");
+      setDate(formatDateForInput(expense.date));
+      setDescription(expense.description || "");
+    }
+  }, [expense]);
+
+  // Set default selected category when categories are loaded and no category is set
   useEffect(() => {
     if (expenseCategories.length > 0 && !selectedCategory) {
       setSelectedCategory(expenseCategories[0].key);
     }
   }, [expenseCategories, selectedCategory]);
 
-  const addExpenseMutation = useAddExpenseMutation({
-    onSuccess: (response) => {
-      console.log("=== ADD EXPENSE SUCCESS ===");
-      console.log("Full response:", JSON.stringify(response, null, 2));
-      console.log("Response data:", response?.data);
-      console.log("========================\n");
-
+  const updateExpenseMutation = useUpdateExpenseMutation(expenseId, {
+    onSuccess: () => {
       // Invalidate expense queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses", "detail", expenseId] });
 
       Toast.show({
         type: "success",
-        text1: "Expense Added",
-        text2: "Your expense has been recorded successfully.",
+        text1: "Expense Updated",
+        text2: "Your expense has been updated successfully.",
       });
-      setAmount("");
-      setPaymentMethod("");
-      setDate("");
-      setDescription("");
+
+      // Navigate back after a short delay
       setTimeout(() => {
         router.back();
       }, 1500);
@@ -100,10 +152,7 @@ const AddExpenseScreen = () => {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: getErrorMessage(
-          error,
-          "Failed to add expense. Please try again.",
-        ),
+        text2: error.message || "Failed to update expense. Please try again.",
       });
     },
   });
@@ -162,7 +211,6 @@ const AddExpenseScreen = () => {
     }
 
     const numericAmount = Number(amount);
-    const apiCategory = selectedCategory;
 
     let formattedDate = date;
     if (date.includes("/")) {
@@ -174,21 +222,67 @@ const AddExpenseScreen = () => {
 
     const payload = {
       amount: numericAmount,
-      category: apiCategory,
+      category: selectedCategory,
       description: description || undefined,
       paymentMethod,
       date: formattedDate,
     };
 
-    addExpenseMutation.mutate(payload);
+    updateExpenseMutation.mutate(payload);
   }, [
     amount,
     selectedCategory,
     paymentMethod,
     date,
     description,
-    addExpenseMutation,
+    updateExpenseMutation,
   ]);
+
+  // Show loading state while fetching expense
+  if (isExpenseLoading) {
+    return (
+      <MainContainer className="bg-light" edges={[]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={COLORS.primary_400} />
+          <Text className="mt-4 text-sm text-textColor/60">
+            Loading expense details...
+          </Text>
+        </View>
+      </MainContainer>
+    );
+  }
+
+  // Show error state if expense fetch fails
+  if (expenseError || !expense) {
+    return (
+      <MainContainer className="bg-light" edges={[]}>
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={COLORS.textColor}
+            style={{ opacity: 0.4 }}
+          />
+          <Text weight="semibold" className="mt-4 text-base text-textColor">
+            Expense Not Found
+          </Text>
+          <Text className="mt-2 text-center text-sm text-textColor/60">
+            {expenseError?.message ||
+              "The expense you're looking for doesn't exist."}
+          </Text>
+          <Pressable
+            onPress={() => router.back()}
+            className="mt-6 rounded-lg bg-primary_400 px-6 py-3"
+            accessibilityRole="button"
+          >
+            <Text weight="semibold" className="text-white">
+              Go Back
+            </Text>
+          </Pressable>
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -219,9 +313,7 @@ const AddExpenseScreen = () => {
                 <Text className="text-sm text-textColor/70">Category</Text>
                 {isCategoriesLoading ? (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">
-                      Loading categories...
-                    </Text>
+                    <Text className="text-textColor/50">Loading categories...</Text>
                   </View>
                 ) : categoriesError ? (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-8">
@@ -237,9 +329,7 @@ const AddExpenseScreen = () => {
                   />
                 ) : (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">
-                      No categories available
-                    </Text>
+                    <Text className="text-textColor/50">No categories available</Text>
                   </View>
                 )}
               </View>
@@ -314,18 +404,18 @@ const AddExpenseScreen = () => {
           <View className="px-6 pb-6">
             <Pressable
               onPress={handleSubmit}
-              disabled={addExpenseMutation.isPending}
+              disabled={updateExpenseMutation.isPending}
               className={cn(
                 "items-center justify-center rounded-2xl py-4",
-                addExpenseMutation.isPending
+                updateExpenseMutation.isPending
                   ? "bg-primary_400/60"
                   : "bg-primary_400",
               )}
             >
               <Text weight="semibold" className="text-base text-white">
-                {addExpenseMutation.isPending
-                  ? "Adding Expense..."
-                  : "Add New Expense"}
+                {updateExpenseMutation.isPending
+                  ? "Updating Expense..."
+                  : "Update Expense"}
               </Text>
             </Pressable>
           </View>
@@ -379,4 +469,5 @@ const AddExpenseScreen = () => {
   );
 };
 
-export default AddExpenseScreen;
+export default EditExpenseScreen;
+

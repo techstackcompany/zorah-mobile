@@ -1,9 +1,15 @@
 import {
   CategoryRanking,
+  DailyExpenseChart,
+  DailyExpenseList,
   ExpenseChart,
   ExpenseList,
+  MonthlyExpenseChart,
+  MonthlyExpenseList,
+  PeriodSelector,
   TabSwitcher,
   type ChartSegment,
+  type PeriodType,
   type TabKey,
 } from "@/components/expense-planning";
 import {
@@ -19,8 +25,11 @@ import CollapsibleCard from "@/components/ui/CollapsibleCard";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
+  useGetDailyExpensesQuery,
   useGetExpenseSummaryQuery,
   useGetExpensesQuery,
+  useGetIncomesQuery,
+  useGetMonthlyExpensesQuery,
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -81,6 +90,11 @@ const ExpensePlanningScreen = () => {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabKey>("expense");
+  const [dailyViewMode, setDailyViewMode] = useState<"chart" | "list">("list");
+  const [monthlyViewMode, setMonthlyViewMode] = useState<"chart" | "list">(
+    "list",
+  );
+  const [periodType, setPeriodType] = useState<PeriodType>("daily");
 
   // Fetch expense data
   const {
@@ -100,22 +114,71 @@ const ExpensePlanningScreen = () => {
     enabled: activeTab === "expense",
   });
 
+  // Fetch daily expense totals
+  const {
+    data: dailyExpensesData,
+    isLoading: isDailyExpensesLoading,
+    refetch: refetchDailyExpenses,
+  } = useGetDailyExpensesQuery({
+    enabled: activeTab === "expense" && periodType === "daily",
+  });
+
+  // Fetch monthly expense totals
+  const {
+    data: monthlyExpensesData,
+    isLoading: isMonthlyExpensesLoading,
+    refetch: refetchMonthlyExpenses,
+  } = useGetMonthlyExpensesQuery({
+    enabled: activeTab === "expense" && periodType === "monthly",
+  });
+
+  // Fetch income data
+  const {
+    data: incomesData,
+    isLoading: isIncomesLoading,
+    refetch: refetchIncomes,
+  } = useGetIncomesQuery({
+    enabled: activeTab === "income",
+  });
+
   console.log("error", error);
 
   const isLoading =
-    activeTab === "expense" && (isSummaryLoading || isExpensesLoading);
+    (activeTab === "expense" &&
+      (isSummaryLoading ||
+        isExpensesLoading ||
+        (periodType === "daily" && isDailyExpensesLoading) ||
+        (periodType === "monthly" && isMonthlyExpensesLoading))) ||
+    (activeTab === "income" && isIncomesLoading);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       if (activeTab === "expense") {
-        await Promise.all([refetchSummary(), refetchExpenses()]);
+        const promises = [
+          refetchSummary(),
+          refetchExpenses(),
+          periodType === "daily"
+            ? refetchDailyExpenses()
+            : refetchMonthlyExpenses(),
+        ];
+        await Promise.all(promises);
+      } else if (activeTab === "income") {
+        await refetchIncomes();
       }
     } finally {
       setIsRefreshing(false);
     }
-  }, [activeTab, refetchSummary, refetchExpenses]);
+  }, [
+    activeTab,
+    periodType,
+    refetchSummary,
+    refetchExpenses,
+    refetchDailyExpenses,
+    refetchMonthlyExpenses,
+    refetchIncomes,
+  ]);
 
   const tabConfig = useMemo(
     () => TAB_ITEMS.find((item) => item.key === activeTab)!,
@@ -180,6 +243,113 @@ const ExpensePlanningScreen = () => {
           segments,
         };
       }
+    } else if (activeTab === "income" && incomesData) {
+      // Transform income data to chart segments
+      const incomesArray = Array.isArray(incomesData.data)
+        ? incomesData.data
+        : [];
+
+      if (incomesArray.length > 0) {
+        // Group incomes by category
+        const categoryMap = new Map<string, number>();
+        incomesArray.forEach((income: any) => {
+          const category = income.category || "Other";
+          const amount = income.amount || 0;
+          categoryMap.set(
+            category,
+            (categoryMap.get(category) || 0) + amount,
+          );
+        });
+
+        // Calculate total
+        const total = Array.from(categoryMap.values()).reduce(
+          (sum, amount) => sum + amount,
+          0,
+        );
+
+        // Transform to segments - sort by amount descending to ensure proper rendering
+        const segments: ChartSegment[] = Array.from(categoryMap.entries())
+          .sort((a, b) => b[1] - a[1]) // Sort by amount descending
+          .map(([categoryName, amount], index) => {
+            const percentage = total > 0 ? (amount / total) * 100 : 0;
+
+            // Determine label position based on index
+            const labelPositions = [
+              { bottom: 36, left: 24 },
+              { top: 42, right: 36 },
+              { top: 62, left: 26 },
+              { bottom: 58, right: 26 },
+            ];
+            const labelPosition =
+              labelPositions[index % labelPositions.length] || {};
+
+            // Generate unique colors for categories that don't have mappings
+            const getColorForCategory = (cat: string, idx: number): string => {
+              if (CATEGORY_COLOR_MAP[cat]) return CATEGORY_COLOR_MAP[cat];
+              // Generate a color based on index for unmapped categories
+              const colors = [
+                "#5D5FFE", "#FDBA4D", "#3EB489", "#1A43BE", "#E261F3",
+                "#27AE60", "#F2994A", "#BB6BD9", "#9B51E0", "#7E8DA0"
+              ];
+              return colors[idx % colors.length];
+            };
+
+            const getTrackColorForCategory = (cat: string, color: string): string => {
+              if (CATEGORY_TRACK_COLOR_MAP[cat]) return CATEGORY_TRACK_COLOR_MAP[cat];
+              // Use a light version of the color for track
+              const trackColors: Record<string, string> = {
+                "#5D5FFE": "#E6E7FF",
+                "#FDBA4D": "#FFF1DD",
+                "#3EB489": "#E5F6F0",
+                "#1A43BE": "#E9EEFF",
+                "#E261F3": "#FBE9FF",
+                "#27AE60": "#E5F6F0",
+                "#F2994A": "#FFF1DD",
+                "#BB6BD9": "#FBE9FF",
+                "#9B51E0": "#F9ECFF",
+                "#7E8DA0": "#F0F2F5",
+              };
+              return trackColors[color] || "#E6E7FF";
+            };
+
+            const getBgColorForCategory = (cat: string, color: string): string => {
+              if (CATEGORY_BG_COLOR_MAP[cat]) return CATEGORY_BG_COLOR_MAP[cat];
+              // Use a very light version of the color for background
+              const bgColors: Record<string, string> = {
+                "#5D5FFE": "#F6F5FF",
+                "#FDBA4D": "#FFF7E7",
+                "#3EB489": "#E7F8F1",
+                "#1A43BE": "#E9EEFF",
+                "#E261F3": "#F9ECFF",
+                "#27AE60": "#E7F8F1",
+                "#F2994A": "#FFF7E7",
+                "#BB6BD9": "#F9ECFF",
+                "#9B51E0": "#F9ECFF",
+                "#7E8DA0": "#F5F6F8",
+              };
+              return bgColors[color] || "#F6F5FF";
+            };
+
+            const categoryColor = getColorForCategory(categoryName, index);
+
+            return {
+              key: `${categoryName}-${index}`,
+              label: categoryName.charAt(0).toUpperCase() + categoryName.slice(1), // Capitalize first letter
+              percentage: Math.round(percentage),
+              color: categoryColor,
+              trackColor: getTrackColorForCategory(categoryName, categoryColor),
+              icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
+              iconBackground: getBgColorForCategory(categoryName, categoryColor),
+              labelPosition,
+              amount,
+            };
+          });
+
+        return {
+          total,
+          segments,
+        };
+      }
     }
 
     // Return empty data when no API data is available
@@ -187,7 +357,7 @@ const ExpensePlanningScreen = () => {
       total: 0,
       segments: [],
     };
-  }, [activeTab, expenseSummaryData]);
+  }, [activeTab, expenseSummaryData, incomesData]);
 
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
@@ -220,6 +390,60 @@ const ExpensePlanningScreen = () => {
       ? expensesData
       : (expensesData as any)?.data || [];
   }, [expensesData, activeTab]);
+
+  // Get incomes array for IncomeList component (reusing ExpenseList)
+  // Transform income data to match ExpenseItem format
+  const incomesArray = useMemo(() => {
+    if (activeTab !== "income") return [];
+    const rawIncomes = Array.isArray(incomesData?.data)
+      ? incomesData.data
+      : [];
+    
+    // Transform Income to ExpenseItem format (they're similar)
+    return rawIncomes.map((income: any) => {
+      const category = income.category || "Other";
+      // Capitalize the category name
+      const capitalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      
+      return {
+        _id: income._id,
+        id: income._id,
+        amount: income.amount || 0,
+        category: capitalizedCategory,
+        description: income.description,
+        paymentMethod: income.source, // Income uses "source" instead of "paymentMethod"
+        date: income.date || income.createdAt,
+        createdAt: income.createdAt,
+        updatedAt: income.updatedAt,
+      };
+    });
+  }, [incomesData, activeTab]);
+
+  // Get daily expenses array for DailyExpenseChart component
+  const dailyExpensesArray = useMemo(() => {
+    if (activeTab !== "expense" || periodType !== "daily") return [];
+    if (!dailyExpensesData) return [];
+
+    // Handle both ApiEnvelope and direct array responses
+    if (Array.isArray(dailyExpensesData)) {
+      return dailyExpensesData;
+    }
+
+    return dailyExpensesData.data || [];
+  }, [dailyExpensesData, activeTab, periodType]);
+
+  // Get monthly expenses array for MonthlyExpenseList component
+  const monthlyExpensesArray = useMemo(() => {
+    if (activeTab !== "expense" || periodType !== "monthly") return [];
+    if (!monthlyExpensesData) return [];
+
+    // Handle both ApiEnvelope and direct array responses
+    if (Array.isArray(monthlyExpensesData)) {
+      return monthlyExpensesData;
+    }
+
+    return monthlyExpensesData.data || [];
+  }, [monthlyExpensesData, activeTab, periodType]);
   return (
     <MainContainer className="bg-lightMuted pb-0" edges={[]}>
       <ScrollView
@@ -282,22 +506,122 @@ const ExpensePlanningScreen = () => {
             </View>
           </View>
 
-          {/* Expense List Section */}
+          {/* Daily/Monthly Spending Section */}
           {activeTab === "expense" && (
             <View className="mt-8">
+              <View className="flex-row items-center justify-between">
+                <Text weight="semibold" className="text-base text-textColor">
+                  {periodType === "daily"
+                    ? "Daily Spending"
+                    : "Monthly Spending"}
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <PeriodSelector
+                    selectedPeriod={periodType}
+                    onPeriodChange={setPeriodType}
+                  />
+                  <View className="flex-row gap-2">
+                    <Pressable
+                      onPress={() => {
+                        if (periodType === "daily") {
+                          setDailyViewMode("list");
+                        } else {
+                          setMonthlyViewMode("list");
+                        }
+                      }}
+                      className={`rounded-lg border px-3 py-1.5 ${(periodType === "daily" ? dailyViewMode === "list" : monthlyViewMode === "list") ? "border-primary_400 bg-primary_100" : "border-grayLight/80 bg-white"}`}
+                    >
+                      <Ionicons
+                        name="list-outline"
+                        size={16}
+                        color={
+                          (
+                            periodType === "daily"
+                              ? dailyViewMode === "list"
+                              : monthlyViewMode === "list"
+                          )
+                            ? COLORS.primary_400
+                            : COLORS.textColor
+                        }
+                      />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        if (periodType === "daily") {
+                          setDailyViewMode("chart");
+                        } else {
+                          setMonthlyViewMode("chart");
+                        }
+                      }}
+                      className={`rounded-lg border px-3 py-1.5 ${(periodType === "daily" ? dailyViewMode === "chart" : monthlyViewMode === "chart") ? "border-primary_400 bg-primary_100" : "border-grayLight/80 bg-white"}`}
+                    >
+                      <Ionicons
+                        name="bar-chart-outline"
+                        size={16}
+                        color={
+                          (
+                            periodType === "daily"
+                              ? dailyViewMode === "chart"
+                              : monthlyViewMode === "chart"
+                          )
+                            ? COLORS.primary_400
+                            : COLORS.textColor
+                        }
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.dailyExpenseCard}>
+                {periodType === "daily" ? (
+                  dailyViewMode === "chart" ? (
+                    <DailyExpenseChart
+                      dailyExpenses={dailyExpensesArray}
+                      isLoading={isDailyExpensesLoading}
+                      formatCurrency={formatCurrency}
+                    />
+                  ) : (
+                    <DailyExpenseList
+                      dailyExpenses={dailyExpensesArray}
+                      isLoading={isDailyExpensesLoading}
+                      formatCurrency={formatCurrency}
+                    />
+                  )
+                ) : monthlyViewMode === "chart" ? (
+                  <MonthlyExpenseChart
+                    monthlyExpenses={monthlyExpensesArray}
+                    isLoading={isMonthlyExpensesLoading}
+                    formatCurrency={formatCurrency}
+                  />
+                ) : (
+                  <MonthlyExpenseList
+                    monthlyExpenses={monthlyExpensesArray}
+                    isLoading={isMonthlyExpensesLoading}
+                    formatCurrency={formatCurrency}
+                  />
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Expense/Income List Section */}
+          {(activeTab === "expense" || activeTab === "income") && (
+            <View className="mt-8">
               <Text weight="semibold" className="text-base text-textColor">
-                Recent Expenses
+                {activeTab === "expense" ? "Recent Expenses" : "Recent Income"}
               </Text>
 
               <View style={styles.expenseListCard}>
                 <ExpenseList
-                  expenses={expensesArray}
-                  isLoading={isExpensesLoading}
+                  expenses={activeTab === "expense" ? expensesArray : incomesArray}
+                  isLoading={activeTab === "expense" ? isExpensesLoading : isIncomesLoading}
                   categoryColorMap={CATEGORY_COLOR_MAP}
                   categoryIconMap={CATEGORY_ICON_MAP}
                   categoryBgMap={CATEGORY_BG_COLOR_MAP}
                   formatCurrency={formatCurrency}
                   formatDate={formatExpenseDate}
+                  type={activeTab}
                 />
               </View>
             </View>
@@ -365,6 +689,12 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   expenseListCard: {
+    marginTop: 16,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+  },
+  dailyExpenseCard: {
     marginTop: 16,
     borderRadius: 28,
     backgroundColor: "#FFFFFF",

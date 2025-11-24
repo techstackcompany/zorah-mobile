@@ -8,6 +8,13 @@ export const CATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> =
     Calls: "call-outline",
     "POS Charges": "card-outline",
     Data: "wifi-outline",
+    // Income categories
+    investment: "trending-up-outline",
+    gift: "gift-outline",
+    salary: "cash-outline",
+    business: "business-outline",
+    freelance: "briefcase-outline",
+    other: "ellipse-outline",
     // Add more mappings as needed
   };
 
@@ -17,6 +24,13 @@ export const CATEGORY_COLOR_MAP: Record<string, string> = {
   Calls: "#3EB489",
   "POS Charges": "#1A43BE",
   Data: "#E261F3",
+  // Income categories
+  investment: "#27AE60",
+  gift: "#E261F3",
+  salary: "#5D5FFE",
+  business: "#FDBA4D",
+  freelance: "#3EB489",
+  other: "#7E8DA0",
   // Add more mappings as needed
 };
 
@@ -26,6 +40,13 @@ export const CATEGORY_TRACK_COLOR_MAP: Record<string, string> = {
   Calls: "#E5F6F0",
   "POS Charges": "#E9EEFF",
   Data: "#FBE9FF",
+  // Income categories
+  investment: "#E5F6F0",
+  gift: "#FBE9FF",
+  salary: "#E6E7FF",
+  business: "#FFF1DD",
+  freelance: "#E5F6F0",
+  other: "#F0F2F5",
   // Add more mappings as needed
 };
 
@@ -35,6 +56,13 @@ export const CATEGORY_BG_COLOR_MAP: Record<string, string> = {
   Calls: "#E7F8F1",
   "POS Charges": "#E9EEFF",
   Data: "#F9ECFF",
+  // Income categories
+  investment: "#E7F8F1",
+  gift: "#F9ECFF",
+  salary: "#F6F5FF",
+  business: "#FFF7E7",
+  freelance: "#E7F8F1",
+  other: "#F5F6F8",
   // Add more mappings as needed
 };
 

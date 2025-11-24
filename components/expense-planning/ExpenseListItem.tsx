@@ -29,7 +29,6 @@ const ExpenseListItem = ({
   categoryColor,
   categoryIcon,
   categoryBg,
-  formattedDate,
   formatCurrency,
 }: ExpenseListItemProps) => {
   const categoryName = expense.category || "Other";
@@ -59,24 +58,8 @@ const ExpenseListItem = ({
               {expense.description}
             </Text>
           )}
-          {formattedDate && (
-            <>
-              {expense.description && (
-                <Text className="text-xs text-textColor/40">•</Text>
-              )}
-              <Text className="text-xs text-textColor/60">{formattedDate}</Text>
-            </>
-          )}
-          {expense.paymentMethod && (
-            <>
-              {(expense.description || formattedDate) && (
-                <Text className="text-xs text-textColor/40">•</Text>
-              )}
-              <Text className="text-xs text-textColor/60">
-                {expense.paymentMethod}
-              </Text>
-            </>
-          )}
+       
+      
         </View>
       </View>
     </View>
