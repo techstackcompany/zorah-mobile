@@ -14,7 +14,6 @@ function RootNavigator() {
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
-  console.log("pathname", pathname);
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || hasCompletedSetup) return;
@@ -40,7 +39,6 @@ function RootNavigator() {
   ]);
 
   if (isLoading){
-    console.log('isLoading', isLoading)
     return null
   }
   return (

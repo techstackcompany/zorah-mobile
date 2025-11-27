@@ -237,7 +237,7 @@ const HomeScreen = () => {
     const balance = balanceData?.balance ?? 0;
     return typeof balance === "number" ? balance : 0;
   }, [balanceData]);
-  console.log("transactionsData", transactionsData);
+  
   useEffect(() => {
     if (
       balanceData?.currency &&
