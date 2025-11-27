@@ -1,10 +1,4 @@
-import {
-  QueryKey,
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -13,18 +7,8 @@ import {
   Income,
 } from "../types";
 
-type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
-  UseQueryOptions<ApiEnvelope<TData>, ApiError, ApiEnvelope<TData>, TQueryKey>,
-  "queryKey" | "queryFn"
->;
-
-type MutationOptions<TData, TVariables> = Omit<
-  UseMutationOptions<ApiEnvelope<TData>, ApiError, TVariables>,
-  "mutationFn"
->;
-
 export const useAddIncomeMutation = (
-  options?: MutationOptions<Income, AddIncomeRequest>,
+  options?: UseMutationOptions<ApiEnvelope<Income>, ApiError, AddIncomeRequest>,
 ) =>
   useMutation<ApiEnvelope<Income>, ApiError, AddIncomeRequest>({
     mutationKey: ["income", "addIncome"],
@@ -38,7 +22,7 @@ export const useAddIncomeMutation = (
   });
 
 export const useGetIncomesQuery = (
-  options?: QueryOptions<Income[]>,
+  options?: UseQueryOptions<ApiEnvelope<Income[]>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<Income[]>, ApiError>({
     queryKey: ["income", "list"],
@@ -75,7 +59,7 @@ export const useGetIncomesQuery = (
 
 export const useGetIncomeQuery = (
   incomeId: string | undefined,
-  options?: QueryOptions<Income>,
+  options?: UseQueryOptions<ApiEnvelope<Income>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<Income>, ApiError>({
     queryKey: ["income", "detail", incomeId],
@@ -116,7 +100,7 @@ export const useGetIncomeQuery = (
 
 export const useDeleteIncomeMutation = (
   incomeId: string | undefined,
-  options?: MutationOptions<ApiEnvelope<{ message: string }>, void>,
+  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["income", "delete", incomeId],
@@ -132,4 +116,3 @@ export const useDeleteIncomeMutation = (
     },
     ...options,
   });
-

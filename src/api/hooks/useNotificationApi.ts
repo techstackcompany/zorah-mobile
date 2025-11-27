@@ -1,10 +1,4 @@
-import {
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  UseQueryOptions,
-  QueryKey,
-} from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { apiRequest, ApiError } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -14,18 +8,8 @@ import {
   SendTestNotificationRequest,
 } from "../types";
 
-type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
-  UseQueryOptions<ApiEnvelope<TData>, ApiError, ApiEnvelope<TData>, TQueryKey>,
-  "queryKey" | "queryFn"
->;
-
-type MutationOptions<TData, TVariables> = Omit<
-  UseMutationOptions<ApiEnvelope<TData>, ApiError, TVariables>,
-  "mutationFn"
->;
-
 export const useGetNotificationsQuery = (
-  options?: QueryOptions<Notification[]>,
+  options?: UseQueryOptions<ApiEnvelope<Notification[]>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<Notification[]>, ApiError>({
     queryKey: ["notifications", "list"],
@@ -38,7 +22,7 @@ export const useGetNotificationsQuery = (
   });
 
 export const useReadNotificationMutation = (
-  options?: MutationOptions<Notification, { notificationId: string }>,
+  options?: UseMutationOptions<ApiEnvelope<Notification>, ApiError, { notificationId: string }>,
 ) =>
   useMutation<
     ApiEnvelope<Notification>,
@@ -58,7 +42,7 @@ export const useReadNotificationMutation = (
   });
 
 export const useRegisterNotificationTokenMutation = (
-  options?: MutationOptions<unknown, RegisterNotificationTokenRequest>,
+  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, RegisterNotificationTokenRequest>,
 ) =>
   useMutation<
     ApiEnvelope<unknown>,
@@ -76,7 +60,7 @@ export const useRegisterNotificationTokenMutation = (
   });
 
 export const useSendTestNotificationMutation = (
-  options?: MutationOptions<unknown, SendTestNotificationRequest>,
+  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, SendTestNotificationRequest>,
 ) =>
   useMutation<
     ApiEnvelope<unknown>,

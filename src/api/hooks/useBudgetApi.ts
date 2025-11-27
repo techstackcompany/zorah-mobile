@@ -1,10 +1,4 @@
-import {
-  QueryKey,
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -17,28 +11,8 @@ import {
   UpdateBudgetResponse,
 } from "../types";
 
-type BudgetQueryOptions = Omit<
-  UseQueryOptions<
-    BudgetListItem[] | ApiEnvelope<BudgetListItem[]>,
-    ApiError,
-    BudgetListItem[] | ApiEnvelope<BudgetListItem[]>,
-    QueryKey
-  >,
-  "queryKey" | "queryFn"
->;
-
-type BudgetDetailQueryOptions = Omit<
-  UseQueryOptions<Budget, ApiError, Budget, QueryKey>,
-  "queryKey" | "queryFn"
->;
-
-type MutationOptions<TData, TVariables> = Omit<
-  UseMutationOptions<TData, ApiError, TVariables>,
-  "mutationFn"
->;
-
 export const useCreateBudgetMutation = (
-  options?: MutationOptions<CreateBudgetResponse, CreateBudgetRequest>,
+  options?: UseMutationOptions<CreateBudgetResponse, ApiError, CreateBudgetRequest>,
 ) =>
   useMutation<CreateBudgetResponse, ApiError, CreateBudgetRequest>({
     mutationKey: ["budgets", "create"],
@@ -51,7 +25,9 @@ export const useCreateBudgetMutation = (
     ...options,
   });
 
-export const useGetBudgetsQuery = (options?: BudgetQueryOptions) =>
+export const useGetBudgetsQuery = (
+  options?: UseQueryOptions<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>,
+) =>
   useQuery<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>({
     queryKey: ["budgets", "list"],
     queryFn: async () => {
@@ -73,7 +49,7 @@ export const useGetBudgetsQuery = (options?: BudgetQueryOptions) =>
 
 export const useGetBudgetQuery = (
   budgetId: string | undefined,
-  options?: BudgetDetailQueryOptions,
+  options?: UseQueryOptions<Budget, ApiError>,
 ) =>
   useQuery<Budget, ApiError>({
     queryKey: ["budgets", "detail", budgetId],
@@ -105,7 +81,7 @@ export const useGetBudgetQuery = (
 
 export const useUpdateBudgetMutation = (
   budgetId: string | undefined,
-  options?: MutationOptions<UpdateBudgetResponse, UpdateBudgetRequest>,
+  options?: UseMutationOptions<UpdateBudgetResponse, ApiError, UpdateBudgetRequest>,
 ) =>
   useMutation<UpdateBudgetResponse, ApiError, UpdateBudgetRequest>({
     mutationKey: ["budgets", "update", budgetId],
@@ -125,7 +101,7 @@ export const useUpdateBudgetMutation = (
 
 export const useDeleteBudgetMutation = (
   budgetId: string | undefined,
-  options?: MutationOptions<ApiEnvelope<{ message: string }>, void>,
+  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "delete", budgetId],
@@ -144,7 +120,7 @@ export const useDeleteBudgetMutation = (
 
 export const useArchiveBudgetMutation = (
   budgetId: string | undefined,
-  options?: MutationOptions<ApiEnvelope<{ message: string }>, void>,
+  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "archive", budgetId],
@@ -163,7 +139,7 @@ export const useArchiveBudgetMutation = (
 
 export const useRestoreBudgetMutation = (
   budgetId: string | undefined,
-  options?: MutationOptions<ApiEnvelope<{ message: string }>, void>,
+  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "restore", budgetId],
@@ -180,7 +156,9 @@ export const useRestoreBudgetMutation = (
     ...options,
   });
 
-export const useGetArchivedBudgetsQuery = (options?: BudgetQueryOptions) =>
+export const useGetArchivedBudgetsQuery = (
+  options?: UseQueryOptions<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>,
+) =>
   useQuery<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>({
     queryKey: ["budgets", "archived"],
     queryFn: async () => {

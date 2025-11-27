@@ -1,10 +1,4 @@
-import {
-  QueryKey,
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -18,18 +12,8 @@ import {
   UpdateExpenseRequest,
 } from "../types";
 
-type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
-  UseQueryOptions<ApiEnvelope<TData>, ApiError, ApiEnvelope<TData>, TQueryKey>,
-  "queryKey" | "queryFn"
->;
-
-type MutationOptions<TData, TVariables> = Omit<
-  UseMutationOptions<ApiEnvelope<TData>, ApiError, TVariables>,
-  "mutationFn"
->;
-
 export const useAddExpenseMutation = (
-  options?: MutationOptions<Expense, AddExpenseRequest>,
+  options?: UseMutationOptions<ApiEnvelope<Expense>, ApiError, AddExpenseRequest>,
 ) =>
   useMutation<ApiEnvelope<Expense>, ApiError, AddExpenseRequest>({
     mutationKey: ["expenses", "addExpense"],
@@ -44,7 +28,7 @@ export const useAddExpenseMutation = (
 
 export const useUpdateExpenseMutation = (
   expenseId: string | undefined,
-  options?: MutationOptions<Expense, UpdateExpenseRequest>,
+  options?: UseMutationOptions<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>,
 ) =>
   useMutation<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>({
     mutationKey: ["expenses", "update", expenseId],
@@ -62,7 +46,9 @@ export const useUpdateExpenseMutation = (
     ...options,
   });
 
-export const useGetExpensesQuery = (options?: QueryOptions<Expense[]>) =>
+export const useGetExpensesQuery = (
+  options?: UseQueryOptions<ApiEnvelope<Expense[]>, ApiError>,
+) =>
   useQuery<ApiEnvelope<Expense[]>, ApiError>({
     queryKey: ["expenses", "all"],
     queryFn: async () => {
@@ -77,7 +63,7 @@ export const useGetExpensesQuery = (options?: QueryOptions<Expense[]>) =>
 
 export const useGetExpenseQuery = (
   expenseId: string | undefined,
-  options?: QueryOptions<Expense>,
+  options?: UseQueryOptions<ApiEnvelope<Expense>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<Expense>, ApiError>({
     queryKey: ["expenses", "detail", expenseId],
@@ -98,7 +84,7 @@ export const useGetExpenseQuery = (
 
 export const useGetExpenseSummaryQuery = (
   type: ExpenseSummaryFilter["type"],
-  options?: QueryOptions<ExpenseSummary>,
+  options?: UseQueryOptions<ApiEnvelope<ExpenseSummary>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<ExpenseSummary>, ApiError>({
     queryKey: ["expenses", "summary", type],
@@ -127,7 +113,7 @@ export const useGetExpenseSummaryQuery = (
   });
 
 export const useGetDailyExpensesQuery = (
-  options?: QueryOptions<DailyExpenseTotal[]>,
+  options?: UseQueryOptions<ApiEnvelope<DailyExpenseTotal[]>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<DailyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "daily"],
@@ -150,7 +136,7 @@ export const useGetDailyExpensesQuery = (
   });
 
 export const useGetMonthlyExpensesQuery = (
-  options?: QueryOptions<MonthlyExpenseTotal[]>,
+  options?: UseQueryOptions<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "monthly"],

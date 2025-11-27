@@ -1,10 +1,4 @@
-import {
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  UseQueryOptions,
-  QueryKey,
-} from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { apiRequest, ApiError } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -16,18 +10,8 @@ import {
   JoinEsusuRequest,
 } from "../types";
 
-type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
-  UseQueryOptions<ApiEnvelope<TData>, ApiError, ApiEnvelope<TData>, TQueryKey>,
-  "queryKey" | "queryFn"
->;
-
-type MutationOptions<TData, TVariables> = Omit<
-  UseMutationOptions<ApiEnvelope<TData>, ApiError, TVariables>,
-  "mutationFn"
->;
-
 export const useCreateEsusuGroupMutation = (
-  options?: MutationOptions<EsusuGroup, CreateEsusuRequest>,
+  options?: UseMutationOptions<ApiEnvelope<EsusuGroup>, ApiError, CreateEsusuRequest>,
 ) =>
   useMutation<ApiEnvelope<EsusuGroup>, ApiError, CreateEsusuRequest>({
     mutationKey: ["esusu", "create"],
@@ -41,7 +25,7 @@ export const useCreateEsusuGroupMutation = (
   });
 
 export const useJoinEsusuGroupMutation = (
-  options?: MutationOptions<EsusuGroup, JoinEsusuRequest>,
+  options?: UseMutationOptions<ApiEnvelope<EsusuGroup>, ApiError, JoinEsusuRequest>,
 ) =>
   useMutation<ApiEnvelope<EsusuGroup>, ApiError, JoinEsusuRequest>({
     mutationKey: ["esusu", "join"],
@@ -56,7 +40,7 @@ export const useJoinEsusuGroupMutation = (
 
 export const useGetEsusuGroupQuery = (
   groupId: string | undefined,
-  options?: QueryOptions<EsusuGroup, QueryKey>,
+  options?: UseQueryOptions<ApiEnvelope<EsusuGroup>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<EsusuGroup>, ApiError>({
     queryKey: ["esusu", "group", groupId],
@@ -77,7 +61,7 @@ export const useGetEsusuGroupQuery = (
   });
 
 export const useContributeToEsusuMutation = (
-  options?: MutationOptions<EsusuGroup, ContributeToEsusuRequest>,
+  options?: UseMutationOptions<ApiEnvelope<EsusuGroup>, ApiError, ContributeToEsusuRequest>,
 ) =>
   useMutation<ApiEnvelope<EsusuGroup>, ApiError, ContributeToEsusuRequest>({
     mutationKey: ["esusu", "contribute"],
@@ -91,7 +75,7 @@ export const useContributeToEsusuMutation = (
   });
 
 export const useProcessEsusuPayoutsMutation = (
-  options?: MutationOptions<unknown, void>,
+  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, void>,
 ) =>
   useMutation<ApiEnvelope<unknown>, ApiError, void>({
     mutationKey: ["esusu", "payouts", "process"],
@@ -104,7 +88,7 @@ export const useProcessEsusuPayoutsMutation = (
   });
 
 export const useRetryEsusuPayoutMutation = (
-  options?: MutationOptions<unknown, void>,
+  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, void>,
 ) =>
   useMutation<ApiEnvelope<unknown>, ApiError, void>({
     mutationKey: ["esusu", "payouts", "retry"],
@@ -118,7 +102,7 @@ export const useRetryEsusuPayoutMutation = (
 
 export const useGetEsusuPayoutHistoryQuery = (
   groupId: string | undefined,
-  options?: QueryOptions<EsusuPayoutHistoryItem[], QueryKey>,
+  options?: UseQueryOptions<ApiEnvelope<EsusuPayoutHistoryItem[]>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<EsusuPayoutHistoryItem[]>, ApiError>({
     queryKey: ["esusu", "payouts", "history", groupId],

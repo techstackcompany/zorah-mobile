@@ -1,10 +1,4 @@
-import {
-  QueryKey,
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -15,18 +9,8 @@ import {
   UpdateSavingsGoalRequest,
 } from "../types";
 
-type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
-  UseQueryOptions<ApiEnvelope<TData>, ApiError, ApiEnvelope<TData>, TQueryKey>,
-  "queryKey" | "queryFn"
->;
-
-type MutationOptions<TData, TVariables> = Omit<
-  UseMutationOptions<ApiEnvelope<TData>, ApiError, TVariables>,
-  "mutationFn"
->;
-
 export const useCreateSavingsGoalMutation = (
-  options?: MutationOptions<SavingsGoal, CreateSavingsGoalRequest>,
+  options?: UseMutationOptions<ApiEnvelope<SavingsGoal>, ApiError, CreateSavingsGoalRequest>,
 ) =>
   useMutation<ApiEnvelope<SavingsGoal>, ApiError, CreateSavingsGoalRequest>({
     mutationKey: ["savings", "createGoal"],
@@ -40,7 +24,7 @@ export const useCreateSavingsGoalMutation = (
   });
 
 export const useContributeToSavingsMutation = (
-  options?: MutationOptions<SavingsGoal, ContributeToSavingsRequest>,
+  options?: UseMutationOptions<ApiEnvelope<SavingsGoal>, ApiError, ContributeToSavingsRequest>,
 ) =>
   useMutation<ApiEnvelope<SavingsGoal>, ApiError, ContributeToSavingsRequest>({
     mutationKey: ["savings", "contribute"],
@@ -54,7 +38,7 @@ export const useContributeToSavingsMutation = (
   });
 
 export const useGetSavingsGoalsQuery = (
-  options?: QueryOptions<SavingsGoal[]>,
+  options?: UseQueryOptions<ApiEnvelope<SavingsGoal[]>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<SavingsGoal[]>, ApiError>({
     queryKey: ["savings", "goals"],
@@ -78,7 +62,7 @@ export const useGetSavingsGoalsQuery = (
 
 export const useGetSavingsGoalQuery = (
   goalId: string | undefined,
-  options?: QueryOptions<SavingsGoal>,
+  options?: UseQueryOptions<ApiEnvelope<SavingsGoal>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<SavingsGoal>, ApiError>({
     queryKey: ["savings", "goal", goalId],
@@ -109,7 +93,7 @@ export const useGetSavingsGoalQuery = (
 
 export const useUpdateSavingsGoalMutation = (
   goalId: string,
-  options?: MutationOptions<SavingsGoal, UpdateSavingsGoalRequest>,
+  options?: UseMutationOptions<ApiEnvelope<SavingsGoal>, ApiError, UpdateSavingsGoalRequest>,
 ) =>
   useMutation<ApiEnvelope<SavingsGoal>, ApiError, UpdateSavingsGoalRequest>({
     mutationKey: ["savings", "updateGoal", goalId],

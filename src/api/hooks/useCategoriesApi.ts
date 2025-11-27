@@ -1,20 +1,11 @@
-import {
-  QueryKey,
-  useQuery,
-  UseQueryOptions,
-} from "@tanstack/react-query";
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import { ApiEnvelope, Category, CategoryType } from "../types";
 
-type QueryOptions<TData, TQueryKey extends QueryKey = QueryKey> = Omit<
-  UseQueryOptions<ApiEnvelope<TData>, ApiError, ApiEnvelope<TData>, TQueryKey>,
-  "queryKey" | "queryFn"
->;
-
 export const useGetCategoriesQuery = (
   type: CategoryType,
-  options?: QueryOptions<Category>,
+  options?: UseQueryOptions<ApiEnvelope<Category>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<Category>, ApiError>({
     queryKey: ["categories", type],
@@ -28,4 +19,3 @@ export const useGetCategoriesQuery = (
     },
     ...options,
   });
-
