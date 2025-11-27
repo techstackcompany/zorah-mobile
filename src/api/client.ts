@@ -4,6 +4,7 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
+  isAxiosError,
 } from "axios";
 import * as SecureStore from "expo-secure-store";
 import { API_CONFIG } from "../config/api";
@@ -30,17 +31,13 @@ async function readFromStorage(key: string): Promise<string | null> {
 async function writeToStorage(key: string, value: string): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
-  } catch {
-    // Silently fail
-  }
+  } catch {}
 }
 
 async function removeFromStorage(key: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(key);
-  } catch {
-    // Silently fail
-  }
+  } catch {}
 }
 
 async function getAuthToken(): Promise<string | null> {
@@ -56,7 +53,6 @@ async function getRefreshToken(): Promise<string | null> {
 }
 
 async function setAuthToken(token: string): Promise<void> {
-  // Store in both keys for backward compatibility
   await Promise.all([
     writeToStorage("accessToken", token),
     writeToStorage("session", token),
@@ -71,22 +67,18 @@ async function clearAuthTokens(): Promise<void> {
   ]);
 }
 
-// Flag to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
-let failedQueue: Array<{
+let failedQueue: {
   resolve: (value?: unknown) => void;
   reject: (error?: unknown) => void;
-}> = [];
+}[];
 
-// Track when login happens to avoid refresh attempts immediately after
 let lastLoginTime: number | null = null;
-const LOGIN_GRACE_PERIOD = 2000; // 2 seconds grace period after login
-
+const LOGIN_GRACE_PERIOD = 2000;
 export function setLastLoginTime() {
   lastLoginTime = Date.now();
 }
 
-// Callback for token refresh failure (can be set by SessionProvider)
 let onTokenRefreshFailure: (() => void) | null = null;
 
 export function setTokenRefreshFailureHandler(handler: () => void) {
@@ -135,7 +127,6 @@ apiClient.interceptors.request.use(
   },
 );
 
-// Response interceptor for token refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
@@ -143,18 +134,16 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Skip refresh logic for the refresh token endpoint itself to avoid infinite loops
-    const isRefreshTokenEndpoint =
-      originalRequest.url?.includes(API_ENDPOINTS.auth.refreshToken.path);
-    
-    // Skip refresh logic for login endpoint
-    const isLoginEndpoint =
-      originalRequest.url?.includes(API_ENDPOINTS.auth.login.path);
-    
-    // Skip refresh if we just logged in (grace period to allow token storage)
+    const isRefreshTokenEndpoint = originalRequest.url?.includes(
+      API_ENDPOINTS.auth.refreshToken.path,
+    );
+
+    const isLoginEndpoint = originalRequest.url?.includes(
+      API_ENDPOINTS.auth.login.path,
+    );
+
     const isWithinGracePeriod =
-      lastLoginTime !== null &&
-      Date.now() - lastLoginTime < LOGIN_GRACE_PERIOD;
+      lastLoginTime !== null && Date.now() - lastLoginTime < LOGIN_GRACE_PERIOD;
 
     // If error is 401 and we haven't retried yet and it's not the refresh/login endpoint
     // and we're not within the login grace period
@@ -194,10 +183,9 @@ apiClient.interceptors.response.use(
           console.error("3. Storage failed to save the refreshToken");
           throw new Error("No refresh token available");
         }
-        
+
         console.log("🔄 Attempting to refresh access token...");
 
-        // Call refresh token endpoint
         const response = await axios.post<{
           data?: { accessToken?: string; refreshToken?: string };
           accessToken?: string;
@@ -212,12 +200,7 @@ apiClient.interceptors.response.use(
           },
         );
 
-        // Extract new tokens from response
-        // Handle both wrapped (data.accessToken) and direct (accessToken) formats
-        const newAccessToken =
-          response.data?.data?.accessToken ||
-          response.data?.accessToken ||
-          (response.data as any)?.accessToken;
+        const newAccessToken = response.data?.accessToken;
         const newRefreshToken =
           response.data?.data?.refreshToken ||
           response.data?.refreshToken ||
@@ -227,28 +210,22 @@ apiClient.interceptors.response.use(
           throw new Error("No access token in refresh response");
         }
 
-        // Store new tokens
         await setAuthToken(newAccessToken);
         if (newRefreshToken) {
           await writeToStorage(REFRESH_TOKEN_KEY, newRefreshToken);
         }
 
-        // Update the original request with new token
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
-        // Process queued requests
         processQueue(null, newAccessToken);
 
-        // Retry the original request
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - clear tokens and reject queued requests
         processQueue(refreshError as Error);
         await clearAuthTokens();
 
-        // Notify the SessionProvider to sign out
         if (onTokenRefreshFailure) {
           onTokenRefreshFailure();
         }
@@ -264,7 +241,7 @@ apiClient.interceptors.response.use(
 );
 
 export function handleApiError(error: unknown): ApiError {
-  if (axios.isAxiosError(error)) {
+  if (isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string }>;
     const message =
       axiosError.response?.data?.message ??
