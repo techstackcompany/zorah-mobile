@@ -1,25 +1,19 @@
+import PaymentModal from "@/components/expense-planning/PaymentModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+import SelectButton from "@/components/ui/SelectButton";
 import Text from "@/components/ui/Text";
-import COLORS from "@/constants/colors";
-import { cn, getErrorMessage } from "@/lib/utils";
+import TextInputField from "@/components/ui/TextInputField";
+import { addKeyboardBehavior, getErrorMessage } from "@/lib/utils";
 import { useAddExpenseMutation, useGetCategoriesQuery } from "@/src/api/hooks";
-import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 type ExpenseCategory = {
@@ -29,43 +23,139 @@ type ExpenseCategory = {
 };
 
 const PAYMENT_METHODS = [
-  "Bank Transfer",
-  "Debit Card",
-  "Credit Card",
-  "Mobile Money",
-  "Cash",
+  { label: "Bank Transfer", value: "transfer" },
+  { label: "Card", value: "card" },
+  { label: "Wallet", value: "wallet" },
+  { label: "Cash", value: "cash" },
 ];
 
-const AddExpenseScreen = () => {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [amount, setAmount] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [date, setDate] = useState("");
-  const [description, setDescription] = useState("");
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+type ValidateFieldsParams = {
+  amount: string;
+  date: string;
+  paymentMethod: string;
+  selectedCategory: string;
+};
 
-  // Fetch categories from API
+const validateFields = ({
+  amount,
+  date,
+  paymentMethod,
+  selectedCategory,
+}: ValidateFieldsParams): boolean => {
+  if (!amount || Number(amount) <= 0) {
+    Toast.show({
+      type: "error",
+      text1: "Invalid Amount",
+      text2: "Please enter a valid expense amount.",
+    });
+    return false;
+  }
+
+  if (!date) {
+    Toast.show({
+      type: "error",
+      text1: "Date Required",
+      text2: "Please select a date for this expense.",
+    });
+    return false;
+  }
+
+  if (!paymentMethod) {
+    Toast.show({
+      type: "error",
+      text1: "Payment Method Required",
+      text2: "Please select a payment method.",
+    });
+    return false;
+  }
+
+  if (!selectedCategory) {
+    Toast.show({
+      type: "error",
+      text1: "Category Required",
+      text2: "Please select a category.",
+    });
+    return false;
+  }
+  return true;
+};
+
+const usePaymentMethodActions = (
+  setFocusedField: React.Dispatch<React.SetStateAction<string | null>>,
+) => {
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("");
+
+  const openPaymentModal = useCallback(() => {
+    setIsPaymentModalVisible(true);
+    setFocusedField("payment");
+  }, [setFocusedField]);
+
+  const closePaymentModal = useCallback(() => {
+    setIsPaymentModalVisible(false);
+    setFocusedField(null);
+  }, [setFocusedField]);
+
+  const handleSelectPaymentMethod = useCallback(
+    (method: string) => {
+      setPaymentMethod(method);
+      setIsPaymentModalVisible(false);
+      setFocusedField(null);
+    },
+    [setFocusedField],
+  );
+
+  return {
+    isPaymentModalVisible,
+    paymentMethod,
+    setPaymentMethod,
+    openPaymentModal,
+    closePaymentModal,
+    handleSelectPaymentMethod,
+  };
+};
+
+const useExpenseSubCategories = () => {
   const {
     data: categoriesData,
     isLoading: isCategoriesLoading,
     error: categoriesError,
   } = useGetCategoriesQuery("expense");
 
-  // Map API categories to UI format
   const expenseCategories = useMemo<ExpenseCategory[]>(() => {
     if (!categoriesData?.data?.subcategories) {
       return [];
     }
 
-    return categoriesData.data.subcategories.map((subcategory) => ({
-      key: subcategory.name,
-      label: subcategory.name,
-      icon: subcategory.image || "", // Use API image URL
+    return categoriesData.data.subcategories.map(({ name, image }) => ({
+      key: name,
+      label: name,
+      icon: image || "",
     }));
   }, [categoriesData]);
+
+  return { expenseCategories, isCategoriesLoading, categoriesError };
+};
+
+const AddExpenseScreen = () => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [date, setDate] = useState("");
+  const [description, setDescription] = useState("");
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const {
+    isPaymentModalVisible,
+    paymentMethod,
+    setPaymentMethod,
+    openPaymentModal,
+    closePaymentModal,
+    handleSelectPaymentMethod,
+  } = usePaymentMethodActions(setFocusedField);
+
+  const { expenseCategories, isCategoriesLoading, categoriesError } =
+    useExpenseSubCategories();
 
   useEffect(() => {
     if (expenseCategories.length > 0 && !selectedCategory) {
@@ -74,15 +164,8 @@ const AddExpenseScreen = () => {
   }, [expenseCategories, selectedCategory]);
 
   const addExpenseMutation = useAddExpenseMutation({
-    onSuccess: (response) => {
-      console.log("=== ADD EXPENSE SUCCESS ===");
-      console.log("Full response:", JSON.stringify(response, null, 2));
-      console.log("Response data:", response?.data);
-      console.log("========================\n");
-
-      // Invalidate expense queries to refresh data
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-
       Toast.show({
         type: "success",
         text1: "Expense Added",
@@ -97,6 +180,7 @@ const AddExpenseScreen = () => {
       }, 1500);
     },
     onError: (error) => {
+      console.log('error', error)
       Toast.show({
         type: "error",
         text1: "Error",
@@ -108,79 +192,27 @@ const AddExpenseScreen = () => {
     },
   });
 
-  const openPaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(true);
-    setFocusedField("payment");
-  }, []);
-
-  const closePaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(false);
-    setFocusedField(null);
-  }, []);
-
-  const handleSelectPaymentMethod = useCallback((method: string) => {
-    setPaymentMethod(method);
-    setIsPaymentModalVisible(false);
-    setFocusedField(null);
-  }, []);
-
   const handleSubmit = useCallback(() => {
-    if (!amount || Number(amount) <= 0) {
-      Toast.show({
-        type: "error",
-        text1: "Invalid Amount",
-        text2: "Please enter a valid expense amount.",
-      });
-      return;
-    }
+    if (validateFields({ amount, date, paymentMethod, selectedCategory })) {
+      const numericAmount = Number(amount);
+      const apiCategory = selectedCategory;
 
-    if (!date) {
-      Toast.show({
-        type: "error",
-        text1: "Date Required",
-        text2: "Please select a date for this expense.",
-      });
-      return;
-    }
-
-    if (!paymentMethod) {
-      Toast.show({
-        type: "error",
-        text1: "Payment Method Required",
-        text2: "Please select a payment method.",
-      });
-      return;
-    }
-
-    if (!selectedCategory) {
-      Toast.show({
-        type: "error",
-        text1: "Category Required",
-        text2: "Please select a category.",
-      });
-      return;
-    }
-
-    const numericAmount = Number(amount);
-    const apiCategory = selectedCategory;
-
-    let formattedDate = date;
-    if (date.includes("/")) {
+      let formattedDate = date;
       const [day, month, yearStr] = date.split("/");
       const fullYear =
         yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+
+      const payload = {
+        amount: numericAmount,
+        category: apiCategory,
+        description: description || undefined,
+        paymentMethod,
+        date: formattedDate,
+      };
+
+      addExpenseMutation.mutate(payload);
     }
-
-    const payload = {
-      amount: numericAmount,
-      category: apiCategory,
-      description: description || undefined,
-      paymentMethod,
-      date: formattedDate,
-    };
-
-    addExpenseMutation.mutate(payload);
   }, [
     amount,
     selectedCategory,
@@ -194,8 +226,8 @@ const AddExpenseScreen = () => {
     <MainContainer className="bg-light" edges={[]}>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.select({ ios: 64, android: 0 })}
+        behavior={addKeyboardBehavior()}
+        keyboardVerticalOffset={200}
       >
         <View className="flex-1">
           <ScrollView
@@ -203,7 +235,7 @@ const AddExpenseScreen = () => {
             contentContainerClassName="pb-10"
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={{ paddingBottom: 400 }}
           >
             <View className="mt-4 gap-6">
               <AmountInput
@@ -245,33 +277,16 @@ const AddExpenseScreen = () => {
               </View>
 
               <View>
-                <Text className="text-sm text-textColor/70">
+                <Text className="mb-2 text-sm text-textColor/70">
                   Payment method
                 </Text>
-                <Pressable
+                <SelectButton
+                  value={paymentMethod}
+                  placeholder="Select payment method"
                   onPress={openPaymentModal}
-                  className={cn(
-                    "mt-2 flex-row items-center justify-between rounded-2xl border bg-white px-4 py-4",
-                    focusedField === "payment"
-                      ? "border-primary_400"
-                      : "border-gray-200",
-                  )}
-                >
-                  <Text
-                    className={cn(
-                      "text-base",
-                      paymentMethod ? "text-textColor" : "text-textColor/50",
-                    )}
-                  >
-                    {paymentMethod || "Select payment method"}
-                  </Text>
-
-                  <Ionicons
-                    name={isPaymentModalVisible ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color={COLORS.textColor}
-                  />
-                </Pressable>
+                  isOpen={isPaymentModalVisible}
+                  isFocused={focusedField === "payment"}
+                />
               </View>
 
               <View>
@@ -288,93 +303,37 @@ const AddExpenseScreen = () => {
                 />
               </View>
 
-              <View>
-                <Text className="text-sm text-textColor/70">
-                  Description (Optional)
-                </Text>
-                <TextInput
-                  placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  onFocus={() => setFocusedField("description")}
-                  onBlur={() => setFocusedField(null)}
-                  className={cn(
-                    "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",
-                    focusedField === "description"
-                      ? "border-primary_400"
-                      : "border-gray-200",
-                  )}
-                />
-              </View>
+              <TextInputField
+                label="Description (Optional)"
+                placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                onFocusChange={(focused) =>
+                  setFocusedField(focused ? "description" : null)
+                }
+                inputClassName="min-h-[120px]"
+              />
             </View>
           </ScrollView>
           <View className="px-6 pb-6">
-            <Pressable
+            <PrimaryButton
               onPress={handleSubmit}
-              disabled={addExpenseMutation.isPending}
-              className={cn(
-                "items-center justify-center rounded-2xl py-4",
-                addExpenseMutation.isPending
-                  ? "bg-primary_400/60"
-                  : "bg-primary_400",
-              )}
-            >
-              <Text weight="semibold" className="text-base text-white">
-                {addExpenseMutation.isPending
-                  ? "Adding Expense..."
-                  : "Add New Expense"}
-              </Text>
-            </Pressable>
+              loading={addExpenseMutation.isPending}
+              label="Add New Expense"
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
-      <SlideUpModal
+      <PaymentModal
         visible={isPaymentModalVisible}
         onClose={closePaymentModal}
-        title="Payment Method"
-        headerBackgroundColor={COLORS.primary_400}
-        headerTextColor="#fff"
-        closeIconColor="#fff"
-        className="px-0"
-      >
-        <View className="gap-2">
-          {PAYMENT_METHODS.map((method) => {
-            const isSelected = paymentMethod === method;
-            return (
-              <Pressable
-                key={method}
-                onPress={() => handleSelectPaymentMethod(method)}
-                className={cn(
-                  "rounded-2xl px-4 py-3",
-                  isSelected ? "bg-primary_100" : "bg-white",
-                )}
-              >
-                <View className="flex-row items-center justify-between">
-                  <Text
-                    weight="semibold"
-                    className={cn(
-                      "text-base text-textColor",
-                      isSelected && "text-primary_400",
-                    )}
-                  >
-                    {method}
-                  </Text>
-                  {isSelected && (
-                    <Ionicons
-                      name="checkmark"
-                      size={18}
-                      color={COLORS.primary_400}
-                    />
-                  )}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      </SlideUpModal>
+        paymentMethods={PAYMENT_METHODS}
+        selectedMethod={paymentMethod}
+        onSelect={handleSelectPaymentMethod}
+      />
     </MainContainer>
   );
 };

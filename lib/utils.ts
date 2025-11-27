@@ -1,6 +1,7 @@
 import COLORS from "@/constants/colors";
 import { AxiosError, isAxiosError } from "axios";
 import { ClassValue, clsx } from "clsx";
+import { Platform } from "react-native";
 import { twMerge } from "tw-merge";
 
 export const cn = (...inputs: ClassValue[]) => {
@@ -322,4 +323,9 @@ export function getAccentColorForGroup(groupName: string): {
   const backgroundColor = lightenColor(accentColor, lightnessPercent);
 
   return { accentColor, backgroundColor };
+}
+
+
+export function addKeyboardBehavior(){
+  return Platform.OS === "ios" ? "padding" : "height"
 }

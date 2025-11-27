@@ -4,6 +4,7 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
+import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import {
@@ -22,7 +23,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  TextInput,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
@@ -379,24 +379,18 @@ const EditExpenseScreen = () => {
               </View>
 
               <View>
-                <Text className="text-sm text-textColor/70">
-                  Description (Optional)
-                </Text>
-                <TextInput
+                <TextInputField
+                  label="Description (Optional)"
                   placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
                   value={description}
                   onChangeText={setDescription}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
-                  onFocus={() => setFocusedField("description")}
-                  onBlur={() => setFocusedField(null)}
-                  className={cn(
-                    "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",
-                    focusedField === "description"
-                      ? "border-primary_400"
-                      : "border-gray-200",
-                  )}
+                  onFocusChange={(focused) =>
+                    setFocusedField(focused ? "description" : null)
+                  }
+                  inputClassName="min-h-[120px]"
                 />
               </View>
             </View>
@@ -470,4 +464,3 @@ const EditExpenseScreen = () => {
 };
 
 export default EditExpenseScreen;
-
