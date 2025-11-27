@@ -55,44 +55,36 @@ export const FX_TRENDS: Record<string, FxSeriesPoint[]> = {
 
 export const FX_PAIRS: FxPair[] = [
   {
+    id: "USDNGN",
+    base: "USD",
+    quote: "NGN",
+    label: "USD/NGN",
+    value: 0, // Will be populated from API
+    change: 0,
+  },
+  {
+    id: "GBPNGN",
+    base: "GBP",
+    quote: "NGN",
+    label: "GBP/NGN",
+    value: 0,
+    change: 0,
+  },
+  {
+    id: "EURNGN",
+    base: "EUR",
+    quote: "NGN",
+    label: "EUR/NGN",
+    value: 0,
+    change: 0,
+  },
+  {
     id: "CADNGN",
     base: "CAD",
     quote: "NGN",
     label: "CAD/NGN",
-    value: 1650.1,
-    change: 2.56,
-  },
-  {
-    id: "USDCAD",
-    base: "USD",
-    quote: "CAD",
-    label: "USD/CAD",
-    value: 1.38314,
-    change: -0.12,
-  },
-  {
-    id: "GBPJPY",
-    base: "GBP",
-    quote: "JPY",
-    label: "GBP/JPY",
-    value: 243.43,
-    change: 1.25,
-  },
-  {
-    id: "EURCAD",
-    base: "EUR",
-    quote: "CAD",
-    label: "EUR/CAD",
-    value: 1.3834,
-    change: -0.38,
-  },
-  {
-    id: "USDAUD",
-    base: "USD",
-    quote: "AUD",
-    label: "USD/AUD",
-    value: 1.38314,
-    change: -0.21,
+    value: 0,
+    change: 0,
   },
 ];
 

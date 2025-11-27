@@ -375,3 +375,27 @@ export interface Category {
   updatedAt?: string;
   __v?: number;
 }
+
+/* ---------------------------------------------
+   FX Rates
+----------------------------------------------*/
+export interface FxRateResponse {
+  result: string;
+  base_code: string;
+  time_last_update_utc?: string;
+  time_next_update_utc?: string;
+  conversion_rates: Record<string, number>;
+}
+
+export interface FxRatePair {
+  base: string;
+  quote: string;
+  rate: number;
+  change?: number;
+  conversionResult?: number;
+}
+
+export interface FxHistoricalData {
+  date: string;
+  rate: number;
+}

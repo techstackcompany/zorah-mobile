@@ -37,14 +37,14 @@ export const API_ENDPOINTS = {
   expenses: {
     addExpense: { method: HttpMethod.POST, path: "/expenses/add-expense" },
     getExpenses: { method: HttpMethod.GET, path: "/expenses/get-expense" },
-    getExpense: ((expenseId: string) => ({
+    getExpense: (expenseId: string) => ({
       method: HttpMethod.GET,
       path: `/expenses/${expenseId}`,
-    })) as DynamicEndpoint<[string]>,
-    updateExpense: ((expenseId: string) => ({
+    }),
+    updateExpense: (expenseId: string) => ({
       method: HttpMethod.PATCH,
       path: `/expenses/${expenseId}`,
-    })) as DynamicEndpoint<[string]>,
+    }),
     summary: { method: HttpMethod.GET, path: "/expenses/summary" },
     daily: { method: HttpMethod.GET, path: "/expenses/daily" },
     monthly: { method: HttpMethod.GET, path: "/expenses/monthly" },
@@ -52,38 +52,38 @@ export const API_ENDPOINTS = {
   income: {
     addIncome: { method: HttpMethod.POST, path: "/income/add-income" },
     getIncomes: { method: HttpMethod.GET, path: "/income/get-income" },
-    getIncome: ((incomeId: string) => ({
+    getIncome: (incomeId: string) => ({
       method: HttpMethod.GET,
       path: `/income/${incomeId}`,
-    })) as DynamicEndpoint<[string]>,
-    deleteIncome: ((incomeId: string) => ({
+    }),
+    deleteIncome: (incomeId: string) => ({
       method: HttpMethod.DELETE,
       path: `/income/${incomeId}`,
-    })) as DynamicEndpoint<[string]>,
+    }),
   },
   budgets: {
     createBudget: { method: HttpMethod.POST, path: "/budgets" },
     getBudgets: { method: HttpMethod.GET, path: "/budgets/get-budgets" },
-    getBudget: ((budgetId: string) => ({
+    getBudget: (budgetId: string) => ({
       method: HttpMethod.GET,
       path: `/budgets/${budgetId}`,
-    })) as DynamicEndpoint<[string]>,
-    updateBudget: ((budgetId: string) => ({
+    }),
+    updateBudget: (budgetId: string) => ({
       method: HttpMethod.PATCH,
       path: `/budgets/${budgetId}`,
-    })) as DynamicEndpoint<[string]>,
-    deleteBudget: ((budgetId: string) => ({
+    }),
+    deleteBudget: (budgetId: string) => ({
       method: HttpMethod.DELETE,
       path: `/budgets/${budgetId}`,
-    })) as DynamicEndpoint<[string]>,
-    archiveBudget: ((budgetId: string) => ({
+    }),
+    archiveBudget: (budgetId: string) => ({
       method: HttpMethod.PATCH,
       path: `/budgets/${budgetId}/archive`,
-    })) as DynamicEndpoint<[string]>,
-    restoreBudget: ((budgetId: string) => ({
+    }),
+    restoreBudget: (budgetId: string) => ({
       method: HttpMethod.PATCH,
       path: `/budgets/${budgetId}/restore`,
-    })) as DynamicEndpoint<[string]>,
+    }),
     getArchivedBudgets: {
       method: HttpMethod.GET,
       path: "/budgets/get-archived-budgets",
@@ -94,10 +94,10 @@ export const API_ENDPOINTS = {
       method: HttpMethod.GET,
       path: "/notifications/get-not",
     },
-    readNotification: ((notificationId: string) => ({
+    readNotification: (notificationId: string) => ({
       method: HttpMethod.PATCH,
       path: `/notifications/${notificationId}/read`,
-    })) as DynamicEndpoint<[string]>,
+    }),
     registerToken: {
       method: HttpMethod.POST,
       path: "/notifications/register-token",
@@ -112,31 +112,31 @@ export const API_ENDPOINTS = {
     createGoal: { method: HttpMethod.POST, path: "/savings/create" },
     contribute: { method: HttpMethod.POST, path: "/savings/contribute" },
     getGoals: { method: HttpMethod.GET, path: "/savings/get-goals" },
-    getGoal: ((goalId: string) => ({
+    getGoal: (goalId: string) => ({
       method: HttpMethod.GET,
       path: `/savings/${goalId}`,
-    })) as DynamicEndpoint<[string]>,
-    updateGoal: ((goalId: string) => ({
+    }),
+    updateGoal: (goalId: string) => ({
       method: HttpMethod.PUT,
       path: `/savings/${goalId}`,
-    })) as DynamicEndpoint<[string]>,
+    }),
   },
   esusu: {
     createGroup: { method: HttpMethod.POST, path: "/esusu/create" },
     joinGroup: { method: HttpMethod.POST, path: "/esusu/join" },
-    getGroup: ((groupId: string) => ({
+    getGroup: (groupId: string) => ({
       method: HttpMethod.GET,
       path: `/esusu/${groupId}`,
-    })) as DynamicEndpoint<[string]>,
+    }),
     contribute: { method: HttpMethod.POST, path: "/esusu/contribute" },
   },
   esusuPayouts: {
     process: { method: HttpMethod.POST, path: "/esusu/payouts/process" },
     retry: { method: HttpMethod.POST, path: "/esusu/payouts/retry" },
-    history: ((groupId: string) => ({
+    history: (groupId: string) => ({
       method: HttpMethod.GET,
       path: `/esusu/payouts/${groupId}/history`,
-    })) as DynamicEndpoint<[string]>,
+    }),
   },
   wallet: {
     getOrCreate: { method: HttpMethod.GET, path: "/wallet/create" },
@@ -151,10 +151,16 @@ export const API_ENDPOINTS = {
     },
   },
   categories: {
-    getCategories: ((type: string) => ({
+    getCategories: (type: string) => ({
       method: HttpMethod.GET,
       path: `/categories?type=${type}`,
-    })) as DynamicEndpoint<[string]>,
+    }),
+  },
+  fx: {
+    rates: { method: HttpMethod.GET, path: "/fx/rates" },
+    pair: { method: HttpMethod.GET, path: "/fx/pair" },
+    pairs: { method: HttpMethod.GET, path: "/fx/pairs" },
+    history: { method: HttpMethod.GET, path: "/fx/history" },
   },
 } as const;
 

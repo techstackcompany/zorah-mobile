@@ -3,17 +3,23 @@ import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
+  CURRENCY_FLAGS,
+  formatCurrency,
   FX_CONVERTER_OPTIONS,
   FX_PAIRS,
   FX_TRENDS,
-  CURRENCY_FLAGS,
-  formatCurrency,
   getChangeColor,
 } from "@/constants/fx";
+import {
+  useGetFxRatePairsQuery,
+  useGetFxRatesQuery,
+  useGetRateHistoryQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useCallback, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,13 +30,6 @@ import {
 import { LineChart } from "react-native-gifted-charts";
 
 const CHART_HEIGHT = 160;
-const CONVERTER_BASE_RATES: Record<string, number> = {
-  NGN: 1,
-  USD: 1456,
-  GBP: 1840,
-  EUR: 1620,
-  CAD: 1100,
-};
 
 const FxRatesScreen = () => {
   const [activeTrend, setActiveTrend] =
@@ -44,14 +43,144 @@ const FxRatesScreen = () => {
     visible: boolean;
   }>({ type: "from", visible: false });
   const [chartWidth, setChartWidth] = useState<number>(0);
-  const activeSeries = FX_TRENDS[activeTrend];
-  const HEADLINE_CHANGE: Record<string, number> = {
-    USDNGN: 1.23,
-    GBPNGN: 0.89,
-    EURNGN: -0.35,
-  };
-  const activeRateValue = activeSeries[activeSeries.length - 1]?.value ?? 1456;
-  const activeRateChange = HEADLINE_CHANGE[activeTrend] ?? 1.23;
+
+  const { data: usdRates, isLoading: isLoadingUsdRates } =
+    useGetFxRatesQuery("USD");
+
+  const fxPairsToFetch = useMemo(
+    () => [
+      { base: "USD", quote: "NGN" },
+      { base: "GBP", quote: "NGN" },
+      { base: "EUR", quote: "NGN" },
+      { base: "CAD", quote: "NGN" },
+    ],
+    [],
+  );
+  const { data: fxRatePairs, isLoading: isLoadingPairs } =
+    useGetFxRatePairsQuery(fxPairsToFetch);
+
+    console.log('fxRatePairs', fxRatePairs)
+  const converterRates = useMemo(() => {
+    const rates: Record<string, number> = { NGN: 1 };
+
+    if (!usdRates?.conversion_rates) {
+      return rates;
+    }
+
+    const usdRatesData = usdRates.conversion_rates;
+    if (usdRatesData.NGN) {
+      rates.USD = usdRatesData.NGN;
+    }
+
+    if (usdRatesData.GBP && usdRatesData.NGN) {
+      rates.GBP = usdRatesData.NGN / usdRatesData.GBP;
+    }
+
+    if (usdRatesData.EUR && usdRatesData.NGN) {
+      rates.EUR = usdRatesData.NGN / usdRatesData.EUR;
+    }
+
+    if (usdRatesData.CAD && usdRatesData.NGN) {
+      rates.CAD = usdRatesData.NGN / usdRatesData.CAD;
+    }
+
+    return rates;
+  }, [usdRates]);
+
+  const trendBase = activeTrend.slice(0, 3);
+  const trendQuote = activeTrend.slice(3);
+  const { data: rateHistory, isLoading: isLoadingHistory } =
+    useGetRateHistoryQuery(trendBase, trendQuote);
+
+  const realFxPairs = useMemo(() => {
+    if (!fxRatePairs || fxRatePairs.length === 0) {
+      return [];
+    }
+
+    return FX_PAIRS.map((pair, index) => {
+      const apiPair = fxRatePairs[index];
+      if (apiPair && apiPair.rate > 0) {
+        return {
+          ...pair,
+          value: apiPair.rate,
+          change: apiPair.change || 0,
+        };
+      }
+      return {
+        ...pair,
+        value: 0,
+        change: 0,
+      };
+    }).filter((pair) => pair.value > 0);
+  }, [fxRatePairs]);
+
+  const activeSeries = useMemo(() => {
+    if (!rateHistory || rateHistory.length === 0) {
+      return [];
+    }
+
+    // Format history for chart (last 7 days)
+    const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    return rateHistory.slice(-7).map((item, index) => {
+      const date = new Date(item.date);
+      const dayIndex = date.getDay();
+      const label =
+        index === rateHistory.length - 1
+          ? "Today"
+          : dayLabels[dayIndex] || `Day ${index + 1}`;
+
+      return {
+        label,
+        value: item.rate,
+      };
+    });
+  }, [rateHistory]);
+
+  // Get active rate value from API data
+  const activeRateValue = useMemo(() => {
+    if (!usdRates?.conversion_rates) {
+      return 0;
+    }
+
+    if (trendBase === "USD" && trendQuote === "NGN") {
+      return usdRates.conversion_rates.NGN || 0;
+    } else if (trendBase === "GBP" && trendQuote === "NGN") {
+      // Convert GBP to USD first, then USD to NGN
+      if (usdRates.conversion_rates.GBP && usdRates.conversion_rates.NGN) {
+        const gbpToUsd = 1 / usdRates.conversion_rates.GBP;
+        return usdRates.conversion_rates.NGN / gbpToUsd;
+      }
+      return 0;
+    } else if (trendBase === "EUR" && trendQuote === "NGN") {
+      // Convert EUR to USD first, then USD to NGN
+      if (usdRates.conversion_rates.EUR && usdRates.conversion_rates.NGN) {
+        const eurToUsd = 1 / usdRates.conversion_rates.EUR;
+        return usdRates.conversion_rates.NGN / eurToUsd;
+      }
+      return 0;
+    }
+
+    return 0;
+  }, [usdRates, trendBase, trendQuote]);
+
+  // Calculate real percentage change from history
+  const activeRateChange = useMemo(() => {
+    if (!rateHistory || rateHistory.length < 2) {
+      return 0; // No change data available yet
+    }
+
+    const current = rateHistory[rateHistory.length - 1]?.rate;
+    const previous = rateHistory[rateHistory.length - 2]?.rate;
+
+    if (!current || !previous || previous === 0) {
+      return 0;
+    }
+
+    return ((current - previous) / previous) * 100;
+  }, [rateHistory]);
+
+  const isLoading = isLoadingUsdRates || isLoadingPairs || isLoadingHistory;
 
   const amountValue = useMemo(() => Number(amount || "0") / 100, [amount]);
 
@@ -82,8 +211,8 @@ const FxRatesScreen = () => {
   }, [amountValue, fromCurrency]);
 
   const convertedValue = useMemo(() => {
-    const fromRate = CONVERTER_BASE_RATES[fromCurrency.code];
-    const toRate = CONVERTER_BASE_RATES[toCurrency.code];
+    const fromRate = converterRates[fromCurrency.code];
+    const toRate = converterRates[toCurrency.code];
     if (!fromRate || !toRate) {
       return "0.00";
     }
@@ -93,7 +222,7 @@ const FxRatesScreen = () => {
     const valueInNaira = amountValue * fromRate;
     const converted = valueInNaira / toRate;
     return converted.toFixed(2);
-  }, [amountValue, fromCurrency, toCurrency]);
+  }, [amountValue, fromCurrency, toCurrency, converterRates]);
 
   const toAmount = useMemo(
     () =>
@@ -107,6 +236,9 @@ const FxRatesScreen = () => {
   const toFlag = toCurrency.flag ?? CURRENCY_FLAGS[toCurrency.code];
 
   const lineChartData = useMemo(() => {
+    if (activeSeries.length === 0) {
+      return [];
+    }
     const lastIndex = activeSeries.length - 1;
     return activeSeries.map((point, index) => ({
       value: point.value,
@@ -146,11 +278,7 @@ const FxRatesScreen = () => {
 
     return { labels, range: range || undefined, offset: minValue };
   }, [activeSeries]);
-  const {
-    labels: yAxisLabelTexts,
-    range: yAxisRange,
-    offset: yAxisOffsetValue,
-  } = axisConfig;
+  const { range: yAxisRange, offset: yAxisOffsetValue } = axisConfig;
 
   const changeColor = getChangeColor(activeRateChange);
   const changeBackground = activeRateChange >= 0 ? "#E9F7EC" : "#FFE6EA";
@@ -158,6 +286,19 @@ const FxRatesScreen = () => {
     chartWidth > 0 && lineChartData.length > 1
       ? (chartWidth - 70) / (lineChartData.length - 1)
       : 30;
+
+  if (isLoading) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted pb-0">
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary_400} />
+          <Text className="mt-4 text-textColor/60">
+            Loading exchange rates...
+          </Text>
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -171,11 +312,17 @@ const FxRatesScreen = () => {
               {activeTrend.slice(0, 3)}/{activeTrend.slice(3)}
             </Text>
             <Text weight="bold" className="mt-3 text-3xl text-textColor">
-              ₦
-              {activeRateValue.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {activeRateValue > 0 ? (
+                <>
+                  ₦
+                  {activeRateValue.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </>
+              ) : (
+                "--"
+              )}
             </Text>
           </View>
           <View style={styles.summaryRight}>
@@ -210,32 +357,29 @@ const FxRatesScreen = () => {
         <View style={[styles.card, { backgroundColor: COLORS.primary_100 }]}>
           <View style={styles.tabRow}>
             <Text className="me-4">Rates Trends</Text>
-            {(Object.keys(FX_TRENDS) as (keyof typeof FX_TRENDS)[]).map(
-              (trend) => {
-                const isActive = trend === activeTrend;
-                return (
-                  <Pressable
-                    key={trend}
-                    onPress={() => setActiveTrend(trend)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isActive }}
-                    style={[
-                      styles.trendChip,
-                      isActive && styles.trendChipActive,
-                    ]}
+            {["USDNGN", "GBPNGN", "EURNGN"].map((trend) => {
+              const isActive = trend === activeTrend;
+              return (
+                <Pressable
+                  key={trend}
+                  onPress={() =>
+                    setActiveTrend(trend as keyof typeof FX_TRENDS)
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  style={[styles.trendChip, isActive && styles.trendChipActive]}
+                >
+                  <Text
+                    weight={isActive ? "semibold" : "medium"}
+                    className={`text-xs ${isActive ? "text-white" : "text-textColor/60"}`}
                   >
-                    <Text
-                      weight={isActive ? "semibold" : "medium"}
-                      className={`text-xs ${isActive ? "text-white" : "text-textColor/60"}`}
-                    >
-                      {trend.length === 6
-                        ? `${trend.slice(0, 3)}/${trend.slice(3)}`
-                        : trend}
-                    </Text>
-                  </Pressable>
-                );
-              },
-            )}
+                    {trend.length === 6
+                      ? `${trend.slice(0, 3)}/${trend.slice(3)}`
+                      : trend}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
           <View
             style={styles.chartWrapper}
@@ -243,30 +387,38 @@ const FxRatesScreen = () => {
               setChartWidth(layout.width)
             }
           >
-            <LineChart
-              height={CHART_HEIGHT}
-              showVerticalLines
-              hideRules
-              verticalLinesUptoDataPoint
-              dataPointsColor={COLORS.grayLight}
-              data={lineChartData}
-              spacing={chartSpacing}
-              width={chartWidth - 35 || undefined}
-              animateOnDataChange
-              xAxisThickness={0}
-              yAxisThickness={0}
-              curved
-              thickness={2.5}
-              color={COLORS.primary_400}
-              rulesColor={COLORS.grayLight}
-              xAxisLabelTexts={activeSeries.map((point) => point.label)}
-              xAxisLabelTextStyle={styles.chartLabelText}
-              yAxisTextStyle={styles.chartLabelText}
-              maxValue={yAxisRange}
-              yAxisOffset={yAxisOffsetValue}
-              formatYLabel={formatYLabel}
-              xAxisTextNumberOfLines={1}
-            />
+            {activeSeries.length > 0 ? (
+              <LineChart
+                height={CHART_HEIGHT}
+                showVerticalLines
+                hideRules
+                verticalLinesUptoDataPoint
+                dataPointsColor={COLORS.grayLight}
+                data={lineChartData}
+                spacing={chartSpacing}
+                width={chartWidth - 35 || undefined}
+                animateOnDataChange
+                xAxisThickness={0}
+                yAxisThickness={0}
+                curved
+                thickness={2.5}
+                color={COLORS.primary_400}
+                rulesColor={COLORS.grayLight}
+                xAxisLabelTexts={activeSeries.map((point) => point.label)}
+                xAxisLabelTextStyle={styles.chartLabelText}
+                yAxisTextStyle={styles.chartLabelText}
+                maxValue={yAxisRange}
+                yAxisOffset={yAxisOffsetValue}
+                formatYLabel={formatYLabel}
+                xAxisTextNumberOfLines={1}
+              />
+            ) : (
+              <View style={styles.chartPlaceholder}>
+                <Text className="text-sm text-textColor/60">
+                  Chart data will appear as rates are tracked over time
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -362,7 +514,16 @@ const FxRatesScreen = () => {
               style={{ width: 16, height: 16 }}
             />
             <Text className="text-sm text-textColor/50">
-              Rates Updated: 21:15
+              Rates Updated:{" "}
+              {usdRates?.time_last_update_utc
+                ? new Date(usdRates.time_last_update_utc).toLocaleTimeString(
+                    "en-US",
+                    { hour: "2-digit", minute: "2-digit" },
+                  )
+                : new Date().toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
             </Text>
           </View>
         </View>
@@ -407,77 +568,87 @@ const FxRatesScreen = () => {
             <View style={{ marginTop: 16 }}>
               <Text className="text-xs text-textColor/50">Fiat Currency</Text>
               <View style={{ marginTop: 16 }}>
-                {FX_PAIRS.map((pair, index) => {
-                  const isLast = index === FX_PAIRS.length - 1;
-                  const baseFlag = CURRENCY_FLAGS[pair.base];
-                  const quoteFlag = CURRENCY_FLAGS[pair.quote];
-                  return (
-                    <View
-                      key={pair.id}
-                      style={[
-                        styles.rateRow,
-                        !isLast
-                          ? {
-                              borderBottomWidth: 1,
-                              borderBottomColor: "#EEF1F6",
-                            }
-                          : null,
-                      ]}
-                    >
-                      <View style={styles.rateRowLeft}>
-                        <View style={styles.flagStack}>
-                          {baseFlag ? (
-                            <Image
-                              source={baseFlag}
-                              style={[styles.flagImage, styles.flagPrimary]}
-                              contentFit="cover"
-                            />
-                          ) : null}
-                          {quoteFlag ? (
-                            <Image
-                              source={quoteFlag}
-                              style={[styles.flagImage, styles.flagSecondary]}
-                              contentFit="cover"
-                            />
-                          ) : null}
+                {realFxPairs.length > 0 ? (
+                  realFxPairs.map((pair, index) => {
+                    const isLast = index === realFxPairs.length - 1;
+                    const baseFlag = CURRENCY_FLAGS[pair.base];
+                    const quoteFlag = CURRENCY_FLAGS[pair.quote];
+                    return (
+                      <View
+                        key={pair.id}
+                        style={[
+                          styles.rateRow,
+                          !isLast
+                            ? {
+                                borderBottomWidth: 1,
+                                borderBottomColor: "#EEF1F6",
+                              }
+                            : null,
+                        ]}
+                      >
+                        <View style={styles.rateRowLeft}>
+                          <View style={styles.flagStack}>
+                            {baseFlag ? (
+                              <Image
+                                source={baseFlag}
+                                style={[styles.flagImage, styles.flagPrimary]}
+                                contentFit="cover"
+                              />
+                            ) : null}
+                            {quoteFlag ? (
+                              <Image
+                                source={quoteFlag}
+                                style={[styles.flagImage, styles.flagSecondary]}
+                                contentFit="cover"
+                              />
+                            ) : null}
+                          </View>
+                          <View>
+                            <Text
+                              weight="semibold"
+                              className="text-sm text-textColor"
+                            >
+                              {pair.label}
+                            </Text>
+                            <Text className="text-xs text-textColor/50">
+                              {pair.base}/{pair.quote}
+                            </Text>
+                          </View>
                         </View>
-                        <View>
+                        <View style={{ alignItems: "flex-end" }}>
                           <Text
                             weight="semibold"
                             className="text-sm text-textColor"
                           >
-                            {pair.label}
+                            {pair.value.toLocaleString()}
                           </Text>
-                          <Text className="text-xs text-textColor/50">
-                            {pair.base}/{pair.quote}
-                          </Text>
+                          <View style={styles.changeRow}>
+                            <Ionicons
+                              name={
+                                pair.change >= 0 ? "arrow-up" : "arrow-down"
+                              }
+                              size={12}
+                              color={getChangeColor(pair.change)}
+                            />
+                            <Text
+                              className="ml-1 text-xs"
+                              style={{ color: getChangeColor(pair.change) }}
+                            >
+                              {pair.change >= 0 ? "+" : ""}
+                              {pair.change.toFixed(2)}%
+                            </Text>
+                          </View>
                         </View>
                       </View>
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text
-                          weight="semibold"
-                          className="text-sm text-textColor"
-                        >
-                          {pair.value.toLocaleString()}
-                        </Text>
-                        <View style={styles.changeRow}>
-                          <Ionicons
-                            name={pair.change >= 0 ? "arrow-up" : "arrow-down"}
-                            size={12}
-                            color={getChangeColor(pair.change)}
-                          />
-                          <Text
-                            className="ml-1 text-xs"
-                            style={{ color: getChangeColor(pair.change) }}
-                          >
-                            {pair.change >= 0 ? "+" : ""}
-                            {pair.change.toFixed(2)}%
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text className="text-sm text-textColor/60">
+                      No exchange rate data available
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           ) : (
@@ -563,6 +734,12 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
     gap: 18,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
   },
   summaryCard: {
     borderRadius: 24,
@@ -777,6 +954,17 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: COLORS.primary_400,
+  },
+  chartPlaceholder: {
+    height: CHART_HEIGHT,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  emptyState: {
+    paddingVertical: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

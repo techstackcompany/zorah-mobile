@@ -3,6 +3,7 @@ export * from "./useBudgetApi";
 export * from "./useCategoriesApi";
 export * from "./useEsusuApi";
 export * from "./useExpensesApi";
+export * from "./useFxRatesApi";
 export * from "./useIncomeApi";
 export * from "./useNotificationApi";
 export * from "./useSavingsApi";
