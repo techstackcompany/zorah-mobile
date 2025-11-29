@@ -12,13 +12,15 @@ import {
   formatCurrentDate,
   formatTransactionPurpose,
 } from "@/lib/utils";
+import { FX_PAIRS } from "@/constants/fx";
 import {
   useGetExpenseSummaryQuery,
+  useGetFxRatePairsQuery,
   useGetIncomesQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
-import { WalletTransaction } from "@/src/api/types";
+import { WalletTransaction, FxRatePair } from "@/src/api/types";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -45,15 +47,6 @@ type QuickAction = {
   icon: ImageSource;
   background: string;
   aspectRatio?: 1;
-};
-
-type FxRate = {
-  id: string;
-  pair: string;
-  code: string;
-  change: number;
-  price: string;
-  flags: [ImageSource, ImageSource];
 };
 
 type RecentTransactionItem = {
@@ -106,42 +99,6 @@ const quickActions: QuickAction[] = [
     icon: require("@/assets/icons/more-ellipsis.svg"),
     background: "bg-white",
     aspectRatio: 1,
-  },
-];
-
-const fxRates: FxRate[] = [
-  {
-    id: "cadngn",
-    pair: "CAD/NGN",
-    code: "CADNGN",
-    change: 2.5,
-    price: "1,650.10",
-    flags: [
-      require("@/assets/icons/canada-flag-curved.svg"),
-      require("@/assets/icons/nigeria-flag-curved.svg"),
-    ],
-  },
-  {
-    id: "cadghs",
-    pair: "CAD/GHS",
-    code: "CADGHS",
-    change: -0.2,
-    price: "589.42",
-    flags: [
-      require("@/assets/icons/canada-flag-curved.svg"),
-      require("@/assets/icons/ghana-flag-curved.svg"),
-    ],
-  },
-  {
-    id: "ghsngn",
-    pair: "GHS/NGN",
-    code: "GHSNGN",
-    change: -0.2,
-    price: "85.33",
-    flags: [
-      require("@/assets/icons/ghana-flag-curved.svg"),
-      require("@/assets/icons/nigeria-flag-curved.svg"),
-    ],
   },
 ];
 
@@ -232,6 +189,57 @@ const HomeScreen = () => {
     isLoading: isLoadingIncomes,
     refetch: refetchIncomes,
   } = useGetIncomesQuery();
+
+  const fxPairsToFetch = useMemo(
+    () => [
+      { base: "USD", quote: "NGN" },
+      { base: "GBP", quote: "NGN" },
+      { base: "EUR", quote: "NGN" },
+      { base: "CAD", quote: "NGN" },
+    ],
+    [],
+  );
+
+  const {
+    data: fxRatePairs,
+    isLoading: isLoadingFxPairs,
+    isFetching: isFetchingFxPairs,
+    refetch: refetchFxPairs,
+  } = useGetFxRatePairsQuery(fxPairsToFetch);
+
+  const fxPairLookup = useMemo(() => {
+    const lookup: { [key: string]: FxRatePair } = {};
+
+    if (fxRatePairs) {
+      fxRatePairs.forEach((pair) => {
+        const key = `${pair.base}${pair.quote}`;
+        lookup[key] = pair;
+      });
+    }
+
+    return lookup;
+  }, [fxRatePairs]);
+
+  const resolvedFxPairs = useMemo(() => {
+    return FX_PAIRS.map((pair) => {
+      const key = `${pair.base}${pair.quote}`;
+      const apiPair = fxPairLookup[key];
+
+      if (apiPair && typeof apiPair.rate === "number" && apiPair.rate > 0) {
+        return {
+          ...pair,
+          value: apiPair.rate,
+          change: apiPair.change ?? 0,
+        };
+      }
+
+      return {
+        ...pair,
+        value: 0,
+        change: 0,
+      };
+    }).filter((pair) => pair.value > 0);
+  }, [fxPairLookup]);
 
   const walletBalance = useMemo(() => {
     const balance = balanceData?.balance ?? 0;
@@ -357,13 +365,16 @@ const HomeScreen = () => {
                   isLoadingBalance ||
                   isLoadingTransactions ||
                   isLoadingExpenseSummary ||
-                  isLoadingIncomes
+                  isLoadingIncomes ||
+                  isLoadingFxPairs ||
+                  isFetchingFxPairs
                 }
                 onRefresh={() => {
                   refetchBalance();
                   refetchTransactions();
                   refetchExpenseSummary();
                   refetchIncomes();
+                  refetchFxPairs();
                 }}
               />
             }
@@ -397,7 +408,10 @@ const HomeScreen = () => {
 
               <FinancialTipCard />
 
-              <FxRatesCard rates={fxRates} currencySymbol={currency.symbol} />
+              <FxRatesCard
+                rates={resolvedFxPairs}
+                isLoading={isLoadingFxPairs && resolvedFxPairs.length === 0}
+              />
 
               <RecentTransactions
                 transactions={recentTransactions}

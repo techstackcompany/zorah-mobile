@@ -190,12 +190,24 @@ export interface Budget {
 
 export interface BudgetListItem {
   _id: string;
+  user?: string;
   category: string;
-  Limit: number;
-  totalSpent: number;
-  remaining: number;
-  percentageused: string;
-  status: string;
+  amount?: number;
+  Limit?: number;
+  period?: "weekly" | "monthly" | "yearly" | (string & {});
+  month?: number | null;
+  year?: number | null;
+  startDate?: string;
+  endDate?: string;
+  categories?: string[];
+  spent?: number;
+  totalSpent?: number;
+  remaining?: number;
+  percentageused?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export interface CreateBudgetResponse {
@@ -385,6 +397,25 @@ export interface FxRateResponse {
   time_last_update_utc?: string;
   time_next_update_utc?: string;
   conversion_rates: Record<string, number>;
+}
+
+export interface FxPairQuote {
+  base_code: string;
+  target_code: string;
+  conversion_rate: number;
+  conversion_result?: number;
+  time_last_update_utc?: string;
+  time_next_update_utc?: string;
+}
+
+export interface FxPairsResponse {
+  result: string;
+  pairs: {
+    base: string;
+    quote: string;
+    rate: number;
+    change?: number;
+  }[];
 }
 
 export interface FxRatePair {

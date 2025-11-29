@@ -1,20 +1,25 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
-import axios, { AxiosInstance } from "axios";
-import { ApiError } from "../client";
+
+import { ApiError,  } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
-import { FxHistoricalData, FxRateResponse } from "../types";
+import {
+  FxHistoricalData,
+  FxPairQuote,
+  FxPairsResponse,
+  FxRatePair,
+  FxRateResponse,
+} from "../types";
+import axios, { AxiosInstance } from "axios";
 
 const DEFAULT_HISTORY_DAYS = 7;
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
-const apiClient: AxiosInstance = axios.create({
-  baseURL: "http://localhost:3000",
-  timeout: 30000,
+ const apiClient: AxiosInstance  = axios.create({
+  baseURL: "https://fx-rates-api.onrender.com",
   headers: {
     Accept: "application/json",
   },
 });
-
 /**
  * Fetch current exchange rates for a base currency from the proxy API
  */
@@ -45,30 +50,21 @@ export const useGetFxRatesQuery = (
 /**
  * Get a specific exchange rate pair
  */
-// Response body
- interface FxPairResponse 
-   {
-    base_code: string;
-    target_code: string;
-    conversion_rate: number;
-    conversion_result: number;
-    time_last_update_utc: string;
-    time_next_update_utc: string;
-  };
-
-
-
 export const useGetFxRatePairQuery = (
   baseCurrency: string,
   quoteCurrency: string,
-  options?: UseQueryOptions<FxPairResponse>,
+  options?: UseQueryOptions<FxPairQuote, ApiError>,
 ) =>
-  useQuery<FxPairResponse>({
+  useQuery<FxPairQuote, ApiError>({
     queryKey: ["fx-rate-pair", baseCurrency, quoteCurrency],
     queryFn: async () => {
-      const response = await apiClient.get(API_ENDPOINTS.fx.pair.path, {
-        params: { base: baseCurrency, target: quoteCurrency },
-      });
+      const response = await apiClient.get<{ pair: FxPairQuote }>(
+        API_ENDPOINTS.fx.pair.path,
+        {
+          params: { base: baseCurrency, target: quoteCurrency },
+        },
+      );
+
       return response.data.pair;
     },
 
@@ -81,19 +77,13 @@ export const useGetFxRatePairQuery = (
 /**
  * Get multiple exchange rate pairs at once with change calculations
  */
-
-type FxRatePairQueryResponse = {
+type FxRatePairQueryResponse = FxRatePair[];
+type FxRatePairRequest = {
   base: string;
   quote: string;
-  rate: number;
-  change: number;
-}[];
-interface FxRatePair {
-  base: string;
-  quote: string;
-}
+};
 export const useGetFxRatePairsQuery = (
-  pairs: FxRatePair[],
+  pairs: FxRatePairRequest[],
   options?: UseQueryOptions<FxRatePairQueryResponse, ApiError>,
 ) =>
   useQuery<FxRatePairQueryResponse, ApiError>({
@@ -103,11 +93,14 @@ export const useGetFxRatePairsQuery = (
         .map((pair) => `${pair.base}:${pair.quote}`)
         .join(",");
 
-      const response = await apiClient.get(API_ENDPOINTS.fx.pairs.path, {
-        params: { pairs: pairsParam },
-      });
+      const response = await apiClient.get<FxPairsResponse>(
+        API_ENDPOINTS.fx.pairs.path,
+        {
+          params: { pairs: pairsParam },
+        },
+      );
 
-      return response.data.pairs
+      return response.data.pairs || [];
     },
     staleTime: ONE_DAY,
     refetchInterval: ONE_DAY,
@@ -136,7 +129,7 @@ export const useGetRateHistoryQuery = (
 
       return response.data.history || [];
     },
-    staleTime: 1000 * 60 * 60 * 24,
+    staleTime: ONE_DAY,
     enabled: !!baseCurrency && !!quoteCurrency,
     ...options,
   });

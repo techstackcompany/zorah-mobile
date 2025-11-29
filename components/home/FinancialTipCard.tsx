@@ -1,11 +1,14 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useGetFinancialTipQuery } from "@/src/api/hooks/useTipsApi";
 import { Ionicons } from "@expo/vector-icons";
 import { ImageBackground } from "expo-image";
 import React from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
 const FinancialTipCard: React.FC = () => {
+  const { data, isLoading, error } = useGetFinancialTipQuery();
+
   return (
     <ImageBackground
       style={{
@@ -24,13 +27,18 @@ const FinancialTipCard: React.FC = () => {
           Financial Tip
         </Text>
       </View>
-      <Text className="text-sm text-textColor/60">
-        Set aside ₦500 daily for emergencies. Small amounts add up to big
-        savings over time!
-      </Text>
+      {isLoading ? (
+        <ActivityIndicator color={COLORS.secondary_500} />
+      ) : (
+        <Text className="text-sm text-textColor/60">
+          {error
+            ? "Could not load financial tip. Please try again later."
+            : data?.tip ||
+              "Set aside ₦500 daily for emergencies. Small amounts add up to big savings over time!"}
+        </Text>
+      )}
     </ImageBackground>
   );
 };
 
 export default FinancialTipCard;
-
