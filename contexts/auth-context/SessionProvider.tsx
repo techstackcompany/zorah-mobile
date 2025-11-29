@@ -9,6 +9,7 @@ import {
   useEffect,
 } from "react";
 import { useStorageState } from "./useStorageState";
+import { clearPersistedQueryCache } from "@/lib/reactQuery";
 
 /* ---------------------------------------------
    Auth Context & Types
@@ -89,6 +90,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signOut = useCallback(() => {
     // Clear all React Query cache to prevent showing previous user's data
     queryClient.clear();
+    void clearPersistedQueryCache();
 
     // Clear session and user data
     setSession(null);
