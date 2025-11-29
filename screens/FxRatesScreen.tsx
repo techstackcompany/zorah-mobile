@@ -1,15 +1,21 @@
-import React from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import MainContainer from "@/components/layouts/MainContainer";
-import Text from "@/components/ui/Text";
-import COLORS from "@/constants/colors";
+import CurrencySelectModal from "@/components/fx/CurrencySelectModal";
 import FxChartCard from "@/components/fx/FxChartCard";
 import FxConverterCard from "@/components/fx/FxConverterCard";
 import FxRatesList from "@/components/fx/FxRatesList";
-import CurrencySelectModal from "@/components/fx/CurrencySelectModal";
 import FxSummaryCard from "@/components/fx/FxSummaryCard";
-import useFxRatesScreen from "@/features/fx/useFxRatesScreen";
-import { formatYLabel } from "@/lib/fxUtils";
+import MainContainer from "@/components/layouts/MainContainer";
+import Text from "@/components/ui/Text";
+import COLORS from "@/constants/colors";
+import { formatYLabel } from "@/features/fx/utils";
+import useFxRatesScreen from "@/features/fx/hooks";
+import React from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 const FxRatesScreen = () => {
   const fx = useFxRatesScreen();
@@ -24,7 +30,9 @@ const FxRatesScreen = () => {
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary_400} />
-          <Text className="mt-4 text-textColor/60">Loading exchange rates...</Text>
+          <Text className="mt-4 text-textColor/60">
+            Loading exchange rates...
+          </Text>
         </View>
       </MainContainer>
     );
@@ -34,9 +42,17 @@ const FxRatesScreen = () => {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
         <View style={styles.loadingContainer}>
-          <Text className="text-base text-textColor/70">Could not load exchange rates. Please try again.</Text>
+          <Text className="text-base text-textColor/70">
+            Could not load exchange rates. Please try again.
+          </Text>
           <View className="mt-4 w-full px-8">
-            <Text weight="semibold" className="text-center text-primary-500" onPress={fx.handleRefresh}>Retry</Text>
+            <Text
+              weight="semibold"
+              className="text-primary-500 text-center"
+              onPress={fx.handleRefresh}
+            >
+              Retry
+            </Text>
           </View>
         </View>
       </MainContainer>
@@ -45,17 +61,73 @@ const FxRatesScreen = () => {
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer} refreshControl={<RefreshControl refreshing={fx.isRefreshing} onRefresh={fx.handleRefresh} />}>
-        <FxSummaryCard pairLabel={`${String(fx.activeTrend).slice(0, 3)}/${String(fx.activeTrend).slice(3)}`} rateValue={fx.activeRateValue} changePercent={fx.activeRateChange} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={fx.isRefreshing}
+            onRefresh={fx.handleRefresh}
+          />
+        }
+      >
+        <FxSummaryCard
+          pairLabel={`${String(fx.activeTrend).slice(0, 3)}/${String(fx.activeTrend).slice(3)}`}
+          rateValue={fx.activeRateValue}
+          changePercent={fx.activeRateChange}
+        />
 
-        <FxChartCard activeTrend={fx.activeTrend as any} onSelectTrend={fx.setActiveTrend as any} activeSeries={fx.activeSeries} lineChartData={fx.lineChartData} isFetchingHistory={fx.isFetchingHistory} yAxisRange={fx.yAxisRange} yAxisOffset={fx.yAxisOffset} formatYLabel={formatY} />
+        <FxChartCard
+          activeTrend={fx.activeTrend as any}
+          onSelectTrend={fx.setActiveTrend as any}
+          activeSeries={fx.activeSeries}
+          lineChartData={fx.lineChartData}
+          isFetchingHistory={fx.isFetchingHistory}
+          yAxisRange={fx.yAxisRange}
+          yAxisOffset={fx.yAxisOffset}
+          formatYLabel={formatY}
+        />
 
-        <FxConverterCard formattedAmount={formattedAmount} toAmount={toAmount} onAmountChange={fx.handleAmountChange} fromCurrencyCode={fx.fromCurrency.code} toCurrencyCode={fx.toCurrency.code} fromFlag={fromFlag} toFlag={toFlag} onOpenFromCurrency={() => fx.setShowCurrencyModal({ type: "from", visible: true })} onOpenToCurrency={() => fx.setShowCurrencyModal({ type: "to", visible: true })} onSwap={() => { const a = fx.fromCurrency; fx.setFromCurrency(fx.toCurrency); fx.setToCurrency(a); }} lastUpdatedLabel={fx.lastUpdatedLabel} />
+        <FxConverterCard
+          formattedAmount={formattedAmount}
+          toAmount={toAmount}
+          onAmountChange={fx.handleAmountChange}
+          fromCurrencyCode={fx.fromCurrency.code}
+          toCurrencyCode={fx.toCurrency.code}
+          fromFlag={fromFlag}
+          toFlag={toFlag}
+          onOpenFromCurrency={() =>
+            fx.setShowCurrencyModal({ type: "from", visible: true })
+          }
+          onOpenToCurrency={() =>
+            fx.setShowCurrencyModal({ type: "to", visible: true })
+          }
+          onSwap={() => {
+            const a = fx.fromCurrency;
+            fx.setFromCurrency(fx.toCurrency);
+            fx.setToCurrency(a);
+          }}
+          lastUpdatedLabel={fx.lastUpdatedLabel}
+        />
 
-        <FxRatesList converterTab={fx.converterTab} onChangeTab={fx.setConverterTab as any} pairs={fx.resolvedFxPairs as any} isFetching={fx.isFetchingPairs} />
+        <FxRatesList
+          converterTab={fx.converterTab}
+          onChangeTab={fx.setConverterTab as any}
+          pairs={fx.resolvedFxPairs as any}
+          isFetching={fx.isFetchingPairs}
+        />
       </ScrollView>
 
-      <CurrencySelectModal visible={fx.showCurrencyModal.visible} type={fx.showCurrencyModal.type} onClose={() => fx.setShowCurrencyModal({ type: "from", visible: false })} onSelect={fx.handleSelectCurrency} activeFrom={fx.fromCurrency.code} activeTo={fx.toCurrency.code} />
+      <CurrencySelectModal
+        visible={fx.showCurrencyModal.visible}
+        type={fx.showCurrencyModal.type}
+        onClose={() =>
+          fx.setShowCurrencyModal({ type: "from", visible: false })
+        }
+        onSelect={fx.handleSelectCurrency}
+        activeFrom={fx.fromCurrency.code}
+        activeTo={fx.toCurrency.code}
+      />
     </MainContainer>
   );
 };

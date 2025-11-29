@@ -1,28 +1,54 @@
-import { useCallback, useMemo, useState } from "react";
 import { FX_CONVERTER_OPTIONS, FX_PAIRS } from "@/constants/fx";
-import { useGetFxRatePairsQuery, useGetFxRatesQuery, useGetRateHistoryQuery } from "@/src/api/hooks";
+import {
+  useGetFxRatePairsQuery,
+  useGetFxRatesQuery,
+  useGetRateHistoryQuery,
+} from "@/src/api/hooks";
 import type { FxRatePair } from "@/src/api/types";
+import { useCallback, useMemo, useState } from "react";
 
 type CurrencyOption = { code: string; name?: string; flag?: any };
 
 export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
   const [activeTrend, setActiveTrend] = useState<string>(initialTrend);
   const [converterTab, setConverterTab] = useState<"fx" | "crypto">("fx");
-  const [fromCurrency, setFromCurrency] = useState<CurrencyOption>(FX_CONVERTER_OPTIONS[0]);
-  const [toCurrency, setToCurrency] = useState<CurrencyOption>(FX_CONVERTER_OPTIONS[1]);
+  const [fromCurrency, setFromCurrency] = useState<CurrencyOption>(
+    FX_CONVERTER_OPTIONS[0],
+  );
+  const [toCurrency, setToCurrency] = useState<CurrencyOption>(
+    FX_CONVERTER_OPTIONS[1],
+  );
   const [amount, setAmount] = useState<string>("0");
-  const [showCurrencyModal, setShowCurrencyModal] = useState<{ type: "from" | "to"; visible: boolean }>({ type: "from", visible: false });
+  const [showCurrencyModal, setShowCurrencyModal] = useState<{
+    type: "from" | "to";
+    visible: boolean;
+  }>({ type: "from", visible: false });
 
-  const { data: usdRates, isLoading: isLoadingUsdRates, isFetching: isFetchingUsdRates, error: usdRatesError, refetch: refetchUsdRates } = useGetFxRatesQuery("USD");
+  const {
+    data: usdRates,
+    isLoading: isLoadingUsdRates,
+    isFetching: isFetchingUsdRates,
+    error: usdRatesError,
+    refetch: refetchUsdRates,
+  } = useGetFxRatesQuery("USD");
 
-  const fxPairsToFetch = useMemo(() => [
-    { base: "USD", quote: "NGN" },
-    { base: "GBP", quote: "NGN" },
-    { base: "EUR", quote: "NGN" },
-    { base: "CAD", quote: "NGN" },
-  ], []);
+  const fxPairsToFetch = useMemo(
+    () => [
+      { base: "USD", quote: "NGN" },
+      { base: "GBP", quote: "NGN" },
+      { base: "EUR", quote: "NGN" },
+      { base: "CAD", quote: "NGN" },
+    ],
+    [],
+  );
 
-  const { data: fxRatePairs, isLoading: isLoadingPairs, isFetching: isFetchingPairs, error: pairsError, refetch: refetchPairs } = useGetFxRatePairsQuery(fxPairsToFetch);
+  const {
+    data: fxRatePairs,
+    isLoading: isLoadingPairs,
+    isFetching: isFetchingPairs,
+    error: pairsError,
+    refetch: refetchPairs,
+  } = useGetFxRatePairsQuery(fxPairsToFetch);
 
   const converterRates = useMemo(() => {
     const rates: Record<string, number> = { NGN: 1 };
@@ -60,10 +86,16 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     }).filter((p) => p.value > 0);
   }, [fxPairLookup]);
 
-  const trendBase = (String(activeTrend).slice(0, 3) || "USD");
-  const trendQuote = (String(activeTrend).slice(3) || "NGN");
+  const trendBase = String(activeTrend).slice(0, 3) || "USD";
+  const trendQuote = String(activeTrend).slice(3) || "NGN";
 
-  const { data: rateHistory, isLoading: isLoadingHistory, isFetching: isFetchingHistory, error: historyError, refetch: refetchHistory } = useGetRateHistoryQuery(trendBase, trendQuote);
+  const {
+    data: rateHistory,
+    isLoading: isLoadingHistory,
+    isFetching: isFetchingHistory,
+    error: historyError,
+    refetch: refetchHistory,
+  } = useGetRateHistoryQuery(trendBase, trendQuote);
 
   const activeSeries = useMemo(() => {
     if (!rateHistory || rateHistory.length === 0) return [];
@@ -71,20 +103,37 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     return rateHistory.slice(-7).map((item: any, index: number) => {
       const date = new Date(item.date);
       const dayIndex = date.getDay();
-      const label = index === rateHistory.length - 1 ? "Today" : dayLabels[dayIndex] || `Day ${index + 1}`;
-      return { label, value: Number(item.rate || item.value || item.price || 0) };
+      const label =
+        index === rateHistory.length - 1
+          ? "Today"
+          : dayLabels[dayIndex] || `Day ${index + 1}`;
+      return {
+        label,
+        value: Number(item.rate || item.value || item.price || 0),
+      };
     });
   }, [rateHistory]);
 
   const lineChartData = useMemo(() => {
     if (!activeSeries.length) return [];
     const lastIndex = activeSeries.length - 1;
-    return activeSeries.map((point, index) => ({ value: point.value, label: point.label, hideDataPoint: index !== lastIndex }));
+    return activeSeries.map((point, index) => ({
+      value: point.value,
+      label: point.label,
+      hideDataPoint: index !== lastIndex,
+    }));
   }, [activeSeries]);
 
   const axisConfig = useMemo(() => {
-    const numericValues = activeSeries.map((p) => Number(p.value)).filter((v) => Number.isFinite(v));
-    if (!numericValues.length) return { labels: [], range: undefined as number | undefined, offset: undefined as number | undefined };
+    const numericValues = activeSeries
+      .map((p) => Number(p.value))
+      .filter((v) => Number.isFinite(v));
+    if (!numericValues.length)
+      return {
+        labels: [],
+        range: undefined as number | undefined,
+        offset: undefined as number | undefined,
+      };
     let minValue = Math.min(...numericValues);
     let maxValue = Math.max(...numericValues);
     if (minValue === maxValue) {
@@ -104,7 +153,8 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
 
   const activeRateValue = useMemo(() => {
     if (!usdRates?.conversion_rates) return 0;
-    if (trendBase === "USD" && trendQuote === "NGN") return usdRates.conversion_rates.NGN || 0;
+    if (trendBase === "USD" && trendQuote === "NGN")
+      return usdRates.conversion_rates.NGN || 0;
     if (trendBase === "GBP" && trendQuote === "NGN") {
       if (usdRates.conversion_rates.GBP && usdRates.conversion_rates.NGN) {
         const gbpToUsd = 1 / usdRates.conversion_rates.GBP;
@@ -125,14 +175,17 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
   const activeRateChange = useMemo(() => {
     if (!rateHistory || rateHistory.length < 2) return 0;
     const current = Number(rateHistory[rateHistory.length - 1]?.rate || 0);
-    const previous = Number(rateHistory[rateHistory.length - 2]?.rate || current || 1);
+    const previous = Number(
+      rateHistory[rateHistory.length - 2]?.rate || current || 1,
+    );
     if (!previous || previous === 0) return 0;
     return ((current - previous) / previous) * 100;
   }, [rateHistory]);
 
   const hasError = Boolean(usdRatesError || pairsError || historyError);
   const isLoading = isLoadingUsdRates || isLoadingPairs || isLoadingHistory;
-  const isRefreshing = isFetchingUsdRates || isFetchingPairs || isFetchingHistory;
+  const isRefreshing =
+    isFetchingUsdRates || isFetchingPairs || isFetchingHistory;
 
   const handleRefresh = useCallback(() => {
     void refetchUsdRates();
@@ -151,25 +204,45 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     const fromRate = converterRates[fromCurrency.code] ?? 1;
     const toRate = converterRates[toCurrency.code] ?? 1;
     if (!fromRate || !toRate) return 0;
-    const baseUsd = fromCurrency.code === "USD" ? amountValue : amountValue / fromRate;
+    const baseUsd =
+      fromCurrency.code === "USD" ? amountValue : amountValue / fromRate;
     const result = baseUsd * toRate;
     return result;
   }, [amountValue, fromCurrency, toCurrency, converterRates]);
 
-  const formattedAmount = useMemo(() => String(amountValue.toFixed(2)), [amountValue]);
-  const toAmount = useMemo(() => String(Number(convertedValue).toFixed(2)), [convertedValue]);
+  const formattedAmount = useMemo(
+    () => String(amountValue.toFixed(2)),
+    [amountValue],
+  );
+  const toAmount = useMemo(
+    () => String(Number(convertedValue).toFixed(2)),
+    [convertedValue],
+  );
 
   const fromFlag = fromCurrency.flag;
   const toFlag = toCurrency.flag;
 
-  const lastUpdatedLabel = usdRates?.time_last_update_utc ? new Date(usdRates.time_last_update_utc).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  const lastUpdatedLabel = usdRates?.time_last_update_utc
+    ? new Date(usdRates.time_last_update_utc).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-  const handleSelectCurrency = useCallback((code: string) => {
-    const selectedOption = FX_CONVERTER_OPTIONS.find((option) => option.code === code);
-    if (!selectedOption) return;
-    if (showCurrencyModal.type === "from") setFromCurrency(selectedOption);
-    else setToCurrency(selectedOption);
-  }, [showCurrencyModal.type]);
+  const handleSelectCurrency = useCallback(
+    (code: string) => {
+      const selectedOption = FX_CONVERTER_OPTIONS.find(
+        (option) => option.code === code,
+      );
+      if (!selectedOption) return;
+      if (showCurrencyModal.type === "from") setFromCurrency(selectedOption);
+      else setToCurrency(selectedOption);
+    },
+    [showCurrencyModal.type],
+  );
 
   return {
     activeTrend,
