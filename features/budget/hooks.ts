@@ -9,11 +9,11 @@ import {
 import { BudgetListItem } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { ImageSource } from "expo-image";
 import { useEffect, useMemo, useState } from "react";
 import Toast from "react-native-toast-message";
 import { BudgetPeriod, getBudgetPeriod, transformBudgets } from "./utils";
-
+export { getBudgetPeriod, transformBudgets };
+export type { BudgetPeriod };
 
 export const useSubcategories = () => {
   const { data: subcategoriesData } = useGetCategoriesQuery("budget");
