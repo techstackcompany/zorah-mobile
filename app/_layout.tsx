@@ -1,31 +1,37 @@
+import OfflineNotice from "@/components/offline/OfflineNotice";
 import { SessionProvider } from "@/contexts/auth-context/SessionProvider";
+import { NetworkProvider } from "@/contexts/network/NetworkProvider";
 import PushNotificationsProvider from "@/contexts/push-notifications/PushNotificationsProvider";
 import { SettingsProvider } from "@/contexts/settings-context/SettingsProvider";
+import { ReactQueryProvider } from "@/lib/reactQuery";
 import RootNavigator from "@/navigation/RootNavigator";
 import FontProvider from "@/providers/FontProvider";
 import toastConfig from "@/providers/ToastConfig";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { View } from "react-native";
 import Toast from "react-native-toast-message";
 import "../global.css";
 
-export const queryClient = new QueryClient();
-
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        <SettingsProvider>
-          <FontProvider>
-            <SafeAreaProvider>
-              {/* <PushNotificationsProvider> */}
-                <RootNavigator />
-              {/* </PushNotificationsProvider> */}
-            </SafeAreaProvider>
-            <Toast config={toastConfig} />
-          </FontProvider>
-        </SettingsProvider>
-      </SessionProvider>
-    </QueryClientProvider>
+    <ReactQueryProvider>
+      <NetworkProvider>
+        <SessionProvider>
+          <SettingsProvider>
+            <FontProvider>
+              <SafeAreaProvider>
+                <View className="flex-1">
+                  <OfflineNotice />
+                  {/* <PushNotificationsProvider> */}
+                  <RootNavigator />
+                  {/* </PushNotificationsProvider> */}
+                </View>
+              </SafeAreaProvider>
+              <Toast config={toastConfig} />
+            </FontProvider>
+          </SettingsProvider>
+        </SessionProvider>
+      </NetworkProvider>
+    </ReactQueryProvider>
   );
 }

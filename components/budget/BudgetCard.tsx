@@ -5,7 +5,7 @@ import { Image, ImageSource } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
 
-type BudgetCategory = {
+export type BudgetCategory = {
   id: string;
   label: string;
   icon: ImageSource;
@@ -92,4 +92,3 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, onMorePress }) => {
 };
 
 export default BudgetCard;
-

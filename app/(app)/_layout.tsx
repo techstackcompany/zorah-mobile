@@ -1,18 +1,18 @@
+import { useSession } from "@/contexts/auth-context/useSession";
 import UserInactivityProvider from "@/contexts/user-inactivity/UserInactivityProvider";
-import { Stack, usePathname } from "expo-router";
+import { Stack } from "expo-router";
 import React from "react";
 
 const AppLayout = () => {
-  console.log("appLayout");
-    const pathname = usePathname();
-    console.log("pathname", pathname);
+  const { session } = useSession();
+  console.log("session", session);
   return (
     <UserInactivityProvider>
       <Stack
         screenOptions={{
           headerBackButtonDisplayMode: "minimal",
           headerBackTitleStyle: { fontFamily: "NunitoSemibold" },
-          headerTitleStyle: { fontFamily: "NunitoSemibold" }
+          headerTitleStyle: { fontFamily: "NunitoSemibold" },
         }}
       >
         <Stack.Screen name="(home)" options={{ headerShown: false }} />
