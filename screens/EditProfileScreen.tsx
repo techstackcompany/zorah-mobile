@@ -19,8 +19,7 @@ import {
 const EditProfileScreen = () => {
   const router = useRouter();
   const { userData } = useSession();
-
-  // Extract user data for initial form values
+console.log('userData', userData)
   const { displayName, displayEmail, displayPhone, initials } = useMemo(() => {
     return extractUserData(userData, {
       fallbackName: "",

@@ -131,7 +131,6 @@ export function extractUserData(
       nestedUser?.fullName,
     ) ?? fallbackName;
 
-  // Extract email
   const resolvedEmail =
     pickString(
       safeUser.email,
@@ -140,7 +139,6 @@ export function extractUserData(
       safeUser.contactEmail,
     ) ?? "";
 
-  // Extract phone (optional)
   const resolvedPhone = includePhone
     ? (pickString(
         safeUser.phone,
@@ -151,7 +149,6 @@ export function extractUserData(
       ) ?? "")
     : undefined;
 
-  // Compute initials from name
   const nameParts = resolvedName
     .split(/\s+/)
     .map((part) => part.trim())
