@@ -65,9 +65,9 @@ type ArchiveAction = {
 };
 
 const getBudgetStatus = (spent: number, allocated: number): ArchiveStatus => {
-  if (spent > allocated) return "exceeded";
-  const percentage = (spent / allocated) * 100;
-  if (percentage >= 80) return "approaching";
+  const remaining = allocated - spent;
+  if (remaining <= 0) return "exceeded";
+  if (allocated > 0 && remaining < allocated * 0.1) return "approaching";
   return "on-track";
 };
 
@@ -76,30 +76,32 @@ const transformArchivedBudgets = (
   subcategories: { key: string; label: string; icon: string }[],
 ) => {
   return budgetsData.map((budget: BudgetListItem) => {
-    const spent = budget.totalSpent || 0;
-    const allocated = budget.Limit || 0;
-    const remaining =
-      budget.remaining !== undefined
-        ? budget.remaining
-        : Math.max(allocated - spent, 0);
+    const spent = budget.totalSpent ?? budget.spent ?? 0;
+    const allocated = budget.Limit ?? budget.amount ?? 0;
+    const remaining = budget.remaining ?? Math.max(allocated - spent, 0);
 
     let status: ArchiveStatus;
-    if (budget.status) {
-      const statusLower = budget.status.toLowerCase();
-      if (
-        statusLower.includes("exceeded") ||
-        statusLower.includes("over budget") ||
-        statusLower.includes("over")
-      ) {
-        status = "exceeded";
-      } else if (
-        statusLower.includes("approaching") ||
-        statusLower.includes("warning")
-      ) {
-        status = "approaching";
-      } else {
-        status = "on-track";
-      }
+    const statusLabel =
+      budget.status ||
+      (remaining <= 0
+        ? "over budget 🚨"
+        : remaining < allocated * 0.1
+          ? "Almost reached ⛔️"
+          : "On track ✅");
+
+    const statusLower = statusLabel.toLowerCase();
+    if (
+      statusLower.includes("exceeded") ||
+      statusLower.includes("over budget") ||
+      statusLower.includes("over")
+    ) {
+      status = "exceeded";
+    } else if (
+      statusLower.includes("almost reached") ||
+      statusLower.includes("approaching") ||
+      statusLower.includes("warning")
+    ) {
+      status = "approaching";
     } else {
       status = getBudgetStatus(spent, allocated);
     }
