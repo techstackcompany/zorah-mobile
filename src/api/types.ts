@@ -38,14 +38,19 @@ export interface RegisterUserResponse {
 }
 
 export interface UserProfile {
+  _id?: string;
   id?: string;
   name?: string;
   email?: string;
   phoneNumber?: string;
   hasPin?: boolean;
-  biometricsEnabled?: boolean;
+  pin?: string;
+  biometricEnabled?: boolean;
+  biometricsEnabled?: boolean; // alias for compatibility
+  KycStatus?: "unverified" | "pending" | "verified" | (string & {});
   createdAt?: string;
   updatedAt?: string;
+  __v?: number;
   [key: string]: unknown;
 }
 
