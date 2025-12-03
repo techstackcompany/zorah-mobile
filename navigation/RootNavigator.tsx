@@ -38,13 +38,14 @@ function RootNavigator() {
     isLoading,
   ]);
 
-  if (isLoading){
-    return null
+  if (isLoading) {
+    return null;
   }
   return (
     <>
       <Stack screenOptions={{ headerShown: false, statusBarStyle: "dark" }}>
-        {/* Public/Unauthenticated */}
+        {/* Root index handles initial routing */}
+        <Stack.Screen name="index" options={{ animation: "none" }} />
 
         {/* Fully ready → app group */}
         <Stack.Protected guard={isAuthenticated && hasCompletedSetup}>

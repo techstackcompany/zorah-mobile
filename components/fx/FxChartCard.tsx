@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ActivityIndicator, Pressable } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { FX_TRENDS } from "@/constants/fx";
+import React, { useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { LineChart } from "react-native-gifted-charts";
 
 const CHART_HEIGHT = 160;
 
@@ -52,7 +52,9 @@ const FxChartCard = ({
                 weight={isActive ? "semibold" : "medium"}
                 className={`text-xs ${isActive ? "text-white" : "text-textColor/60"}`}
               >
-                {trend.length === 6 ? `${trend.slice(0, 3)}/${trend.slice(3)}` : trend}
+                {trend.length === 6
+                  ? `${trend.slice(0, 3)}/${trend.slice(3)}`
+                  : trend}
               </Text>
             </Pressable>
           );
@@ -63,7 +65,20 @@ const FxChartCard = ({
         onLayout={({ nativeEvent: { layout } }) => setChartWidth(layout.width)}
       >
         {isFetchingHistory ? (
-          <ActivityIndicator size="small" color={COLORS.primary_400} style={{ marginBottom: 8 }} />
+          <ActivityIndicator
+            size="small"
+            color={COLORS.primary_400}
+            style={{
+              marginBottom: 8,
+              position: "absolute",
+              backgroundColor:"white",
+              padding:4,
+              left:"50%",
+              borderRadius:999,
+              zIndex:999,
+              transform: [{ translateX: "-50%" }],
+            }}
+          />
         ) : null}
         {activeSeries.length > 0 ? (
           <LineChart

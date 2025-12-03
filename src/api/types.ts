@@ -435,3 +435,22 @@ export interface FxHistoricalData {
   date: string;
   rate: number;
 }
+
+/* ---------------------------------------------
+   KYC
+----------------------------------------------*/
+export interface SubmitKycRequest {
+  tier: number;
+  fullName: string;
+  dateOfBirth: string;
+  phoneNumber: string;
+  address: string;
+  bvn: string;
+  nin: string;
+}
+
+export interface SubmitKycResponse {
+  status?: string;
+  reference?: string;
+  [key: string]: unknown;
+}

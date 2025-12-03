@@ -8,3 +8,4 @@ export * from "./useIncomeApi";
 export * from "./useNotificationApi";
 export * from "./useSavingsApi";
 export * from "./useWalletApi";
+export * from "./useKycApi";

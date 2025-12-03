@@ -391,7 +391,11 @@ const TransactionHistoryScreen = () => {
         : "bg-light";
 
   const handleTransactionPress = (transactionId: string) => {
-    router.push("/transactions/details");
+    if (!transactionId) return;
+    router.push({
+      pathname: "/transactions/details",
+      params: { id: transactionId },
+    });
   };
 
   const toggleCategory = (id: FilterCategoryId) => {

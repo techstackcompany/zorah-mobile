@@ -56,15 +56,7 @@ const AppLayout = () => {
         <Stack.Screen name="savings-goals" options={{ headerShown: false }} />
         <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
 
-        <Stack.Screen
-          name="profile/edit-profile"
-          options={{ title: "Edit Profile" }}
-        />
-        <Stack.Screen
-          name="profile/banks"
-          options={{ title: "Linked Banks" }}
-        />
-        <Stack.Screen name="profile/add-bank" options={{ title: "Add Bank" }} />
+        <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen
           name="debt-tracker/index"
           options={{ title: "Debt & Lending Tracker" }}

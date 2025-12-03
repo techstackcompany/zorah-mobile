@@ -176,11 +176,6 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = await getRefreshToken();
         if (!refreshToken) {
-          console.error("❌ Token refresh failed: No refresh token stored");
-          console.error("This usually means:");
-          console.error("1. Login response didn't include refreshToken");
-          console.error("2. RefreshToken wasn't stored during login");
-          console.error("3. Storage failed to save the refreshToken");
           throw new Error("No refresh token available");
         }
 

@@ -187,6 +187,15 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
   const isRefreshing =
     isFetchingUsdRates || isFetchingPairs || isFetchingHistory;
 
+  // Indicates we have cached data but the latest fetch failed (stale data)
+  // Only show stale indicator when we have meaningful cached data for
+  // what's currently visible: rates list AND chart data for selected trend
+  const hasCachedData =
+    resolvedFxPairs.length > 0 &&
+    activeSeries.length > 0 &&
+    activeRateValue > 0;
+  const isStale = hasError && hasCachedData && !isRefreshing;
+
   const handleRefresh = useCallback(() => {
     void refetchUsdRates();
     void refetchPairs();
@@ -277,6 +286,7 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     fromFlag,
     toFlag,
     handleSelectCurrency,
+    isStale,
   } as const;
 };
 

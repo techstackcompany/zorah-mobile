@@ -1,10 +1,8 @@
 import { BudgetListItem } from "@/src/api/types";
 import { ImageSource } from "expo-image";
+import { BudgetPeriod } from "./types";
 
-export type BudgetPeriod = {
-  month: number;
-  year: number;
-};
+
 
 export const getBudgetStatus = (
   spent: number,

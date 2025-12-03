@@ -45,6 +45,10 @@ export const API_ENDPOINTS = {
       method: HttpMethod.PATCH,
       path: `/expenses/${expenseId}`,
     }),
+    deleteExpense: (expenseId: string) => ({
+      method: HttpMethod.DELETE,
+      path: `/expenses/${expenseId}`,
+    }),
     summary: { method: HttpMethod.GET, path: "/expenses/summary" },
     daily: { method: HttpMethod.GET, path: "/expenses/daily" },
     monthly: { method: HttpMethod.GET, path: "/expenses/monthly" },
@@ -161,6 +165,9 @@ export const API_ENDPOINTS = {
     pair: { method: HttpMethod.GET, path: "/fx/pair" },
     pairs: { method: HttpMethod.GET, path: "/fx/pairs" },
     history: { method: HttpMethod.GET, path: "/fx/history" },
+  },
+  kyc: {
+    submit: { method: HttpMethod.POST, path: "/kyc/submit" },
   },
 } as const;
 

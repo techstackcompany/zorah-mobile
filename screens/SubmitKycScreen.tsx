@@ -1,133 +1,283 @@
-import React, { useMemo, useState } from "react";
-import { View, StyleSheet, TextInput, Pressable } from "react-native";
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Keyboard,
+  LayoutChangeEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  KeyboardEvent,
+} from "react-native";
+import Toast from "react-native-toast-message";
+import { useSubmitKycMutation } from "@/src/api/hooks";
 
-const NATIONALITIES = ["Nigeria", "Ghana", "Kenya", "South Africa", "Other"];
+const KYC_TIERS = [
+  { value: 1, label: "Tier 1" },
+  { value: 2, label: "Tier 2" },
+  { value: 3, label: "Tier 3" },
+];
 
 const SubmitKycScreen = () => {
-  const [bvn, setBvn] = useState("");
-  const [nationality, setNationality] = useState<string>(NATIONALITIES[0]);
-  const [dob, setDob] = useState(""); // dd/mm/yyyy
+  const [tier, setTier] = useState<number>(1);
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState(""); 
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
-  const [showNationalityList, setShowNationalityList] = useState(false);
+  const [bvn, setBvn] = useState("");
+  const [nin, setNin] = useState("");
+  const [showTierList, setShowTierList] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const fieldPositions = useRef<Record<string, number>>({});
+  const submitKycMutation = useSubmitKycMutation({
+    onSuccess: () => {
+      Toast.show({
+        type: "success",
+        text1: "KYC submitted",
+        text2: "We are reviewing your details.",
+      });
+      router.back();
+    },
+    onError: (error) => {
+      Toast.show({
+        type: "error",
+        text1: "Submission failed",
+        text2: error.message || "Unable to submit KYC. Please try again.",
+      });
+    },
+  });
 
-  const isValid = useMemo(() => {
-    const bvnValid = /^\d{11}$/.test(bvn.trim());
-    const dobValid = /^\d{2}\/\d{2}\/\d{4}$/.test(dob.trim());
-    const addressValid = address.trim().length > 3;
-    return bvnValid && dobValid && addressValid && nationality.length > 0;
-  }, [bvn, dob, address, nationality]);
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      "keyboardDidShow",
+      (event: KeyboardEvent) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(event.endCoordinates.height);
+      },
+    );
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
-  const handleSubmit = () => {
-    if (!isValid) return;
-    // TODO: integrate API submission
-    router.back();
+  const handleFieldLayout =
+    (key: string) => (event: LayoutChangeEvent): void => {
+      fieldPositions.current[key] = event.nativeEvent.layout.y;
+    };
+
+  const scrollToField = (key: string) => {
+    const y = fieldPositions.current[key];
+    if (typeof y === "number") {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, y - 12),
+        animated: true,
+      });
+    }
   };
 
-  return (
-    <MainContainer edges={["top"]} className="bg-white">
-      <View style={styles.headerRow}>
-        <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={20} color={COLORS.textColor} />
-        </Pressable>
-        <Text weight="semibold" className="text-base text-textColor">
-          Submit KYC
-        </Text>
-        <View style={{ width: 32 }} />
-      </View>
+  const isValid = useMemo(() => {
+    const fullNameValid = fullName.trim().length >= 3;
+    const dateOfBirthValid = /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth.trim());
+    const phoneNumberValid = /^\d{10,15}$/.test(phoneNumber.trim());
+    const addressValid = address.trim().length > 3;
+    const bvnValid = /^\d{11}$/.test(bvn.trim());
+    const ninValid = /^\d{11}$/.test(nin.trim());
+    return (
+      fullNameValid &&
+      dateOfBirthValid &&
+      phoneNumberValid &&
+      addressValid &&
+      bvnValid &&
+      ninValid
+    );
+  }, [fullName, dateOfBirth, phoneNumber, address, bvn, nin]);
 
-      <View style={styles.content}>
+  const handleSubmit = () => {
+    if (!isValid || submitKycMutation.isPending) return;
+    const payload = {
+      tier,
+      fullName: fullName.trim(),
+      dateOfBirth: dateOfBirth.trim(),
+      phoneNumber: phoneNumber.trim(),
+      address: address.trim(),
+      bvn: bvn.trim(),
+      nin: nin.trim(),
+    };
+    submitKycMutation.mutate(payload);
+  };
+  return (
+    <MainContainer edges={[]} className="bg-white">
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[
+          styles.content,
+          keyboardVisible && { paddingBottom: keyboardHeight + 40 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text weight="semibold" className="text-lg text-textColor">
           Personal Details
         </Text>
 
-        {/* BVN */}
-        <View style={styles.field}>
-          <Text className="text-sm text-textColor">BVN</Text>
-          <TextInput
-            value={bvn}
-            onChangeText={setBvn}
-            keyboardType="number-pad"
-            placeholder="12345678901"
-            style={styles.input}
-            placeholderTextColor="#9AA5B1"
-          />
-        </View>
-
-        {/* Nationality */}
-        <View style={styles.field}>
-          <Text className="text-sm text-textColor">Nationality</Text>
+        {/* Tier */}
+        <View style={styles.field} onLayout={handleFieldLayout("tier")}>
+          <Text className="text-sm text-textColor">KYC Tier</Text>
           <Pressable
             style={[styles.input, styles.selectInput]}
             accessibilityRole="button"
-            onPress={() => setShowNationalityList((s) => !s)}
+            onPress={() => setShowTierList((s) => !s)}
           >
-            <Text className="text-textColor">{nationality}</Text>
+            <Text className="text-textColor">
+              {KYC_TIERS.find((t) => t.value === tier)?.label}
+            </Text>
             <Ionicons name="chevron-down" size={16} color="#9AA5B1" />
           </Pressable>
-          {showNationalityList ? (
+          {showTierList ? (
             <View style={styles.selectList}>
-              {NATIONALITIES.map((item) => (
+              {KYC_TIERS.map((item) => (
                 <Pressable
-                  key={item}
+                  key={item.value}
                   style={styles.selectItem}
                   onPress={() => {
-                    setNationality(item);
-                    setShowNationalityList(false);
+                    setTier(item.value);
+                    setShowTierList(false);
                   }}
                 >
-                  <Text className="text-sm text-textColor">{item}</Text>
+                  <Text className="text-sm text-textColor">{item.label}</Text>
                 </Pressable>
               ))}
             </View>
           ) : null}
         </View>
 
+        {/* Full Name */}
+        <View
+          style={styles.field}
+          onLayout={handleFieldLayout("fullName")}
+        >
+          <Text className="text-sm text-textColor">Full Name</Text>
+          <TextInput
+            value={fullName}
+            onChangeText={setFullName}
+            placeholder="John Doe"
+            style={styles.input}
+            placeholderTextColor="#9AA5B1"
+            autoCapitalize="words"
+            onFocus={() => scrollToField("fullName")}
+          />
+        </View>
+
         {/* Date Of Birth */}
-        <View style={styles.field}>
+        <View style={styles.field} onLayout={handleFieldLayout("dob")}>
           <Text className="text-sm text-textColor">Date Of Birth</Text>
           <View style={styles.inputWithIcon}>
             <TextInput
-              value={dob}
-              onChangeText={setDob}
+              value={dateOfBirth}
+              onChangeText={setDateOfBirth}
               keyboardType="numbers-and-punctuation"
-              placeholder="10/04/1987"
+              placeholder="1999-03-10"
               style={[styles.input, { paddingRight: 36 }]}
               placeholderTextColor="#9AA5B1"
+              onFocus={() => scrollToField("dob")}
             />
-            <Ionicons name="calendar-outline" size={18} color="#9AA5B1" style={styles.inputIcon} />
+            <Ionicons
+              name="calendar-outline"
+              size={18}
+              color="#9AA5B1"
+              style={styles.inputIcon}
+            />
           </View>
         </View>
 
+        {/* Phone Number */}
+        <View
+          style={styles.field}
+          onLayout={handleFieldLayout("phoneNumber")}
+        >
+          <Text className="text-sm text-textColor">Phone Number</Text>
+          <TextInput
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+            placeholder="0912345678"
+            style={styles.input}
+            placeholderTextColor="#9AA5B1"
+            onFocus={() => scrollToField("phoneNumber")}
+          />
+        </View>
+
         {/* Address */}
-        <View style={styles.field}>
+        <View style={styles.field} onLayout={handleFieldLayout("address")}>
           <Text className="text-sm text-textColor">Address</Text>
           <TextInput
             value={address}
             onChangeText={setAddress}
-            placeholder="Address"
+            placeholder="Lagos"
             style={styles.input}
             placeholderTextColor="#9AA5B1"
+            onFocus={() => scrollToField("address")}
+          />
+        </View>
+
+        {/* BVN */}
+        <View style={styles.field} onLayout={handleFieldLayout("bvn")}>
+          <Text className="text-sm text-textColor">BVN</Text>
+          <TextInput
+            value={bvn}
+            onChangeText={setBvn}
+            keyboardType="number-pad"
+            placeholder="22624259105"
+            style={styles.input}
+            placeholderTextColor="#9AA5B1"
+            maxLength={11}
+            onFocus={() => scrollToField("bvn")}
+          />
+        </View>
+
+        {/* NIN */}
+        <View style={styles.field} onLayout={handleFieldLayout("nin")}>
+          <Text className="text-sm text-textColor">NIN</Text>
+          <TextInput
+            value={nin}
+            onChangeText={setNin}
+            keyboardType="number-pad"
+            placeholder="38074528687"
+            style={styles.input}
+            placeholderTextColor="#9AA5B1"
+            maxLength={11}
+            onFocus={() => scrollToField("nin")}
           />
         </View>
 
         {/* No progress UI, No upload proof section */}
 
         <Pressable
-          style={[styles.submitBtn, { opacity: isValid ? 1 : 0.5 }]}
-          disabled={!isValid}
+          style={[
+            styles.submitBtn,
+            { opacity: isValid && !submitKycMutation.isPending ? 1 : 0.5 },
+          ]}
+          disabled={!isValid || submitKycMutation.isPending}
           onPress={handleSubmit}
           accessibilityRole="button"
         >
           <Text weight="semibold" className="text-white">
-            Next
+            {submitKycMutation.isPending ? "Submitting..." : "Next"}
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </MainContainer>
   );
 };
@@ -150,6 +300,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingVertical: 16,
+    paddingBottom: 40,
     gap: 14,
   },
   field: {

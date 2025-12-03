@@ -7,13 +7,21 @@ import PrimaryButton from "@/components/ui/PrimaryButton";
 import SelectButton from "@/components/ui/SelectButton";
 import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
-import { addKeyboardBehavior, getErrorMessage } from "@/lib/utils";
+import COLORS from "@/constants/colors";
+import { addKeyboardBehavior, cn, getErrorMessage } from "@/lib/utils";
 import { useAddExpenseMutation, useGetCategoriesQuery } from "@/src/api/hooks";
+import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, ScrollView, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  Switch,
+  View,
+} from "react-native";
 import Toast from "react-native-toast-message";
 
 type ExpenseCategory = {
@@ -22,12 +30,32 @@ type ExpenseCategory = {
   icon: ImageSource | string;
 };
 
+type VoiceStatus = "idle" | "recording" | "detected";
+
+type DetectedExpenseDetails = {
+  amountValue: string;
+  amountLabel: string;
+  categoryKey?: string;
+  categoryLabel: string;
+  paymentMethod: string;
+  paymentMethodLabel: string;
+  summary: string;
+  dateValue: string;
+};
+
 const PAYMENT_METHODS = [
   { label: "Bank Transfer", value: "transfer" },
   { label: "Card", value: "card" },
   { label: "Wallet", value: "wallet" },
   { label: "Cash", value: "cash" },
 ];
+
+const formatDateForInput = (value: Date) => {
+  const day = `${value.getDate()}`.padStart(2, "0");
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const year = `${value.getFullYear()}`.slice(-2);
+  return `${day}/${month}/${year}`;
+};
 
 type ValidateFieldsParams = {
   amount: string;
@@ -79,6 +107,9 @@ const validateFields = ({
   }
   return true;
 };
+
+const getPaymentMethodLabel = (value: string) =>
+  PAYMENT_METHODS.find((method) => method.value === value)?.label ?? value;
 
 const usePaymentMethodActions = (
   setFocusedField: React.Dispatch<React.SetStateAction<string | null>>,
@@ -145,6 +176,10 @@ const AddExpenseScreen = () => {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
+  const [detectedExpense, setDetectedExpense] =
+    useState<DetectedExpenseDetails | null>(null);
   const {
     isPaymentModalVisible,
     paymentMethod,
@@ -162,6 +197,64 @@ const AddExpenseScreen = () => {
       setSelectedCategory(expenseCategories[0].key);
     }
   }, [expenseCategories, selectedCategory]);
+
+  const resetVoiceAssist = useCallback(() => {
+    setVoiceStatus("idle");
+    setDetectedExpense(null);
+  }, []);
+
+  const handleEntryModeChange = useCallback(
+    (enabled: boolean) => {
+      setIsVoiceMode(enabled);
+      setFocusedField(null);
+      resetVoiceAssist();
+      if (enabled && isPaymentModalVisible) {
+        closePaymentModal();
+      }
+    },
+    [closePaymentModal, isPaymentModalVisible, resetVoiceAssist],
+  );
+
+  const resolveDetectedCategory = useCallback(
+    (preferred: string[]): { key?: string; label: string } => {
+      if (!expenseCategories.length) {
+        return { label: preferred[0], key: undefined };
+      }
+
+      const normalizedPreferred = preferred.map((item) => item.toLowerCase());
+      const match = expenseCategories.find((category) =>
+        normalizedPreferred.includes(category.label.toLowerCase()),
+      );
+      const fallback = expenseCategories[0];
+      const resolved = match ?? fallback;
+
+      return { key: resolved.key, label: resolved.label };
+    },
+    [expenseCategories],
+  );
+
+  const createDetectedExpense = useCallback((): DetectedExpenseDetails => {
+    const resolvedCategory = resolveDetectedCategory([
+      "Food",
+      "Transport",
+      "General",
+    ]);
+    const sampleDate = new Date();
+    sampleDate.setMonth(9); // October
+    sampleDate.setDate(15);
+
+    return {
+      amountValue: "100",
+      amountLabel: "$100",
+      categoryKey: resolvedCategory.key,
+      categoryLabel: resolvedCategory.label,
+      paymentMethod: "cash",
+      paymentMethodLabel: getPaymentMethodLabel("cash"),
+      summary:
+        "I spent $100 on transportation and food on the 15th of Oct, and I paid with cash.",
+      dateValue: formatDateForInput(sampleDate),
+    };
+  }, [resolveDetectedCategory]);
 
   const addExpenseMutation = useAddExpenseMutation({
     onSuccess: () => {
@@ -191,6 +284,25 @@ const AddExpenseScreen = () => {
       });
     },
   });
+
+  const handleMicPress = useCallback(() => {
+    if (voiceStatus === "recording") {
+      const detection = createDetectedExpense();
+      setAmount(detection.amountValue);
+      setDate(detection.dateValue);
+      setDescription(detection.summary);
+      setPaymentMethod(detection.paymentMethod);
+      if (detection.categoryKey) {
+        setSelectedCategory(detection.categoryKey);
+      }
+      setDetectedExpense(detection);
+      setVoiceStatus("detected");
+      return;
+    }
+
+    setDetectedExpense(null);
+    setVoiceStatus("recording");
+  }, [createDetectedExpense, setPaymentMethod, voiceStatus]);
 
   const handleSubmit = useCallback(() => {
     if (validateFields({ amount, date, paymentMethod, selectedCategory })) {
@@ -222,6 +334,10 @@ const AddExpenseScreen = () => {
     addExpenseMutation,
   ]);
 
+  const micIsRecording = voiceStatus === "recording";
+  const isSubmitDisabled =
+    isVoiceMode && (!detectedExpense || voiceStatus !== "detected");
+
   return (
     <MainContainer className="bg-light" edges={[]}>
       <KeyboardAvoidingView
@@ -235,87 +351,213 @@ const AddExpenseScreen = () => {
             contentContainerClassName="pb-10"
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 400 }}
+            contentContainerStyle={{
+              paddingBottom: isVoiceMode ? 240 : 400,
+            }}
           >
             <View className="mt-4 gap-6">
-              <AmountInput
-                value={amount}
-                onChangeValue={setAmount}
-                onFocus={() => setFocusedField("amount")}
-                onBlur={() =>
-                  setFocusedField((prev) => (prev === "amount" ? null : prev))
-                }
-              />
-
-              <View>
-                <Text className="text-sm text-textColor/70">Category</Text>
-                {isCategoriesLoading ? (
-                  <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">
-                      Loading categories...
-                    </Text>
-                  </View>
-                ) : categoriesError ? (
-                  <View className="mt-3 items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-8">
-                    <Text className="text-red-600">
-                      Failed to load categories. Please try again.
-                    </Text>
-                  </View>
-                ) : expenseCategories.length > 0 ? (
-                  <CategorySelector
-                    categories={expenseCategories}
-                    selectedKey={selectedCategory}
-                    onSelect={setSelectedCategory}
-                  />
-                ) : (
-                  <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">
-                      No categories available
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <View>
-                <Text className="mb-2 text-sm text-textColor/70">
-                  Payment method
+              <View className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                <Text weight="semibold" className="text-base text-textColor">
+                  How would you like to make an entry
                 </Text>
-                <SelectButton
-                  value={paymentMethod}
-                  placeholder="Select payment method"
-                  onPress={openPaymentModal}
-                  isOpen={isPaymentModalVisible}
-                  isFocused={focusedField === "payment"}
-                />
+                <View className="mt-3 flex-row items-center justify-between rounded-xl bg-lightBg px-3 py-3">
+                  <Text className="text-sm text-textColor/80">
+                    Switch to voice assist expense entry
+                  </Text>
+                  <Switch
+                    value={isVoiceMode}
+                    onValueChange={handleEntryModeChange}
+                    trackColor={{
+                      false: "#D7DCE5",
+                      true: COLORS.primary_400,
+                    }}
+                    thumbColor="#FFFFFF"
+                    ios_backgroundColor="#D7DCE5"
+                  />
+                </View>
               </View>
 
-              <View>
-                <Text className="text-sm text-textColor/70">Date</Text>
-                <DatePickerField
-                  value={date}
-                  onChange={(formatted, _raw) => {
-                    setDate(formatted);
-                  }}
-                  isFocused={focusedField === "date"}
-                  onFocusChange={(focused) =>
-                    setFocusedField(focused ? "date" : null)
-                  }
-                />
-              </View>
+              {isVoiceMode ? (
+                <View className="gap-5">
+                  <View className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                    <Text weight="semibold" className="text-base text-textColor">
+                      How it works
+                    </Text>
+                    <Text className="mt-2 text-sm leading-5 text-textColor/80">
+                      Simply tap the microphone and say your expense. For example:
+                    </Text>
+                    <View className="mt-3 rounded-xl bg-primary_100 px-3 py-3">
+                      <Text className="text-sm text-primary_400">
+                        "Spent $25 on food at the restaurant"
+                      </Text>
+                      <Text className="mt-1 text-sm text-primary_400">
+                        "Lunch for $18.50"
+                      </Text>
+                    </View>
+                  </View>
 
-              <TextInputField
-                label="Description (Optional)"
-                placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                onFocusChange={(focused) =>
-                  setFocusedField(focused ? "description" : null)
-                }
-                inputClassName="min-h-[120px]"
-              />
+                  <View className="items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-6">
+                    <Text
+                      weight="semibold"
+                      className="text-base text-textColor"
+                    >
+                      {micIsRecording ? "Recording" : "Ready to record"}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ busy: micIsRecording }}
+                      onPress={handleMicPress}
+                      className={cn(
+                        "h-16 w-16 items-center justify-center rounded-full",
+                        micIsRecording ? "bg-coral" : "bg-primary_400",
+                      )}
+                      android_ripple={{ color: "rgba(255,255,255,0.2)" }}
+                    >
+                      <Ionicons name="mic" size={28} color="#FFFFFF" />
+                    </Pressable>
+                    <Text className="text-xs text-textColor/60">
+                      Tap to record expense details
+                    </Text>
+                  </View>
+
+                  {detectedExpense ? (
+                    <View className="rounded-2xl border border-secondary_200 bg-secondary_150 px-4 py-4">
+                      <Text
+                        weight="semibold"
+                        className="text-base text-secondary_500"
+                      >
+                        Detected Information:
+                      </Text>
+                      <View className="mt-3 gap-2">
+                        <View className="flex-row items-center gap-2">
+                          <Ionicons
+                            name="cash-outline"
+                            size={18}
+                            color={COLORS.secondary_500}
+                          />
+                          <Text className="text-sm text-textColor">
+                            Amount: {detectedExpense.amountLabel}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center gap-2">
+                          <Ionicons
+                            name="grid-outline"
+                            size={18}
+                            color={COLORS.secondary_500}
+                          />
+                          <Text className="text-sm text-textColor">
+                            Category: {detectedExpense.categoryLabel}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center gap-2">
+                          <Ionicons
+                            name="card-outline"
+                            size={18}
+                            color={COLORS.secondary_500}
+                          />
+                          <Text className="text-sm text-textColor">
+                            Payment: {detectedExpense.paymentMethodLabel}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-start gap-2">
+                          <Ionicons
+                            name="document-text-outline"
+                            size={18}
+                            color={COLORS.secondary_500}
+                            style={{ marginTop: 2 }}
+                          />
+                          <Text className="flex-1 text-sm leading-5 text-textColor/90">
+                            {detectedExpense.summary}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              ) : (
+                <View className="gap-6">
+                  <AmountInput
+                    value={amount}
+                    onChangeValue={setAmount}
+                    onFocus={() => setFocusedField("amount")}
+                    onBlur={() =>
+                      setFocusedField((prev) =>
+                        prev === "amount" ? null : prev,
+                      )
+                    }
+                  />
+
+                  <View>
+                    <Text className="text-sm text-textColor/70">Category</Text>
+                    {isCategoriesLoading ? (
+                      <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
+                        <Text className="text-textColor/50">
+                          Loading categories...
+                        </Text>
+                      </View>
+                    ) : categoriesError ? (
+                      <View className="mt-3 items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-8">
+                        <Text className="text-red-600">
+                          Failed to load categories. Please try again.
+                        </Text>
+                      </View>
+                    ) : expenseCategories.length > 0 ? (
+                      <CategorySelector
+                        categories={expenseCategories}
+                        selectedKey={selectedCategory}
+                        onSelect={setSelectedCategory}
+                      />
+                    ) : (
+                      <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
+                        <Text className="text-textColor/50">
+                          No categories available
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View>
+                    <Text className="mb-2 text-sm text-textColor/70">
+                      Payment method
+                    </Text>
+                    <SelectButton
+                      value={paymentMethod}
+                      placeholder="Select payment method"
+                      onPress={openPaymentModal}
+                      isOpen={isPaymentModalVisible}
+                      isFocused={focusedField === "payment"}
+                    />
+                  </View>
+
+                  <View>
+                    <Text className="text-sm text-textColor/70">Date</Text>
+                    <DatePickerField
+                      value={date}
+                      onChange={(formatted, _raw) => {
+                        setDate(formatted);
+                      }}
+                      isFocused={focusedField === "date"}
+                      onFocusChange={(focused) =>
+                        setFocusedField(focused ? "date" : null)
+                      }
+                    />
+                  </View>
+
+                  <TextInputField
+                    label="Description (Optional)"
+                    placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    onFocusChange={(focused) =>
+                      setFocusedField(focused ? "description" : null)
+                    }
+                    inputClassName="min-h-[120px]"
+                  />
+                </View>
+              )}
             </View>
           </ScrollView>
           <View className="px-6 pb-6">
@@ -323,6 +565,7 @@ const AddExpenseScreen = () => {
               onPress={handleSubmit}
               loading={addExpenseMutation.isPending}
               label="Add New Expense"
+              disabled={isSubmitDisabled}
             />
           </View>
         </View>

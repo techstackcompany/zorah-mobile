@@ -117,7 +117,7 @@ const ForgotPasswordScreen = () => {
           )}
         >
           <TextInput
-            className="flex-1 font-poppins text-base text-tertiary"
+            className=" font-poppins text-base text-tertiary"
             value={email}
             onChangeText={(value) => {
               setError(null);

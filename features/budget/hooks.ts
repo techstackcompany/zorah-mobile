@@ -11,9 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import Toast from "react-native-toast-message";
-import { BudgetPeriod, getBudgetPeriod, transformBudgets } from "./utils";
-export { getBudgetPeriod, transformBudgets };
-export type { BudgetPeriod };
+import { getBudgetPeriod, transformBudgets } from "./utils";
+import { BudgetPeriod } from "./types";
 
 export const useSubcategories = () => {
   const { data: subcategoriesData } = useGetCategoriesQuery("budget");

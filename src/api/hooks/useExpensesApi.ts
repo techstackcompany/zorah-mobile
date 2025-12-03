@@ -46,6 +46,25 @@ export const useUpdateExpenseMutation = (
     ...options,
   });
 
+export const useDeleteExpenseMutation = (
+  expenseId: string | undefined,
+  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
+) =>
+  useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
+    mutationKey: ["expenses", "delete", expenseId],
+    mutationFn: () => {
+      if (!expenseId) {
+        throw new Error("Expense ID is required");
+      }
+      const endpoint = API_ENDPOINTS.expenses.deleteExpense(expenseId);
+      return apiRequest<ApiEnvelope<{ message: string }>>({
+        method: endpoint.method,
+        url: endpoint.path,
+      });
+    },
+    ...options,
+  });
+
 export const useGetExpensesQuery = (
   options?: UseQueryOptions<ApiEnvelope<Expense[]>, ApiError>,
 ) =>

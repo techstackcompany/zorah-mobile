@@ -51,10 +51,10 @@ const FxRatesList = ({ converterTab, onChangeTab, pairs, isFetching }: FxRatesLi
           <View style={{ marginTop: 16 }}>
             {isFetching ? (
               <ActivityIndicator size="small" color={COLORS.primary_400} />
-            ) : pairs.length > 0 ? (
+            ) : pairs && pairs.length > 0 ? (
               pairs.map((pair, index) => (
                 <FxRateRow
-                  key={pair.id}
+                  key={pair.id ?? `${pair.base}-${pair.quote}-${index}`}
                   pair={pair}
                   baseFlag={CURRENCY_FLAGS[pair.base]}
                   quoteFlag={CURRENCY_FLAGS[pair.quote]}
@@ -112,13 +112,14 @@ const FxRateRow = ({ pair, baseFlag, quoteFlag, isLast }: FxRateRowProps) => (
     </View>
     <View style={{ alignItems: "flex-end" }}>
       <Text weight="semibold" className="text-sm text-textColor">
-        <Text className="text-xs">{pair.quote}</Text>{pair.value.toLocaleString()}
+        <Text className="text-xs">{pair.quote}</Text>
+        {(pair.value ?? 0).toLocaleString()}
       </Text>
       <View style={styles.changeRow}>
-        <Ionicons name={pair.change >= 0 ? "arrow-up" : "arrow-down"} size={12} color={getChangeColor(pair.change)} />
-        <Text className="ml-1 text-xs" style={{ color: getChangeColor(pair.change) }}>
-          {pair.change >= 0 ? "+" : ""}
-          {pair.change.toFixed(2)}%
+        <Ionicons name={(pair.change ?? 0) >= 0 ? "arrow-up" : "arrow-down"} size={12} color={getChangeColor(pair.change ?? 0)} />
+        <Text className="ml-1 text-xs" style={{ color: getChangeColor(pair.change ?? 0) }}>
+          {(pair.change ?? 0) >= 0 ? "+" : ""}
+          {(pair.change ?? 0).toFixed(2)}%
         </Text>
       </View>
     </View>

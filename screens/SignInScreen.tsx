@@ -138,27 +138,17 @@ const SignInScreen = () => {
       }
 
       const computedIsVerified =
-        profile &&
-        typeof (profile as { isVerified?: unknown }).isVerified === "boolean"
-          ? Boolean((profile as { isVerified?: boolean }).isVerified)
-          : true;
+        typeof profile?.isVerified === "boolean" ? profile.isVerified : true;
       setIsVerified(computedIsVerified);
 
       const computedHasCompletedSetup =
-        profile &&
-        typeof (profile as { hasCompletedSetup?: unknown })
-          .hasCompletedSetup === "boolean"
-          ? Boolean(
-              (profile as { hasCompletedSetup?: boolean }).hasCompletedSetup,
-            )
+        typeof profile?.hasCompletedSetup === "boolean"
+          ? profile.hasCompletedSetup
           : true;
       setHasCompletedSetup(computedHasCompletedSetup);
 
       const nextSetupStep =
-        profile &&
-        typeof (profile as { setupStep?: unknown }).setupStep === "number"
-          ? (profile as { setupStep?: number }).setupStep
-          : null;
+        typeof profile?.setupStep === "number" ? profile.setupStep : null;
       setSetupStep(
         nextSetupStep == null || !Number.isFinite(nextSetupStep)
           ? null
@@ -169,8 +159,8 @@ const SignInScreen = () => {
         type: "success",
         text1: "Welcome back",
         text2:
-          profile && typeof (profile as { name?: string }).name === "string"
-            ? `Hi ${((profile as { name?: string }).name ?? "").split(" ")[0]}`
+          typeof profile?.name === "string"
+            ? `Hi ${(profile.name ?? "").split(" ")[0]}`
             : "You’re now signed in.",
       });
 
@@ -211,23 +201,16 @@ const SignInScreen = () => {
       };
 
       if (MOCK_SIGN_IN_RESPONSE_ENABLED) {
-        await processSignInResponse(
-          createMockSignInResponse(normalizedEmail),
-        );
+        await processSignInResponse(createMockSignInResponse(normalizedEmail));
         return;
       }
 
       const response = await loginMutation.mutateAsync(payload);
       await processSignInResponse(response);
     } catch (error) {
-      if (
-        MOCK_SIGN_IN_RESPONSE_ENABLED ||
-        shouldFallbackToMockSignIn(error)
-      ) {
+      if (MOCK_SIGN_IN_RESPONSE_ENABLED || shouldFallbackToMockSignIn(error)) {
         console.warn("Falling back to mock sign-in", error);
-        await processSignInResponse(
-          createMockSignInResponse(normalizedEmail),
-        );
+        await processSignInResponse(createMockSignInResponse(normalizedEmail));
         return;
       }
 

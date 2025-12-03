@@ -33,7 +33,7 @@ const AccountScreen = () => {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showPinSetupModal, setShowPinSetupModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
-  const { signOut, userData, isVerified } = useSession();
+  const { signOut, userData, kycVerificationStatus } = useSession();
   const { settings, updateSetting } = useAppSettings();
 
   const toggleBiometricsMutation = useToggleBiometricsMutation({
@@ -65,8 +65,8 @@ const AccountScreen = () => {
     initials,
     statusLabel,
     linkedBanksText,
+    isKycVerified,
   } = useMemo(() => {
-    // Extract basic user data using utility function
     const userDataExtracted = extractUserData(userData, {
       fallbackName: "PocketMonie User",
       fallbackInitials: "PU",
@@ -115,16 +115,28 @@ const AccountScreen = () => {
       linkedBanksCount = Math.max(0, Math.trunc(linkedBanksSource));
     }
 
+    const kycStatusRaw =
+      (safeUser.KycStatus as string | undefined) ??
+      (nestedUser?.KycStatus as string | undefined) ??
+      kycVerificationStatus;
+    const rawKycStatus =
+      typeof kycStatusRaw === "string" && kycStatusRaw.trim()
+        ? kycStatusRaw.trim()
+        : "Unverified";
+    const normalizedKycStatus = rawKycStatus.toLowerCase();
+    const statusLabel = rawKycStatus;
+
     return {
       displayName: userDataExtracted.displayName,
       displayEmail: userDataExtracted.displayEmail,
       displayPhone: userDataExtracted.displayPhone ?? "",
       initials: userDataExtracted.initials,
-      statusLabel: isVerified ? "Verified" : "Pending Verification",
+      statusLabel,
+      isKycVerified: normalizedKycStatus === "verified",
       linkedBanksText:
         linkedBanksCount === 1 ? "1 Linked" : `${linkedBanksCount} Linked`,
     };
-  }, [isVerified, userData]);
+  }, [kycVerificationStatus, userData]);
 
   const handleNavigate = (path: string) => {
     router.push(path as RelativePathString);
@@ -198,7 +210,7 @@ const AccountScreen = () => {
               label="Status"
               iconSource={require("@/assets/icons/circle-check.svg")}
               value={
-                isVerified ? (
+                isKycVerified ? (
                   <View className="flex-row gap-1">
                     <Image
                       source={require("@/assets/icons/verified-check.svg")}
@@ -215,6 +227,7 @@ const AccountScreen = () => {
                 )
               }
               valueVariant="status"
+              onPress={() => handleNavigate("/(app)/profile/kyc-verification")}
             />
             <AccountRow
               label="Bank Accounts"
@@ -336,7 +349,6 @@ const AccountScreen = () => {
         visible={showPinSetupModal}
         onClose={() => {
           setShowPinSetupModal(false);
-          // Reset toggle since PIN wasn't set
           updateSetting("enableBiometrics", false);
         }}
         title="Set Up PIN"

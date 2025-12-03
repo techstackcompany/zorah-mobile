@@ -1,3 +1,4 @@
+import { clearPersistedQueryCache } from "@/lib/reactQuery";
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { UserProfile } from "@/src/api/types";
@@ -9,20 +10,22 @@ import {
   useEffect,
 } from "react";
 import { useStorageState } from "./useStorageState";
-import { clearPersistedQueryCache } from "@/lib/reactQuery";
 
 /* ---------------------------------------------
    Auth Context & Types
 ----------------------------------------------*/
+export type KycStatus = string;
+
 export type AuthContextType = {
   // Session & Auth
   session: string | null;
   signIn: (session: string) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 
   // User progress flags
   hasOnboarded: boolean;
   isVerified: boolean;
+  kycVerificationStatus: KycStatus;
   hasSetAffirmations: boolean;
   hasCompletedSetup: boolean;
   setupStep: number | null;
@@ -32,6 +35,7 @@ export type AuthContextType = {
   // Setters
   setHasOnboarded: (value: boolean) => void;
   setIsVerified: (value: boolean) => void;
+  setKycVerificationStatus: (value: KycStatus) => void;
   setHasSetAffirmations: (value: boolean) => void;
   setHasCompletedSetup: (value: boolean) => void;
   setSetupStep: (value: number | null) => void;
@@ -63,6 +67,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
   ] = useStorageState("hasCompletedSetup");
   const [[isLoadingSetupStep, setupStep], setSetupStepRaw] =
     useStorageState("setupStep");
+  const [
+    [isLoadingKycStatus, kycVerificationStatusRaw],
+    setKycVerificationStatusRaw,
+  ] = useStorageState("kycVerificationStatus");
 
   const {
     data: profileResponse,
@@ -79,6 +87,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isLoadingAffirmations ||
     isLoadingCompletedSetup ||
     isLoadingSetupStep ||
+    isLoadingKycStatus ||
     isLoadingUserData ||
     (session ? isProfileLoading && !isProfileError : false);
 
@@ -87,15 +96,19 @@ export function SessionProvider({ children }: PropsWithChildren) {
   ----------------------------------------------*/
   const signIn = (session: string) => setSession(session);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    // Clear persisted cache first to prevent restoration
+    await clearPersistedQueryCache();
+
     // Clear all React Query cache to prevent showing previous user's data
+    queryClient.removeQueries();
     queryClient.clear();
-    void clearPersistedQueryCache();
 
     // Clear session and user data
     setSession(null);
     // setHasOnboarded(null);
     setIsVerified(null);
+    setKycVerificationStatusRaw(null);
     setHasSetAffirmations(null);
     setUserDataRaw(null);
     setHasCompletedSetupRaw(null);
@@ -104,6 +117,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     queryClient,
     setSession,
     setIsVerified,
+    setKycVerificationStatusRaw,
     setHasSetAffirmations,
     setUserDataRaw,
     setHasCompletedSetupRaw,
@@ -162,6 +176,17 @@ export function SessionProvider({ children }: PropsWithChildren) {
     normalizedSetupStep = Number.isNaN(parsed) ? null : parsed;
   }
 
+  // Normalize kycVerificationStatus
+  const kycVerificationStatus: KycStatus =
+    kycVerificationStatusRaw ?? "unverified";
+
+  // Sync kycVerificationStatus from profile response
+  useEffect(() => {
+    if (profileResponse?.data?.KycStatus) {
+      setKycVerificationStatusRaw(profileResponse.data.KycStatus);
+    }
+  }, [profileResponse, setKycVerificationStatusRaw]);
+
   /* ---------------------------------------------
      Context value
   ----------------------------------------------*/
@@ -172,6 +197,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     hasOnboarded: hasOnboarded === "true",
     isVerified: isVerified === "true",
+    kycVerificationStatus,
     hasSetAffirmations: hasSetAffirmations === "true",
     hasCompletedSetup,
     setupStep: normalizedSetupStep,
@@ -180,6 +206,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     setHasOnboarded: (v) => setHasOnboarded(String(v)),
     setIsVerified: (v) => setIsVerified(String(v)),
+    setKycVerificationStatus: (v) => setKycVerificationStatusRaw(v),
     setHasSetAffirmations: (v) => setHasSetAffirmations(String(v)),
     setHasCompletedSetup: (v) => setHasCompletedSetupRaw(String(v)),
     setSetupStep: (v) =>

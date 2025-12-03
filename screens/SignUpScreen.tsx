@@ -1,9 +1,9 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { useRegisterUserMutation } from "@/src/api/hooks";
-import { ApiError } from "@/src/api/client";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/src/api/client";
+import { useRegisterUserMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
@@ -74,8 +74,8 @@ const SignUpScreen = () => {
           ? `Welcome, ${response.name}!`
           : "Welcome to Zorah!",
       });
-      
-      router.replace("/setup/choose-language");
+
+      router.replace("/(auth)/setup/choose-language");
     } catch (error) {
       const apiError = error as ApiError;
       const serverMessage =
@@ -140,7 +140,7 @@ const SignUpScreen = () => {
           onBlur={() => setFocused(null)}
           placeholder="Enter your full name"
           className={cn(
-            "border-gray-200 font-poppins rounded-xl border bg-white px-4 py-3 text-base",
+            "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
             focused === "name" && "focus",
             errors.name ? "border-red-500" : "focus:border-primary_400",
           )}
@@ -165,7 +165,7 @@ const SignUpScreen = () => {
           keyboardType="email-address"
           autoCapitalize="none"
           className={cn(
-            "border-gray-300 font-poppins rounded-xl border px-4 py-3 text-base",
+            "rounded-xl border border-gray-300 px-4 py-3 font-poppins text-base",
             focused === "email" && "focus",
             errors.email ? "border-red-500" : "focus:border-blue-500",
           )}
@@ -189,7 +189,7 @@ const SignUpScreen = () => {
           placeholder="Enter your phone number"
           keyboardType="phone-pad"
           className={cn(
-            "font-poppins rounded-xl border px-4 py-3 text-base",
+            "rounded-xl border px-4 py-3 font-poppins text-base",
             focused === "phone" && "border-blue-500",
             errors.phone
               ? "border-red-500"
@@ -223,7 +223,7 @@ const SignUpScreen = () => {
             onBlur={() => setFocused(null)}
             placeholder="Create a Password"
             secureTextEntry={!showPassword}
-            className="font-poppins flex-1 py-3 text-base"
+            className="flex-1 py-3 font-poppins text-base"
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons
@@ -261,7 +261,7 @@ const SignUpScreen = () => {
           <Pressable>
             <Text
               weight="semibold"
-              className="text-primary_400 text-sm active:underline"
+              className="text-sm text-primary_400 active:underline"
             >
               Service Policy, Terms and Condition
             </Text>
@@ -295,15 +295,15 @@ const SignUpScreen = () => {
 
       {/* Divider */}
       <View className="mb-6 flex-row items-center">
-        <View className="bg-gray-200 h-[1px] flex-1" />
+        <View className="h-[1px] flex-1 bg-gray-200" />
         <Text weight="semibold" className="mx-3 text-sm">
           OR
         </Text>
-        <View className="bg-gray-200 h-[1px] flex-1" />
+        <View className="h-[1px] flex-1 bg-gray-200" />
       </View>
 
       {/* Continue with Google */}
-      <Pressable className="border-gray-300 mb-6 flex-row items-center justify-center rounded-xl border py-4">
+      <Pressable className="mb-6 flex-row items-center justify-center rounded-xl border border-gray-300 py-4">
         <Image
           source={require("@/assets/icons/google.svg")}
           style={{ width: 20, height: 20 }}
@@ -312,7 +312,7 @@ const SignUpScreen = () => {
           Continue with Google
         </Text>
       </Pressable>
-    
+
       <Link asChild href={"/signIn"}>
         <Pressable className="flex-row items-center justify-center gap-2">
           <Text className="text-tertiary">Existing User?</Text>

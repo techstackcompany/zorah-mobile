@@ -140,12 +140,14 @@ export default function OnboardingScreen() {
                   ))}
                 </View>
 
-                {/* Skip */}
-                {currentIndex !== slides.length - 1 && (
-                  <TouchableOpacity onPress={handleSkip}>
-                    <Text className=" ">Skip</Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  onPress={handleSkip}
+                  disabled={currentIndex === slides.length - 1}
+                  className={cn(currentIndex === slides.length - 1 && "opacity-0")}
+                >
+                  <Text className=" ">Skip</Text>
+                </TouchableOpacity>
+              
               </View>
 
               {/* Text */}

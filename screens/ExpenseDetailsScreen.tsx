@@ -8,8 +8,9 @@ import {
   formatExpenseDate,
 } from "@/components/expense-planning/utils";
 import COLORS from "@/constants/colors";
-import { useGetExpenseQuery } from "@/src/api/hooks";
+import { useDeleteExpenseMutation, useGetExpenseQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
@@ -23,6 +24,7 @@ import Toast from "react-native-toast-message";
 
 const ExpenseDetailsScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id?: string }>();
   const expenseId = params.id;
 
@@ -36,6 +38,32 @@ const ExpenseDetailsScreen = () => {
         type: "error",
         text1: "Error",
         text2: error.message || "Failed to load expense details.",
+      });
+    },
+  });
+
+  const deleteExpenseMutation = useDeleteExpenseMutation(expenseId, {
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses", "detail", expenseId] });
+      const successMessage =
+        response?.message ||
+        (response?.data as { message?: string } | undefined)?.message ||
+        "The expense has been removed from your history.";
+      Toast.show({
+        type: "success",
+        text1: "Expense Deleted",
+        text2: successMessage,
+      });
+      setTimeout(() => {
+        router.back();
+      }, 800);
+    },
+    onError: (error) => {
+      Toast.show({
+        type: "error",
+        text1: "Delete Failed",
+        text2: error.message || "Unable to delete this expense. Please try again.",
       });
     },
   });
@@ -265,17 +293,18 @@ const ExpenseDetailsScreen = () => {
               className="flex-1 flex-row items-center justify-center rounded-lg bg-primary_400 py-4"
               accessibilityRole="button"
               onPress={() => {
-                // TODO: Implement delete functionality
-                Toast.show({
-                  type: "info",
-                  text1: "Coming Soon",
-                  text2: "Delete expense functionality will be available soon.",
-                });
+                if (!deleteExpenseMutation.isPending) {
+                  deleteExpenseMutation.mutate();
+                }
+              }}
+              disabled={deleteExpenseMutation.isPending}
+              style={{
+                opacity: deleteExpenseMutation.isPending ? 0.6 : 1,
               }}
             >
               <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
               <Text weight="semibold" className="ml-2 text-white">
-                Delete
+                {deleteExpenseMutation.isPending ? "Deleting..." : "Delete"}
               </Text>
             </Pressable>
           </View>
@@ -296,4 +325,3 @@ const styles = StyleSheet.create({
 });
 
 export default ExpenseDetailsScreen;
-

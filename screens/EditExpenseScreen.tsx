@@ -34,12 +34,34 @@ type ExpenseCategory = {
 };
 
 const PAYMENT_METHODS = [
-  "Bank Transfer",
-  "Debit Card",
-  "Credit Card",
-  "Mobile Money",
-  "Cash",
+  { label: "Bank Transfer", value: "transfer" },
+  { label: "Card", value: "card" },
+  { label: "Wallet", value: "wallet" },
+  { label: "Cash", value: "cash" },
 ];
+
+const getPaymentMethodLabel = (value: string) =>
+  PAYMENT_METHODS.find((method) => method.value === value)?.label ?? value;
+
+const normalizePaymentMethodValue = (value: string | undefined): string => {
+  if (!value) return "";
+  const normalized = value.trim().toLowerCase();
+  const match = PAYMENT_METHODS.find(
+    (method) =>
+      method.value.toLowerCase() === normalized ||
+      method.label.toLowerCase() === normalized,
+  );
+  if (match) {
+    return match.value;
+  }
+
+  if (normalized.includes("card")) return "card";
+  if (normalized.includes("transfer")) return "transfer";
+  if (normalized.includes("wallet")) return "wallet";
+  if (normalized.includes("cash")) return "cash";
+
+  return value;
+};
 
 // Helper function to format date from API (YYYY-MM-DD) to UI format (DD/MM/YYYY)
 const formatDateForInput = (dateString: string | undefined): string => {
@@ -118,7 +140,7 @@ const EditExpenseScreen = () => {
     if (expense) {
       setAmount(expense.amount?.toString() || "");
       setSelectedCategory(expense.category || "");
-      setPaymentMethod(expense.paymentMethod || "");
+      setPaymentMethod(normalizePaymentMethodValue(expense.paymentMethod));
       setDate(formatDateForInput(expense.date));
       setDescription(expense.description || "");
     }
@@ -167,8 +189,8 @@ const EditExpenseScreen = () => {
     setFocusedField(null);
   }, []);
 
-  const handleSelectPaymentMethod = useCallback((method: string) => {
-    setPaymentMethod(method);
+  const handleSelectPaymentMethod = useCallback((methodValue: string) => {
+    setPaymentMethod(methodValue);
     setIsPaymentModalVisible(false);
     setFocusedField(null);
   }, []);
@@ -353,7 +375,9 @@ const EditExpenseScreen = () => {
                       paymentMethod ? "text-textColor" : "text-textColor/50",
                     )}
                   >
-                    {paymentMethod || "Select payment method"}
+                    {paymentMethod
+                      ? getPaymentMethodLabel(paymentMethod)
+                      : "Select payment method"}
                   </Text>
 
                   <Ionicons
@@ -426,11 +450,11 @@ const EditExpenseScreen = () => {
       >
         <View className="gap-2">
           {PAYMENT_METHODS.map((method) => {
-            const isSelected = paymentMethod === method;
+            const isSelected = paymentMethod === method.value;
             return (
               <Pressable
-                key={method}
-                onPress={() => handleSelectPaymentMethod(method)}
+                key={method.value}
+                onPress={() => handleSelectPaymentMethod(method.value)}
                 className={cn(
                   "rounded-2xl px-4 py-3",
                   isSelected ? "bg-primary_100" : "bg-white",
@@ -444,7 +468,7 @@ const EditExpenseScreen = () => {
                       isSelected && "text-primary_400",
                     )}
                   >
-                    {method}
+                    {method.label}
                   </Text>
                   {isSelected && (
                     <Ionicons

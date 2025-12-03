@@ -6,8 +6,9 @@ import FxSummaryCard from "@/components/fx/FxSummaryCard";
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useFxRatesScreen } from "@/features/fx/hooks";
 import { formatYLabel } from "@/features/fx/utils";
-import useFxRatesScreen from "@/features/fx/hooks";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   ActivityIndicator,
@@ -38,7 +39,12 @@ const FxRatesScreen = () => {
     );
   }
 
-  if (fx.hasError) {
+  if (
+    fx.hasError &&
+    !fx.resolvedFxPairs.length &&
+    !fx.activeSeries.length &&
+    fx.activeRateValue === 0
+  ) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
         <View style={styles.loadingContainer}>
@@ -71,6 +77,19 @@ const FxRatesScreen = () => {
           />
         }
       >
+        {fx.isStale && (
+          <View style={styles.staleBanner}>
+            <Ionicons
+              name="cloud-offline-outline"
+              size={16}
+              color={COLORS.amber}
+            />
+            <Text className="ml-2 text-sm" style={{ color: COLORS.amber }}>
+              Showing cached data. Pull to refresh.
+            </Text>
+          </View>
+        )}
+
         <FxSummaryCard
           pairLabel={`${String(fx.activeTrend).slice(0, 3)}/${String(fx.activeTrend).slice(3)}`}
           rateValue={fx.activeRateValue}
@@ -144,6 +163,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 60,
+  },
+  staleBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 4,
   },
 });
 
