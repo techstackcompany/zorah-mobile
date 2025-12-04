@@ -4,7 +4,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
-import { Stack, useRouter } from "expo-router";
+import { RelativePathString, Stack, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Pressable,
@@ -278,7 +278,7 @@ const NotificationsScreen = () => {
 
   const handleActivityPress = (activity: ActivityNotification) => {
     if (activity.target) {
-      router.push(activity.target);
+      router.push(activity.target as RelativePathString);
     }
   };
 
@@ -336,7 +336,6 @@ const NotificationsScreen = () => {
                     <View
                       key={activity.id}
                       className="rounded-3xl bg-white px-5 py-5"
-                      style={styles.cardShadow}
                     >
                       <View className="flex-row items-start justify-between">
                         <View className="flex-row flex-1 items-center">
@@ -396,7 +395,6 @@ const NotificationsScreen = () => {
                     <View
                       key={section.id}
                       className="rounded-2xl border border-grayLight/70 bg-white"
-                      style={styles.cardShadow}
                     >
                       <View className="flex-row items-end justify-between border-b border-grayLight/80 px-5 py-4">
                         <View>
@@ -494,13 +492,7 @@ const NotificationsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  cardShadow: {
-    shadowColor: "#1F2933",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
-  },
+ 
 });
 
 export default NotificationsScreen;

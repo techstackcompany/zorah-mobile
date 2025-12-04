@@ -270,7 +270,7 @@ const BudgetArchiveScreen = () => {
     <MainContainer edges={[]} className="bg-lightMuted">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-6 pb-24"
+        contentContainerClassName="px-6 pb-24 flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -279,16 +279,16 @@ const BudgetArchiveScreen = () => {
           />
         }
       >
-        {isLoadingArchived ? (
-          <View className="mt-8 flex-1 items-center justify-center py-12">
-            <ActivityIndicator size="large" color={COLORS.primary_400} />
-            <Text className="mt-4 text-textColor/60">
-              Loading archived budgets...
-            </Text>
-          </View>
-        ) : hasArchivedBudgets ? (
-          <>
-            {/* <View className="mt-6 rounded-3xl border border-grayLight/40 bg-white p-4 shadow-sm shadow-[#1018280D]">
+          {isLoadingArchived ? (
+            <View className="mt-8 flex-1 items-center justify-center py-12">
+              <ActivityIndicator size="large" color={COLORS.primary_400} />
+              <Text className="mt-4 text-textColor/60">
+                Loading archived budgets...
+              </Text>
+            </View>
+          ) : hasArchivedBudgets ? (
+            <>
+              {/* <View className="mt-6 rounded-3xl border border-grayLight/40 bg-white p-4 shadow-sm shadow-[#1018280D]">
               <Text className="text-xs uppercase text-textColor/60">
                 Archive Summary
               </Text>
@@ -313,131 +313,138 @@ const BudgetArchiveScreen = () => {
               </View>
             </View> */}
 
-            <View className="mt-8">
-              <Text weight="semibold" className="text-lg text-textColor">
-                My Archive
-              </Text>
+              <View className="mt-8">
+                <Text weight="semibold" className="text-lg text-textColor">
+                  My Archive
+                </Text>
 
-              <View className="mt-4 gap-4">
-                {archivedBudgets.map((budget) => {
-                  const meta = STATUS_META[budget.status];
-                  const remainingValue =
-                    budget.remaining ||
-                    Math.max(budget.allocated - budget.spent, 0);
-                  const progress =
-                    budget.allocated <= 0
-                      ? 0
-                      : Math.min((budget.spent / budget.allocated) * 100, 100);
+                <View className="mt-4 gap-4">
+                  {archivedBudgets.map((budget) => {
+                    const meta = STATUS_META[budget.status];
+                    const remainingValue =
+                      budget.remaining ||
+                      Math.max(budget.allocated - budget.spent, 0);
+                    const progress =
+                      budget.allocated <= 0
+                        ? 0
+                        : Math.min(
+                            (budget.spent / budget.allocated) * 100,
+                            100,
+                          );
 
-                  // Handle icon - can be local require() or remote URL
-                  const iconSource =
-                    typeof budget.icon === "string"
-                      ? { uri: budget.icon }
-                      : budget.icon;
+                    // Handle icon - can be local require() or remote URL
+                    const iconSource =
+                      typeof budget.icon === "string"
+                        ? { uri: budget.icon }
+                        : budget.icon;
 
-                  return (
-                    <Pressable
-                      key={budget.id}
-                      className="rounded-3xl border border-grayLight/90 bg-white p-4"
-                      onPress={() => handleOpenActions(budget)}
-                    >
-                      <View className="flex-row items-start gap-4">
-                        <View className="flex-1">
-                          <View className="h-12 flex-row items-start gap-2">
-                            <View className="aspect-square h-full items-center justify-center rounded-full bg-primary_100">
-                              <Image
-                                source={iconSource}
-                                style={{ width: 24, height: 24 }}
-                                contentFit="contain"
-                              />
-                            </View>
-                            <View className="h-full justify-between">
-                              <Text
-                                weight="semibold"
-                                className="text-base text-textColor"
-                              >
-                                {budget.name}
-                              </Text>
-                              <Text className=" text-xs text-textColor/50">
-                                {budget.archivedDate}
-                              </Text>
-                            </View>
-                            <View
-                              className="me-auto rounded-full px-3 py-1"
-                              style={{ backgroundColor: COLORS.secondary_150 }}
-                            >
-                              <Text
-                                className="text-xs"
-                                style={{ color: COLORS.secondary_500 }}
-                              >
-                                {meta.label}
-                              </Text>
-                            </View>
-                            <Pressable
-                              onPress={() => handleOpenActions(budget)}
-                            >
-                              <Image
-                                source={require("@/assets/icons/more.svg")}
-                                style={{ width: 24, height: 24 }}
-                              />
-                            </Pressable>
-                          </View>
-
-                          <View className="mt-4">
-                            <View className="mb-2 h-2 rounded-full bg-gray-200">
+                    return (
+                      <Pressable
+                        key={budget.id}
+                        className="rounded-3xl border border-grayLight/90 bg-white p-4"
+                        onPress={() => handleOpenActions(budget)}
+                      >
+                        <View className="flex-row items-start gap-4">
+                          <View className="flex-1">
+                            <View className="h-12 flex-row items-start gap-2">
+                              <View className="aspect-square h-full items-center justify-center rounded-full bg-primary_100">
+                                <Image
+                                  source={iconSource}
+                                  style={{ width: 24, height: 24 }}
+                                  contentFit="contain"
+                                />
+                              </View>
+                              <View className="h-full justify-between">
+                                <Text
+                                  weight="semibold"
+                                  className="text-base text-textColor"
+                                >
+                                  {budget.name}
+                                </Text>
+                                <Text className=" text-xs text-textColor/50">
+                                  {budget.archivedDate}
+                                </Text>
+                              </View>
                               <View
-                                className="h-full rounded-full"
+                                className="me-auto rounded-full px-3 py-1"
                                 style={{
-                                  width: `${progress}%`,
-                                  backgroundColor: meta.accentColor,
+                                  backgroundColor: COLORS.secondary_150,
                                 }}
-                              />
+                              >
+                                <Text
+                                  className="text-xs"
+                                  style={{ color: COLORS.secondary_500 }}
+                                >
+                                  {meta.label}
+                                </Text>
+                              </View>
+                              <Pressable
+                                onPress={() => handleOpenActions(budget)}
+                              >
+                                <Image
+                                  source={require("@/assets/icons/more.svg")}
+                                  style={{ width: 24, height: 24 }}
+                                />
+                              </Pressable>
                             </View>
-                            <View className="flex-row items-center justify-between">
-                              <Text className="text-sm text-secondary_500">
-                                {formatCurrency(budget.spent)} of{" "}
-                                {formatCurrency(budget.allocated)}
-                              </Text>
-                              <Text className="text-sm text-textColor ">
-                                {formatCurrency(remainingValue)}{" "}
-                                <Text className="text-textColor/70">left </Text>
-                              </Text>
+
+                            <View className="mt-4">
+                              <View className="mb-2 h-2 rounded-full bg-gray-200">
+                                <View
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${progress}%`,
+                                    backgroundColor: meta.accentColor,
+                                  }}
+                                />
+                              </View>
+                              <View className="flex-row items-center justify-between">
+                                <Text className="text-sm text-secondary_500">
+                                  {formatCurrency(budget.spent)} of{" "}
+                                  {formatCurrency(budget.allocated)}
+                                </Text>
+                                <Text className="text-sm text-textColor ">
+                                  {formatCurrency(remainingValue)}{" "}
+                                  <Text className="text-textColor/70">
+                                    left{" "}
+                                  </Text>
+                                </Text>
+                              </View>
                             </View>
                           </View>
                         </View>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          </>
-        ) : (
-          <View className="mt-6 flex-1 items-center">
-            <View className="w-full flex-1 rounded-[32px] border border-[#F2F2F2] bg-[#FAFAFA] px-6 py-12">
-              <View className="flex-1 items-center justify-center gap-6">
-                <View className="h-32 w-32 items-center justify-center rounded-3xl bg-white">
-                  <Image
-                    source={require("@/assets/images/home/no-archive.svg")}
-                    style={{ width: 96, height: 96 }}
-                  />
-                </View>
-                <View className="items-center gap-2">
-                  <Text
-                    weight="semibold"
-                    className="text-lg"
-                    style={{ color: COLORS.textColor }}
-                  >
-                    No archived information
-                  </Text>
-                  <Text className="text-sm" style={{ color: "#9CA3AF" }}>
-                    All archive details will appear here
-                  </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
+            </>
+          ) : (
+            <View className="mt-6 flex-1 items-center">
+              <View className="w-full flex-1  items-center justify-center rounded-[32px] border border-[#F2F2F2] bg-[#FAFAFA] px-6 py-12">
+                <View className="items-center justify-center gap-6">
+                  <View className="h-32 w-32 rounded-3xl bg-white">
+                    <Image
+                      source={require("@/assets/images/home/no-archive.svg")}
+                      style={{ width: 96, height: 96 }}
+                    />
+                  </View>
+                  <View className="items-center gap-2">
+                    <Text
+                      weight="semibold"
+                      className="text-lg"
+                      style={{ color: COLORS.textColor }}
+                    >
+                      No archived information
+                    </Text>
+                    <Text className="text-sm" style={{ color: "#9CA3AF" }}>
+                      All archive details will appear here
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </View>
-          </View>
-        )}
+          )}
       </ScrollView>
 
       <SlideUpModal
