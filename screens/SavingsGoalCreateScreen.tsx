@@ -9,10 +9,16 @@ import Text from "@/components/ui/Text";
 import { formatCurrency } from "@/constants/investments";
 import { cn } from "@/lib/utils";
 import { useCreateSavingsGoalMutation } from "@/src/api/hooks";
-import { Image } from "expo-image";
 import { useQueryClient } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -49,9 +55,10 @@ const GOAL_CATEGORIES: readonly CategoryItem<GoalCategory>[] = [
 ] as const;
 
 const SavingsGoalCreateScreen = () => {
-
   const router = useRouter();
   const queryClient = useQueryClient();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<GoalCategory>(
@@ -62,9 +69,28 @@ const SavingsGoalCreateScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Track keyboard height for dynamic spacing
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   const createGoalMutation = useCreateSavingsGoalMutation({
     onSuccess: (response) => {
- 
       queryClient.invalidateQueries({ queryKey: ["savings"] });
 
       setShowSuccess(true);
@@ -87,8 +113,6 @@ const SavingsGoalCreateScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-    
-
       Toast.show({
         type: "error",
         text1: "Error",
@@ -135,7 +159,6 @@ const SavingsGoalCreateScreen = () => {
 
     const numericAmount = Number(amount);
 
-  
     let formattedDate = targetDate;
     if (targetDate.includes("/")) {
       const [day, month, yearStr] = targetDate.split("/");
@@ -145,22 +168,17 @@ const SavingsGoalCreateScreen = () => {
     }
 
     const payload = {
-      title: name.trim(), 
+      title: name.trim(),
       targetAmount: numericAmount,
       deadline: formattedDate,
       description: note.trim() || undefined,
     };
 
-    
-
     createGoalMutation.mutate(payload);
   }, [name, amount, targetDate, note, createGoalMutation]);
 
   const isSubmitDisabled =
-    !name ||
-    !amount ||
-    !targetDate ||
-    createGoalMutation.isPending;
+    !name || !amount || !targetDate || createGoalMutation.isPending;
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -179,7 +197,11 @@ const SavingsGoalCreateScreen = () => {
           ) : null}
 
           <ScrollView
-            contentContainerClassName="px-6 pb-32"
+            ref={scrollViewRef}
+            contentContainerClassName="px-6"
+            contentContainerStyle={{
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 128,
+            }}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
           >
@@ -251,7 +273,13 @@ const SavingsGoalCreateScreen = () => {
                 placeholderTextColor="#9AA5B1"
                 multiline
                 numberOfLines={4}
-                onFocus={() => setFocusedField("note")}
+                onFocus={() => {
+                  setFocusedField("note");
+                  // Scroll to bottom when note field is focused
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }}
                 onBlur={() => setFocusedField(null)}
                 className={cn(
                   "mt-2 rounded-2xl border bg-white px-4 py-4 text-base text-textColor",
@@ -265,7 +293,9 @@ const SavingsGoalCreateScreen = () => {
 
             <Button
               title={
-                createGoalMutation.isPending ? "Creating Goal..." : "Create Goal"
+                createGoalMutation.isPending
+                  ? "Creating Goal..."
+                  : "Create Goal"
               }
               className="mt-10"
               onPress={handleSubmit}
