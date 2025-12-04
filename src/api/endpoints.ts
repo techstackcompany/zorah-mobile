@@ -90,7 +90,7 @@ export const API_ENDPOINTS = {
     }),
     getArchivedBudgets: {
       method: HttpMethod.GET,
-      path: "/budgets/get-archived-budgets",
+      path: "/budgets/archived",
     },
   },
   notifications: {

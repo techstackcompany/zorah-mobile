@@ -13,6 +13,7 @@ const AppLayout = () => {
           headerBackButtonDisplayMode: "minimal",
           headerBackTitleStyle: { fontFamily: "NunitoSemibold" },
           headerTitleStyle: { fontFamily: "NunitoSemibold" },
+          headerShadowVisible: false,
         }}
       >
         <Stack.Screen name="(home)" options={{ headerShown: false }} />
