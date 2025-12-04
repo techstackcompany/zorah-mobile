@@ -24,6 +24,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import CollapsibleCard from "@/components/ui/CollapsibleCard";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import SlideUpModal from "@/components/ui/SlideUpModal";
 import {
   useGetDailyExpensesQuery,
   useGetExpenseSummaryQuery,
@@ -84,7 +85,12 @@ const TAB_ITEMS: readonly TabContent[] = [
   },
 ] as const;
 
-const PERIOD_LABEL = "2025 Sep";
+type MonthOption = {
+  key: string;
+  label: string;
+  month?: number;
+  year?: number;
+};
 
 const ExpensePlanningScreen = () => {
   const router = useRouter();
@@ -95,51 +101,39 @@ const ExpensePlanningScreen = () => {
     "list",
   );
   const [periodType, setPeriodType] = useState<PeriodType>("daily");
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string>("all");
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   // Fetch expense data
   const {
     data: expenseSummaryData,
     isLoading: isSummaryLoading,
     refetch: refetchSummary,
-  } = useGetExpenseSummaryQuery("monthly", {
-    enabled: activeTab === "expense",
-  });
+  } = useGetExpenseSummaryQuery("monthly");
 
   const {
     data: expensesData,
     isLoading: isExpensesLoading,
     error,
     refetch: refetchExpenses,
-  } = useGetExpensesQuery({
-    enabled: activeTab === "expense",
-  });
-
-  // Fetch daily expense totals
+  } = useGetExpensesQuery();
   const {
     data: dailyExpensesData,
     isLoading: isDailyExpensesLoading,
     refetch: refetchDailyExpenses,
-  } = useGetDailyExpensesQuery({
-    enabled: activeTab === "expense" && periodType === "daily",
-  });
+  } = useGetDailyExpensesQuery();
 
-  // Fetch monthly expense totals
   const {
     data: monthlyExpensesData,
     isLoading: isMonthlyExpensesLoading,
     refetch: refetchMonthlyExpenses,
-  } = useGetMonthlyExpensesQuery({
-    enabled: activeTab === "expense" && periodType === "monthly",
-  });
+  } = useGetMonthlyExpensesQuery();
 
-  // Fetch income data
   const {
     data: incomesData,
     isLoading: isIncomesLoading,
     refetch: refetchIncomes,
-  } = useGetIncomesQuery({
-    enabled: activeTab === "income",
-  });
+  } = useGetIncomesQuery();
 
   console.log("error", error);
 
@@ -188,62 +182,115 @@ const ExpensePlanningScreen = () => {
   const emptyStateContent = EMPTY_STATE_MESSAGES[activeTab];
 
   // Transform API summary data to UI format
+  const expensesArray = useMemo(() => {
+    if (activeTab !== "expense") return [];
+    return Array.isArray(expensesData)
+      ? expensesData
+      : (expensesData as any)?.data || [];
+  }, [expensesData, activeTab]);
+
+  const monthOptions = useMemo<MonthOption[]>(() => {
+    const seen = new Set<string>();
+    const options: MonthOption[] = [];
+
+    expensesArray.forEach((exp: any) => {
+      const rawDate = exp.date || exp.createdAt;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const label = d.toLocaleString("en-US", {
+        month: "short",
+        year: "numeric",
+      });
+      options.push({ key, label, month: d.getMonth() + 1, year: d.getFullYear() });
+    });
+
+    options.sort((a, b) => {
+      if (!a.year || !a.month || !b.year || !b.month) return 0;
+      return new Date(b.year, b.month - 1).getTime() - new Date(a.year, a.month - 1).getTime();
+    });
+
+    return [{ key: "all", label: "All time" }, ...options];
+  }, [expensesArray]);
+
+  const selectedMonthLabel = useMemo(() => {
+    const found = monthOptions.find((opt) => opt.key === selectedMonthKey);
+    return found?.label ?? "All time";
+  }, [monthOptions, selectedMonthKey]);
+
+  const filteredExpenses = useMemo(() => {
+    if (selectedMonthKey === "all") return expensesArray;
+    const [yearStr, monthStr] = selectedMonthKey.split("-");
+    const month = Number(monthStr);
+    const year = Number(yearStr);
+    if (!Number.isFinite(month) || !Number.isFinite(year)) return expensesArray;
+
+    return expensesArray.filter((exp: any) => {
+      const rawDate = exp.date || exp.createdAt;
+      if (!rawDate) return false;
+      const d = new Date(rawDate);
+      return (
+        !Number.isNaN(d.getTime()) &&
+        d.getFullYear() === year &&
+        d.getMonth() + 1 === month
+      );
+    });
+  }, [expensesArray, selectedMonthKey]);
+
+  const buildExpenseSummaryFromList = useCallback(
+    (list: any[]): { total: number; segments: ChartSegment[] } => {
+      if (!list || list.length === 0) return { total: 0, segments: [] };
+
+      const categoryMap = new Map<string, number>();
+      let total = 0;
+
+      list.forEach((item) => {
+        const category = item.category || "Other";
+        const amount = Math.abs(item.amount || 0);
+        total += amount;
+        categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
+      });
+
+      const labelPositions = [
+        { bottom: 36, left: 24 },
+        { top: 42, right: 36 },
+        { top: 62, left: 26 },
+        { bottom: 58, right: 26 },
+      ];
+
+      const segments: ChartSegment[] = Array.from(categoryMap.entries()).map(
+        ([categoryName, amount], index) => {
+          const percentage = total > 0 ? (amount / total) * 100 : 0;
+          const labelPosition = labelPositions[index % labelPositions.length] || {};
+
+          return {
+            key: `${categoryName}-${index}`,
+            label: categoryName,
+            percentage: Math.round(percentage),
+            color: CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE",
+            trackColor: CATEGORY_TRACK_COLOR_MAP[categoryName] || "#E6E7FF",
+            icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
+            iconBackground: CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF",
+            labelPosition,
+            amount,
+          };
+        },
+      );
+
+      return { total, segments };
+    },
+    [],
+  );
+
   const currentSummary = useMemo(() => {
-    if (activeTab === "expense" && expenseSummaryData) {
-      // The API returns: { data: { type, total, byCategory: [...] } }
-      // React Query returns: { data: ApiEnvelope<ExpenseSummary> }
-      // So expenseSummaryData = { data: { type, total, byCategory: [...] } }
+    if (activeTab === "expense") {
+      return buildExpenseSummaryFromList(filteredExpenses);
+    }
 
-      const summaryData = (expenseSummaryData as any)?.data;
-      const byCategory = summaryData?.byCategory;
-
-      // Check if we have the byCategory array
-      if (Array.isArray(byCategory) && byCategory.length > 0) {
-        // Calculate total - use the total from API or sum the categories
-        const total =
-          summaryData.total ||
-          byCategory.reduce(
-            (sum: number, item: any) => sum + (item.total || 0),
-            0,
-          );
-
-        // Transform to segments with percentages
-        const segments: ChartSegment[] = byCategory.map(
-          (item: any, index: number) => {
-            const categoryName = item.category || "Other";
-            const amount = item.total || 0;
-            const percentage = total > 0 ? (amount / total) * 100 : 0;
-
-            // Determine label position based on index
-            const labelPositions = [
-              { bottom: 36, left: 24 },
-              { top: 42, right: 36 },
-              { top: 62, left: 26 },
-              { bottom: 58, right: 26 },
-            ];
-            const labelPosition =
-              labelPositions[index % labelPositions.length] || {};
-
-            return {
-              key: `${categoryName}-${index}`,
-              label: categoryName,
-              percentage: Math.round(percentage),
-              color: CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE",
-              trackColor: CATEGORY_TRACK_COLOR_MAP[categoryName] || "#E6E7FF",
-              icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
-              iconBackground: CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF",
-              labelPosition,
-              amount, // Use the actual amount from the API
-            };
-          },
-        );
-
-        return {
-          total,
-          segments,
-        };
-      }
-    } else if (activeTab === "income" && incomesData) {
+    if (activeTab === "income" && incomesData) {
       // Transform income data to chart segments
       const incomesArray = Array.isArray(incomesData.data)
         ? incomesData.data
@@ -384,13 +431,6 @@ const ExpensePlanningScreen = () => {
   }, [currentSummary]);
 
   // Get expenses array for ExpenseList component
-  const expensesArray = useMemo(() => {
-    if (activeTab !== "expense") return [];
-    return Array.isArray(expensesData)
-      ? expensesData
-      : (expensesData as any)?.data || [];
-  }, [expensesData, activeTab]);
-
   // Get incomes array for IncomeList component (reusing ExpenseList)
   // Transform income data to match ExpenseItem format
   const incomesArray = useMemo(() => {
@@ -422,28 +462,44 @@ const ExpensePlanningScreen = () => {
   // Get daily expenses array for DailyExpenseChart component
   const dailyExpensesArray = useMemo(() => {
     if (activeTab !== "expense" || periodType !== "daily") return [];
-    if (!dailyExpensesData) return [];
+    const byDay = new Map<string, { _id: { day: number; month: number; year: number }; total: number }>();
 
-    // Handle both ApiEnvelope and direct array responses
-    if (Array.isArray(dailyExpensesData)) {
-      return dailyExpensesData;
-    }
+    filteredExpenses.forEach((expense: any) => {
+      const rawDate = expense.date || expense.createdAt;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      const total = byDay.get(key)?.total || 0;
+      byDay.set(key, {
+        _id: { day: d.getDate(), month: d.getMonth() + 1, year: d.getFullYear() },
+        total: total + Math.abs(expense.amount || 0),
+      });
+    });
 
-    return dailyExpensesData.data || [];
-  }, [dailyExpensesData, activeTab, periodType]);
+    return Array.from(byDay.values());
+  }, [activeTab, filteredExpenses, periodType]);
 
   // Get monthly expenses array for MonthlyExpenseList component
   const monthlyExpensesArray = useMemo(() => {
     if (activeTab !== "expense" || periodType !== "monthly") return [];
-    if (!monthlyExpensesData) return [];
+    const byMonth = new Map<string, { _id: { month: number; year: number }; total: number }>();
 
-    // Handle both ApiEnvelope and direct array responses
-    if (Array.isArray(monthlyExpensesData)) {
-      return monthlyExpensesData;
-    }
+    filteredExpenses.forEach((expense: any) => {
+      const rawDate = expense.date || expense.createdAt;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      const total = byMonth.get(key)?.total || 0;
+      byMonth.set(key, {
+        _id: { month: d.getMonth() + 1, year: d.getFullYear() },
+        total: total + Math.abs(expense.amount || 0),
+      });
+    });
 
-    return monthlyExpensesData.data || [];
-  }, [monthlyExpensesData, activeTab, periodType]);
+    return Array.from(byMonth.values());
+  }, [activeTab, filteredExpenses, periodType]);
   return (
     <MainContainer className="bg-lightMuted pb-0" edges={[]}>
       <ScrollView
@@ -468,9 +524,12 @@ const ExpensePlanningScreen = () => {
               <Text weight="medium" className="text-sm text-textColor/70">
                 {tabConfig.breakdownTitle}
               </Text>
-              <Pressable style={styles.periodPill}>
+              <Pressable
+                style={styles.periodPill}
+                onPress={() => setShowMonthPicker(true)}
+              >
                 <Text weight="semibold" className="text-sm text-textColor">
-                  {PERIOD_LABEL}
+                  {selectedMonthLabel}
                 </Text>
 
                 <Image
@@ -509,11 +568,11 @@ const ExpensePlanningScreen = () => {
           {/* Daily/Monthly Spending Section */}
           {activeTab === "expense" && (
             <View className="mt-8">
-              <View className="flex-row items-center justify-between">
-                <Text weight="semibold" className="text-base text-textColor">
-                  {periodType === "daily"
-                    ? "Daily Spending"
-                    : "Monthly Spending"}
+                <View className="flex-row items-center justify-between">
+                  <Text weight="semibold" className="text-base text-textColor">
+                    {periodType === "daily"
+                      ? "Daily Spending"
+                      : "Monthly Spending"}
                 </Text>
                 <View className="flex-row items-center gap-2">
                   <PeriodSelector
@@ -658,6 +717,43 @@ const ExpensePlanningScreen = () => {
       >
         <Ionicons name="add" size={24} color="#FFFFFF" />
       </TouchableOpacity>
+
+      <SlideUpModal
+        visible={showMonthPicker}
+        onClose={() => setShowMonthPicker(false)}
+        title="Select period"
+        headerBackgroundColor={COLORS.primary_400}
+        headerTextColor="#fff"
+        closeIconColor="#fff"
+      >
+        <View className="gap-2">
+          {monthOptions.map((option) => {
+            const isSelected = option.key === selectedMonthKey;
+            return (
+              <Pressable
+                key={option.key}
+                onPress={() => {
+                  setSelectedMonthKey(option.key);
+                  setShowMonthPicker(false);
+                }}
+                className={`rounded-2xl px-4 py-3 ${isSelected ? "bg-primary_100" : "bg-white"}`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text
+                    weight="semibold"
+                    className={`text-base text-textColor ${isSelected ? "text-primary_400" : ""}`}
+                  >
+                    {option.label}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={18} color={COLORS.primary_400} />
+                  )}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </SlideUpModal>
     </MainContainer>
   );
 };
