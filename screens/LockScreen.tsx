@@ -1,5 +1,4 @@
 import COLORS from "@/constants/colors";
-import useAppSettings from "@/contexts/settings-context/useAppSettings";
 import { useVerifyUserPinMutation } from "@/src/api/hooks";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,10 +6,11 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as LocalAuthentication from "expo-local-authentication";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -36,6 +36,12 @@ type BiometricSupport = {
   isEnrolled: boolean;
   checking: boolean;
   isAvailable: boolean;
+};
+
+type LockScreenProps = {
+  visible?: boolean;
+  onUnlock?: () => void;
+  variant?: "screen" | "modal";
 };
 
 const useDeviceBiometricSupport = (): BiometricSupport => {
@@ -93,10 +99,13 @@ const useDeviceBiometricSupport = (): BiometricSupport => {
   };
 };
 
-const LockScreen = () => {
+const LockScreen = ({
+  visible = true,
+  onUnlock,
+  variant = "screen",
+}: LockScreenProps) => {
   const [code, setCode] = useState<number[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
-  const { settings } = useAppSettings();
   const router = useRouter();
 
   const {
@@ -104,28 +113,6 @@ const LockScreen = () => {
     supportsFaceId,
     supportsFingerprint,
   } = useDeviceBiometricSupport();
-
-  // Prevent navigation away from lock screen until verified
-  useFocusEffect(
-    useCallback(() => {
-      // Check if we should be on lock screen
-      const checkLockState = async () => {
-        const wasInBackground = await AsyncStorage.getItem(
-          "userInactivity:wasInBackground",
-        );
-        // If biometrics are enabled and app was in background, ensure we stay on lock screen
-        if (settings.enableBiometrics && wasInBackground === "true") {
-          // Force stay on lock screen
-          return;
-        }
-        // If biometrics are disabled, navigate away
-        if (!settings.enableBiometrics) {
-          router.replace("/(app)/(home)");
-        }
-      };
-      checkLockState();
-    }, [settings.enableBiometrics, router]),
-  );
 
   // Show fingerprint icon if Android OR if fingerprint is the primary method
   const biometricIcon =
@@ -137,13 +124,22 @@ const LockScreen = () => {
   const codeLength = Array(CODE_FIELDS).fill(null);
   const offset = useSharedValue(0);
 
+  const handleUnlockSuccess = useCallback(async () => {
+    await AsyncStorage.setItem("userInactivity:wasInBackground", "false");
+    setCode([]);
+    setIsVerifying(false);
+
+    if (onUnlock) {
+      onUnlock();
+      return;
+    }
+
+    router.replace("/(app)/(home)");
+  }, [onUnlock, router]);
+
   const verifyPinMutation = useVerifyUserPinMutation({
     onSuccess: async () => {
-      // Clear the background flag when PIN is verified
-      await AsyncStorage.setItem("userInactivity:wasInBackground", "false");
-      setIsVerifying(false);
-      // Navigate to home
-      router.replace("/(app)/(home)");
+      await handleUnlockSuccess();
     },
     onError: (error) => {
       setIsVerifying(false);
@@ -188,29 +184,26 @@ const LockScreen = () => {
   const onBiometricPress = async () => {
     const { success } = await LocalAuthentication.authenticateAsync();
     if (success) {
-      // Clear the background flag when biometric is verified
-      await AsyncStorage.setItem("userInactivity:wasInBackground", "false");
-      router.replace("/(app)/(home)");
+      await handleUnlockSuccess();
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
-  console.log("code", code);
 
   useEffect(() => {
+    if (!visible) return;
+
     const handleBiometric = async () => {
       const { success } = await LocalAuthentication.authenticateAsync();
       if (success) {
-        // Clear the background flag when biometric is verified
-        await AsyncStorage.setItem("userInactivity:wasInBackground", "false");
-        router.replace("/(app)/(home)");
+        await handleUnlockSuccess();
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     };
     handleBiometric();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [visible, handleUnlockSuccess]);
+
   useEffect(() => {
     // Only verify if we have 4 digits, not already verifying, and mutation is not pending
     if (
@@ -225,7 +218,9 @@ const LockScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code.length]); // Only depend on code.length, not the entire code array or mutation
 
-  return (
+  if (!visible) return null;
+
+  const content = (
     <LinearGradient colors={["#F6FAFF", "#FFFFFF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -337,6 +332,21 @@ const LockScreen = () => {
       </SafeAreaView>
     </LinearGradient>
   );
+
+  if (variant === "modal") {
+    return (
+      <Modal
+        transparent
+        animationType="fade"
+        visible={visible}
+        statusBarTranslucent
+      >
+        {content}
+      </Modal>
+    );
+  }
+
+  return content;
 };
 const styles = StyleSheet.create({
   container: {
