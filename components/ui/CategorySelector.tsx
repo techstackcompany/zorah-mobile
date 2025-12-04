@@ -29,7 +29,7 @@ const CategorySelector = <K extends string>({
       <Pressable
         onPress={() => onSelect(category.key)}
         className={cn(
-          "aspect-square w-26 items-center justify-center gap-2 rounded-xl border px-2 py-2",
+          "aspect-square w-[96px] items-center justify-center gap-2 rounded-xl border px-2 py-2",
           isActive
             ? "border-primary_400 bg-primary_200"
             : "border-gray-200 bg-white",

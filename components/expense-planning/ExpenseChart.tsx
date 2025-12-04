@@ -3,7 +3,7 @@ import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
+import Svg, { Circle, G, Text as SvgText, TSpan } from "react-native-svg";
 
 export type ChartSegment = {
   key: string;
@@ -53,6 +53,7 @@ const ExpenseChart = ({
       const labelRadius = CHART_RADIUS;
       const labelX = CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
       const labelY = CHART_SIZE / 2 + labelRadius * Math.sin(midpointAngle);
+      const percentageLabel = `${Math.round(segment.percentage)}%`;
 
       const element = (
         <React.Fragment key={segment.key}>
@@ -71,12 +72,12 @@ const ExpenseChart = ({
             x={labelX}
             y={labelY}
             fill={COLORS.textColor}
-            fontSize={12}
+            fontSize={10}
             fontWeight="600"
             textAnchor="middle"
             alignmentBaseline="middle"
           >
-            {segment.percentage}%
+            <TSpan>{percentageLabel}</TSpan>
           </SvgText>
         </React.Fragment>
       );
