@@ -106,7 +106,6 @@ const SavingsGoalCreateScreen = () => {
       setTargetDate("");
       setNote("");
 
-      // Navigate back after a short delay
       setTimeout(() => {
         setShowSuccess(false);
         router.back();

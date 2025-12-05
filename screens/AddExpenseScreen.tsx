@@ -388,10 +388,10 @@ const AddExpenseScreen = () => {
                     </Text>
                     <View className="mt-3 rounded-xl bg-primary_100 px-3 py-3">
                       <Text className="text-sm text-primary_400">
-                        "Spent $25 on food at the restaurant"
+                        &quot;Spent $25 on food at the restaurant&quot;
                       </Text>
                       <Text className="mt-1 text-sm text-primary_400">
-                        "Lunch for $18.50"
+                        &quot;Lunch for $18.50&quot;
                       </Text>
                     </View>
                   </View>

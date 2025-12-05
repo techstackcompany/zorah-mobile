@@ -77,6 +77,7 @@ const SignUpScreen = () => {
 
       router.replace("/(auth)/setup/choose-language");
     } catch (error) {
+      
       const apiError = error as ApiError;
       const serverMessage =
         typeof apiError?.data === "object" &&
