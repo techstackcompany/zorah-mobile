@@ -2,6 +2,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
+import { useAskAiMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useState } from "react";
@@ -102,7 +103,7 @@ const BREAKDOWN_DATA: BreakdownCategory[] = [
   },
 ];
 
-const MESSAGES: Message[] = [
+const INITIAL_MESSAGES: Message[] = [
   {
     id: "intro",
     author: "assistant",
@@ -134,6 +135,49 @@ const MESSAGES: Message[] = [
 const AiAssistantScreen = () => {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [draftMessage, setDraftMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+
+  const askMutation = useAskAiMutation();
+
+  const handleSend = () => {
+    const text = draftMessage.trim();
+    if (!text) return;
+
+    // add user message locally
+    const userMsg: UserMessage = {
+      id: `user_${Date.now()}`,
+      author: "user",
+      timestamp: "just now",
+      body: text,
+    };
+    setMessages((m) => [...m, userMsg]);
+    setDraftMessage("");
+
+    // call API
+    askMutation.mutate(
+      { message: text },
+      {
+        onSuccess: (data) => {
+          const assistantMsg: AssistantMessage = {
+            id: `assistant_${Date.now()}`,
+            author: "assistant",
+            timestamp: "just now",
+            body: data.reply,
+          };
+          setMessages((m) => [...m, assistantMsg]);
+        },
+        onError: (err) => {
+          const errMsg: AssistantMessage = {
+            id: `assistant_err_${Date.now()}`,
+            author: "assistant",
+            timestamp: "just now",
+            body: err.message || "Failed to get a response",
+          };
+          setMessages((m) => [...m, errMsg]);
+        },
+      },
+    );
+  };
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted">
@@ -156,14 +200,11 @@ const AiAssistantScreen = () => {
                   onPress={() => setActiveCategory(category.id)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isActive }}
-                  style={[
-                    styles.categoryChip,
-                    
-                  ]}
+                  style={[styles.categoryChip]}
                 >
                   <Text
                     weight={isActive ? "semibold" : "medium"}
-                    className={cn('text-primary_400 text-sm')}
+                    className={cn("text-sm text-primary_400")}
                   >
                     {category.label}
                   </Text>
@@ -334,7 +375,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#FFFFFF",
   },
- 
+
   categoryChipInactive: {
     backgroundColor: "#E9EDF5",
   },

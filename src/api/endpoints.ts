@@ -169,6 +169,9 @@ export const API_ENDPOINTS = {
   kyc: {
     submit: { method: HttpMethod.POST, path: "/kyc/submit" },
   },
+  ai: {
+    ask: { method: HttpMethod.POST, path: "/ai/ask" },
+  },
 } as const;
 
 export type ApiEndpoints = typeof API_ENDPOINTS;
