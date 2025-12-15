@@ -1,22 +1,25 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { cn } from "@/lib/utils";
+import { addKeyboardBehavior, cn } from "@/lib/utils";
 import { useAskAiMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  KeyboardAvoidingView,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
+import Markdown from "react-native-markdown-display";
 
 type AssistantCategory = {
   id: string;
   label: string;
+  prompt: string;
 };
 
 type BreakdownCategory = {
@@ -29,7 +32,26 @@ type BreakdownCategory = {
 
 type MessageBase = {
   id: string;
-  timestamp: string;
+  timestamp: number;
+};
+
+/** Format a timestamp as relative time (e.g., "just now", "2m ago", "1h ago") */
+const formatRelativeTime = (timestamp: number): string => {
+  const now = Date.now();
+  const diffMs = now - timestamp;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 30) return "just now";
+  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay === 1) return "yesterday";
+  if (diffDay < 7) return `${diffDay}d ago`;
+
+  return new Date(timestamp).toLocaleDateString();
 };
 
 type AssistantMessage = MessageBase & {
@@ -51,63 +73,42 @@ type UserMessage = MessageBase & {
 type Message = AssistantMessage | UserMessage;
 
 const CATEGORIES: AssistantCategory[] = [
-  { id: "saving", label: "Saving Tips" },
-  { id: "budget", label: "Budget Help" },
-  { id: "investment", label: "Investment Advice" },
-  { id: "credit", label: "Credit Score" },
-  { id: "spending", label: "Track Spending" },
-];
-
-const BREAKDOWN_DATA: BreakdownCategory[] = [
   {
-    id: "food",
-    label: "Food & Dining",
-    amount: "₦32,000",
-    percentage: "32%",
-    color: "#3152FF",
+    id: "saving",
+    label: "Saving Tips",
+    prompt:
+      "Give me some practical tips to save more money based on my spending habits.",
   },
   {
-    id: "transport",
-    label: "Transportation",
-    amount: "₦27,000",
-    percentage: "32%",
-    color: "#27AE60",
+    id: "budget",
+    label: "Budget Help",
+    prompt:
+      "Help me create or improve my budget. What categories should I focus on?",
   },
   {
-    id: "shopping",
-    label: "Shopping",
-    amount: "₦43,000",
-    percentage: "32%",
-    color: "#F2994A",
+    id: "investment",
+    label: "Investment Advice",
+    prompt:
+      "What are some beginner-friendly investment options I should consider?",
   },
   {
-    id: "entertainment",
-    label: "Entertainment",
-    amount: "₦23,000",
-    percentage: "32%",
-    color: "#BB6BD9",
+    id: "credit",
+    label: "Credit Score",
+    prompt:
+      "How can I improve my credit score? What factors affect it the most?",
   },
   {
-    id: "bills",
-    label: "Bills & Utilities",
-    amount: "₦44,000",
-    percentage: "32%",
-    color: "#9B51E0",
-  },
-  {
-    id: "others",
-    label: "Others",
-    amount: "₦44,000",
-    percentage: "32%",
-    color: "#7E8DA0",
+    id: "spending",
+    label: "Track Spending",
+    prompt: "Analyze my spending patterns and show me where my money is going.",
   },
 ];
 
-const INITIAL_MESSAGES: Message[] = [
+const getInitialMessages = (): Message[] => [
   {
     id: "intro",
     author: "assistant",
-    timestamp: "5m ago",
+    timestamp: Date.now(),
     title:
       "Hello! I'm Bobbie, your AI financial assistant. I'm here to help you manage your finance better. How can I assist you today?",
     bullets: [
@@ -121,33 +122,42 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: "prompt",
     author: "assistant",
-    timestamp: "5m ago",
+    timestamp: Date.now(),
     body: "Let's get started! Would you like to add your income and expenses first, or set a savings goal to work towards?",
-  },
-  {
-    id: "user-question",
-    author: "user",
-    timestamp: "4m ago",
-    body: "Hi Bobbie! Can you help me analyze my spending this month?",
   },
 ];
 
 const AiAssistantScreen = () => {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [draftMessage, setDraftMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>(getInitialMessages);
+  const [, forceUpdate] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Update timestamps periodically so "just now" becomes "1m ago", etc.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate((n) => n + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const askMutation = useAskAiMutation();
 
-  const handleSend = () => {
+  useEffect(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, [messages]);
+
+  const handleSend = useCallback(() => {
     const text = draftMessage.trim();
     if (!text) return;
 
-    // add user message locally
     const userMsg: UserMessage = {
       id: `user_${Date.now()}`,
       author: "user",
-      timestamp: "just now",
+      timestamp: Date.now(),
       body: text,
     };
     setMessages((m) => [...m, userMsg]);
@@ -161,7 +171,7 @@ const AiAssistantScreen = () => {
           const assistantMsg: AssistantMessage = {
             id: `assistant_${Date.now()}`,
             author: "assistant",
-            timestamp: "just now",
+            timestamp: Date.now(),
             body: data.reply,
           };
           setMessages((m) => [...m, assistantMsg]);
@@ -170,22 +180,70 @@ const AiAssistantScreen = () => {
           const errMsg: AssistantMessage = {
             id: `assistant_err_${Date.now()}`,
             author: "assistant",
-            timestamp: "just now",
+            timestamp: Date.now(),
             body: err.message || "Failed to get a response",
           };
           setMessages((m) => [...m, errMsg]);
         },
       },
     );
-  };
+  }, [draftMessage, askMutation]);
+
+  const handleCategoryPress = useCallback(
+    (category: AssistantCategory) => {
+      setActiveCategory(category.id);
+
+      // Add user message with the category prompt
+      const userMsg: UserMessage = {
+        id: `user_${Date.now()}`,
+        author: "user",
+        timestamp: Date.now(),
+        body: category.prompt,
+      };
+      setMessages((m) => [...m, userMsg]);
+
+      // Call AI API
+      askMutation.mutate(
+        { message: category.prompt },
+        {
+          onSuccess: (data) => {
+            const assistantMsg: AssistantMessage = {
+              id: `assistant_${Date.now()}`,
+              author: "assistant",
+              timestamp: Date.now(),
+              body: data.reply,
+            };
+            setMessages((m) => [...m, assistantMsg]);
+          },
+          onError: (err) => {
+            const errMsg: AssistantMessage = {
+              id: `assistant_err_${Date.now()}`,
+              author: "assistant",
+              timestamp: Date.now(),
+              body: err.message || "Failed to get a response",
+            };
+            setMessages((m) => [...m, errMsg]);
+          },
+        },
+      );
+    },
+    [askMutation],
+  );
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted">
-      <View className="flex-1">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={addKeyboardBehavior()}
+        keyboardVerticalOffset={100}
+      >
         <ScrollView
+          ref={scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           <ScrollView
             horizontal
@@ -197,10 +255,14 @@ const AiAssistantScreen = () => {
               return (
                 <Pressable
                   key={category.id}
-                  onPress={() => setActiveCategory(category.id)}
+                  onPress={() => handleCategoryPress(category)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isActive }}
-                  style={[styles.categoryChip]}
+                  style={[
+                    styles.categoryChip,
+                    askMutation.isPending && { opacity: 0.6 },
+                  ]}
+                  disabled={askMutation.isPending}
                 >
                   <Text
                     weight={isActive ? "semibold" : "medium"}
@@ -214,7 +276,7 @@ const AiAssistantScreen = () => {
           </ScrollView>
 
           <View style={styles.messageStack}>
-            {MESSAGES.map((message) => {
+            {messages.map((message) => {
               if (message.author === "assistant") {
                 return (
                   <View key={message.id} style={styles.assistantMessageRow}>
@@ -235,9 +297,9 @@ const AiAssistantScreen = () => {
                         </Text>
                       ) : null}
                       {message.body ? (
-                        <Text className="mt-1 text-sm leading-5 text-textColor/80">
+                        <Markdown style={markdownStyles}>
                           {message.body}
-                        </Text>
+                        </Markdown>
                       ) : null}
                       {message.bullets ? (
                         <View style={styles.bulletList}>
@@ -310,7 +372,7 @@ const AiAssistantScreen = () => {
                         </View>
                       ) : null}
                       <Text className="mt-2 text-[10px] text-textColor/50">
-                        {message.timestamp}
+                        {formatRelativeTime(message.timestamp)}
                       </Text>
                     </View>
                   </View>
@@ -325,11 +387,27 @@ const AiAssistantScreen = () => {
                     </Text>
                   </View>
                   <Text className="mt-1 text-[10px] text-textColor/50">
-                    {message.timestamp}
+                    {formatRelativeTime(message.timestamp)}
                   </Text>
                 </View>
               );
             })}
+
+            {/* Typing indicator while AI is thinking */}
+            {askMutation.isPending && (
+              <View style={styles.assistantMessageRow}>
+                <View style={styles.avatar}>
+                  <Image
+                    tintColor={COLORS.primary_400}
+                    source={require("@/assets/icons/ai_bot.svg")}
+                    style={{ width: 24, height: 24 }}
+                  />
+                </View>
+                <View style={styles.assistantBubble}>
+                  <Text className="text-sm text-textColor/60">Thinking...</Text>
+                </View>
+              </View>
+            )}
           </View>
         </ScrollView>
 
@@ -341,20 +419,125 @@ const AiAssistantScreen = () => {
               placeholder="Ask Bobbie about your finances..."
               placeholderTextColor="#9AA5B1"
               style={styles.textInput}
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+              editable={!askMutation.isPending}
             />
             <Image
               source={require("@/assets/icons/mic.svg")}
               style={{ width: 24, height: 24 }}
             />
           </View>
-          <Pressable style={styles.sendButton} accessibilityRole="button">
+          <Pressable
+            style={[
+              styles.sendButton,
+              askMutation.isPending && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            onPress={handleSend}
+            disabled={askMutation.isPending}
+          >
             <Ionicons name="sparkles-outline" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </MainContainer>
   );
 };
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: COLORS.textColor,
+  },
+  paragraph: {
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  heading1: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 12,
+    marginBottom: 8,
+    color: COLORS.textColor,
+  },
+  heading2: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 10,
+    marginBottom: 6,
+    color: COLORS.textColor,
+  },
+  heading3: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 8,
+    marginBottom: 4,
+    color: COLORS.textColor,
+  },
+  strong: {
+    fontWeight: "700",
+  },
+  em: {
+    fontStyle: "italic",
+  },
+  bullet_list: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  ordered_list: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  list_item: {
+    flexDirection: "row",
+    marginBottom: 4,
+  },
+  bullet_list_icon: {
+    marginRight: 8,
+    color: COLORS.primary_400,
+  },
+  ordered_list_icon: {
+    marginRight: 8,
+    color: COLORS.primary_400,
+  },
+  code_inline: {
+    backgroundColor: "#F0F4F8",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: "monospace",
+    fontSize: 13,
+  },
+  code_block: {
+    backgroundColor: "#F0F4F8",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  fence: {
+    backgroundColor: "#F0F4F8",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  blockquote: {
+    backgroundColor: "#F6FAFF",
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary_400,
+    paddingLeft: 12,
+    paddingVertical: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  link: {
+    color: COLORS.primary_400,
+    textDecorationLine: "underline",
+  },
+});
 
 const styles = StyleSheet.create({
   scrollView: {
@@ -362,7 +545,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 24,
-    paddingBottom: 120,
+    paddingBottom: 20,
     paddingHorizontal: 24,
   },
   categoryRow: {
