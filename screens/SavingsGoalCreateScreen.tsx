@@ -69,7 +69,6 @@ const SavingsGoalCreateScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Track keyboard height for dynamic spacing
   useEffect(() => {
     const showEvent =
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
