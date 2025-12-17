@@ -8,6 +8,8 @@ import {
   SendTestNotificationRequest,
 } from "../types";
 
+
+
 export const useGetNotificationsQuery = (
   options?: UseQueryOptions<ApiEnvelope<Notification[]>, ApiError>,
 ) =>
@@ -20,6 +22,7 @@ export const useGetNotificationsQuery = (
       }),
     ...options,
   });
+
 
 export const useReadNotificationMutation = (
   options?: UseMutationOptions<ApiEnvelope<Notification>, ApiError, { notificationId: string }>,
@@ -41,6 +44,8 @@ export const useReadNotificationMutation = (
     ...options,
   });
 
+
+  
 export const useRegisterNotificationTokenMutation = (
   options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, RegisterNotificationTokenRequest>,
 ) =>
