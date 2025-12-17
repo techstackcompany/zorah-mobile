@@ -1,6 +1,11 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { CURRENCY_FLAGS, FxPair, formatCurrency, getChangeColor } from "@/constants/fx";
+import {
+  CURRENCY_FLAGS,
+  FxPair,
+  formatCurrency,
+  getChangeColor,
+} from "@/constants/fx";
 import { cn } from "@/lib/utils";
 import { Image } from "expo-image";
 import React from "react";
@@ -9,9 +14,14 @@ import { ActivityIndicator, View } from "react-native";
 type FxRatesCardProps = {
   rates: FxPair[];
   isLoading?: boolean;
+  error?: { message?: string } | null;
 };
 
-const FxRatesCard: React.FC<FxRatesCardProps> = ({ rates, isLoading = false }) => {
+const FxRatesCard: React.FC<FxRatesCardProps> = ({
+  rates,
+  isLoading = false,
+  error = null,
+}) => {
   return (
     <View className="mt-8 rounded-3xl bg-white px-5 py-5">
       <View className="flex-row items-center justify-between">
@@ -27,6 +37,15 @@ const FxRatesCard: React.FC<FxRatesCardProps> = ({ rates, isLoading = false }) =
       <View className="mt-4 rounded-2xl px-3 py-3">
         {isLoading ? (
           <ActivityIndicator size="small" color={COLORS.primary_400} />
+        ) : error ? (
+          <View className="py-6">
+            <Text className="text-center text-sm text-red-500">
+              Failed to load exchange rates
+            </Text>
+            <Text className="mt-1 text-center text-xs text-textColor/60">
+              Pull down to refresh
+            </Text>
+          </View>
         ) : rates.length > 0 ? (
           rates.map((rate, index) => {
             const changeColor = getChangeColor(rate.change);
@@ -97,7 +116,9 @@ const FxRatesCard: React.FC<FxRatesCardProps> = ({ rates, isLoading = false }) =
           })
         ) : (
           <View className="py-6">
-            <Text className="text-sm text-textColor/60">No exchange rate data available</Text>
+            <Text className="text-center text-sm text-textColor/60">
+              No exchange rate data available
+            </Text>
           </View>
         )}
       </View>

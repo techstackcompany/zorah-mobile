@@ -32,6 +32,8 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     refetch: refetchUsdRates,
   } = useGetFxRatesQuery("USD");
 
+  console.log("fx", usdRates, usdRatesError);
+
   const fxPairsToFetch = useMemo(
     () => [
       { base: "USD", quote: "NGN" },
