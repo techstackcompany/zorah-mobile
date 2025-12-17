@@ -2,7 +2,7 @@
   "expo": {
     "name": "Zorah",
     "slug": "zorah",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.png",
     "scheme": "zorah",
@@ -13,15 +13,13 @@
       "bundleIdentifier": "com.onerendzina.zorah"
     },
     "android": {
+      "icon": "./assets/images/app-icon.png",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.onerendzina.zorah",
-      "gradleProperties": {
-        "android.enableJetifier": "true"
-      }
+      "package": "com.onerendzina.zorah"
     },
     "plugins": [
       "expo-router",
@@ -40,18 +38,20 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ],
-       [
+      [
         "expo-speech-recognition",
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ],
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/app-icon.png",
           "color": "#061D62",
           "sounds": []
         }
