@@ -64,6 +64,10 @@ export const API_ENDPOINTS = {
       method: HttpMethod.DELETE,
       path: `/income/${incomeId}`,
     }),
+    editIncome: (incomeId: string) => ({
+      method: HttpMethod.PUT,
+      path: `/income/${incomeId}`,
+    }),
   },
   budgets: {
     createBudget: { method: HttpMethod.POST, path: "/budgets" },

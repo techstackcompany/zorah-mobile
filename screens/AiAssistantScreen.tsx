@@ -1,12 +1,14 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { addKeyboardBehavior, cn } from "@/lib/utils";
 import { useAskAiMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -15,6 +17,7 @@ import {
   View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
+import Toast from "react-native-toast-message";
 
 type AssistantCategory = {
   id: string;
@@ -134,6 +137,26 @@ const AiAssistantScreen = () => {
   const [, forceUpdate] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // Voice recognition
+  const { startRecording, stopRecording, isRecording, isProcessing } =
+    useSpeechRecognition({
+      onResult: (text) => {
+        setDraftMessage((prev) => (prev ? `${prev} ${text}` : text));
+        Toast.show({
+          type: "success",
+          text1: "Voice input received",
+          text2: text,
+        });
+      },
+      onError: (error) => {
+        Toast.show({
+          type: "error",
+          text1: "Voice recognition error",
+          text2: error,
+        });
+      },
+    });
+
   // Update timestamps periodically so "just now" becomes "1m ago", etc.
   useEffect(() => {
     const interval = setInterval(() => {
@@ -229,6 +252,14 @@ const AiAssistantScreen = () => {
     },
     [askMutation],
   );
+
+  const handleMicPress = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted">
@@ -421,21 +452,39 @@ const AiAssistantScreen = () => {
               style={styles.textInput}
               returnKeyType="send"
               onSubmitEditing={handleSend}
-              editable={!askMutation.isPending}
+              editable={!askMutation.isPending && !isRecording}
             />
-            <Image
-              source={require("@/assets/icons/mic.svg")}
-              style={{ width: 24, height: 24 }}
-            />
+            {isProcessing ? (
+              <ActivityIndicator size="small" color={COLORS.primary_400} />
+            ) : (
+              <Pressable
+                onPress={handleMicPress}
+                disabled={askMutation.isPending}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isRecording ? "Stop recording" : "Start voice input"
+                }
+                style={[
+                  styles.micButton,
+                  isRecording && styles.micButtonRecording,
+                ]}
+              >
+                <Ionicons
+                  name={isRecording ? "stop" : "mic"}
+                  size={24}
+                  color={isRecording ? "#FFFFFF" : COLORS.primary_400}
+                />
+              </Pressable>
+            )}
           </View>
           <Pressable
             style={[
               styles.sendButton,
-              askMutation.isPending && { opacity: 0.6 },
+              (askMutation.isPending || isRecording) && { opacity: 0.6 },
             ]}
             accessibilityRole="button"
             onPress={handleSend}
-            disabled={askMutation.isPending}
+            disabled={askMutation.isPending || isRecording}
           >
             <Ionicons name="sparkles-outline" size={20} color="#FFFFFF" />
           </Pressable>
@@ -692,6 +741,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: COLORS.textColor,
+  },
+  micButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  micButtonRecording: {
+    backgroundColor: "#FF4444",
   },
   sendButton: {
     marginLeft: 16,

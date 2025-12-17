@@ -326,3 +326,7 @@ export function getAccentColorForGroup(groupName: string): {
 export function addKeyboardBehavior(){
   return Platform.OS === "ios" ? "padding" : "height"
 }
+
+export function capitalizeWord(word:string){
+  return word.charAt(0).toUpperCase() + word.slice(1)
+}
