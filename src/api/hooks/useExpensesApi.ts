@@ -82,7 +82,7 @@ export const useGetExpensesQuery = (
 
 export const useGetExpenseQuery = (
   expenseId: string | undefined,
-  options?: UseQueryOptions<ApiEnvelope<Expense>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<Expense>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<Expense>, ApiError>({
     queryKey: ["expenses", "detail", expenseId],

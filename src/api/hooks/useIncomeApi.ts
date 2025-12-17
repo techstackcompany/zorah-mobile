@@ -1,10 +1,16 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   AddIncomeRequest,
   ApiEnvelope,
   Income,
+  UpdateIncomeRequest,
 } from "../types";
 
 export const useAddIncomeMutation = (
@@ -59,7 +65,7 @@ export const useGetIncomesQuery = (
 
 export const useGetIncomeQuery = (
   incomeId: string | undefined,
-  options?: UseQueryOptions<ApiEnvelope<Income>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<Income>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<Income>, ApiError>({
     queryKey: ["income", "detail", incomeId],
@@ -69,9 +75,7 @@ export const useGetIncomeQuery = (
       }
       const endpoint = API_ENDPOINTS.income.getIncome(incomeId);
       const response = await apiRequest<
-        | ApiEnvelope<Income>
-        | Income
-        | { success: boolean; data: Income }
+        ApiEnvelope<Income> | Income | { success: boolean; data: Income }
       >({
         method: endpoint.method,
         url: endpoint.path,
@@ -100,7 +104,11 @@ export const useGetIncomeQuery = (
 
 export const useDeleteIncomeMutation = (
   incomeId: string | undefined,
-  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
+  options?: UseMutationOptions<
+    ApiEnvelope<{ message: string }>,
+    ApiError,
+    void
+  >,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["income", "delete", incomeId],
@@ -112,6 +120,29 @@ export const useDeleteIncomeMutation = (
       return apiRequest<ApiEnvelope<{ message: string }>>({
         method: endpoint.method,
         url: endpoint.path,
+      });
+    },
+    ...options,
+  });
+export const useUpdateIncomeMutation = (
+  incomeId: string | undefined,
+  options?: UseMutationOptions<
+    ApiEnvelope<Income>,
+    ApiError,
+    UpdateIncomeRequest
+  >,
+) =>
+  useMutation<ApiEnvelope<Income>, ApiError, UpdateIncomeRequest>({
+    mutationKey: ["income", "update", incomeId],
+    mutationFn: (payload) => {
+      if (!incomeId) {
+        throw new Error("Income ID is required");
+      }
+      const endpoint = API_ENDPOINTS.income.editIncome(incomeId);
+      return apiRequest<ApiEnvelope<Income>>({
+        method: endpoint.method,
+        url: endpoint.path,
+        data: payload,
       });
     },
     ...options,

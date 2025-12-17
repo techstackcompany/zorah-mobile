@@ -151,6 +151,8 @@ export interface AddIncomeRequest {
   date: string;
 }
 
+export type UpdateIncomeRequest = Partial<AddIncomeRequest>;
+
 export interface Income extends AddIncomeRequest {
   _id?: string;
   id?: string;
@@ -177,17 +179,17 @@ export interface Budget {
   user?: string;
   category: string;
   amount?: number;
-  Limit?: number; // API response uses "Limit" with capital L
+  Limit?: number; 
   period?: "weekly" | "monthly" | "yearly" | string;
   month?: number;
   year?: number;
   startDate?: string;
   endDate?: string;
   spent?: number;
-  totalSpent?: number; // API response uses "totalSpent"
+  totalSpent?: number; 
   remaining?: number;
-  percentageused?: string; // API response format: "0.00%"
-  status?: string; // API response format: "On track ✅"
+  percentageused?: string; 
+  status?: string; 
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
