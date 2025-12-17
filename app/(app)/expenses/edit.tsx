@@ -1,4 +1,7 @@
-import EditExpenseScreen from "@/screens/EditExpenseScreen";
+import EditExpenseIncomeScreen from "@/screens/EditExpenseIncomeScreen";
 
-export default EditExpenseScreen;
+const EditExpenseRoute = () => {
+  return <EditExpenseIncomeScreen route="expense" />;
+};
 
+export default EditExpenseRoute;

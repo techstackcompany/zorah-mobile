@@ -12,7 +12,13 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "gradleCommand": ":app:bundleRelease",
+        "env": {
+          "EXPO_ANDROID_MINIFY_ENABLED": "true"
+        }
+      }
     }
   },
   "submit": {

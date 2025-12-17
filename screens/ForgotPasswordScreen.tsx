@@ -56,6 +56,7 @@ const ForgotPasswordScreen = () => {
         params: { email: trimmed },
       });
     } catch (error) {
+      console.log('error', error)
       const apiError = error as ApiError;
       const serverMessage =
         typeof apiError?.data === "object" &&
@@ -117,7 +118,7 @@ const ForgotPasswordScreen = () => {
           )}
         >
           <TextInput
-            className=" font-poppins text-base text-tertiary"
+            className="font-poppins text-base text-tertiary"
             value={email}
             onChangeText={(value) => {
               setError(null);

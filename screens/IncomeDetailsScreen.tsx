@@ -1,6 +1,4 @@
 import DeleteBudgetModal from "@/components/budget/DeleteBudgetModal";
-import MainContainer from "@/components/layouts/MainContainer";
-import Text from "@/components/ui/Text";
 import {
   CATEGORY_BG_COLOR_MAP,
   CATEGORY_COLOR_MAP,
@@ -8,10 +6,13 @@ import {
   formatCurrency,
   formatExpenseDate,
 } from "@/components/expense-planning/utils";
+import MainContainer from "@/components/layouts/MainContainer";
+import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { capitalizeWord } from "@/lib/utils";
 import { useDeleteIncomeMutation, useGetIncomeQuery } from "@/src/api/hooks";
-import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -30,19 +31,7 @@ const IncomeDetailsScreen = () => {
   const incomeId = params.id;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const {
-    data: incomeData,
-    isLoading,
-    error,
-  } = useGetIncomeQuery(incomeId, {
-    onError: (error) => {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error.message || "Failed to load income details.",
-      });
-    },
-  });
+  const { data: incomeData, isLoading, error } = useGetIncomeQuery(incomeId);
 
   const deleteIncomeMutation = useDeleteIncomeMutation(incomeId, {
     onSuccess: () => {
@@ -70,7 +59,6 @@ const IncomeDetailsScreen = () => {
   }, [incomeData]);
 
   const categoryName = income?.category || "Other";
-  const capitalizedCategory = categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase();
   const categoryColor = CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE";
   const categoryIcon = CATEGORY_ICON_MAP[categoryName] || "cash-outline";
   const categoryBg = CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF";
@@ -145,7 +133,7 @@ const IncomeDetailsScreen = () => {
     {
       id: "category",
       label: "Category",
-      value: capitalizedCategory,
+      value: capitalizeWord(categoryName),
     },
     {
       id: "date",
@@ -155,7 +143,7 @@ const IncomeDetailsScreen = () => {
     {
       id: "source",
       label: "Payment Method",
-      value: income.source || "Not specified",
+      value: capitalizeWord(income.source) || "Not specified",
     },
     {
       id: "createdAt",
@@ -188,13 +176,17 @@ const IncomeDetailsScreen = () => {
                 <View
                   style={[styles.incomeIcon, { backgroundColor: categoryBg }]}
                 >
-                  <Ionicons name={categoryIcon} size={32} color={categoryColor} />
+                  <Ionicons
+                    name={categoryIcon}
+                    size={32}
+                    color={categoryColor}
+                  />
                 </View>
                 <Text
                   weight="semibold"
                   className="mt-4 text-center text-base text-textColor"
                 >
-                  {capitalizedCategory}
+                  {capitalizeWord(income.category)}
                 </Text>
                 <Text
                   weight="bold"
@@ -205,7 +197,10 @@ const IncomeDetailsScreen = () => {
                 {formattedDate && (
                   <View className="mt-4">
                     <View className="rounded-full bg-white px-4 py-1.5">
-                      <Text weight="semibold" className="text-xs text-primary_400">
+                      <Text
+                        weight="semibold"
+                        className="text-xs text-primary_400"
+                      >
                         {formattedDate}
                       </Text>
                     </View>
@@ -267,11 +262,9 @@ const IncomeDetailsScreen = () => {
               className="flex-1 flex-row items-center justify-center rounded-lg border border-primary_400 py-4"
               accessibilityRole="button"
               onPress={() => {
-                // TODO: Implement edit functionality
-                Toast.show({
-                  type: "info",
-                  text1: "Coming Soon",
-                  text2: "Edit income functionality will be available soon.",
+                router.push({
+                  pathname: "/income/edit",
+                  params: { id: incomeId },
                 });
               }}
             >
@@ -304,7 +297,7 @@ const IncomeDetailsScreen = () => {
         onConfirm={handleDelete}
         budgetName={
           income
-            ? `${capitalizedCategory}${income.description ? ` - ${income.description}` : ""}`
+            ? `${capitalizeWord(income.category)}${income.description ? ` - ${income.description}` : ""}`
             : undefined
         }
         isDeleting={deleteIncomeMutation.isPending}
@@ -324,4 +317,3 @@ const styles = StyleSheet.create({
 });
 
 export default IncomeDetailsScreen;
-

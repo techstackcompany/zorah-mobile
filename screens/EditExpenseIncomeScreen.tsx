@@ -10,12 +10,14 @@ import { cn } from "@/lib/utils";
 import {
   useGetCategoriesQuery,
   useGetExpenseQuery,
+  useGetIncomeQuery,
   useUpdateExpenseMutation,
+  useUpdateIncomeMutation,
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { ImageSource } from "expo-image";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -63,7 +65,6 @@ const normalizePaymentMethodValue = (value: string | undefined): string => {
   return value;
 };
 
-// Helper function to format date from API (YYYY-MM-DD) to UI format (DD/MM/YYYY)
 const formatDateForInput = (dateString: string | undefined): string => {
   if (!dateString) return "";
   try {
@@ -78,12 +79,16 @@ const formatDateForInput = (dateString: string | undefined): string => {
   }
 };
 
-const EditExpenseScreen = () => {
+interface Props {
+  route: "expense" | "income";
+}
+
+const EditExpenseIncomeScreen = ({ route }: Props) => {
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id?: string }>();
-  const expenseId = params.id;
-
+  const itemId = params.id;
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -92,89 +97,123 @@ const EditExpenseScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
 
-  // Fetch expense data
+  const isIncomeScreen = route === "income";
+
   const {
     data: expenseData,
     isLoading: isExpenseLoading,
     error: expenseError,
-  } = useGetExpenseQuery(expenseId, {
-    onError: (error) => {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error.message || "Failed to load expense details.",
-      });
-    },
+  } = useGetExpenseQuery(itemId, {
+    enabled: !isIncomeScreen && !!itemId,
   });
 
-  // Fetch categories from API
+  const {
+    data: incomeData,
+    isLoading: isIncomeLoading,
+    error: incomeError,
+  } = useGetIncomeQuery(itemId, {
+    enabled: isIncomeScreen && !!itemId,
+  });
+
   const {
     data: categoriesData,
     isLoading: isCategoriesLoading,
     error: categoriesError,
-  } = useGetCategoriesQuery("expense");
+  } = useGetCategoriesQuery(isIncomeScreen ? "income" : "expense");
 
-  // Extract expense from response
-  const expense = useMemo(() => {
-    if (!expenseData) return null;
-    return Array.isArray(expenseData)
-      ? expenseData[0]
-      : expenseData.data || expenseData;
-  }, [expenseData]);
+  const item = useMemo(() => {
+    const data = isIncomeScreen ? incomeData : expenseData;
+    if (!data) return null;
+    return Array.isArray(data) ? data[0] : data.data || data;
+  }, [expenseData, incomeData, isIncomeScreen]);
 
-  // Map API categories to UI format
   const expenseCategories = useMemo<ExpenseCategory[]>(() => {
     if (!categoriesData?.data?.subcategories) {
       return [];
     }
 
     return categoriesData.data.subcategories.map((subcategory) => ({
-      key: subcategory.name,
+      key: subcategory.name.toLowerCase(),
       label: subcategory.name,
       icon: subcategory.image || "",
     }));
   }, [categoriesData]);
 
-  // Pre-populate form fields when expense data loads
   useEffect(() => {
-    if (expense) {
-      setAmount(expense.amount?.toString() || "");
-      setSelectedCategory(expense.category || "");
-      setPaymentMethod(normalizePaymentMethodValue(expense.paymentMethod));
-      setDate(formatDateForInput(expense.date));
-      setDescription(expense.description || "");
+    if (item) {
+      setAmount(item.amount?.toString() || "");
+      setSelectedCategory(item.category.toLowerCase() || "");
+      setPaymentMethod(
+        normalizePaymentMethodValue(item?.paymentMethod ?? item.source),
+      );
+      setDate(formatDateForInput(item.date));
+      setDescription(item.description || "");
     }
-  }, [expense]);
+  }, [item]);
 
-  // Set default selected category when categories are loaded and no category is set
   useEffect(() => {
     if (expenseCategories.length > 0 && !selectedCategory) {
       setSelectedCategory(expenseCategories[0].key);
     }
   }, [expenseCategories, selectedCategory]);
 
-  const updateExpenseMutation = useUpdateExpenseMutation(expenseId, {
+  useEffect(() => {
+    if (isIncomeScreen) {
+      navigation.setOptions({
+        headerTitle: "Edit Income",
+      });
+    } else {
+      navigation.setOptions({
+        headerTitle: "Edit Expense",
+      });
+    }
+  }, [navigation, isIncomeScreen]);
+
+  const updateExpenseMutation = useUpdateExpenseMutation(itemId, {
     onSuccess: () => {
-      // Invalidate expense queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["expenses", "detail", expenseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["expenses", "detail", itemId],
+      });
 
       Toast.show({
         type: "success",
         text1: "Expense Updated",
         text2: "Your expense has been updated successfully.",
+        visibilityTime: 1500,
+        onHide: () => router.back(),
       });
-
-      // Navigate back after a short delay
-      setTimeout(() => {
-        router.back();
-      }, 1500);
     },
     onError: (error) => {
       Toast.show({
         type: "error",
         text1: "Error",
         text2: error.message || "Failed to update expense. Please try again.",
+      });
+    },
+  });
+
+  const updateIncomeMutation = useUpdateIncomeMutation(itemId, {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+      queryClient.invalidateQueries({
+        queryKey: ["income", "detail", itemId],
+      });
+
+      Toast.show({
+        type: "success",
+        text1: "Income Updated",
+        text2: "Your income has been updated successfully.",
+        visibilityTime: 1500,
+        onHide: () => router.back(),
+      });
+    },
+    onError: (error) => {
+      console.log("error", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to update income. Please try again.",
       });
     },
   });
@@ -200,7 +239,7 @@ const EditExpenseScreen = () => {
       Toast.show({
         type: "error",
         text1: "Invalid Amount",
-        text2: "Please enter a valid expense amount.",
+        text2: `Please enter a valid ${isIncomeScreen ? "income" : "expense"} amount.`,
       });
       return;
     }
@@ -209,12 +248,12 @@ const EditExpenseScreen = () => {
       Toast.show({
         type: "error",
         text1: "Date Required",
-        text2: "Please select a date for this expense.",
+        text2: `Please select a date for this ${isIncomeScreen ? "income" : "expense"}.`,
       });
       return;
     }
 
-    if (!paymentMethod) {
+    if (!isIncomeScreen && !paymentMethod) {
       Toast.show({
         type: "error",
         text1: "Payment Method Required",
@@ -242,40 +281,53 @@ const EditExpenseScreen = () => {
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
-    const payload = {
-      amount: numericAmount,
-      category: selectedCategory,
-      description: description || undefined,
-      paymentMethod,
-      date: formattedDate,
-    };
-
-    updateExpenseMutation.mutate(payload);
+    if (isIncomeScreen) {
+      const payload = {
+        amount: numericAmount,
+        category: selectedCategory,
+        description: description || undefined,
+        source: paymentMethod || "Other",
+        date: formattedDate,
+      };
+      updateIncomeMutation.mutate(payload);
+    } else {
+      const payload = {
+        amount: numericAmount,
+        category: selectedCategory,
+        description: description || undefined,
+        paymentMethod,
+        date: formattedDate,
+      };
+      updateExpenseMutation.mutate(payload);
+    }
   }, [
     amount,
     selectedCategory,
     paymentMethod,
     date,
     description,
+    isIncomeScreen,
     updateExpenseMutation,
+    updateIncomeMutation,
   ]);
 
-  // Show loading state while fetching expense
-  if (isExpenseLoading) {
+  const isLoading = isExpenseLoading || isIncomeLoading;
+  const error = expenseError || incomeError;
+
+  if (isLoading) {
     return (
       <MainContainer className="bg-light" edges={[]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={COLORS.primary_400} />
           <Text className="mt-4 text-sm text-textColor/60">
-            Loading expense details...
+            Loading {isIncomeScreen ? "income" : "expense"} details...
           </Text>
         </View>
       </MainContainer>
     );
   }
 
-  // Show error state if expense fetch fails
-  if (expenseError || !expense) {
+  if (error || !item) {
     return (
       <MainContainer className="bg-light" edges={[]}>
         <View className="flex-1 items-center justify-center px-6">
@@ -286,11 +338,11 @@ const EditExpenseScreen = () => {
             style={{ opacity: 0.4 }}
           />
           <Text weight="semibold" className="mt-4 text-base text-textColor">
-            Expense Not Found
+            {isIncomeScreen ? "Income" : "Expense"} Not Found
           </Text>
           <Text className="mt-2 text-center text-sm text-textColor/60">
-            {expenseError?.message ||
-              "The expense you're looking for doesn't exist."}
+            {error?.message ||
+              `The ${isIncomeScreen ? "income" : "expense"} you're looking for doesn't exist.`}
           </Text>
           <Pressable
             onPress={() => router.back()}
@@ -335,7 +387,9 @@ const EditExpenseScreen = () => {
                 <Text className="text-sm text-textColor/70">Category</Text>
                 {isCategoriesLoading ? (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">Loading categories...</Text>
+                    <Text className="text-textColor/50">
+                      Loading categories...
+                    </Text>
                   </View>
                 ) : categoriesError ? (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-8">
@@ -351,14 +405,16 @@ const EditExpenseScreen = () => {
                   />
                 ) : (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">No categories available</Text>
+                    <Text className="text-textColor/50">
+                      No categories available
+                    </Text>
                   </View>
                 )}
               </View>
 
               <View>
                 <Text className="text-sm text-textColor/70">
-                  Payment method
+                  {isIncomeScreen ? "Source" : "Payment method"}
                 </Text>
                 <Pressable
                   onPress={openPaymentModal}
@@ -377,7 +433,7 @@ const EditExpenseScreen = () => {
                   >
                     {paymentMethod
                       ? getPaymentMethodLabel(paymentMethod)
-                      : "Select payment method"}
+                      : `Select ${isIncomeScreen ? "source" : "payment method"}`}
                   </Text>
 
                   <Ionicons
@@ -405,7 +461,11 @@ const EditExpenseScreen = () => {
               <View>
                 <TextInputField
                   label="Description (Optional)"
-                  placeholder="What did you spend the money on? (e.g., Lunch at Mama Cass)"
+                  placeholder={
+                    isIncomeScreen
+                      ? "Where did this income come from? (e.g., Freelance project for John)"
+                      : "What did you spend the money on? (e.g., Lunch at Mama Cass)"
+                  }
                   value={description}
                   onChangeText={setDescription}
                   multiline
@@ -422,18 +482,23 @@ const EditExpenseScreen = () => {
           <View className="px-6 pb-6">
             <Pressable
               onPress={handleSubmit}
-              disabled={updateExpenseMutation.isPending}
+              disabled={
+                updateExpenseMutation.isPending ||
+                updateIncomeMutation.isPending
+              }
               className={cn(
                 "items-center justify-center rounded-2xl py-4",
-                updateExpenseMutation.isPending
+                updateExpenseMutation.isPending ||
+                  updateIncomeMutation.isPending
                   ? "bg-primary_400/60"
                   : "bg-primary_400",
               )}
             >
               <Text weight="semibold" className="text-base text-white">
-                {updateExpenseMutation.isPending
-                  ? "Updating Expense..."
-                  : "Update Expense"}
+                {updateExpenseMutation.isPending ||
+                updateIncomeMutation.isPending
+                  ? `Updating ${isIncomeScreen ? "Income" : "Expense"}...`
+                  : `Update ${isIncomeScreen ? "Income" : "Expense"}`}
               </Text>
             </Pressable>
           </View>
@@ -442,7 +507,7 @@ const EditExpenseScreen = () => {
       <SlideUpModal
         visible={isPaymentModalVisible}
         onClose={closePaymentModal}
-        title="Payment Method"
+        title={isIncomeScreen ? "Income Source" : "Payment Method"}
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"
         closeIconColor="#fff"
@@ -487,4 +552,4 @@ const EditExpenseScreen = () => {
   );
 };
 
-export default EditExpenseScreen;
+export default EditExpenseIncomeScreen;

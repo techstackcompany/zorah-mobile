@@ -22,15 +22,16 @@ import {
 } from "@/components/expense-planning/utils";
 import MainContainer from "@/components/layouts/MainContainer";
 import CollapsibleCard from "@/components/ui/CollapsibleCard";
+import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import SlideUpModal from "@/components/ui/SlideUpModal";
 import {
   useGetDailyExpensesQuery,
   useGetExpenseSummaryQuery,
   useGetExpensesQuery,
   useGetIncomesQuery,
   useGetMonthlyExpensesQuery,
+// eslint-disable-next-line import/no-unresolved
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -134,7 +135,7 @@ const ExpensePlanningScreen = () => {
     isLoading: isIncomesLoading,
     refetch: refetchIncomes,
   } = useGetIncomesQuery();
-
+  console.log("expensesData", expensesData);
   console.log("error", error);
 
   const isLoading =
@@ -205,12 +206,20 @@ const ExpensePlanningScreen = () => {
         month: "short",
         year: "numeric",
       });
-      options.push({ key, label, month: d.getMonth() + 1, year: d.getFullYear() });
+      options.push({
+        key,
+        label,
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+      });
     });
 
     options.sort((a, b) => {
       if (!a.year || !a.month || !b.year || !b.month) return 0;
-      return new Date(b.year, b.month - 1).getTime() - new Date(a.year, a.month - 1).getTime();
+      return (
+        new Date(b.year, b.month - 1).getTime() -
+        new Date(a.year, a.month - 1).getTime()
+      );
     });
 
     return [{ key: "all", label: "All time" }, ...options];
@@ -264,7 +273,8 @@ const ExpensePlanningScreen = () => {
       const segments: ChartSegment[] = Array.from(categoryMap.entries()).map(
         ([categoryName, amount], index) => {
           const percentage = total > 0 ? (amount / total) * 100 : 0;
-          const labelPosition = labelPositions[index % labelPositions.length] || {};
+          const labelPosition =
+            labelPositions[index % labelPositions.length] || {};
 
           return {
             key: `${categoryName}-${index}`,
@@ -302,10 +312,7 @@ const ExpensePlanningScreen = () => {
         incomesArray.forEach((income: any) => {
           const category = income.category || "Other";
           const amount = income.amount || 0;
-          categoryMap.set(
-            category,
-            (categoryMap.get(category) || 0) + amount,
-          );
+          categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
         });
 
         // Calculate total
@@ -335,14 +342,26 @@ const ExpensePlanningScreen = () => {
               if (CATEGORY_COLOR_MAP[cat]) return CATEGORY_COLOR_MAP[cat];
               // Generate a color based on index for unmapped categories
               const colors = [
-                "#5D5FFE", "#FDBA4D", "#3EB489", "#1A43BE", "#E261F3",
-                "#27AE60", "#F2994A", "#BB6BD9", "#9B51E0", "#7E8DA0"
+                "#5D5FFE",
+                "#FDBA4D",
+                "#3EB489",
+                "#1A43BE",
+                "#E261F3",
+                "#27AE60",
+                "#F2994A",
+                "#BB6BD9",
+                "#9B51E0",
+                "#7E8DA0",
               ];
               return colors[idx % colors.length];
             };
 
-            const getTrackColorForCategory = (cat: string, color: string): string => {
-              if (CATEGORY_TRACK_COLOR_MAP[cat]) return CATEGORY_TRACK_COLOR_MAP[cat];
+            const getTrackColorForCategory = (
+              cat: string,
+              color: string,
+            ): string => {
+              if (CATEGORY_TRACK_COLOR_MAP[cat])
+                return CATEGORY_TRACK_COLOR_MAP[cat];
               // Use a light version of the color for track
               const trackColors: Record<string, string> = {
                 "#5D5FFE": "#E6E7FF",
@@ -359,7 +378,10 @@ const ExpensePlanningScreen = () => {
               return trackColors[color] || "#E6E7FF";
             };
 
-            const getBgColorForCategory = (cat: string, color: string): string => {
+            const getBgColorForCategory = (
+              cat: string,
+              color: string,
+            ): string => {
               if (CATEGORY_BG_COLOR_MAP[cat]) return CATEGORY_BG_COLOR_MAP[cat];
               // Use a very light version of the color for background
               const bgColors: Record<string, string> = {
@@ -381,12 +403,16 @@ const ExpensePlanningScreen = () => {
 
             return {
               key: `${categoryName}-${index}`,
-              label: categoryName.charAt(0).toUpperCase() + categoryName.slice(1), // Capitalize first letter
+              label:
+                categoryName.charAt(0).toUpperCase() + categoryName.slice(1), // Capitalize first letter
               percentage: Math.round(percentage),
               color: categoryColor,
               trackColor: getTrackColorForCategory(categoryName, categoryColor),
               icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
-              iconBackground: getBgColorForCategory(categoryName, categoryColor),
+              iconBackground: getBgColorForCategory(
+                categoryName,
+                categoryColor,
+              ),
               labelPosition,
               amount,
             };
@@ -435,16 +461,15 @@ const ExpensePlanningScreen = () => {
   // Transform income data to match ExpenseItem format
   const incomesArray = useMemo(() => {
     if (activeTab !== "income") return [];
-    const rawIncomes = Array.isArray(incomesData?.data)
-      ? incomesData.data
-      : [];
-    
+    const rawIncomes = Array.isArray(incomesData?.data) ? incomesData.data : [];
+
     // Transform Income to ExpenseItem format (they're similar)
     return rawIncomes.map((income: any) => {
       const category = income.category || "Other";
       // Capitalize the category name
-      const capitalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
-      
+      const capitalizedCategory =
+        category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+
       return {
         _id: income._id,
         id: income._id,
@@ -462,7 +487,10 @@ const ExpensePlanningScreen = () => {
   // Get daily expenses array for DailyExpenseChart component
   const dailyExpensesArray = useMemo(() => {
     if (activeTab !== "expense" || periodType !== "daily") return [];
-    const byDay = new Map<string, { _id: { day: number; month: number; year: number }; total: number }>();
+    const byDay = new Map<
+      string,
+      { _id: { day: number; month: number; year: number }; total: number }
+    >();
 
     filteredExpenses.forEach((expense: any) => {
       const rawDate = expense.date || expense.createdAt;
@@ -472,7 +500,11 @@ const ExpensePlanningScreen = () => {
       const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
       const total = byDay.get(key)?.total || 0;
       byDay.set(key, {
-        _id: { day: d.getDate(), month: d.getMonth() + 1, year: d.getFullYear() },
+        _id: {
+          day: d.getDate(),
+          month: d.getMonth() + 1,
+          year: d.getFullYear(),
+        },
         total: total + Math.abs(expense.amount || 0),
       });
     });
@@ -483,7 +515,10 @@ const ExpensePlanningScreen = () => {
   // Get monthly expenses array for MonthlyExpenseList component
   const monthlyExpensesArray = useMemo(() => {
     if (activeTab !== "expense" || periodType !== "monthly") return [];
-    const byMonth = new Map<string, { _id: { month: number; year: number }; total: number }>();
+    const byMonth = new Map<
+      string,
+      { _id: { month: number; year: number }; total: number }
+    >();
 
     filteredExpenses.forEach((expense: any) => {
       const rawDate = expense.date || expense.createdAt;
@@ -568,11 +603,11 @@ const ExpensePlanningScreen = () => {
           {/* Daily/Monthly Spending Section */}
           {activeTab === "expense" && (
             <View className="mt-8">
-                <View className="flex-row items-center justify-between">
-                  <Text weight="semibold" className="text-base text-textColor">
-                    {periodType === "daily"
-                      ? "Daily Spending"
-                      : "Monthly Spending"}
+              <View className="flex-row items-center justify-between">
+                <Text weight="semibold" className="text-base text-textColor">
+                  {periodType === "daily"
+                    ? "Daily Spending"
+                    : "Monthly Spending"}
                 </Text>
                 <View className="flex-row items-center gap-2">
                   <PeriodSelector
@@ -673,8 +708,14 @@ const ExpensePlanningScreen = () => {
 
               <View style={styles.expenseListCard}>
                 <ExpenseList
-                  expenses={activeTab === "expense" ? expensesArray : incomesArray}
-                  isLoading={activeTab === "expense" ? isExpensesLoading : isIncomesLoading}
+                  expenses={
+                    activeTab === "expense" ? expensesArray : incomesArray
+                  }
+                  isLoading={
+                    activeTab === "expense"
+                      ? isExpensesLoading
+                      : isIncomesLoading
+                  }
                   categoryColorMap={CATEGORY_COLOR_MAP}
                   categoryIconMap={CATEGORY_ICON_MAP}
                   categoryBgMap={CATEGORY_BG_COLOR_MAP}
@@ -746,7 +787,11 @@ const ExpensePlanningScreen = () => {
                     {option.label}
                   </Text>
                   {isSelected && (
-                    <Ionicons name="checkmark" size={18} color={COLORS.primary_400} />
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={COLORS.primary_400}
+                    />
                   )}
                 </View>
               </Pressable>

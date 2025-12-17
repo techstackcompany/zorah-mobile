@@ -6,13 +6,13 @@ import RecentTransactions from "@/components/home/RecentTransactions";
 import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
+import { FX_PAIRS } from "@/constants/fx";
 import { useUserDisplayData } from "@/hooks/useUserDisplayData";
 import {
   formatCurrencyWithSymbol,
   formatCurrentDate,
   formatTransactionPurpose,
 } from "@/lib/utils";
-import { FX_PAIRS } from "@/constants/fx";
 import {
   useGetExpenseSummaryQuery,
   useGetFxRatePairsQuery,
@@ -20,7 +20,7 @@ import {
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
-import { WalletTransaction, FxRatePair } from "@/src/api/types";
+import { FxRatePair, WalletTransaction } from "@/src/api/types";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -204,6 +204,7 @@ const HomeScreen = () => {
     data: fxRatePairs,
     isLoading: isLoadingFxPairs,
     isFetching: isFetchingFxPairs,
+    error: fxPairsError,
     refetch: refetchFxPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
 
@@ -245,7 +246,7 @@ const HomeScreen = () => {
     const balance = balanceData?.balance ?? 0;
     return typeof balance === "number" ? balance : 0;
   }, [balanceData]);
-  
+
   useEffect(() => {
     if (
       balanceData?.currency &&
@@ -411,6 +412,7 @@ const HomeScreen = () => {
               <FxRatesCard
                 rates={resolvedFxPairs}
                 isLoading={isLoadingFxPairs && resolvedFxPairs.length === 0}
+                error={fxPairsError}
               />
 
               <RecentTransactions

@@ -123,7 +123,7 @@ const BudgetScreen = () => {
         <View className="mt-6 px-6">
           <BudgetExceededAlert />
         </View>
-        {budgetsError ? (
+        {budgetsError && budgets.length ===0 ? (
           <View className="mt-6 px-6">
             <Text className="text-center text-red-500">
               Failed to load budgets. Pull to refresh to try again.
