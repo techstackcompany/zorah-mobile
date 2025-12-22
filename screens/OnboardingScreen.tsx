@@ -1,9 +1,9 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
-import COLORS from "@/constants/colors";
+import { slides } from "@/constants/onboarding";
 import { cn } from "@/lib/utils";
-import { Image, ImageStyle } from "expo-image";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
@@ -17,61 +17,6 @@ import {
 
 const { width } = Dimensions.get("window");
 
-type Slide = {
-  id: number;
-  title: string;
-  highlight: string;
-  subtitle: string;
-  description: string;
-  image: any;
-  imagePosition?: string;
-  bgColor?: string;
-  imageStyle?: ImageStyle;
-};
-
-const slides: Slide[] = [
-  {
-    id: 1,
-    title: "Money management made",
-    highlight: "simple",
-    subtitle: "Money Management",
-    bgColor: COLORS.primary_100,
-    description:
-      "Zorah helps you track budgets, set savings goals, and stay in control of your money.",
-    image: require("../assets/images/onboarding/image1.png"),
-  },
-  {
-    id: 2,
-    title: "Shop smarter, save",
-    highlight: "bigger",
-    subtitle: "MarketPlace",
-    bgColor: COLORS.secondary_100,
-    description:
-      "Shop local, save more. Zorah MarketPlace brings you the best deals while supporting local vendors.",
-    image: require("../assets/images/onboarding/image2.png"),
-  },
-  {
-    id: 3,
-    title: "Shop smarter, save",
-    highlight: "bigger",
-    subtitle: "MarketPlace",
-    bgColor: COLORS.primary_100,
-    imagePosition: "right bottom",
-    description:
-      "Shop local, save more. Zorah MarketPlace brings you the best deals while supporting local vendors.",
-    image: require("../assets/images/onboarding/image3.png"),
-  },
-  {
-    id: 4,
-    title: "Budget smart for every",
-    highlight: "celebration",
-    subtitle: "MarketPlace",
-    imageStyle: { transform: "translateX(10%)" },
-    description:
-      "From aso ebi to transport and gifts, keep your event expenses simple, organized and debt-free.",
-    image: require("../assets/images/onboarding/image4.png"),
-  },
-];
 const lastIndex = slides.length - 1;
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -134,7 +79,9 @@ export default function OnboardingScreen() {
                       key={index}
                       className={cn(
                         "mx-1 h-2 w-1/6 max-w-24 rounded-full",
-                        index === currentIndex ? " bg-secondary_400" : "bg-grey",
+                        index === currentIndex
+                          ? " bg-secondary_400"
+                          : "bg-grey",
                       )}
                     />
                   ))}
@@ -143,11 +90,12 @@ export default function OnboardingScreen() {
                 <TouchableOpacity
                   onPress={handleSkip}
                   disabled={currentIndex === slides.length - 1}
-                  className={cn(currentIndex === slides.length - 1 && "opacity-0")}
+                  className={cn(
+                    currentIndex === slides.length - 1 && "opacity-0",
+                  )}
                 >
                   <Text className=" ">Skip</Text>
                 </TouchableOpacity>
-              
               </View>
 
               {/* Text */}
@@ -155,7 +103,7 @@ export default function OnboardingScreen() {
                 <Text
                   family="degular"
                   weight="semibold"
-                  className="text-center text-[38px] leading-tight mb-3"
+                  className="mb-3 text-center text-[38px] leading-tight"
                 >
                   {item.title}{" "}
                   <Text
@@ -166,7 +114,7 @@ export default function OnboardingScreen() {
                     {item.highlight}
                   </Text>
                 </Text>
-                <Text className=" tracking-wide mt-3 text-center font-nunito leading-relaxed text-lg sm:text-xl">
+                <Text className="mt-3 text-center font-nunito text-lg leading-relaxed tracking-wide sm:text-xl">
                   {item.description}
                 </Text>
               </View>
