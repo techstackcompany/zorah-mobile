@@ -44,3 +44,4 @@ app-example
 
 *.postman_collection.json
 
+credentials.json
