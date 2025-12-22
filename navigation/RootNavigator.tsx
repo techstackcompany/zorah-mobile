@@ -1,11 +1,5 @@
 import { useSession } from "@/contexts/auth-context/useSession";
-import {
-  RelativePathString,
-  Stack,
-  usePathname,
-  useRouter,
-  useSegments,
-} from "expo-router";
+import { RelativePathString, Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 
 function RootNavigator() {
@@ -13,17 +7,19 @@ function RootNavigator() {
     useSession();
   const router = useRouter();
   const segments = useSegments();
-  const pathname = usePathname();
+
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || hasCompletedSetup) return;
+
     const stepRoutes: Record<number, string> = {
       1: "/(auth)/setup/choose-language",
       2: "/(auth)/setup/monthly-income",
       3: "/(auth)/setup/your-banks",
       4: "/(auth)/setup/summary",
     };
-    const targetRoute = stepRoutes[setupStep ?? 1] ?? stepRoutes[1];
+
+    const targetRoute = stepRoutes[setupStep ?? 1];
     const currentPath =
       `/${segments.join("/") || ""}`.replace(/\/+$/, "") || "/";
     if (currentPath !== targetRoute) {
