@@ -2,9 +2,9 @@
   "expo": {
     "name": "Zorah",
     "slug": "zorah",
-    "version": "1.0.2",
+    "version": "1.0.5",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "zorah",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,13 +13,14 @@
       "bundleIdentifier": "com.onerendzina.zorah"
     },
     "android": {
-      "icon": "./assets/images/app-icon.png",
+      "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.onerendzina.zorah"
+      "package": "com.onerendzina.zorah",
+      "blockedPermissions": ["android.permission.RECEIVE_BOOT_COMPLETED"]
     },
     "plugins": [
       "expo-router",
@@ -51,7 +52,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/app-icon.png",
+          "icon": "./assets/images/icon.png",
           "color": "#061D62",
           "sounds": []
         }
