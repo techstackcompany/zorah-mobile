@@ -9,13 +9,25 @@ import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { addKeyboardBehavior, cn, getErrorMessage } from "@/lib/utils";
-import { useAddExpenseMutation, useGetCategoriesQuery } from "@/src/api/hooks";
+import {
+  useAddExpenseMutation,
+  useGetCategoriesQuery,
+  useVoiceExpenseLoggingMutation,
+} from "@/src/api/hooks";
+
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  useAudioRecorder,
+  useAudioRecorderState,
+} from "expo-audio";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -192,6 +204,27 @@ const AddExpenseScreen = () => {
   const { expenseCategories, isCategoriesLoading, categoriesError } =
     useExpenseSubCategories();
 
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
+
+  const requestAudioPermissions = async () => {
+    try {
+      const { granted } = await requestRecordingPermissionsAsync();
+      if (!granted) {
+        Alert.alert(
+          "Permission Required",
+          "Microphone access is required for voice recording.",
+        );
+      }
+    } catch (error) {
+      console.error("Error requesting audio permissions:", error);
+    }
+  };
+
+  useEffect(() => {
+    requestAudioPermissions();
+  }, []);
+
   useEffect(() => {
     if (expenseCategories.length > 0 && !selectedCategory) {
       setSelectedCategory(expenseCategories[0].key);
@@ -215,47 +248,6 @@ const AddExpenseScreen = () => {
     [closePaymentModal, isPaymentModalVisible, resetVoiceAssist],
   );
 
-  const resolveDetectedCategory = useCallback(
-    (preferred: string[]): { key?: string; label: string } => {
-      if (!expenseCategories.length) {
-        return { label: preferred[0], key: undefined };
-      }
-
-      const normalizedPreferred = preferred.map((item) => item.toLowerCase());
-      const match = expenseCategories.find((category) =>
-        normalizedPreferred.includes(category.label.toLowerCase()),
-      );
-      const fallback = expenseCategories[0];
-      const resolved = match ?? fallback;
-
-      return { key: resolved.key, label: resolved.label };
-    },
-    [expenseCategories],
-  );
-
-  const createDetectedExpense = useCallback((): DetectedExpenseDetails => {
-    const resolvedCategory = resolveDetectedCategory([
-      "Food",
-      "Transport",
-      "General",
-    ]);
-    const sampleDate = new Date();
-    sampleDate.setMonth(9); // October
-    sampleDate.setDate(15);
-
-    return {
-      amountValue: "100",
-      amountLabel: "$100",
-      categoryKey: resolvedCategory.key,
-      categoryLabel: resolvedCategory.label,
-      paymentMethod: "cash",
-      paymentMethodLabel: getPaymentMethodLabel("cash"),
-      summary:
-        "I spent $100 on transportation and food on the 15th of Oct, and I paid with cash.",
-      dateValue: formatDateForInput(sampleDate),
-    };
-  }, [resolveDetectedCategory]);
-
   const addExpenseMutation = useAddExpenseMutation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
@@ -273,7 +265,7 @@ const AddExpenseScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.log('error', error)
+      console.log("error", error);
       Toast.show({
         type: "error",
         text1: "Error",
@@ -285,24 +277,112 @@ const AddExpenseScreen = () => {
     },
   });
 
-  const handleMicPress = useCallback(() => {
-    if (voiceStatus === "recording") {
-      const detection = createDetectedExpense();
-      setAmount(detection.amountValue);
-      setDate(detection.dateValue);
-      setDescription(detection.summary);
-      setPaymentMethod(detection.paymentMethod);
-      if (detection.categoryKey) {
-        setSelectedCategory(detection.categoryKey);
-      }
-      setDetectedExpense(detection);
-      setVoiceStatus("detected");
-      return;
-    }
+  const transcribeMutation = useVoiceExpenseLoggingMutation({
+    onSuccess: (data) => {
+      console.log("Transcription result:", data);
 
-    setDetectedExpense(null);
-    setVoiceStatus("recording");
-  }, [createDetectedExpense, setPaymentMethod, voiceStatus]);
+      // Format date from YYYY-MM-DD to DD/MM/YY
+      let formattedDate = "";
+      if (data.date) {
+        const dateObj = new Date(data.date);
+        const day = `${dateObj.getDate()}`.padStart(2, "0");
+        const month = `${dateObj.getMonth() + 1}`.padStart(2, "0");
+        const year = `${dateObj.getFullYear()}`.slice(-2);
+        formattedDate = `${day}/${month}/${year}`;
+      }
+
+      setAmount(data.amount.toString());
+      setDate(formattedDate);
+      setDescription(data.description);
+      setPaymentMethod(data.paymentMethod);
+      setSelectedCategory(data.category);
+
+      setDetectedExpense({
+        amountValue: data.amount.toString(),
+        amountLabel: `₦${data.amount}`,
+        categoryKey: data.category,
+        categoryLabel: data.category,
+        paymentMethod: data.paymentMethod,
+        paymentMethodLabel: getPaymentMethodLabel(data.paymentMethod),
+        summary: data.description,
+        dateValue: formattedDate,
+      });
+      setVoiceStatus("detected");
+
+      Toast.show({
+        type: "success",
+        text1: "Recording Complete",
+        text2: "Expense details extracted successfully!",
+      });
+    },
+    onError: (error) => {
+      console.error("Transcription error:", error);
+      setVoiceStatus("idle");
+      Toast.show({
+        type: "error",
+        text1: "Transcription Failed",
+        text2: getErrorMessage(
+          error,
+          "Failed to process audio. Please try again.",
+        ),
+      });
+    },
+  });
+
+  const handleMicPress = useCallback(async () => {
+    try {
+      if (recorderState.isRecording) {
+        // Stop recording
+        await audioRecorder.stop();
+        const audioUri = audioRecorder.uri;
+
+        if (!audioUri) {
+          throw new Error("No audio file was recorded");
+        }
+
+        console.log("Recording stopped. Audio URI:", audioUri);
+
+        // Create FormData to send audio file to server
+        const formData = new FormData();
+        formData.append("audio", {
+          uri: audioUri,
+          type: "audio/m4a",
+          name: "recording.m4a",
+        } as any);
+
+        setVoiceStatus("detected");
+        Toast.show({
+          type: "info",
+          text1: "Processing",
+          text2: "Transcribing your expense...",
+        });
+
+        transcribeMutation.mutate(formData);
+        return;
+      }
+
+      // Start recording
+      setDetectedExpense(null);
+      setVoiceStatus("recording");
+
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
+
+      Toast.show({
+        type: "info",
+        text1: "Recording Started",
+        text2: "Speak your expense details now...",
+      });
+    } catch (error) {
+      console.error("Error handling microphone:", error);
+      setVoiceStatus("idle");
+      Toast.show({
+        type: "error",
+        text1: "Recording Error",
+        text2: "Failed to record audio. Please try again.",
+      });
+    }
+  }, [recorderState.isRecording, audioRecorder, transcribeMutation]);
 
   const handleSubmit = useCallback(() => {
     if (validateFields({ amount, date, paymentMethod, selectedCategory })) {
@@ -334,7 +414,7 @@ const AddExpenseScreen = () => {
     addExpenseMutation,
   ]);
 
-  const micIsRecording = voiceStatus === "recording";
+  const micIsRecording = recorderState.isRecording;
   const isSubmitDisabled =
     isVoiceMode && (!detectedExpense || voiceStatus !== "detected");
 
@@ -380,11 +460,15 @@ const AddExpenseScreen = () => {
               {isVoiceMode ? (
                 <View className="gap-5">
                   <View className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-                    <Text weight="semibold" className="text-base text-textColor">
+                    <Text
+                      weight="semibold"
+                      className="text-base text-textColor"
+                    >
                       How it works
                     </Text>
                     <Text className="mt-2 text-sm leading-5 text-textColor/80">
-                      Simply tap the microphone and say your expense. For example:
+                      Simply tap the microphone and say your expense. For
+                      example:
                     </Text>
                     <View className="mt-3 rounded-xl bg-primary_100 px-3 py-3">
                       <Text className="text-sm text-primary_400">

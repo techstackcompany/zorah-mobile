@@ -6,16 +6,15 @@ import CategorySelector, {
 } from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
-import { formatCurrency } from "@/constants/investments";
 import { cn } from "@/lib/utils";
 import {
   useGetSavingsGoalQuery,
   useUpdateSavingsGoalMutation,
 } from "@/src/api/hooks";
-import { Image } from "expo-image";
 import { useQueryClient } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -99,14 +98,7 @@ const SavingsGoalEditScreen = () => {
 
   const updateGoalMutation = useUpdateSavingsGoalMutation(id || "", {
     onSuccess: (response) => {
-      console.log("=== UPDATE SAVINGS GOAL SUCCESS ===");
-      console.log("Full response:", JSON.stringify(response, null, 2));
-      console.log("Response data:", response?.data);
-      console.log("========================\n");
-
-      // Invalidate savings goals queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["savings"] });
-
       setShowSuccess(true);
       Toast.show({
         type: "success",
@@ -114,7 +106,6 @@ const SavingsGoalEditScreen = () => {
         text2: "Your savings goal has been updated successfully.",
       });
 
-      // Navigate back after a short delay
       setTimeout(() => {
         setShowSuccess(false);
         router.back();
@@ -135,11 +126,6 @@ const SavingsGoalEditScreen = () => {
       });
     },
   });
-
-  const formattedAmount = useMemo(
-    () => (amount ? formatCurrency(Number(amount)) : "₦0.00"),
-    [amount],
-  );
 
   const handleSubmit = useCallback(() => {
     if (!id) {
@@ -373,4 +359,3 @@ const SavingsGoalEditScreen = () => {
 };
 
 export default SavingsGoalEditScreen;
-

@@ -1,4 +1,9 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -13,7 +18,11 @@ import {
 } from "../types";
 
 export const useAddExpenseMutation = (
-  options?: UseMutationOptions<ApiEnvelope<Expense>, ApiError, AddExpenseRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<Expense>,
+    ApiError,
+    AddExpenseRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<Expense>, ApiError, AddExpenseRequest>({
     mutationKey: ["expenses", "addExpense"],
@@ -26,9 +35,38 @@ export const useAddExpenseMutation = (
     ...options,
   });
 
+type VoiceExpenseResponse = {
+  amount: number;
+  category: string;
+  description: string;
+  paymentMethod: string;
+  date: string;
+};
+
+export const useVoiceExpenseLoggingMutation = (
+  options?: UseMutationOptions<VoiceExpenseResponse, ApiError, FormData>,
+) =>
+  useMutation<VoiceExpenseResponse, ApiError, FormData>({
+    mutationKey: ["expenses", "voiceLogExpense"],
+    mutationFn: (formData) =>
+      apiRequest<VoiceExpenseResponse>({
+        method: API_ENDPOINTS.expenses.voiceLogExpense.method,
+        url: API_ENDPOINTS.expenses.voiceLogExpense.path,
+        data: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }),
+    ...options,
+  });
+
 export const useUpdateExpenseMutation = (
   expenseId: string | undefined,
-  options?: UseMutationOptions<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<Expense>,
+    ApiError,
+    UpdateExpenseRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>({
     mutationKey: ["expenses", "update", expenseId],
@@ -48,7 +86,11 @@ export const useUpdateExpenseMutation = (
 
 export const useDeleteExpenseMutation = (
   expenseId: string | undefined,
-  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
+  options?: UseMutationOptions<
+    ApiEnvelope<{ message: string }>,
+    ApiError,
+    void
+  >,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["expenses", "delete", expenseId],
@@ -114,10 +156,8 @@ export const useGetExpenseSummaryQuery = (
         params: { type },
       });
 
-      // The API might return either ApiEnvelope<ExpenseSummary> or a raw array
       if (Array.isArray(response)) {
-        // Wrap array in an ApiEnvelope with a structure compatible with ExpenseSummary
-        // Note: This assumes `type` can be passed and total is sum of totals
+     
         const summary: ExpenseSummary = {
           type,
           total: response.reduce((acc, item) => acc + item.total, 0),

@@ -3,8 +3,7 @@ import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
-  GOAL_CONTRIBUTIONS,
-  SAVINGS_GOALS,
+  
   calculateGoalProgress,
   getStatusTone,
 } from "@/constants/savings";

@@ -6,13 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { RelativePathString, Stack, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  ViewStyle,
-} from "react-native";
+import { Pressable, ScrollView, View, ViewStyle } from "react-native";
 
 type NotificationTab = "activities" | "transactions";
 
@@ -293,11 +287,6 @@ const NotificationsScreen = () => {
               const activeStyle: ViewStyle = isActive
                 ? {
                     backgroundColor: "#FFFFFF",
-                    shadowColor: "#1A43BE",
-                    shadowOpacity: 0.06,
-                    shadowRadius: 8,
-                    shadowOffset: { width: 0, height: 4 },
-                    elevation: 2,
                   }
                 : {};
               return (
@@ -338,7 +327,7 @@ const NotificationsScreen = () => {
                       className="rounded-3xl bg-white px-5 py-5"
                     >
                       <View className="flex-row items-start justify-between">
-                        <View className="flex-row flex-1 items-center">
+                        <View className="flex-1 flex-row items-center">
                           <View
                             className="mr-3 size-10 items-center justify-center rounded-full"
                             style={{ backgroundColor: activity.iconBackground }}
@@ -398,7 +387,10 @@ const NotificationsScreen = () => {
                     >
                       <View className="flex-row items-end justify-between border-b border-grayLight/80 px-5 py-4">
                         <View>
-                          <Text weight="semibold" className="text-base text-textColor">
+                          <Text
+                            weight="semibold"
+                            className="text-base text-textColor"
+                          >
                             {section.title}
                           </Text>
                           <Text className="text-xs text-textColor/60">
@@ -490,9 +482,5 @@ const NotificationsScreen = () => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
- 
-});
 
 export default NotificationsScreen;

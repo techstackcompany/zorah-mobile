@@ -1,17 +1,10 @@
 import Text from "@/components/ui/Text";
+import { ExpenseItem } from "@/features/expense-income/types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-export type ExpenseItem = {
-  _id?: string;
-  id?: string;
-  category?: string;
-  amount?: number;
-  description?: string;
-  date?: string;
-  paymentMethod?: string;
-};
+
 
 type ExpenseListItemProps = {
   expense: ExpenseItem;
@@ -22,6 +15,8 @@ type ExpenseListItemProps = {
   formattedDate: string;
   formatCurrency: (value: number) => string;
 };
+
+
 
 const ExpenseListItem = ({
   expense,
@@ -58,8 +53,6 @@ const ExpenseListItem = ({
               {expense.description}
             </Text>
           )}
-       
-      
         </View>
       </View>
     </View>

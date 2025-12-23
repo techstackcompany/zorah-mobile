@@ -6,7 +6,7 @@ import {
   CATEGORY_ICON_MAP,
   formatCurrency,
   formatExpenseDate,
-} from "@/components/expense-planning/utils";
+} from "@/features/expense-income/utils";
 import COLORS from "@/constants/colors";
 import { useDeleteExpenseMutation, useGetExpenseQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";

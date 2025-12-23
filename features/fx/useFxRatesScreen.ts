@@ -51,7 +51,6 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     error: pairsError,
     refetch: refetchPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
-
   const converterRates = useMemo(() => {
     const rates: Record<string, number> = { NGN: 1 };
     if (usdRates?.conversion_rates) {

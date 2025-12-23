@@ -5,17 +5,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Text as SvgText, TSpan } from "react-native-svg";
 
-export type ChartSegment = {
-  key: string;
-  label: string;
-  percentage: number;
-  color: string;
-  trackColor: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconBackground: string;
-  labelPosition: Partial<Record<"top" | "bottom" | "left" | "right", number>>;
-  amount: number;
-};
+
 
 type ExpenseChartProps = {
   segments: ChartSegment[];

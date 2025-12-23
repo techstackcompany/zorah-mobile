@@ -1,15 +1,10 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { TabKey, TabItem } from "@/features/expense-income/types";
 import { cn } from "@/lib/utils";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-export type TabKey = "expense" | "income";
-
-export type TabItem = {
-  key: TabKey;
-  label: string;
-};
 
 type TabSwitcherProps = {
   tabs: readonly TabItem[];

@@ -1,18 +1,18 @@
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { PeriodType } from "@/features/expense-income/types";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
 
-export type PeriodType = "daily" | "monthly";
 
 type PeriodSelectorProps = {
   selectedPeriod: PeriodType;
   onPeriodChange: (period: PeriodType) => void;
 };
 
-const PERIOD_OPTIONS: Array<{ value: PeriodType; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
+const PERIOD_OPTIONS:{ value: PeriodType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { value: "daily", label: "Daily", icon: "calendar-outline" },
   { value: "monthly", label: "Monthly", icon: "calendar-number-outline" },
 ];

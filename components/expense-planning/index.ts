@@ -9,7 +9,3 @@ export { default as MonthlyExpenseList } from "./MonthlyExpenseList";
 export { default as PeriodSelector } from "./PeriodSelector";
 export { default as TabSwitcher } from "./TabSwitcher";
 
-export type { ChartSegment } from "./ExpenseChart";
-export type { ExpenseItem } from "./ExpenseListItem";
-export type { PeriodType } from "./PeriodSelector";
-export type { TabItem, TabKey } from "./TabSwitcher";

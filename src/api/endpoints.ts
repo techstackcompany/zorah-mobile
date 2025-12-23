@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   expenses: {
     addExpense: { method: HttpMethod.POST, path: "/expenses/add-expense" },
     getExpenses: { method: HttpMethod.GET, path: "/expenses/get-expense" },
+    voiceLogExpense: { method: HttpMethod.POST, path: "/voice/log-expense" },
     getExpense: (expenseId: string) => ({
       method: HttpMethod.GET,
       path: `/expenses/${expenseId}`,
@@ -175,6 +176,10 @@ export const API_ENDPOINTS = {
   },
   ai: {
     ask: { method: HttpMethod.POST, path: "/ai/ask" },
+    transcribeExpense: {
+      method: HttpMethod.POST,
+      path: "/ai/transcribe-expense",
+    },
   },
 } as const;
 

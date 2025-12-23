@@ -5,7 +5,7 @@ import {
   CATEGORY_ICON_MAP,
   formatCurrency,
   formatExpenseDate,
-} from "@/components/expense-planning/utils";
+} from "@/features/expense-income/utils";
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
