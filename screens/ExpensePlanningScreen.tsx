@@ -8,30 +8,22 @@ import {
   MonthlyExpenseList,
   PeriodSelector,
   TabSwitcher,
-  type ChartSegment,
-  type PeriodType,
-  type TabKey,
 } from "@/components/expense-planning";
-import {
-  CATEGORY_BG_COLOR_MAP,
-  CATEGORY_COLOR_MAP,
-  CATEGORY_ICON_MAP,
-  CATEGORY_TRACK_COLOR_MAP,
-  formatCurrency,
-  formatExpenseDate,
-} from "@/components/expense-planning/utils";
+
 import MainContainer from "@/components/layouts/MainContainer";
 import CollapsibleCard from "@/components/ui/CollapsibleCard";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { ChartSegment, PeriodType, TabKey } from "@/features/expense-income/types";
+import { buildExpenseSummaryFromList, CATEGORY_BG_COLOR_MAP, CATEGORY_COLOR_MAP, CATEGORY_ICON_MAP, formatCurrency, formatExpenseDate, getBgColorForCategory, getColorForCategory, getTrackColorForCategory } from "@/features/expense-income/utils";
+import { capitalizeWord } from "@/lib/utils";
 import {
   useGetDailyExpensesQuery,
   useGetExpenseSummaryQuery,
   useGetExpensesQuery,
   useGetIncomesQuery,
   useGetMonthlyExpensesQuery,
-// eslint-disable-next-line import/no-unresolved
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -105,7 +97,6 @@ const ExpensePlanningScreen = () => {
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("all");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-  // Fetch expense data
   const {
     data: expenseSummaryData,
     isLoading: isSummaryLoading,
@@ -249,51 +240,7 @@ const ExpensePlanningScreen = () => {
     });
   }, [expensesArray, selectedMonthKey]);
 
-  const buildExpenseSummaryFromList = useCallback(
-    (list: any[]): { total: number; segments: ChartSegment[] } => {
-      if (!list || list.length === 0) return { total: 0, segments: [] };
 
-      const categoryMap = new Map<string, number>();
-      let total = 0;
-
-      list.forEach((item) => {
-        const category = item.category || "Other";
-        const amount = Math.abs(item.amount || 0);
-        total += amount;
-        categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
-      });
-
-      const labelPositions = [
-        { bottom: 36, left: 24 },
-        { top: 42, right: 36 },
-        { top: 62, left: 26 },
-        { bottom: 58, right: 26 },
-      ];
-
-      const segments: ChartSegment[] = Array.from(categoryMap.entries()).map(
-        ([categoryName, amount], index) => {
-          const percentage = total > 0 ? (amount / total) * 100 : 0;
-          const labelPosition =
-            labelPositions[index % labelPositions.length] || {};
-
-          return {
-            key: `${categoryName}-${index}`,
-            label: categoryName,
-            percentage: Math.round(percentage),
-            color: CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE",
-            trackColor: CATEGORY_TRACK_COLOR_MAP[categoryName] || "#E6E7FF",
-            icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
-            iconBackground: CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF",
-            labelPosition,
-            amount,
-          };
-        },
-      );
-
-      return { total, segments };
-    },
-    [],
-  );
 
   const currentSummary = useMemo(() => {
     if (activeTab === "expense") {
@@ -301,7 +248,6 @@ const ExpensePlanningScreen = () => {
     }
 
     if (activeTab === "income" && incomesData) {
-      // Transform income data to chart segments
       const incomesArray = Array.isArray(incomesData.data)
         ? incomesData.data
         : [];
@@ -321,13 +267,11 @@ const ExpensePlanningScreen = () => {
           0,
         );
 
-        // Transform to segments - sort by amount descending to ensure proper rendering
         const segments: ChartSegment[] = Array.from(categoryMap.entries())
-          .sort((a, b) => b[1] - a[1]) // Sort by amount descending
+          .sort((a, b) => b[1] - a[1]) 
           .map(([categoryName, amount], index) => {
             const percentage = total > 0 ? (amount / total) * 100 : 0;
 
-            // Determine label position based on index
             const labelPositions = [
               { bottom: 36, left: 24 },
               { top: 42, right: 36 },
@@ -337,74 +281,15 @@ const ExpensePlanningScreen = () => {
             const labelPosition =
               labelPositions[index % labelPositions.length] || {};
 
-            // Generate unique colors for categories that don't have mappings
-            const getColorForCategory = (cat: string, idx: number): string => {
-              if (CATEGORY_COLOR_MAP[cat]) return CATEGORY_COLOR_MAP[cat];
-              // Generate a color based on index for unmapped categories
-              const colors = [
-                "#5D5FFE",
-                "#FDBA4D",
-                "#3EB489",
-                "#1A43BE",
-                "#E261F3",
-                "#27AE60",
-                "#F2994A",
-                "#BB6BD9",
-                "#9B51E0",
-                "#7E8DA0",
-              ];
-              return colors[idx % colors.length];
-            };
-
-            const getTrackColorForCategory = (
-              cat: string,
-              color: string,
-            ): string => {
-              if (CATEGORY_TRACK_COLOR_MAP[cat])
-                return CATEGORY_TRACK_COLOR_MAP[cat];
-              // Use a light version of the color for track
-              const trackColors: Record<string, string> = {
-                "#5D5FFE": "#E6E7FF",
-                "#FDBA4D": "#FFF1DD",
-                "#3EB489": "#E5F6F0",
-                "#1A43BE": "#E9EEFF",
-                "#E261F3": "#FBE9FF",
-                "#27AE60": "#E5F6F0",
-                "#F2994A": "#FFF1DD",
-                "#BB6BD9": "#FBE9FF",
-                "#9B51E0": "#F9ECFF",
-                "#7E8DA0": "#F0F2F5",
-              };
-              return trackColors[color] || "#E6E7FF";
-            };
-
-            const getBgColorForCategory = (
-              cat: string,
-              color: string,
-            ): string => {
-              if (CATEGORY_BG_COLOR_MAP[cat]) return CATEGORY_BG_COLOR_MAP[cat];
-              // Use a very light version of the color for background
-              const bgColors: Record<string, string> = {
-                "#5D5FFE": "#F6F5FF",
-                "#FDBA4D": "#FFF7E7",
-                "#3EB489": "#E7F8F1",
-                "#1A43BE": "#E9EEFF",
-                "#E261F3": "#F9ECFF",
-                "#27AE60": "#E7F8F1",
-                "#F2994A": "#FFF7E7",
-                "#BB6BD9": "#F9ECFF",
-                "#9B51E0": "#F9ECFF",
-                "#7E8DA0": "#F5F6F8",
-              };
-              return bgColors[color] || "#F6F5FF";
-            };
+         
+         
 
             const categoryColor = getColorForCategory(categoryName, index);
 
             return {
               key: `${categoryName}-${index}`,
               label:
-                categoryName.charAt(0).toUpperCase() + categoryName.slice(1), // Capitalize first letter
+                capitalizeWord(categoryName),
               percentage: Math.round(percentage),
               color: categoryColor,
               trackColor: getTrackColorForCategory(categoryName, categoryColor),
@@ -425,12 +310,11 @@ const ExpensePlanningScreen = () => {
       }
     }
 
-    // Return empty data when no API data is available
     return {
       total: 0,
       segments: [],
     };
-  }, [activeTab, expenseSummaryData, incomesData]);
+  }, [activeTab, buildExpenseSummaryFromList, filteredExpenses, incomesData]);
 
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
