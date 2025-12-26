@@ -1,11 +1,8 @@
-import { useSession } from "@/contexts/auth-context/useSession";
 import UserInactivityProvider from "@/contexts/user-inactivity/UserInactivityProvider";
 import { Stack } from "expo-router";
 import React from "react";
 
 const AppLayout = () => {
-  const { session } = useSession();
-  console.log("session", session);
   return (
     <UserInactivityProvider>
       <Stack
