@@ -1,7 +1,7 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, View } from "react-native";
@@ -13,8 +13,6 @@ type RecentTransactionItem = {
   amount: number;
   timeAgo: string;
   type: "income" | "expense";
-  icon: ImageSource;
-  accent: string;
 };
 
 type RecentTransactionsProps = {
@@ -31,8 +29,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   return (
     <View className="mt-8">
       <View className="flex-row items-center justify-between">
-        <Text
-        >
+        <Text>
           <Text weight="semibold" className="text-lg">
             Recent Transactions
           </Text>
@@ -55,7 +52,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               No recent transactions
             </Text>
             <Text className="mt-1 text-center text-xs text-textColor/60">
-              All transactions will appear here
+              Recent transactions will appear here
             </Text>
           </View>
         ) : (
@@ -80,16 +77,6 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                       "border-b border-grayLight",
                   )}
                 >
-                  <View
-                    className="mr-4 size-10 items-center justify-center rounded-full"
-                    style={{ backgroundColor: transaction.accent }}
-                  >
-                    <Image
-                      source={transaction.icon}
-                      style={{ width: 24, height: 24 }}
-                      contentFit="contain"
-                    />
-                  </View>
                   <View className="flex-1">
                     <Text weight="semibold" className="text-sm capitalize">
                       {transaction.title}
@@ -121,4 +108,3 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 };
 
 export default RecentTransactions;
-
