@@ -41,7 +41,6 @@ export type AuthContextType = {
   setSetupStep: (value: number | null) => void;
   setUserData: (value: unknown | null) => void;
 
-  // Loading
   isLoading: boolean;
 };
 
@@ -77,7 +76,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isLoading: isProfileLoading,
     isError: isProfileError,
   } = useGetUserProfileQuery({
-    enabled: Boolean(session),
+    enabled: Boolean(session)
   });
 
   const isLoading =
@@ -94,19 +93,17 @@ export function SessionProvider({ children }: PropsWithChildren) {
   /* ---------------------------------------------
      Authentication methods
   ----------------------------------------------*/
+
+
   const signIn = (session: string) => setSession(session);
 
   const signOut = useCallback(async () => {
-    // Clear persisted cache first to prevent restoration
     await clearPersistedQueryCache();
 
-    // Clear all React Query cache to prevent showing previous user's data
     queryClient.removeQueries();
     queryClient.clear();
 
-    // Clear session and user data
     setSession(null);
-    // setHasOnboarded(null);
     setIsVerified(null);
     setKycVerificationStatusRaw(null);
     setHasSetAffirmations(null);
@@ -124,13 +121,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSetupStepRaw,
   ]);
 
-  // Set up token refresh failure handler
   useEffect(() => {
     setTokenRefreshFailureHandler(() => {
       signOut();
     });
 
-    // Cleanup on unmount
     return () => {
       setTokenRefreshFailureHandler(() => {});
     };
@@ -139,7 +134,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
   /* ---------------------------------------------
      userData handling
   ----------------------------------------------*/
-  // SecureStore only saves strings — so we’ll stringify JSON data before saving
   const setUserData = useCallback(
     (data: unknown | null) => {
       if (data === null) {
@@ -157,12 +151,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }
   }, [profileResponse, setUserData]);
 
-  // Parse the stored JSON (if any)
   let parsedUserData: UserProfile | null = null;
   if (typeof userData === "string") {
     try {
       const parsed = JSON.parse(userData);
-      // Validate that parsed data matches UserProfile structure
       parsedUserData = parsed as UserProfile;
     } catch {
       parsedUserData = null;
@@ -176,7 +168,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     normalizedSetupStep = Number.isNaN(parsed) ? null : parsed;
   }
 
-  // Normalize kycVerificationStatus
   const kycVerificationStatus: KycStatus =
     kycVerificationStatusRaw ?? "unverified";
 
@@ -215,6 +206,5 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     isLoading,
   };
-  console.log(session);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

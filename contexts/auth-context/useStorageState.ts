@@ -40,14 +40,14 @@ export function useStorageState(key: string): UseAsyncStateReturn<string> {
     SecureStore.getItemAsync(key).then((value) => {
       setState(value);
     });
-  }, [key]);
+  }, [key, setState]);
 
   const setValue = useCallback(
     (value: string | null) => {
       setState(value);
       setStorageItemAsync(key, value);
     },
-    [key],
+    [key, setState],
   );
 
   return [state, setValue];

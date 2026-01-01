@@ -46,7 +46,7 @@ export const useLoginUserMutation = (
   });
 
 export const useGetUserProfileQuery = (
-  options?: UseQueryOptions<ApiEnvelope<UserProfile>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<UserProfile>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<UserProfile>, ApiError>({
     queryKey: ["auth", "profile"],

@@ -1,11 +1,10 @@
+import PasswordTextInput from "@/components/PasswordTextInput";
 import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { setStorageItemAsync } from "@/contexts/auth-context/useStorageState";
 import { cn } from "@/lib/utils";
-import { ApiError } from "@/src/api/client";
+import { handleApiError, setRefreshToken } from "@/src/api/client";
 import { useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -14,66 +13,14 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-
-const MOCK_SIGN_IN_RESPONSE_ENABLED = false;
-
-const createMockSignInResponse = (email: string) => {
-  const normalizedEmail = email?.trim().toLowerCase() || "mock@pocketmonie.app";
-  const timestamp = Date.now();
-  const mockUser = {
-    id: `mock-${timestamp}`,
-    name: "Pocket Monie Demo",
-    email: normalizedEmail,
-    isVerified: true,
-    hasCompletedSetup: true,
-    setupStep: 3,
-  };
-  return {
-    accessToken: `mock-access-token-${timestamp}`,
-    refreshToken: `mock-refresh-token-${timestamp}`,
-    user: mockUser,
-    data: mockUser,
-  };
-};
-
-const shouldFallbackToMockSignIn = (error?: unknown) => {
-  if (!error) return false;
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    typeof (error as any).status === "number"
-  ) {
-    const status = (error as any).status ?? 0;
-    return status === 0 || status >= 500;
-  }
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    return message.includes("network") || message.includes("server");
-  }
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    typeof (error as { message?: unknown }).message === "string"
-  ) {
-    const lowerMessage = (
-      (error as { message?: string }).message ?? ""
-    ).toLowerCase();
-    return lowerMessage.includes("network") || lowerMessage.includes("server");
-  }
-  return false;
-};
 
 const SignInScreen = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
   const router = useRouter();
   const {
     signIn,
@@ -84,54 +31,41 @@ const SignInScreen = () => {
   } = useSession();
   const loginMutation = useLoginUserMutation();
 
+  const focusField = (field: string) => {
+    setFocused(field);
+  };
+
+  const blurField = () => {
+    setFocused(null);
+  };
+
   const processSignInResponse = useCallback(
-    async (
-      response: LoginUserResponse | ReturnType<typeof createMockSignInResponse>,
-    ) => {
+    async (response: LoginUserResponse) => {
       const accessToken =
         typeof response.accessToken === "string" ? response.accessToken : null;
       if (!accessToken) {
         throw new Error("Missing access token from login response.");
       }
-
       const refreshToken =
         typeof response.refreshToken === "string"
           ? response.refreshToken
-          : typeof (response as any)?.data?.refreshToken === "string"
-            ? (response as any).data.refreshToken
-            : null;
-
-      console.log("Access token found:", !!accessToken);
-      console.log("Refresh token found:", !!refreshToken);
+          : null;
 
       if (refreshToken) {
-        await setStorageItemAsync("refreshToken", refreshToken);
-        console.log("✅ Refresh token stored successfully");
+        await setRefreshToken(refreshToken);
       } else {
         console.warn(
-          "⚠️ No refresh token in login response - token refresh will not work",
+          "No refresh token in login response - token refresh will not work",
         );
-        console.warn("Response structure:", {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          responseKeys: Object.keys(response || {}),
-        });
       }
-
       signIn(accessToken);
 
-      console.log("✅ Access token stored successfully");
-
       const profileCandidate =
-        response && typeof response === "object" ? (response as any) : null;
+        typeof response === "object" ? (response as any) : null;
       const profile =
         profileCandidate && typeof profileCandidate.user === "object"
           ? profileCandidate.user
-          : profileCandidate &&
-              typeof profileCandidate.data === "object" &&
-              !Array.isArray(profileCandidate.data)
-            ? profileCandidate.data
-            : null;
+          : null;
 
       if (profile) {
         setUserData(profile);
@@ -194,40 +128,14 @@ const SignInScreen = () => {
     const normalizedEmail = form.email.trim().toLowerCase();
 
     try {
-      setApiErrorMessage(null);
       const payload = {
         email: normalizedEmail,
         password: form.password,
       };
-
-      if (MOCK_SIGN_IN_RESPONSE_ENABLED) {
-        await processSignInResponse(createMockSignInResponse(normalizedEmail));
-        return;
-      }
-
       const response = await loginMutation.mutateAsync(payload);
       await processSignInResponse(response);
     } catch (error) {
-      if (MOCK_SIGN_IN_RESPONSE_ENABLED || shouldFallbackToMockSignIn(error)) {
-        console.warn("Falling back to mock sign-in", error);
-        await processSignInResponse(createMockSignInResponse(normalizedEmail));
-        return;
-      }
-
-      const apiError = error as ApiError;
-      const serverMessage =
-        typeof apiError?.data === "object" &&
-        apiError.data !== null &&
-        "message" in apiError.data &&
-        typeof (apiError.data as { message?: string }).message === "string"
-          ? (apiError.data as { message?: string }).message
-          : undefined;
-      const message =
-        serverMessage ??
-        apiError?.message ??
-        "We could not sign you in. Please try again.";
-      console.log("message", message);
-      setApiErrorMessage(message);
+      const message = handleApiError(error).message;
       Toast.show({
         type: "error",
         text1: "Sign in failed",
@@ -261,7 +169,6 @@ const SignInScreen = () => {
         <TextInput
           value={form.email}
           onChangeText={(email) => {
-            setApiErrorMessage(null);
             setForm({ ...form, email });
           }}
           placeholder="example@email.com"
@@ -281,39 +188,14 @@ const SignInScreen = () => {
       </View>
 
       <View className="mb-2">
-        <Text className="mb-2 text-sm text-tertiary">Password</Text>
-        <View
-          className={cn(
-            "flex-row items-center rounded-xl border px-4",
-            focused === "password" && "border-blue-500",
-            errors.password
-              ? "border-red-500"
-              : "border-gray-300 focus:border-blue-500",
-          )}
-        >
-          <TextInput
-            value={form.password}
-            onChangeText={(password) => {
-              setApiErrorMessage(null);
-              setForm({ ...form, password });
-            }}
-            placeholder="Enter your password"
-            secureTextEntry={!showPassword}
-            onFocus={() => setFocused("password")}
-            onBlur={() => setFocused(null)}
-            className="flex-1 py-3 font-poppins text-base"
-          />
-          <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
-            <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={22}
-              color="#555"
-            />
-          </TouchableOpacity>
-        </View>
-        {errors.password ? (
-          <Text className="mt-1 text-sm text-red-500">{errors.password}</Text>
-        ) : null}
+        <PasswordTextInput
+          value={form.password}
+          blurField={blurField}
+          focusField={() => focusField("password")}
+          onChangeText={(password) => {
+            setForm({ ...form, password });
+          }}
+        />
       </View>
 
       <Link asChild href="/forgot-password">
@@ -322,11 +204,6 @@ const SignInScreen = () => {
         </Pressable>
       </Link>
 
-      {apiErrorMessage ? (
-        <Text className="mb-3 text-center text-sm text-red-500">
-          {apiErrorMessage}
-        </Text>
-      ) : null}
       <Pressable
         disabled={isSubmitting}
         onPress={handleSubmit}
@@ -350,15 +227,7 @@ const SignInScreen = () => {
         <View className="h-[1px] flex-1 bg-gray-200" />
       </View>
 
-      <Pressable className="mb-4 flex-row items-center justify-center rounded-xl border border-gray-300 py-4">
-        <Image
-          source={require("@/assets/icons/google.svg")}
-          style={{ width: 20, height: 20 }}
-        />
-        <Text className="ml-4 text-base text-tertiary">
-          Continue with Google
-        </Text>
-      </Pressable>
+   
 
       <Link asChild href={"/signUp"}>
         <Pressable className="mb-10 flex-row items-center justify-center gap-2">
