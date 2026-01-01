@@ -36,26 +36,43 @@ export const useAddExpenseMutation = (
   });
 
 type VoiceExpenseResponse = {
-  amount: number;
-  category: string;
-  description: string;
-  paymentMethod: string;
-  date: string;
+  message: string;
+  status: string;
+  transaction: {
+    _id: string;
+    amount: number;
+    createdAt: string;
+    updatedAt: string;
+    metadata: {
+      category: string;
+      description: string;
+    };
+    purpose: string;
+    reference: string;
+    status: string;
+    type: string;
+    user: string;
+  };
+};
+
+type VoiceExpenseRequest = {
+  message: string;
 };
 
 export const useVoiceExpenseLoggingMutation = (
-  options?: UseMutationOptions<VoiceExpenseResponse, ApiError, FormData>,
+  options?: UseMutationOptions<
+    VoiceExpenseResponse,
+    ApiError,
+    VoiceExpenseRequest
+  >,
 ) =>
-  useMutation<VoiceExpenseResponse, ApiError, FormData>({
+  useMutation<VoiceExpenseResponse, ApiError, VoiceExpenseRequest>({
     mutationKey: ["expenses", "voiceLogExpense"],
-    mutationFn: (formData) =>
+    mutationFn: (payload) =>
       apiRequest<VoiceExpenseResponse>({
         method: API_ENDPOINTS.expenses.voiceLogExpense.method,
         url: API_ENDPOINTS.expenses.voiceLogExpense.path,
-        data: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        data: payload,
       }),
     ...options,
   });
@@ -157,7 +174,6 @@ export const useGetExpenseSummaryQuery = (
       });
 
       if (Array.isArray(response)) {
-     
         const summary: ExpenseSummary = {
           type,
           total: response.reduce((acc, item) => acc + item.total, 0),

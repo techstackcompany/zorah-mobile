@@ -17,17 +17,12 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  RecordingPresets,
-  requestRecordingPermissionsAsync,
-  useAudioRecorder,
-  useAudioRecorderState,
-} from "expo-audio";
+import useVoiceTranscriber from "../hooks/useVoiceTranscriber";
+
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -42,7 +37,7 @@ type ExpenseCategory = {
   icon: ImageSource | string;
 };
 
-type VoiceStatus = "idle" | "recording" | "detected";
+type VoiceStatus = "idle" | "recording" | "transcribed" | "detected";
 
 type DetectedExpenseDetails = {
   amountValue: string;
@@ -192,6 +187,7 @@ const AddExpenseScreen = () => {
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
   const [detectedExpense, setDetectedExpense] =
     useState<DetectedExpenseDetails | null>(null);
+  const [editableTranscript, setEditableTranscript] = useState("");
   const {
     isPaymentModalVisible,
     paymentMethod,
@@ -204,26 +200,15 @@ const AddExpenseScreen = () => {
   const { expenseCategories, isCategoriesLoading, categoriesError } =
     useExpenseSubCategories();
 
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(audioRecorder);
-
-  const requestAudioPermissions = async () => {
-    try {
-      const { granted } = await requestRecordingPermissionsAsync();
-      if (!granted) {
-        Alert.alert(
-          "Permission Required",
-          "Microphone access is required for voice recording.",
-        );
-      }
-    } catch (error) {
-      console.error("Error requesting audio permissions:", error);
-    }
-  };
-
-  useEffect(() => {
-    requestAudioPermissions();
-  }, []);
+  const {
+    recognizing,
+    transcript,
+    fullTranscript,
+    start: startTranscription,
+    stop: stopTranscription,
+    reset: resetTranscript,
+    error: transcriptionError,
+  } = useVoiceTranscriber(true);
 
   useEffect(() => {
     if (expenseCategories.length > 0 && !selectedCategory) {
@@ -277,34 +262,39 @@ const AddExpenseScreen = () => {
     },
   });
 
-  const transcribeMutation = useVoiceExpenseLoggingMutation({
+  const logVoiceExpenseMutation = useVoiceExpenseLoggingMutation({
     onSuccess: (data) => {
-      console.log("Transcription result:", data);
+      console.log("Voice expense response:", data);
 
-      // Format date from YYYY-MM-DD to DD/MM/YY
       let formattedDate = "";
-      if (data.date) {
-        const dateObj = new Date(data.date);
+      if (data.transaction.createdAt) {
+        const dateObj = new Date(data.transaction.createdAt);
         const day = `${dateObj.getDate()}`.padStart(2, "0");
         const month = `${dateObj.getMonth() + 1}`.padStart(2, "0");
         const year = `${dateObj.getFullYear()}`.slice(-2);
         formattedDate = `${day}/${month}/${year}`;
       }
 
-      setAmount(data.amount.toString());
+      const amount = data.transaction.amount;
+      const category = data.transaction.metadata.category;
+      const description = data.transaction.metadata.description;
+      // Note: paymentMethod is not in the API response, defaulting to empty
+      const paymentMethod = "";
+
+      setAmount(amount.toString());
       setDate(formattedDate);
-      setDescription(data.description);
-      setPaymentMethod(data.paymentMethod);
-      setSelectedCategory(data.category);
+      setDescription(description);
+      setPaymentMethod(paymentMethod);
+      setSelectedCategory(category);
 
       setDetectedExpense({
-        amountValue: data.amount.toString(),
-        amountLabel: `₦${data.amount}`,
-        categoryKey: data.category,
-        categoryLabel: data.category,
-        paymentMethod: data.paymentMethod,
-        paymentMethodLabel: getPaymentMethodLabel(data.paymentMethod),
-        summary: data.description,
+        amountValue: amount.toString(),
+        amountLabel: `₦${amount}`,
+        categoryKey: category,
+        categoryLabel: category,
+        paymentMethod: paymentMethod,
+        paymentMethodLabel: getPaymentMethodLabel(paymentMethod),
+        summary: description,
         dateValue: formattedDate,
       });
       setVoiceStatus("detected");
@@ -316,75 +306,56 @@ const AddExpenseScreen = () => {
       });
     },
     onError: (error) => {
-      console.error("Transcription error:", error);
       setVoiceStatus("idle");
       Toast.show({
         type: "error",
         text1: "Transcription Failed",
         text2: getErrorMessage(
           error,
-          "Failed to process audio. Please try again.",
+          "Failed to process expense log. Please try again.",
         ),
       });
     },
   });
 
-  const handleMicPress = useCallback(async () => {
-    try {
-      if (recorderState.isRecording) {
-        // Stop recording
-        await audioRecorder.stop();
-        const audioUri = audioRecorder.uri;
+  const handleMicPress = async () => {
+    if (recognizing) {
+      await stopTranscription();
 
-        if (!audioUri) {
-          throw new Error("No audio file was recorded");
-        }
-
-        console.log("Recording stopped. Audio URI:", audioUri);
-
-        // Create FormData to send audio file to server
-        const formData = new FormData();
-        formData.append("audio", {
-          uri: audioUri,
-          type: "audio/m4a",
-          name: "recording.m4a",
-        } as any);
-
-        setVoiceStatus("detected");
-        Toast.show({
-          type: "info",
-          text1: "Processing",
-          text2: "Transcribing your expense...",
-        });
-
-        transcribeMutation.mutate(formData);
-        return;
-      }
-
-      // Start recording
+    } else {
+      resetTranscript();
       setDetectedExpense(null);
+      setEditableTranscript("");
+      await startTranscription();
       setVoiceStatus("recording");
+    }
+  };
 
-      await audioRecorder.prepareToRecordAsync();
-      audioRecorder.record();
+  useEffect(() => {
+    if (!recognizing && transcript.trim() && voiceStatus === "recording") {
+      setVoiceStatus("transcribed");
+      setEditableTranscript(transcript);
+    }
+  }, [recognizing, transcript, voiceStatus]);
 
-      Toast.show({
-        type: "info",
-        text1: "Recording Started",
-        text2: "Speak your expense details now...",
-      });
-    } catch (error) {
-      console.error("Error handling microphone:", error);
-      setVoiceStatus("idle");
+  useEffect(() => {
+    if (transcriptionError) {
       Toast.show({
         type: "error",
-        text1: "Recording Error",
-        text2: "Failed to record audio. Please try again.",
+        text1: "Transcription Error",
+        text2: transcriptionError,
       });
+      setVoiceStatus("idle");
     }
-  }, [recorderState.isRecording, audioRecorder, transcribeMutation]);
+  }, [transcriptionError]);
 
   const handleSubmit = useCallback(() => {
+    // If in voice mode and have transcript, send to API for processing
+    if (isVoiceMode && editableTranscript.trim()) {
+      logVoiceExpenseMutation.mutate({ message: editableTranscript });
+      return;
+    }
+
     if (validateFields({ amount, date, paymentMethod, selectedCategory })) {
       const numericAmount = Number(amount);
       const apiCategory = selectedCategory;
@@ -406,6 +377,9 @@ const AddExpenseScreen = () => {
       addExpenseMutation.mutate(payload);
     }
   }, [
+    isVoiceMode,
+    editableTranscript,
+    logVoiceExpenseMutation,
     amount,
     selectedCategory,
     paymentMethod,
@@ -414,9 +388,9 @@ const AddExpenseScreen = () => {
     addExpenseMutation,
   ]);
 
-  const micIsRecording = recorderState.isRecording;
+  const micIsRecording = recognizing;
   const isSubmitDisabled =
-    isVoiceMode && (!detectedExpense || voiceStatus !== "detected");
+    isVoiceMode && (!editableTranscript.trim() || voiceStatus === "recording");
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -459,27 +433,28 @@ const AddExpenseScreen = () => {
 
               {isVoiceMode ? (
                 <View className="gap-5">
-                  <View className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-                    <Text
-                      weight="semibold"
-                      className="text-base text-textColor"
-                    >
-                      How it works
-                    </Text>
-                    <Text className="mt-2 text-sm leading-5 text-textColor/80">
-                      Simply tap the microphone and say your expense. For
-                      example:
-                    </Text>
-                    <View className="mt-3 rounded-xl bg-primary_100 px-3 py-3">
-                      <Text className="text-sm text-primary_400">
-                        &quot;Spent $25 on food at the restaurant&quot;
+                  {recognizing ? null : (
+                    <View className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                      <Text
+                        weight="semibold"
+                        className="text-base text-textColor"
+                      >
+                        How it works
                       </Text>
-                      <Text className="mt-1 text-sm text-primary_400">
-                        &quot;Lunch for $18.50&quot;
+                      <Text className="mt-2 text-sm leading-5 text-textColor/80">
+                        Simply tap the microphone and say your expense. For
+                        example:
                       </Text>
+                      <View className="mt-3 rounded-xl bg-primary_100 px-3 py-3">
+                        <Text className="text-sm text-primary_400">
+                          &quot;Spent $25 on food at the restaurant&quot;
+                        </Text>
+                        <Text className="mt-1 text-sm text-primary_400">
+                          &quot;Lunch for $18.50&quot;
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-
+                  )}
                   <View className="items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-6">
                     <Text
                       weight="semibold"
@@ -503,7 +478,6 @@ const AddExpenseScreen = () => {
                       Tap to record expense details
                     </Text>
                   </View>
-
                   {detectedExpense ? (
                     <View className="rounded-2xl border border-secondary_200 bg-secondary_150 px-4 py-4">
                       <Text
@@ -555,6 +529,40 @@ const AddExpenseScreen = () => {
                           </Text>
                         </View>
                       </View>
+                    </View>
+                  ) : null}
+                  {recognizing && fullTranscript.trim() ? (
+                    <View className="bg-primary_50 rounded-2xl border border-primary_200 px-4 py-4">
+                      <View className="mb-3 flex-row items-center gap-2">
+                        <View className="h-2 w-2 animate-pulse rounded-full bg-primary_400" />
+                        <Text
+                          weight="semibold"
+                          className="text-base text-primary_400"
+                        >
+                          Listening...
+                        </Text>
+                      </View>
+                      <Text className="text-sm leading-5 text-textColor/90">
+                        {fullTranscript}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {voiceStatus === "transcribed" &&
+                  editableTranscript.trim() ? (
+                    <View>
+                      <Text className="mb-2 text-sm text-textColor/70">
+                        Edit your transcription
+                      </Text>
+                      <TextInputField
+                        value={editableTranscript}
+                        onChangeText={setEditableTranscript}
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                        placeholder="Edit the transcribed text..."
+                        inputClassName="min-h-[120px]"
+                      />
                     </View>
                   ) : null}
                 </View>
@@ -647,7 +655,7 @@ const AddExpenseScreen = () => {
           <View className="px-6 pb-6">
             <PrimaryButton
               onPress={handleSubmit}
-              loading={addExpenseMutation.isPending}
+              loading={addExpenseMutation.isPending || logVoiceExpenseMutation.isPending}
               label="Add New Expense"
               disabled={isSubmitDisabled}
             />

@@ -11,7 +11,7 @@ interface UseSpeechRecognitionOptions {
   onResult?: (text: string) => void;
   onError?: (error: string) => void;
   autoStop?: boolean;
-  maxDuration?: number; // in milliseconds, default 30s
+  maxDuration?: number;
 }
 
 export const useSpeechRecognition = (
@@ -24,7 +24,6 @@ export const useSpeechRecognition = (
   const [transcript, setTranscript] = useState("");
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check and request permissions
   const requestPermission = useCallback(async () => {
     try {
       const result =
@@ -65,7 +64,6 @@ export const useSpeechRecognition = (
     }
   });
 
-  // Handle speech recognition errors
   useSpeechRecognitionEvent("error", (event) => {
     console.error("Speech recognition error:", event.error);
     const errorMessage = event.error || "Speech recognition failed";
