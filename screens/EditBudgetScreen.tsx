@@ -12,7 +12,6 @@ import {
 } from "@/src/api/hooks/useBudgetApi";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { ImageSource } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -25,35 +24,6 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-
-type BudgetCategoryKey = "food" | "entertainment" | "transport" | "shopping";
-
-const BUDGET_CATEGORIES = [
-  {
-    key: "food",
-    label: "Food",
-    icon: require("@/assets/images/home/food.png"),
-  },
-  {
-    key: "entertainment",
-    label: "Entertainment",
-    icon: require("@/assets/images/home/entertainment.png"),
-  },
-  {
-    key: "transport",
-    label: "Transport",
-    icon: require("@/assets/images/home/transport.png"),
-  },
-  {
-    key: "shopping",
-    label: "Shopping",
-    icon: require("@/assets/images/home/shopping.png"),
-  },
-] as const satisfies readonly {
-  key: BudgetCategoryKey;
-  label: string;
-  icon: ImageSource;
-}[];
 
 type BudgetPeriodKey = "this_week" | "this_month" | "this_year" | "custom";
 
@@ -155,16 +125,14 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
-// Map UI category keys to API category names
-const CATEGORY_MAP: Record<BudgetCategoryKey, string> = {
+const CATEGORY_MAP: Record<string, string> = {
   food: "Food",
   entertainment: "Entertainment",
   transport: "Transport",
   shopping: "Shopping",
 };
 
-// Reverse map: API category names to UI keys
-const REVERSE_CATEGORY_MAP: Record<string, BudgetCategoryKey> = {
+const REVERSE_CATEGORY_MAP: Record<string, string> = {
   Food: "food",
   Entertainment: "entertainment",
   Transport: "transport",
@@ -186,13 +154,6 @@ const REVERSE_PERIOD_MAP: Record<string, BudgetPeriodKey> = {
   yearly: "this_year",
 };
 
-const isBudgetCategoryKey = (
-  value: string | undefined,
-): value is BudgetCategoryKey => {
-  return Boolean(value && BUDGET_CATEGORIES.some((item) => item.key === value));
-};
-
-// Format date to YYYY-MM-DD
 const formatDateForAPI = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -293,19 +254,7 @@ const EditBudgetScreen = () => {
     return "80000";
   });
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<BudgetCategoryKey>(
-    () => {
-      const apiCategory =
-        (budget?.category as string) || (params.category as string);
-      if (apiCategory && REVERSE_CATEGORY_MAP[apiCategory]) {
-        return REVERSE_CATEGORY_MAP[apiCategory];
-      }
-      if (isBudgetCategoryKey(apiCategory)) {
-        return apiCategory;
-      }
-      return "food";
-    },
-  );
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>(() => {
     if (budget?.period && REVERSE_PERIOD_MAP[budget.period]) {
       return REVERSE_PERIOD_MAP[budget.period];
@@ -528,7 +477,7 @@ const EditBudgetScreen = () => {
                   returnKeyType="next"
                 />
               </View>
-    
+
               <AmountInput
                 value={amount}
                 onChangeValue={setAmount}
@@ -538,7 +487,7 @@ const EditBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
                 <CategorySelector
-                  categories={BUDGET_CATEGORIES}
+                  categories={[]}
                   selectedKey={selectedCategory}
                   onSelect={setSelectedCategory}
                   className="mt-3"

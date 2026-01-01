@@ -1,9 +1,7 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
-import CategorySelector, {
-  type CategoryItem,
-} from "@/components/ui/CategorySelector";
+import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
@@ -26,31 +24,6 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-type GoalCategory = "education" | "home" | "travel" | "car";
-
-const GOAL_CATEGORIES: readonly CategoryItem<GoalCategory>[] = [
-  {
-    key: "education",
-    label: "Education",
-    icon: require("@/assets/images/savings_goals/education.png"),
-  },
-  {
-    key: "home",
-    label: "Home",
-    icon: require("@/assets/images/savings_goals/home.png"),
-  },
-  {
-    key: "travel",
-    label: "Travel",
-    icon: require("@/assets/images/savings_goals/travel.png"),
-  },
-  {
-    key: "car",
-    label: "Car",
-    icon: require("@/assets/images/savings_goals/car.png"),
-  },
-] as const;
-
 const SavingsGoalEditScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -58,9 +31,7 @@ const SavingsGoalEditScreen = () => {
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<GoalCategory>(
-    GOAL_CATEGORIES[0].key,
-  );
+  const [category, setCategory] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [note, setNote] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -296,7 +267,7 @@ const SavingsGoalEditScreen = () => {
             <View className="mt-6">
               <Text className="text-sm text-textColor">Goal Category</Text>
               <CategorySelector
-                categories={GOAL_CATEGORIES}
+                categories={[]}
                 selectedKey={category}
                 onSelect={setCategory}
               />
