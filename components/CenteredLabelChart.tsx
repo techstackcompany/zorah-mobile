@@ -16,7 +16,7 @@ const data = [
 ];
 
 export default function CenteredLabelChart() {
-  let startAngle = 0; // start from right (0 radians)
+  let startAngle = 0;
   const segments = data.map((item) => {
     const angle = (item.percentage / 100) * 2 * Math.PI;
     const currentStartAngle = startAngle;

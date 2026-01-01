@@ -137,7 +137,6 @@ const AiAssistantScreen = () => {
   const [, forceUpdate] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Voice recognition
   const { startRecording, stopRecording, isRecording, isProcessing } =
     useSpeechRecognition({
       onResult: (text) => {
@@ -157,7 +156,6 @@ const AiAssistantScreen = () => {
       },
     });
 
-  // Update timestamps periodically so "just now" becomes "1m ago", etc.
   useEffect(() => {
     const interval = setInterval(() => {
       forceUpdate((n) => n + 1);
@@ -168,9 +166,10 @@ const AiAssistantScreen = () => {
   const askMutation = useAskAiMutation();
 
   useEffect(() => {
-    setTimeout(() => {
+    const timeoutID = setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+    return () => clearTimeout(timeoutID);
   }, [messages]);
 
   const handleSend = useCallback(() => {
@@ -186,7 +185,6 @@ const AiAssistantScreen = () => {
     setMessages((m) => [...m, userMsg]);
     setDraftMessage("");
 
-    // call API
     askMutation.mutate(
       { message: text },
       {
@@ -216,7 +214,6 @@ const AiAssistantScreen = () => {
     (category: AssistantCategory) => {
       setActiveCategory(category.id);
 
-      // Add user message with the category prompt
       const userMsg: UserMessage = {
         id: `user_${Date.now()}`,
         author: "user",

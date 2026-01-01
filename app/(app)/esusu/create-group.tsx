@@ -147,7 +147,7 @@ export default function CreateEsusuGroupScreen() {
             {step === 2 && (
               <View className="px-6 pt-6">
                 <Text className="text-center text-lg font-semibold text-textColor">
-                  Add Members (Coming Soon)
+                  Add Members
                 </Text>
                 <Text className="mt-2 text-center text-sm text-textColor/70">
                   This step will be implemented next

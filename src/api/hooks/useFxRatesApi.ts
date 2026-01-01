@@ -74,6 +74,8 @@ export const useGetFxRatePairQuery = (
     ...options,
   });
 
+
+
 /**
  * Get multiple exchange rate pairs at once with change calculations
  */
@@ -108,6 +110,8 @@ export const useGetFxRatePairsQuery = (
     ...options,
   });
 
+
+  
 /**
  * Get rate history for a currency pair (for charts) from the proxy API
  */

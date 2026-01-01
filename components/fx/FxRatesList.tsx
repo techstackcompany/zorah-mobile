@@ -70,7 +70,7 @@ const FxRatesList = ({ converterTab, onChangeTab, pairs, isFetching }: FxRatesLi
         </View>
       ) : (
         <View style={styles.cryptoPlaceholder}>
-          <Text className="text-sm text-textColor/60">Crypto market data will appear here soon.</Text>
+          <Text className="text-sm text-textColor/60">Crypto market data will appear here.</Text>
         </View>
       )}
     </View>
