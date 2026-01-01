@@ -6,7 +6,7 @@ import { cn, formatCurrency, formatTransactionPurpose } from "@/lib/utils";
 import { useGetWalletTransactionsQuery } from "@/src/api/hooks";
 import { WalletTransaction } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -29,8 +29,7 @@ type TransactionItem = {
   timeAgo: string;
   amount: number;
   type: TransactionType;
-  icon: ImageSource;
-  accent: string;
+ 
 };
 
 type TransactionSection = {
@@ -96,7 +95,6 @@ const formatAmountWithSign = (value: number) => {
   return `${prefix}${formatCurrency(Math.abs(value))}`;
 };
 
-// Helper function to format time ago
 const formatTimeAgo = (dateString?: string): string => {
   if (!dateString) return "Just now";
   const date = new Date(dateString);
@@ -111,7 +109,6 @@ const formatTimeAgo = (dateString?: string): string => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-// Helper function to format date for section title
 const formatSectionDate = (dateString?: string): string => {
   if (!dateString) return "Unknown";
 
@@ -136,7 +133,6 @@ const formatSectionDate = (dateString?: string): string => {
       return "Yesterday";
     }
 
-    // Check if it's within the last 7 days
     const daysDiff = Math.floor(
       (today.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24),
     );
@@ -163,31 +159,11 @@ const formatSectionDate = (dateString?: string): string => {
   }
 };
 
-// Helper function to get default icon and accent based on transaction type
-const getTransactionIcon = (
-  type: "credit" | "debit",
-): {
-  icon: ImageSource;
-  accent: string;
-} => {
-  if (type === "credit") {
-    return {
-      icon: require("@/assets/images/home/salary.png"),
-      accent: "#EEF5FF",
-    };
-  }
-  return {
-    icon: require("@/assets/images/home/shopping.png"),
-    accent: "#FDECEF",
-  };
-};
 
-// Transform API transaction to UI transaction
 const transformTransactionForUI = (
   txn: WalletTransaction,
 ): TransactionItem & { createdAt?: string } => {
   const isCredit = txn.type === "credit";
-  const { icon, accent } = getTransactionIcon(txn.type as "credit" | "debit");
   const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
 
   const title =
@@ -206,8 +182,7 @@ const transformTransactionForUI = (
     timeAgo: formatTimeAgo(txn.createdAt),
     amount,
     type: isCredit ? "income" : "expense",
-    icon,
-    accent,
+   
     createdAt: txn.createdAt,
   };
 };
@@ -221,7 +196,6 @@ const groupTransactionsByDate = (
   >();
 
   transactions.forEach((txn) => {
-    // Use createdAt to group by date
     const dateKey = txn.createdAt
       ? new Date(txn.createdAt).toISOString().split("T")[0]
       : "unknown";
@@ -233,15 +207,13 @@ const groupTransactionsByDate = (
 
   return Array.from(grouped.entries())
     .map(([dateKey, items]) => {
-      // Get the date from the first transaction's createdAt
       const firstDate = items[0]?.createdAt || dateKey;
       return {
         id: dateKey,
         title: formatSectionDate(firstDate),
         items: items
-          .map(({ createdAt, ...item }) => item) // Remove createdAt from final items
+          .map(({ createdAt, ...item }) => item) 
           .sort((a, b) => {
-            // Sort by timeAgo (most recent first)
             const aTime = a.timeAgo;
             const bTime = b.timeAgo;
             if (aTime.includes("ago") && !bTime.includes("ago")) return -1;
@@ -251,7 +223,6 @@ const groupTransactionsByDate = (
       };
     })
     .sort((a, b) => {
-      // Sort sections: "Today" first, then "Yesterday", then by date
       if (a.title === "Today") return -1;
       if (b.title === "Today") return 1;
       if (a.title === "Yesterday") return -1;
@@ -271,28 +242,23 @@ const filterTransactionsBySearch = (
   const searchLower = searchTerm.toLowerCase().trim();
 
   return items.filter((item) => {
-    // Search in title
     if (item.title.toLowerCase().includes(searchLower)) {
       return true;
     }
 
-    // Search in description
     if (item.description?.toLowerCase().includes(searchLower)) {
       return true;
     }
 
-    // Search in account
     if (item.account.toLowerCase().includes(searchLower)) {
       return true;
     }
 
-    // Search in amount (format: ₦1,234)
     const amountStr = formatCurrency(Math.abs(item.amount));
     if (amountStr.toLowerCase().includes(searchLower)) {
       return true;
     }
 
-    // Search in raw amount number
     if (Math.abs(item.amount).toString().includes(searchLower)) {
       return true;
     }
@@ -308,13 +274,11 @@ const buildSections = (
 ) => {
   return sections
     .map((section) => {
-      // First filter by tab
       let items =
         tab === "all"
           ? section.items
           : section.items.filter((item) => item.type === tab);
 
-      // Then filter by search term
       items = filterTransactionsBySearch(items, searchTerm);
 
       if (!items.length) {
@@ -611,16 +575,7 @@ const TransactionHistoryScreen = () => {
                           onPress={() => handleTransactionPress(item.id)}
                           className="flex-row items-center rounded-3xl bg-white px-4 py-4"
                         >
-                          <View
-                            className="mr-3 size-12 items-center justify-center rounded-full"
-                            style={{ backgroundColor: item.accent }}
-                          >
-                            <Image
-                              source={item.icon}
-                              style={{ width: 26, height: 26 }}
-                              contentFit="contain"
-                            />
-                          </View>
+                        
                           <View className="flex-1 pe-2">
                             <Text
                               weight="semibold"

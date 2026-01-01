@@ -4,20 +4,20 @@ import BudgetListSection from "@/components/budget/BudgetListSection";
 import BudgetPeriodNavigator from "@/components/budget/BudgetPeriodNavigator";
 import BudgetSummary from "@/components/budget/BudgetSummary";
 import DeleteBudgetModal from "@/components/budget/DeleteBudgetModal";
+import SmartBudgetTips from "@/components/budget/SmartBudgetTips";
 import MainContainer from "@/components/layouts/MainContainer";
-import { useGetBudgetsQuery } from "@/src/api/hooks";
-import React, { useEffect, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
 import Text from "@/components/ui/Text";
 import {
+  BudgetPeriod,
+  getBudgetPeriod,
   useBudgetActions,
   useBudgetRefresh,
   useBudgetSummary,
   useBudgets,
-  BudgetPeriod,
-  getBudgetPeriod,
 } from "@/features/budget";
-
+import { useGetBudgetsQuery } from "@/src/api/hooks";
+import React, { useEffect, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, View } from "react-native";
 
 const BudgetScreen = () => {
   const { isLoading: isLoadingBudgets, error: budgetsError } =
@@ -26,7 +26,9 @@ const BudgetScreen = () => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
   });
-  const { rawBudgets, budgets, filteredRawBudgets } = useBudgets(selectedPeriod);
+
+  const { rawBudgets, budgets, filteredRawBudgets } =
+    useBudgets(selectedPeriod);
   const availablePeriods = useMemo(() => {
     const periods = rawBudgets
       .map(getBudgetPeriod)
@@ -46,6 +48,7 @@ const BudgetScreen = () => {
         new Date(b.year, b.month - 1, 1).getTime(),
     );
   }, [rawBudgets]);
+
   useEffect(() => {
     if (availablePeriods.length === 0) return;
 
@@ -123,7 +126,7 @@ const BudgetScreen = () => {
         <View className="mt-6 px-6">
           <BudgetExceededAlert />
         </View>
-        {budgetsError && budgets.length ===0 ? (
+        {budgetsError && budgets.length === 0 ? (
           <View className="mt-6 px-6">
             <Text className="text-center text-red-500">
               Failed to load budgets. Pull to refresh to try again.
@@ -136,7 +139,7 @@ const BudgetScreen = () => {
             onMorePress={budgetActions.openActionSheet}
           />
         )}
-
+        <SmartBudgetTips/>
       </ScrollView>
 
       <BudgetActionSheet

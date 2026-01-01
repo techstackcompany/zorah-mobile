@@ -106,18 +106,9 @@ const transformArchivedBudgets = (
       status = getBudgetStatus(spent, allocated);
     }
 
-    // Format archived date - if API returns dates, use them
-    // For now, we'll use a placeholder since BudgetListItem doesn't have dates
     let archivedDate = "Archived";
-    // If the API response has dates, we can format them like this:
-    // if (budget.updatedAt) {
-    //   const date = new Date(budget.updatedAt);
-    //   archivedDate = date.toLocaleDateString("en-GB", {
-    //     day: "2-digit",
-    //     month: "2-digit",
-    //     year: "numeric",
-    //   });
-    // }
+   
+    
 
     return {
       id: budget._id,
@@ -137,32 +128,6 @@ const transformArchivedBudgets = (
 
 const useSubcategories = () => {
   const { data: subcategoriesData } = useGetCategoriesQuery("budget");
-  return useMemo(() => {
-    if (!subcategoriesData) return [];
-    const categories =
-      Array.isArray(subcategoriesData) || !("data" in subcategoriesData)
-        ? subcategoriesData
-        : subcategoriesData.data;
-
-    // Handle both array and single object responses
-    const categoriesArray = Array.isArray(categories)
-      ? categories
-      : categories
-        ? [categories]
-        : [];
-
-    return (
-      categoriesArray
-        ?.flatMap((cat) =>
-          cat.subcategories?.map((sub) => ({
-            key: sub.name || sub._id,
-            label: sub.name || "",
-            icon: sub.image || "",
-          })),
-        )
-        .filter(Boolean) || []
-    );
-  }, [subcategoriesData]);
 };
 
 const BudgetArchiveScreen = () => {
@@ -210,30 +175,17 @@ const BudgetArchiveScreen = () => {
     },
   );
 
-  // Trigger restore mutation when budgetIdToRestore is set
   useEffect(() => {
     if (budgetIdToRestore && !restoreBudgetMutation.isPending) {
       restoreBudgetMutation.mutate();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [budgetIdToRestore]);
+  }, [budgetIdToRestore, restoreBudgetMutation]);
 
   const handleRestoreBudget = (budgetId: string) => {
     setBudgetIdToRestore(budgetId);
   };
 
-  const archiveTotal = useMemo(
-    () =>
-      archivedBudgets.reduce(
-        (acc, budget) => {
-          acc.allocated += budget.allocated;
-          acc.spent += budget.spent;
-          return acc;
-        },
-        { allocated: 0, spent: 0 },
-      ),
-    [archivedBudgets],
-  );
+  
 
   const handleOpenActions = (budget: ArchivedBudget) => {
     setSelectedBudget(budget);
@@ -258,7 +210,7 @@ const BudgetArchiveScreen = () => {
       },
       {
         label: "Delete",
-        enabled: false, // Delete can be added later if needed
+        enabled: false, 
         action: () => {},
       },
     ];
@@ -332,7 +284,6 @@ const BudgetArchiveScreen = () => {
                             100,
                           );
 
-                    // Handle icon - can be local require() or remote URL
                     const iconSource =
                       typeof budget.icon === "string"
                         ? { uri: budget.icon }

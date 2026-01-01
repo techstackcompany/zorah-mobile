@@ -56,8 +56,7 @@ type RecentTransactionItem = {
   amount: number;
   timeAgo: string;
   type: "income" | "expense";
-  icon: ImageSource;
-  accent: string;
+
 };
 
 const currencies: CurrencyOption[] = [
@@ -117,31 +116,12 @@ const formatTimeAgo = (dateString?: string): string => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-// Helper function to get default icon and accent based on transaction type
-const getTransactionIcon = (
-  type: "credit" | "debit",
-): {
-  icon: ImageSource;
-  accent: string;
-} => {
-  if (type === "credit") {
-    return {
-      icon: require("@/assets/images/home/salary.png"),
-      accent: "#EEF5FF",
-    };
-  }
-  return {
-    icon: require("@/assets/images/home/shopping.png"),
-    accent: "#FDECEF",
-  };
-};
+;
 
-// Transform API transaction to UI transaction
 const transformTransactionForHome = (
   txn: WalletTransaction,
 ): RecentTransactionItem => {
   const isCredit = txn.type === "credit";
-  const { icon, accent } = getTransactionIcon(txn.type as "credit" | "debit");
   const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
 
   return {
@@ -157,8 +137,7 @@ const transformTransactionForHome = (
     amount,
     timeAgo: formatTimeAgo(txn.createdAt),
     type: isCredit ? "income" : "expense",
-    icon,
-    accent,
+  
   };
 };
 
