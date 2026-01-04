@@ -6,12 +6,7 @@ import { Image, ImageSource } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
 
-type CurrencyOption = {
-  code: string;
-  label: string;
-  symbol: string;
-  flag: ImageSource;
-};
+
 
 type SummaryCard = {
   id: string;
@@ -24,21 +19,17 @@ type SummaryCard = {
 type WalletBalanceCardProps = {
   formattedBalance: string;
   balanceHidden: boolean;
-  currency: CurrencyOption;
   balanceSubtitle: string;
   summaryCards: SummaryCard[];
   onToggleBalanceVisibility: () => void;
-  onCurrencyPress: () => void;
 };
 
 const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
   formattedBalance,
   balanceHidden,
-  currency,
   balanceSubtitle,
   summaryCards,
   onToggleBalanceVisibility,
-  onCurrencyPress,
 }) => {
   return (
     <View className="mt-6 rounded-3xl px-6 py-6">
@@ -50,11 +41,11 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
         Wallet Balance
       </Text>
       <View className="mt-3 flex-row items-center justify-between">
-        <View className="flex-row items-baseline gap-2">
+        <View >
+          <Pressable  className="flex-row items-baseline gap-2" hitSlop={10} onPress={onToggleBalanceVisibility}>
           <Text weight="bold" className="text-3xl">
             {formattedBalance}
           </Text>
-          <Pressable hitSlop={10} onPress={onToggleBalanceVisibility}>
             <Ionicons
               name={balanceHidden ? "eye-off-outline" : "eye-outline"}
               size={20}
@@ -62,20 +53,7 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
             />
           </Pressable>
         </View>
-        <Pressable
-          onPress={onCurrencyPress}
-          className="flex-row items-center gap-2 rounded-full bg-white px-3 py-2"
-        >
-          <Image
-            source={currency.flag}
-            style={{ width: 20, height: 20, borderRadius: 10 }}
-            contentFit="cover"
-          />
-          <Text weight="semibold" className="text-primary_400">
-            {currency.code}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color={COLORS.primary_400} />
-        </Pressable>
+
       </View>
       <View className="mt-2 flex-row items-center gap-2">
         <Ionicons name="arrow-up" size={16} color={COLORS.secondary_500} />
