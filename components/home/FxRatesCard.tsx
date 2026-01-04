@@ -28,10 +28,10 @@ const FxRatesCard: React.FC<FxRatesCardProps> = ({
         <Text weight="semibold" className="text-base">
           Fx Rates
         </Text>
-        <View className="flex-row items-center gap-2 rounded-full bg-secondary_100 px-3 py-1">
+        {/* <View className="flex-row items-center gap-2 rounded-full bg-secondary_100 px-3 py-1">
           <View className="h-2 w-2 rounded-full bg-secondary_500" />
           <Text className="text-xs text-secondary_500">Live</Text>
-        </View>
+        </View> */}
       </View>
 
       <View className="mt-4 rounded-2xl px-3 py-3">
