@@ -10,13 +10,21 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.onerendzina.zorah"
+      "bundleIdentifier": "com.onerendzina.zorah",
+      "entitlements": {
+        "aps-environment": "development"
+      },
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
+            "googleServicesFile": "./google-services.json",
+
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.onerendzina.zorah",
@@ -39,6 +47,7 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ],
+      "@react-native-firebase/app",
       [
         "expo-speech-recognition",
         {
@@ -47,6 +56,20 @@
           "androidSpeechServicePackages": [
             "com.google.android.googlequicksearchbox"
           ]
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "gradleProperties": {
+              "android.enableJetifier": "true"
+            }
+          },
+          "ios": {
+            "useFrameworks": "static",
+            "buildReactNativeFromSource": true
+          }
         }
       ],
       [

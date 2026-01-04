@@ -51,6 +51,7 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     error: pairsError,
     refetch: refetchPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
+  console.log('fxRatePairs', fxRatePairs)
   const converterRates = useMemo(() => {
     const rates: Record<string, number> = { NGN: 1 };
     if (usdRates?.conversion_rates) {
@@ -97,6 +98,7 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     error: historyError,
     refetch: refetchHistory,
   } = useGetRateHistoryQuery(trendBase, trendQuote);
+  console.log('rateHistory', rateHistory, JSON.stringify(historyError))
 
   const activeSeries = useMemo(() => {
     if (!rateHistory || rateHistory.length === 0) return [];

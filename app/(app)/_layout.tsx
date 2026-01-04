@@ -44,10 +44,6 @@ const AppLayout = () => {
           options={{ title: "Bills Reminder" }}
         />
         <Stack.Screen
-          name="tax-management/index"
-          options={{ title: "Tax Management" }}
-        />
-        <Stack.Screen
           name="bill-reminder/add-bill"
           options={{ title: "Add Bill" }}
         />
@@ -56,18 +52,6 @@ const AppLayout = () => {
 
         <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen
-          name="debt-tracker/index"
-          options={{ title: "Debt & Lending Tracker" }}
-        />
-        <Stack.Screen
-          name="debt-tracker/details"
-          options={{ title: "Debt Details" }}
-        />
-        <Stack.Screen
-          name="debt-tracker/record"
-          options={{ title: "Record Debt" }}
-        />
-        <Stack.Screen
           name="fund-wallet/index"
           options={{ title: "Fund Wallet" }}
         />
@@ -75,7 +59,6 @@ const AppLayout = () => {
           name="fund-wallet/bank-transfer"
           options={{ title: "Bank Transfer" }}
         />
-        <Stack.Screen name="esusu" options={{ headerShown: false }} />
         <Stack.Screen
           name="fund-wallet/bank-ussd"
           options={{ title: "Bank USSD" }}

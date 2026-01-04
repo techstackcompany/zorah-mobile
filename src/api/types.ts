@@ -293,42 +293,6 @@ export interface UpdateSavingsGoalRequest {
 }
 
 /* ---------------------------------------------
-   Esusu
-----------------------------------------------*/
-export interface CreateEsusuRequest {
-  name: string;
-  contributionAmount: number;
-  frequency: "daily" | "weekly" | "monthly" | (string & {});
-}
-
-export interface JoinEsusuRequest {
-  groupId: string;
-}
-
-export interface EsusuGroup extends CreateEsusuRequest {
-  id?: string;
-  members?: Record<string, unknown>[];
-  createdAt?: string;
-  updatedAt?: string;
-  [key: string]: unknown;
-}
-
-export interface ContributeToEsusuRequest {
-  groupId: string;
-  amount: number;
-}
-
-export interface EsusuPayoutHistoryItem {
-  id?: string;
-  groupId?: string;
-  memberId?: string;
-  amount?: number;
-  status?: string;
-  payoutDate?: string;
-  [key: string]: unknown;
-}
-
-/* ---------------------------------------------
    Wallets
 ----------------------------------------------*/
 export interface DepositFundsRequest {
@@ -351,9 +315,7 @@ export interface WalletTransaction {
     | "deposit"
     | "withdrawal"
     | "savings"
-    | "esusu"
     | "transfer"
-    | "esusu_contribution"
     | "savings_contribution"
     | "other";
   description?: string;

@@ -34,26 +34,6 @@ const featureItems: FeatureItem[] = [
     icon: require("@/assets/icons/black_market_fx.svg"),
   },
   {
-    id: "debt-tracker",
-    label: "Debt & Lending Tracker",
-    icon: require("@/assets/icons/debt-tracking.svg"),
-  },
-  {
-    id: "savings-circles",
-    label: "Savings Circles (Esusu/Ajo Support)",
-    icon: require("@/assets/icons/saving-circles.svg"),
-  },
-  {
-    id: "project-wallet",
-    label: "Project Wallet",
-    icon: require("@/assets/icons/project-bar.svg"),
-  },
-  {
-    id: "tax-management",
-    label: "Tax Management",
-    icon: require("@/assets/icons/tax-management.svg"),
-  },
-  {
     id: "bill-reminder",
     label: "Bill Reminder",
     icon: require("@/assets/icons/bill-reminder.svg"),
@@ -77,12 +57,6 @@ const MoreScreen = () => {
       router.push("/(app)/ai-assistant");
     } else if (feature.id === "black-market-fx") {
       router.push("/fxRates");
-    } else if (feature.id === "debt-tracker") {
-      router.push("/(app)/debt-tracker");
-    } else if (feature.id === "savings-circles") {
-      router.push("/esusu");
-    } else if (feature.id === "tax-management") {
-      router.push("/(app)/tax-management");
     } else if (feature.id === "bill-reminder") {
       router.push("/(app)/bill-reminder");
     } else if (feature.id === "notifications") {

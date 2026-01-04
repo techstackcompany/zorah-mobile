@@ -15,7 +15,7 @@ const DEFAULT_HISTORY_DAYS = 7;
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
  const apiClient: AxiosInstance  = axios.create({
-  baseURL: "https://fx-rates-api.onrender.com",
+  baseURL: "https://seal-app-jjgmw.ondigitalocean.app",
   headers: {
     Accept: "application/json",
   },

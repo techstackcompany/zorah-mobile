@@ -2,7 +2,6 @@ export * from "./useAiApi";
 export * from "./useAuthApi";
 export * from "./useBudgetApi";
 export * from "./useCategoriesApi";
-export * from "./useEsusuApi";
 export * from "./useExpensesApi";
 export * from "./useFxRatesApi";
 export * from "./useIncomeApi";

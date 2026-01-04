@@ -234,7 +234,7 @@ const BankTransferScreen = () => {
         closeIconColor="#FFFFFF"
       >
         <Text className="text-base text-textColor">
-          Share Esusu Information
+          Share Wallet Information
         </Text>
         <View className="mt-5 flex-row flex-wrap justify-between gap-y-4">
           {shareOptions.map((option) => (

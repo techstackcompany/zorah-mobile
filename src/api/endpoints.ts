@@ -12,9 +12,7 @@ export interface EndpointConfig {
   isExternal?: boolean;
 }
 
-type DynamicEndpoint<TArgs extends unknown[]> = (
-  ...args: TArgs
-) => EndpointConfig;
+
 
 export const API_ENDPOINTS = {
   auth: {
@@ -128,23 +126,6 @@ export const API_ENDPOINTS = {
     updateGoal: (goalId: string) => ({
       method: HttpMethod.PUT,
       path: `/savings/${goalId}`,
-    }),
-  },
-  esusu: {
-    createGroup: { method: HttpMethod.POST, path: "/esusu/create" },
-    joinGroup: { method: HttpMethod.POST, path: "/esusu/join" },
-    getGroup: (groupId: string) => ({
-      method: HttpMethod.GET,
-      path: `/esusu/${groupId}`,
-    }),
-    contribute: { method: HttpMethod.POST, path: "/esusu/contribute" },
-  },
-  esusuPayouts: {
-    process: { method: HttpMethod.POST, path: "/esusu/payouts/process" },
-    retry: { method: HttpMethod.POST, path: "/esusu/payouts/retry" },
-    history: (groupId: string) => ({
-      method: HttpMethod.GET,
-      path: `/esusu/payouts/${groupId}/history`,
     }),
   },
   wallet: {

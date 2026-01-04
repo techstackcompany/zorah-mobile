@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "204601401968",
+    "project_id": "zorah-e5958",
+    "storage_bucket": "zorah-e5958.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:204601401968:android:76d808c6997d201c168ab5",
+        "android_client_info": {
+          "package_name": "getzorah.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8uYpVYa5igTFNMBiDTjBDPVorKVrVOZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
