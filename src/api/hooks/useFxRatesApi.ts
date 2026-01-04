@@ -95,7 +95,7 @@ export const useGetFxRatePairsQuery = (
         .map((pair) => `${pair.base}:${pair.quote}`)
         .join(",");
 
-      const response = await apiClient.get<FxPairsResponse>(
+      const response = await apiClient.get(
         API_ENDPOINTS.fx.pairs.path,
         {
           params: { pairs: pairsParam },

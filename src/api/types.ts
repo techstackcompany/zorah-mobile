@@ -179,17 +179,17 @@ export interface Budget {
   user?: string;
   category: string;
   amount?: number;
-  Limit?: number; 
+  Limit?: number;
   period?: "weekly" | "monthly" | "yearly" | string;
   month?: number;
   year?: number;
   startDate?: string;
   endDate?: string;
   spent?: number;
-  totalSpent?: number; 
+  totalSpent?: number;
   remaining?: number;
-  percentageused?: string; 
-  status?: string; 
+  percentageused?: string;
+  status?: string;
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
@@ -377,22 +377,17 @@ export interface FxPairQuote {
   time_next_update_utc?: string;
 }
 
-export interface FxPairsResponse {
-  result: string;
-  pairs: {
-    base: string;
-    quote: string;
-    rate: number;
-    change?: number;
-  }[];
-}
+export type FxPairsResponse = FxRatePair[]
+ 
+
 
 export interface FxRatePair {
-  base: string;
-  quote: string;
-  rate: number;
-  change?: number;
-  conversionResult?: number;
+  base_code: string;
+  target_code: string;
+  conversion_rate: number;
+  change_percent: number;
+  time_last_update_utc: string;
+  time_next_update_utc: string;
 }
 
 export interface FxHistoricalData {
