@@ -1,4 +1,3 @@
-import CurrencySelectorModal from "@/components/home/CurrencySelectorModal";
 import FinancialTipCard from "@/components/home/FinancialTipCard";
 import FxRatesCard from "@/components/home/FxRatesCard";
 import QuickActions from "@/components/home/QuickActions";
@@ -11,6 +10,7 @@ import { useUserDisplayData } from "@/hooks/useUserDisplayData";
 import {
   formatCurrencyWithSymbol,
   formatCurrentDate,
+  formatTimeAgo,
   formatTransactionPurpose,
 } from "@/lib/utils";
 import {
@@ -23,7 +23,7 @@ import {
 import { FxRatePair, WalletTransaction } from "@/src/api/types";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
 type CurrencyOption = {
@@ -56,29 +56,14 @@ type RecentTransactionItem = {
   amount: number;
   timeAgo: string;
   type: "income" | "expense";
-
 };
 
-const currencies: CurrencyOption[] = [
-  {
-    code: "NGN",
-    label: "NGN - Nigerian (Naira)",
-    symbol: "₦",
-    flag: require("@/assets/icons/nigeria-flag-curved.svg"),
-  },
-  {
-    code: "CAD",
-    label: "CAD - Canadian (Dollar)",
-    symbol: "$",
-    flag: require("@/assets/icons/canada-flag-curved.svg"),
-  },
-  {
-    code: "GHS",
-    label: "GHS - Ghanaian (Cedi)",
-    symbol: "₵",
-    flag: require("@/assets/icons/ghana-flag-curved.svg"),
-  },
-];
+const NGN_CURRENCY: CurrencyOption = {
+  code: "NGN",
+  label: "NGN - Nigerian (Naira)",
+  symbol: "₦",
+  flag: require("@/assets/icons/nigeria-flag-curved.svg"),
+};
 
 const quickActions: QuickAction[] = [
   {
@@ -101,23 +86,6 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-// Helper function to format time ago
-const formatTimeAgo = (dateString?: string): string => {
-  if (!dateString) return "Just now";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return "Just now";
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-};
-
-;
-
 const transformTransactionForHome = (
   txn: WalletTransaction,
 ): RecentTransactionItem => {
@@ -137,16 +105,13 @@ const transformTransactionForHome = (
     amount,
     timeAgo: formatTimeAgo(txn.createdAt),
     type: isCredit ? "income" : "expense",
-  
   };
 };
 
 const HomeScreen = () => {
   const router = useRouter();
-  const [currency, setCurrency] = useState<CurrencyOption>(currencies[0]);
-  const [showCurrencySheet, setShowCurrencySheet] = useState(false);
+  const [currency] = useState<CurrencyOption>(NGN_CURRENCY);
   const [balanceHidden, setBalanceHidden] = useState(false);
-  const hasInitializedCurrency = useRef(false);
   const { initials, welcomeName } = useUserDisplayData();
   const {
     data: balanceData,
@@ -186,13 +151,13 @@ const HomeScreen = () => {
     error: fxPairsError,
     refetch: refetchFxPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
-
+  console.log("fxRatePairs", fxRatePairs);
   const fxPairLookup = useMemo(() => {
     const lookup: { [key: string]: FxRatePair } = {};
 
     if (fxRatePairs) {
       fxRatePairs.forEach((pair) => {
-        const key = `${pair.base}${pair.quote}`;
+        const key = `${pair.base_code}${pair.target_code}`;
         lookup[key] = pair;
       });
     }
@@ -205,11 +170,15 @@ const HomeScreen = () => {
       const key = `${pair.base}${pair.quote}`;
       const apiPair = fxPairLookup[key];
 
-      if (apiPair && typeof apiPair.rate === "number" && apiPair.rate > 0) {
+      if (
+        apiPair &&
+        typeof apiPair.conversion_rate === "number" &&
+        apiPair.conversion_rate > 0
+      ) {
         return {
           ...pair,
-          value: apiPair.rate,
-          change: apiPair.change ?? 0,
+          value: apiPair.conversion_rate,
+          change: apiPair.change_percent ?? 0,
         };
       }
 
@@ -225,21 +194,6 @@ const HomeScreen = () => {
     const balance = balanceData?.balance ?? 0;
     return typeof balance === "number" ? balance : 0;
   }, [balanceData]);
-
-  useEffect(() => {
-    if (
-      balanceData?.currency &&
-      !isLoadingBalance &&
-      !hasInitializedCurrency.current
-    ) {
-      const currencyCode = balanceData.currency;
-      const apiCurrencyOption = currencies.find((c) => c.code === currencyCode);
-      if (apiCurrencyOption) {
-        setCurrency(apiCurrencyOption);
-        hasInitializedCurrency.current = true;
-      }
-    }
-  }, [balanceData?.currency, isLoadingBalance]);
 
   const formattedBalance = useMemo(() => {
     if (balanceHidden) {
@@ -297,10 +251,6 @@ const HomeScreen = () => {
   const balanceSubtitle = "12% From Last Month";
   const currentDate = formatCurrentDate();
 
-  const handleCurrencySelect = (option: CurrencyOption) => {
-    setCurrency(option);
-    setShowCurrencySheet(false);
-  };
   const handleQuickActionPress = (action: QuickAction) => {
     switch (action.id) {
       case "expense-income":
@@ -371,13 +321,11 @@ const HomeScreen = () => {
               <WalletBalanceCard
                 formattedBalance={formattedBalance}
                 balanceHidden={balanceHidden}
-                currency={currency}
                 balanceSubtitle={balanceSubtitle}
                 summaryCards={summaryCards}
                 onToggleBalanceVisibility={() =>
                   setBalanceHidden((prev) => !prev)
                 }
-                onCurrencyPress={() => setShowCurrencySheet(true)}
               />
             </View>
             <View className="bg-lightMuted px-6">
@@ -401,14 +349,6 @@ const HomeScreen = () => {
             </View>
           </ScrollView>
         </View>
-
-        <CurrencySelectorModal
-          visible={showCurrencySheet}
-          currencies={currencies}
-          selectedCurrency={currency}
-          onClose={() => setShowCurrencySheet(false)}
-          onSelect={handleCurrencySelect}
-        />
       </MainContainer>
     </>
   );
