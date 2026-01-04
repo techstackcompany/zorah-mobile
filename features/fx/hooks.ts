@@ -51,7 +51,7 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     error: pairsError,
     refetch: refetchPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
-  console.log('fxRatePairs', fxRatePairs)
+  
   const converterRates = useMemo(() => {
     const rates: Record<string, number> = { NGN: 1 };
     if (usdRates?.conversion_rates) {
@@ -66,7 +66,7 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     const lookup: Record<string, FxRatePair> = {} as any;
     if (fxRatePairs) {
       fxRatePairs.forEach((pair) => {
-        const key = `${pair.base}${pair.quote}`;
+        const key = `${pair.base_code}${pair.target_code}`;
         lookup[key] = pair as FxRatePair;
       });
     }
@@ -77,11 +77,15 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     return FX_PAIRS.map((pair) => {
       const key = `${pair.base}${pair.quote}`;
       const apiPair = fxPairLookup[key];
-      if (apiPair && typeof apiPair.rate === "number" && apiPair.rate > 0) {
+      if (
+        apiPair &&
+        typeof apiPair.conversion_rate === "number" &&
+        apiPair.conversion_rate > 0
+      ) {
         return {
           ...pair,
-          value: apiPair.rate,
-          change: apiPair.change ?? 0,
+          value: apiPair.conversion_rate,
+          change: apiPair.change_percent ?? 0,
         } as any;
       }
       return { ...pair, value: 0, change: 0 } as any;
@@ -98,7 +102,6 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     error: historyError,
     refetch: refetchHistory,
   } = useGetRateHistoryQuery(trendBase, trendQuote);
-  console.log('rateHistory', rateHistory, JSON.stringify(historyError))
 
   const activeSeries = useMemo(() => {
     if (!rateHistory || rateHistory.length === 0) return [];
