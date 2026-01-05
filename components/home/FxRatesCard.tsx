@@ -37,7 +37,7 @@ const FxRatesCard: React.FC<FxRatesCardProps> = ({
       <View className="mt-4 rounded-2xl px-3 py-3">
         {isLoading ? (
           <ActivityIndicator size="small" color={COLORS.primary_400} />
-        ) : error ? (
+        ) : error && rates.length === 0 ? (
           <View className="py-6">
             <Text className="text-center text-sm text-red-500">
               Failed to load exchange rates

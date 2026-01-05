@@ -4,19 +4,16 @@ import Button from "@/components/ui/Button";
 import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
-import { formatCurrency } from "@/constants/investments";
+import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { cn } from "@/lib/utils";
-import { useCreateSavingsGoalMutation } from "@/src/api/hooks";
+import {
+  useCreateSavingsGoalMutation,
+  useGetCategoriesQuery,
+} from "@/src/api/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -31,35 +28,23 @@ const SavingsGoalCreateScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const { keyboardHeight } = useKeyboardHeight();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [targetDate, setTargetDate] = useState("");
-  
   const [note, setNote] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const timeOutId = useRef<number | null>(null)
+  const timeOutId = useRef<number | null>(null);
 
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useGetCategoriesQuery("savings");
 
-    const showSubscription = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
+  const categories = useMemo(() => {
+    if (!categoriesData) return [];
+    return categoriesData;
+  }, [categoriesData]);
 
   const createGoalMutation = useCreateSavingsGoalMutation({
     onSuccess: (response) => {
@@ -91,11 +76,6 @@ const SavingsGoalCreateScreen = () => {
       });
     },
   });
-
-  const formattedAmount = useMemo(
-    () => (amount ? formatCurrency(Number(amount)) : "₦0.00"),
-    [amount],
-  );
 
   const handleSubmit = useCallback(() => {
     Keyboard.dismiss();
@@ -211,7 +191,7 @@ const SavingsGoalCreateScreen = () => {
             <View className="mt-6">
               <Text className="text-sm text-textColor">Goal Category</Text>
               <CategorySelector
-                categories={[]}
+                categories={categoriesData}
                 selectedKey={category}
                 onSelect={setCategory}
               />
@@ -246,7 +226,7 @@ const SavingsGoalCreateScreen = () => {
                 numberOfLines={4}
                 onFocus={() => {
                   setFocusedField("note");
-                  if(timeOutId.current) clearTimeout(timeOutId.current)
+                  if (timeOutId.current) clearTimeout(timeOutId.current);
                   timeOutId.current = setTimeout(() => {
                     scrollViewRef.current?.scrollToEnd({ animated: true });
                   }, 100);

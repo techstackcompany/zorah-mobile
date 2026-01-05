@@ -2,6 +2,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { CATEGORY_ICON_MAP } from "@/features/expense-income/utils";
 import { cn, formatCurrency, formatTransactionPurpose } from "@/lib/utils";
 import { useGetWalletTransactionsQuery } from "@/src/api/hooks";
 import { WalletTransaction } from "@/src/api/types";
@@ -29,7 +30,7 @@ type TransactionItem = {
   timeAgo: string;
   amount: number;
   type: TransactionType;
- 
+  category?: string;
 };
 
 type TransactionSection = {
@@ -159,7 +160,6 @@ const formatSectionDate = (dateString?: string): string => {
   }
 };
 
-
 const transformTransactionForUI = (
   txn: WalletTransaction,
 ): TransactionItem & { createdAt?: string } => {
@@ -167,7 +167,7 @@ const transformTransactionForUI = (
   const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
 
   const title =
-    txn.description ||
+    txn.metadata?.description ||
     (txn.purpose
       ? formatTransactionPurpose(txn.purpose)
       : isCredit
@@ -182,7 +182,7 @@ const transformTransactionForUI = (
     timeAgo: formatTimeAgo(txn.createdAt),
     amount,
     type: isCredit ? "income" : "expense",
-   
+    category: txn.metadata?.category,
     createdAt: txn.createdAt,
   };
 };
@@ -212,7 +212,7 @@ const groupTransactionsByDate = (
         id: dateKey,
         title: formatSectionDate(firstDate),
         items: items
-          .map(({ createdAt, ...item }) => item) 
+          .map(({ createdAt, ...item }) => item)
           .sort((a, b) => {
             const aTime = a.timeAgo;
             const bTime = b.timeAgo;
@@ -569,51 +569,73 @@ const TransactionHistoryScreen = () => {
                     </View>
 
                     <View className="gap-3">
-                      {section.items.map((item) => (
-                        <Pressable
-                          key={item.id}
-                          onPress={() => handleTransactionPress(item.id)}
-                          className="flex-row items-center rounded-3xl bg-white px-4 py-4"
-                        >
-                        
-                          <View className="flex-1 pe-2">
-                            <Text
-                              weight="semibold"
-                              numberOfLines={1}
-                              className="text-lg capitalize"
+                      {section.items.map((item) => {
+                        const categoryIcon =
+                          CATEGORY_ICON_MAP[item.category || ""] ||
+                          "wallet-outline";
+                        const iconBgColor =
+                          item.type === "income" ? "#E5F6F0" : "#FFF1DD";
+                        const iconColor =
+                          item.type === "income"
+                            ? COLORS.secondary_500
+                            : "#D14343";
+
+                        return (
+                          <Pressable
+                            key={item.id}
+                            onPress={() => handleTransactionPress(item.id)}
+                            className="flex-row items-center rounded-3xl bg-white px-4 py-4"
+                          >
+                            <View
+                              className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+                              style={{ backgroundColor: iconBgColor }}
                             >
-                              {item.title}
-                            </Text>
-                            <Text className="mt-1 text-sm text-textColor/60">
-                              {item.account} • {item.timeAgo}
-                            </Text>
-                            {item.description ? (
+                              <Ionicons
+                                name={categoryIcon}
+                                size={20}
+                                color={iconColor}
+                              />
+                            </View>
+
+                            <View className="flex-1 pe-2">
                               <Text
-                                italic
-                                className="mt-1 text-xs text-textColor/60"
+                                weight="semibold"
+                                numberOfLines={1}
+                                className="text-lg capitalize"
                               >
-                                {item.description}
+                                {item.title}
                               </Text>
-                            ) : null}
-                          </View>
-                          <View className="items-end">
-                            <Text
-                              weight="semibold"
-                              className={cn(
-                                "text-base",
-                                item.type === "income"
-                                  ? "text-secondary_500"
-                                  : "text-[#D14343]",
-                              )}
-                            >
-                              {formatAmountWithSign(item.amount)}
-                            </Text>
-                            <Text className="mt-1 text-xs text-textColor/40">
-                              {item.type === "income" ? "Income" : "Expense"}
-                            </Text>
-                          </View>
-                        </Pressable>
-                      ))}
+                              <Text className="mt-1 text-sm text-textColor/60">
+                                {item.account} • {item.timeAgo}
+                              </Text>
+                              {item.description ? (
+                                <Text
+                                  italic
+                                  className="mt-1 text-xs text-textColor/60"
+                                >
+                                  {item.description}
+                                </Text>
+                              ) : null}
+                            </View>
+                            <View className="items-end">
+                              <Text
+                                weight="semibold"
+                                className={cn(
+                                  "text-base",
+                                  item.type === "income"
+                                    ? "text-secondary_500"
+                                    : "text-[#D14343]",
+                                )}
+                              >
+                                {formatAmountWithSign(item.amount)}
+                              </Text>
+                              <Text className="mt-1 text-xs text-textColor/40">
+                                {item.type === "income" ? "Income" : "Expense"}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
                     </View>
                   </View>
                 ))

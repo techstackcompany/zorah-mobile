@@ -1,3 +1,5 @@
+import { ImageSource } from "expo-image";
+
 export interface ApiEnvelope<T = unknown> {
   success?: boolean;
   message?: string;
@@ -24,9 +26,12 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-export interface LoginUserResponse extends ApiEnvelope<UserProfile> {
-  accessToken: string;
-  refreshToken: string;
+export interface LoginUserResponse extends ApiEnvelope<AuthTokens> {
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface RegisterUserResponse {
@@ -38,15 +43,13 @@ export interface RegisterUserResponse {
 }
 
 export interface UserProfile {
-  _id?: string;
-  id?: string;
+  _id: string;
   name?: string;
   email?: string;
   phoneNumber?: string;
   hasPin?: boolean;
   pin?: string;
   biometricEnabled?: boolean;
-  biometricsEnabled?: boolean; // alias for compatibility
   KycStatus?: "unverified" | "pending" | "verified" | (string & {});
   createdAt?: string;
   updatedAt?: string;
@@ -77,7 +80,9 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
-export interface RefreshTokenResponse extends AuthTokens {}
+export interface RefreshTokenResponse {
+  accessToken: string;
+}
 
 /* ---------------------------------------------
    Expenses
@@ -99,11 +104,6 @@ export interface UpdateExpenseRequest {
 }
 
 export interface Expense extends AddExpenseRequest {
-  _id?: string;
-  id?: string;
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
   [key: string]: unknown;
 }
 
@@ -318,8 +318,13 @@ export interface WalletTransaction {
     | "transfer"
     | "savings_contribution"
     | "other";
-  description?: string;
   reference: string;
+  status: "pending" | "successful" | "failed" | string;
+  metadata?: {
+    category?: string;
+    description?: string;
+    [key: string]: unknown;
+  };
   createdAt?: string;
   updatedAt?: string;
   user: string;
@@ -340,22 +345,17 @@ export interface WalletDetails {
 ----------------------------------------------*/
 export type CategoryType = "income" | "expense" | "budget" | "savings";
 
-export interface CategorySubcategory {
+export interface CategoryResponseItem {
   _id: string;
   name: string;
   image: string;
 }
 
-export interface Category {
-  _id: string;
-  name: string;
-  type: CategoryType;
-  image: string;
-  subcategories: CategorySubcategory[];
-  createdAt?: string;
-  updatedAt?: string;
-  __v?: number;
-}
+export type CategoryItem<K extends string = string> = {
+  key: K;
+  label: string;
+  icon: ImageSource | string;
+};
 
 /* ---------------------------------------------
    FX Rates
@@ -377,9 +377,7 @@ export interface FxPairQuote {
   time_next_update_utc?: string;
 }
 
-export type FxPairsResponse = FxRatePair[]
- 
-
+export type FxPairsResponse = FxRatePair[];
 
 export interface FxRatePair {
   base_code: string;

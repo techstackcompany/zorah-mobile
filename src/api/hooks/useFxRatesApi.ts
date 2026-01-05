@@ -5,7 +5,6 @@ import { API_ENDPOINTS } from "../endpoints";
 import {
   FxHistoricalData,
   FxPairQuote,
-  FxPairsResponse,
   FxRatePair,
   FxRateResponse,
 } from "../types";
@@ -20,6 +19,8 @@ const ONE_DAY = 1000 * 60 * 60 * 24;
     Accept: "application/json",
   },
 });
+
+
 /**
  * Fetch current exchange rates for a base currency from the proxy API
  */

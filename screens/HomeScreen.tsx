@@ -95,13 +95,13 @@ const transformTransactionForHome = (
   return {
     id: txn._id,
     title:
-      txn.description ||
+      txn.metadata?.description ||
       (txn.purpose
         ? formatTransactionPurpose(txn.purpose)
         : isCredit
           ? "Credit"
           : "Debit"),
-    category: isCredit ? "Income" : "Expense",
+    category: txn.metadata?.category || (isCredit ? "Income" : "Expense"),
     amount,
     timeAgo: formatTimeAgo(txn.createdAt),
     type: isCredit ? "income" : "expense",
@@ -279,7 +279,6 @@ const HomeScreen = () => {
     return transactions.map(transformTransactionForHome).slice(0, 4);
   }, [transactionsData]);
 
-  // Show empty state only when there are no transactions
   const shouldShowEmpty = useMemo(() => {
     return recentTransactions.length === 0;
   }, [recentTransactions.length]);

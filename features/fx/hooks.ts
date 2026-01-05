@@ -227,7 +227,6 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
 
   const fromFlag = fromCurrency.flag;
   const toFlag = toCurrency.flag;
-
   const lastUpdatedLabel = usdRates?.time_last_update_utc
     ? new Date(usdRates.time_last_update_utc).toLocaleTimeString("en-US", {
         hour: "2-digit",

@@ -15,13 +15,27 @@ import CollapsibleCard from "@/components/ui/CollapsibleCard";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { ChartSegment, PeriodType, TabKey } from "@/features/expense-income/types";
-import { buildExpenseSummaryFromList, CATEGORY_BG_COLOR_MAP, CATEGORY_COLOR_MAP, CATEGORY_ICON_MAP, formatCurrency, formatExpenseDate, getBgColorForCategory, getColorForCategory, getTrackColorForCategory } from "@/features/expense-income/utils";
+import {
+  ChartSegment,
+  PeriodType,
+  TabKey,
+} from "@/features/expense-income/types";
+import {
+  buildExpenseSummaryFromList,
+  CATEGORY_BG_COLOR_MAP,
+  CATEGORY_COLOR_MAP,
+  CATEGORY_ICON_MAP,
+  formatCurrency,
+  formatExpenseDate,
+  getBgColorForCategory,
+  getColorForCategory,
+  getTrackColorForCategory,
+} from "@/features/expense-income/utils";
 import { capitalizeWord } from "@/lib/utils";
 import {
   useGetDailyExpensesQuery,
-  useGetExpenseSummaryQuery,
   useGetExpensesQuery,
+  useGetExpenseSummaryQuery,
   useGetIncomesQuery,
   useGetMonthlyExpensesQuery,
 } from "@/src/api/hooks";
@@ -173,12 +187,10 @@ const ExpensePlanningScreen = () => {
 
   const emptyStateContent = EMPTY_STATE_MESSAGES[activeTab];
 
-  // Transform API summary data to UI format
   const expensesArray = useMemo(() => {
     if (activeTab !== "expense") return [];
-    return Array.isArray(expensesData)
-      ? expensesData
-      : (expensesData as any)?.data || [];
+    if (!expensesData) return [];
+    return Array.isArray(expensesData?.data) ? expensesData.data : [];
   }, [expensesData, activeTab]);
 
   const monthOptions = useMemo<MonthOption[]>(() => {
@@ -240,10 +252,59 @@ const ExpensePlanningScreen = () => {
     });
   }, [expensesArray, selectedMonthKey]);
 
-
-
   const currentSummary = useMemo(() => {
     if (activeTab === "expense") {
+      if (expenseSummaryData?.data) {
+        const summaryData = expenseSummaryData.data;
+        const categoryArray = (summaryData as any).byCategory || summaryData;
+
+        if (Array.isArray(categoryArray) && categoryArray.length > 0) {
+          const total = categoryArray.reduce(
+            (sum, item) => sum + (item.total || 0),
+            0,
+          );
+
+          const labelPositions = [
+            { bottom: 36, left: 24 },
+            { top: 42, right: 36 },
+            { top: 62, left: 26 },
+            { bottom: 58, right: 26 },
+          ];
+
+          const segments: ChartSegment[] = categoryArray
+            .sort((a, b) => (b.total || 0) - (a.total || 0))
+            .map((item, index) => {
+              const categoryName = item.category || "Other";
+              const amount = item.total || 0;
+              const percentage = total > 0 ? (amount / total) * 100 : 0;
+              const labelPosition =
+                labelPositions[index % labelPositions.length] || {};
+              const categoryColor = getColorForCategory(categoryName, index);
+
+              return {
+                key: `${categoryName}-${index}`,
+                label: capitalizeWord(categoryName),
+                percentage: Math.round(percentage),
+                color: categoryColor,
+                trackColor: getTrackColorForCategory(
+                  categoryName,
+                  categoryColor,
+                ),
+                icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
+                iconBackground: getBgColorForCategory(
+                  categoryName,
+                  categoryColor,
+                ),
+                labelPosition,
+                amount,
+              };
+            });
+
+          return { total, segments };
+        }
+      }
+
+      // Fallback to building from filtered expenses list
       return buildExpenseSummaryFromList(filteredExpenses);
     }
 
@@ -261,14 +322,13 @@ const ExpensePlanningScreen = () => {
           categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
         });
 
-        // Calculate total
         const total = Array.from(categoryMap.values()).reduce(
           (sum, amount) => sum + amount,
           0,
         );
 
         const segments: ChartSegment[] = Array.from(categoryMap.entries())
-          .sort((a, b) => b[1] - a[1]) 
+          .sort((a, b) => b[1] - a[1])
           .map(([categoryName, amount], index) => {
             const percentage = total > 0 ? (amount / total) * 100 : 0;
 
@@ -281,15 +341,11 @@ const ExpensePlanningScreen = () => {
             const labelPosition =
               labelPositions[index % labelPositions.length] || {};
 
-         
-         
-
             const categoryColor = getColorForCategory(categoryName, index);
 
             return {
               key: `${categoryName}-${index}`,
-              label:
-                capitalizeWord(categoryName),
+              label: capitalizeWord(categoryName),
               percentage: Math.round(percentage),
               color: categoryColor,
               trackColor: getTrackColorForCategory(categoryName, categoryColor),
@@ -314,7 +370,7 @@ const ExpensePlanningScreen = () => {
       total: 0,
       segments: [],
     };
-  }, [activeTab, buildExpenseSummaryFromList, filteredExpenses, incomesData]);
+  }, [activeTab, expenseSummaryData, filteredExpenses, incomesData]);
 
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
@@ -340,17 +396,13 @@ const ExpensePlanningScreen = () => {
     });
   }, [currentSummary]);
 
-  // Get expenses array for ExpenseList component
-  // Get incomes array for IncomeList component (reusing ExpenseList)
-  // Transform income data to match ExpenseItem format
+
   const incomesArray = useMemo(() => {
     if (activeTab !== "income") return [];
     const rawIncomes = Array.isArray(incomesData?.data) ? incomesData.data : [];
 
-    // Transform Income to ExpenseItem format (they're similar)
     return rawIncomes.map((income: any) => {
       const category = income.category || "Other";
-      // Capitalize the category name
       const capitalizedCategory =
         category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
 
@@ -360,7 +412,7 @@ const ExpensePlanningScreen = () => {
         amount: income.amount || 0,
         category: capitalizedCategory,
         description: income.description,
-        paymentMethod: income.source, // Income uses "source" instead of "paymentMethod"
+        paymentMethod: income.source,
         date: income.date || income.createdAt,
         createdAt: income.createdAt,
         updatedAt: income.updatedAt,

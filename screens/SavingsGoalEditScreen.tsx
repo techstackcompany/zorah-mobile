@@ -44,7 +44,6 @@ const SavingsGoalEditScreen = () => {
     error: goalError,
   } = useGetSavingsGoalQuery(id);
 
-  // Populate form when goal data is loaded
   useEffect(() => {
     if (goalData?.data) {
       const goal = goalData.data;
@@ -52,7 +51,6 @@ const SavingsGoalEditScreen = () => {
       setAmount(goal.targetAmount?.toString() || "");
       setNote(goal.description || "");
 
-      // Format deadline from ISO to DD/MM/YY for DatePickerField
       if (goal.deadline) {
         try {
           const date = new Date(goal.deadline);
@@ -83,12 +81,7 @@ const SavingsGoalEditScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.log("=== UPDATE SAVINGS GOAL ERROR ===");
-      console.log("Error object:", error);
-      console.log("Error message:", error.message);
-      console.log("Error status:", error.status);
-      console.log("Error data:", error.data);
-      console.log("========================\n");
+    
 
       Toast.show({
         type: "error",
@@ -139,37 +132,22 @@ const SavingsGoalEditScreen = () => {
     }
 
     const numericAmount = Number(amount);
-
-    // Format date to YYYY-MM-DD
-    // DatePickerField returns DD/MM/YY format
     let formattedDate = targetDate;
     if (targetDate.includes("/")) {
       const [day, month, yearStr] = targetDate.split("/");
-      // Handle 2-digit year (YY) - assume 20XX for years 00-99
       const fullYear =
         yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
     const payload = {
-      title: name.trim(), // Map 'name' to 'title' for API
+      title: name.trim(), 
       targetAmount: numericAmount,
       deadline: formattedDate,
       description: note.trim() || undefined,
     };
 
-    console.log("=== UPDATE SAVINGS GOAL REQUEST ===");
-    console.log("Goal ID:", id);
-    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
-    console.log("Original form values:", {
-      name,
-      amount,
-      category,
-      targetDate,
-      note,
-    });
-    console.log("Formatted date:", formattedDate);
-    console.log("========================\n");
+   
 
     updateGoalMutation.mutate(payload);
   }, [id, name, amount, targetDate, note, updateGoalMutation]);

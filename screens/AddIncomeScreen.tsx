@@ -41,7 +41,6 @@ const AddIncomeScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
 
-  // Fetch categories from API
   const {
     data: categoriesData,
     isLoading: isCategoriesLoading,
@@ -50,14 +49,14 @@ const AddIncomeScreen = () => {
 
   // Map API categories to UI format
   const incomeCategories = useMemo<IncomeCategory[]>(() => {
-    if (!categoriesData?.data?.subcategories) {
+    if (!categoriesData) {
       return [];
     }
 
-    return categoriesData.data.subcategories.map((subcategory) => ({
+    return categoriesData.map((subcategory) => ({
       key: subcategory.name,
       label: subcategory.name,
-      icon: subcategory.image || "", // Use API image URL
+      icon: subcategory.image || "", 
     }));
   }, [categoriesData]);
 

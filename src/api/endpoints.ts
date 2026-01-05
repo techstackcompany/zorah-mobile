@@ -12,8 +12,6 @@ export interface EndpointConfig {
   isExternal?: boolean;
 }
 
-
-
 export const API_ENDPOINTS = {
   auth: {
     register: { method: HttpMethod.POST, path: "/auth/register" },
@@ -134,11 +132,6 @@ export const API_ENDPOINTS = {
     withdraw: { method: HttpMethod.POST, path: "/wallet/withdraw" },
     balance: { method: HttpMethod.GET, path: "/wallet/balance" },
     transactions: { method: HttpMethod.GET, path: "/wallet/transactions" },
-    healthCheck: {
-      method: HttpMethod.GET,
-      path: "http://13.48.253.14:4000/api/v1",
-      isExternal: true,
-    },
   },
   categories: {
     getCategories: (type: string) => ({
@@ -157,10 +150,6 @@ export const API_ENDPOINTS = {
   },
   ai: {
     ask: { method: HttpMethod.POST, path: "/ai/ask" },
-    transcribeExpense: {
-      method: HttpMethod.POST,
-      path: "/ai/transcribe-expense",
-    },
   },
 } as const;
 

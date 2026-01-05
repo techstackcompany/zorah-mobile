@@ -1,14 +1,9 @@
 import { cn } from "@/lib/utils";
-import { Image, ImageSource } from "expo-image";
+import { CategoryItem } from "@/src/api/types";
+import { Image } from "expo-image";
 import React from "react";
 import { FlatList, Pressable, View } from "react-native";
 import Text from "./Text";
-
-type CategoryItem<K extends string> = {
-  key: K;
-  label: string;
-  icon: ImageSource | string; // Support both local images and remote URLs
-};
 
 type CategorySelectorProps<K extends string> = {
   categories: readonly CategoryItem<K>[];
@@ -72,5 +67,5 @@ const CategorySelector = <K extends string>({
   );
 };
 
-export type { CategoryItem, CategorySelectorProps };
+export type { CategorySelectorProps };
 export default CategorySelector;

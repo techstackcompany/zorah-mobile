@@ -1,6 +1,8 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { CATEGORY_ICON_MAP } from "@/features/expense-income/utils";
 import { cn } from "@/lib/utils";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -68,6 +70,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                 transaction.type === "income"
                   ? COLORS.secondary_500
                   : "#D14343";
+
+              // Get icon for category
+              const categoryIcon =
+                CATEGORY_ICON_MAP[transaction.category] || "wallet-outline";
+              const iconBgColor =
+                transaction.type === "income" ? "#E5F6F0" : "#FFF1DD";
+
               return (
                 <View
                   key={transaction.id}
@@ -77,15 +86,26 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                       "border-b border-grayLight",
                   )}
                 >
+                  <View
+                    className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+                    style={{ backgroundColor: iconBgColor }}
+                  >
+                    <Ionicons
+                      name={categoryIcon}
+                      size={20}
+                      color={amountColor}
+                    />
+                  </View>
+
                   <View className="flex-1">
-                    <Text weight="semibold" className="text-sm capitalize">
+                    <Text weight="semibold" className="text-sm capitalize" numberOfLines={1}>
                       {transaction.title}
                     </Text>
                     <Text className="mt-1 text-xs text-textColor/60">
                       {transaction.category}
                     </Text>
                   </View>
-                  <View className="items-end">
+                  <View className="items-end ms-5">
                     <Text
                       weight="semibold"
                       className="text-sm"
