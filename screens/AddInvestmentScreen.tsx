@@ -18,6 +18,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
 const AddInvestmentScreen = () => {
   const router = useRouter();
@@ -29,8 +30,8 @@ const AddInvestmentScreen = () => {
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [typeModalVisible, setTypeModalVisible] = useState(false);
-  const [providerModalVisible, setProviderModalVisible] = useState(false);
+  const typeModalVisible = useSharedValue(false);
+  const providerModalVisible = useSharedValue(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = useCallback(() => {
@@ -93,7 +94,7 @@ const AddInvestmentScreen = () => {
               <Text className="text-sm text-textColor/70">Investment Type</Text>
               <Pressable
                 onPress={() => {
-                  setTypeModalVisible(true);
+                  typeModalVisible.value = true;
                   setFocusedField("investmentType");
                 }}
                 className={cn(
@@ -129,7 +130,7 @@ const AddInvestmentScreen = () => {
               </Text>
               <Pressable
                 onPress={() => {
-                  setProviderModalVisible(true);
+                  providerModalVisible.value = true;
                   setFocusedField("provider");
                 }}
                 className={cn(
@@ -237,9 +238,9 @@ const AddInvestmentScreen = () => {
       </KeyboardAvoidingView>
 
       <SlideUpModal
-        visible={typeModalVisible}
+        isOpen={typeModalVisible}
         onClose={() => {
-          setTypeModalVisible(false);
+          typeModalVisible.value = false;
           setFocusedField(null);
         }}
         title="Investment Type"
@@ -255,7 +256,7 @@ const AddInvestmentScreen = () => {
                 key={type.id}
                 onPress={() => {
                   setInvestmentType(type.label);
-                  setTypeModalVisible(false);
+                  typeModalVisible.value = false;
                   setFocusedField(null);
                 }}
                 accessibilityRole="button"
@@ -282,9 +283,9 @@ const AddInvestmentScreen = () => {
       </SlideUpModal>
 
       <SlideUpModal
-        visible={providerModalVisible}
+        isOpen={providerModalVisible}
         onClose={() => {
-          setProviderModalVisible(false);
+          providerModalVisible.value = false;
           setFocusedField(null);
         }}
         title="Select Provider"
@@ -305,7 +306,7 @@ const AddInvestmentScreen = () => {
                       key={option.id}
                       onPress={() => {
                         setProvider(option.label);
-                        setProviderModalVisible(false);
+                        providerModalVisible.value = false;
                         setFocusedField(null);
                       }}
                       accessibilityRole="button"

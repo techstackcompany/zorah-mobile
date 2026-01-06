@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
+import { SharedValue } from "react-native-reanimated";
 
 type CurrencyOption = {
   code: string;
@@ -14,7 +15,7 @@ type CurrencyOption = {
 };
 
 type CurrencySelectorModalProps = {
-  visible: boolean;
+  isOpen: SharedValue<boolean>;
   currencies: CurrencyOption[];
   selectedCurrency: CurrencyOption;
   onClose: () => void;
@@ -22,7 +23,7 @@ type CurrencySelectorModalProps = {
 };
 
 const CurrencySelectorModal: React.FC<CurrencySelectorModalProps> = ({
-  visible,
+  isOpen,
   currencies,
   selectedCurrency,
   onClose,
@@ -30,7 +31,7 @@ const CurrencySelectorModal: React.FC<CurrencySelectorModalProps> = ({
 }) => {
   return (
     <SlideUpModal
-      visible={visible}
+      isOpen={isOpen}
       onClose={onClose}
       title="Currency"
       headerBackgroundColor={COLORS.primary_400}

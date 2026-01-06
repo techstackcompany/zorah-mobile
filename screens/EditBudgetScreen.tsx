@@ -23,6 +23,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type BudgetPeriodKey = "this_week" | "this_month" | "this_year" | "custom";
@@ -268,8 +269,8 @@ const EditBudgetScreen = () => {
     return "this_month";
   });
   const [selectedRange, setSelectedRange] = useState<DateRange>(initialRange);
-  const [isPeriodModalVisible, setIsPeriodModalVisible] = useState(false);
-  const [isCustomModalVisible, setIsCustomModalVisible] = useState(false);
+  const isPeriodModalVisible = useSharedValue(false);
+  const isCustomModalVisible = useSharedValue(false);
   const [customRangeDraft, setCustomRangeDraft] = useState<OptionalDateRange>({
     start: null,
     end: null,
@@ -337,19 +338,19 @@ const EditBudgetScreen = () => {
 
   const handleSelectPeriod = (key: BudgetPeriodKey) => {
     if (key === "custom") {
-      setIsPeriodModalVisible(false);
+      isPeriodModalVisible.value = false;
       setCustomRangeDraft({
         start: selectedRange.start,
         end: selectedRange.end,
       });
-      setIsCustomModalVisible(true);
+      isCustomModalVisible.value = true;
       return;
     }
 
     const range = getPresetRange(key);
     setSelectedRange(range);
     setPeriodKey(key);
-    setIsPeriodModalVisible(false);
+    isPeriodModalVisible.value = false;
   };
 
   const handleApplyCustomRange = () => {
@@ -367,7 +368,7 @@ const EditBudgetScreen = () => {
       end: new Date(end),
     });
     setPeriodKey("custom");
-    setIsCustomModalVisible(false);
+    isCustomModalVisible.value = false;
   };
 
   const handleSubmit = () => {
@@ -497,7 +498,7 @@ const EditBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Period</Text>
                 <Pressable
-                  onPress={() => setIsPeriodModalVisible(true)}
+                  onPress={() => (isPeriodModalVisible.value = true)}
                   className="mt-2 flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-4"
                 >
                   <Text
@@ -530,8 +531,8 @@ const EditBudgetScreen = () => {
         </View>
 
         <SlideUpModal
-          visible={isPeriodModalVisible}
-          onClose={() => setIsPeriodModalVisible(false)}
+          isOpen={isPeriodModalVisible}
+          onClose={() => (isPeriodModalVisible.value = false)}
           title="Budget Period"
           headerTextColor="white"
         >
@@ -575,8 +576,8 @@ const EditBudgetScreen = () => {
         </SlideUpModal>
 
         <SlideUpModal
-          visible={isCustomModalVisible}
-          onClose={() => setIsCustomModalVisible(false)}
+          isOpen={isCustomModalVisible}
+          onClose={() => (isCustomModalVisible.value = false)}
           title="Custom Period"
           headerBackgroundColor={COLORS.primary_400}
           headerTextColor="#fff"

@@ -29,6 +29,7 @@ const BudgetScreen = () => {
 
   const { rawBudgets, budgets, filteredRawBudgets } =
     useBudgets(selectedPeriod);
+
   const availablePeriods = useMemo(() => {
     const periods = rawBudgets
       .map(getBudgetPeriod)
@@ -139,11 +140,11 @@ const BudgetScreen = () => {
             onMorePress={budgetActions.openActionSheet}
           />
         )}
-        <SmartBudgetTips/>
+        <SmartBudgetTips />
       </ScrollView>
 
       <BudgetActionSheet
-        visible={budgetActions.isActionSheetOpen}
+        isOpen={budgetActions.isActionSheetOpen}
         onClose={budgetActions.closeActionSheet}
         actions={budgetActions.actions}
         onActionPress={(action) => action.action()}

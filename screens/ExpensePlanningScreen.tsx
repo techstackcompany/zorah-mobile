@@ -51,6 +51,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabContent = {
@@ -109,7 +110,7 @@ const ExpensePlanningScreen = () => {
   );
   const [periodType, setPeriodType] = useState<PeriodType>("daily");
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("all");
-  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const showMonthPicker = useSharedValue(false);
 
   const {
     data: expenseSummaryData,
@@ -396,7 +397,6 @@ const ExpensePlanningScreen = () => {
     });
   }, [currentSummary]);
 
-
   const incomesArray = useMemo(() => {
     if (activeTab !== "income") return [];
     const rawIncomes = Array.isArray(incomesData?.data) ? incomesData.data : [];
@@ -472,238 +472,244 @@ const ExpensePlanningScreen = () => {
     return Array.from(byMonth.values());
   }, [activeTab, filteredExpenses, periodType]);
   return (
-    <MainContainer className="bg-lightMuted pb-0" edges={[]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-        }
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
-        <View className="px-6">
-          <TabSwitcher
-            tabs={TAB_ITEMS}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-          <CollapsibleCard
-            headerBottomBorder
-            title={tabConfig.categoryTitle}
-            style={styles.card}
-          >
-            <View className="flex-row items-center justify-between p-5">
-              <Text weight="medium" className="text-sm text-textColor/70">
-                {tabConfig.breakdownTitle}
-              </Text>
-              <Pressable
-                style={styles.periodPill}
-                onPress={() => setShowMonthPicker(true)}
-              >
-                <Text weight="semibold" className="text-sm text-textColor">
-                  {selectedMonthLabel}
+    <>
+      <MainContainer className="bg-lightMuted pb-0" edges={[]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+            />
+          }
+          contentContainerStyle={{ paddingBottom: 120 }}
+        >
+          <View className="px-6">
+            <TabSwitcher
+              tabs={TAB_ITEMS}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+            <CollapsibleCard
+              headerBottomBorder
+              title={tabConfig.categoryTitle}
+              style={styles.card}
+            >
+              <View className="flex-row items-center justify-between p-5">
+                <Text weight="medium" className="text-sm text-textColor/70">
+                  {tabConfig.breakdownTitle}
                 </Text>
+                <Pressable
+                  style={styles.periodPill}
+                  onPress={() => (showMonthPicker.value = true)}
+                >
+                  <Text weight="semibold" className="text-sm text-textColor">
+                    {selectedMonthLabel}
+                  </Text>
 
-                <Image
-                  source={require("@/assets/icons/calendar.svg")}
-                  style={{ width: 24, height: 24 }}
-                />
-              </Pressable>
-            </View>
-
-            <View style={styles.chartWrapper}>
-              <ExpenseChart
-                segments={summarySegments}
-                total={currentSummary.total}
-                totalLabel={`Total ${tabConfig.label.toLowerCase()}`}
-                isLoading={isLoading}
-                formatCurrency={formatCurrency}
-              />
-            </View>
-          </CollapsibleCard>
-
-          <View className="mt-8">
-            <Text weight="semibold" className="text-base text-textColor">
-              {tabConfig.rankingTitle}
-            </Text>
-
-            <View style={styles.rankingCard}>
-              <CategoryRanking
-                segments={summarySegments}
-                isLoading={isLoading}
-                emptyMessage={`Add an entry to see your ${tabConfig.label.toLowerCase()} rankings.`}
-                formatCurrency={formatCurrency}
-              />
-            </View>
-          </View>
-
-          {/* Daily/Monthly Spending Section */}
-          {activeTab === "expense" && (
-            <View className="mt-8">
-              <View className="flex-row items-center justify-between">
-                <Text weight="semibold" className="text-base text-textColor">
-                  {periodType === "daily"
-                    ? "Daily Spending"
-                    : "Monthly Spending"}
-                </Text>
-                <View className="flex-row items-center gap-2">
-                  <PeriodSelector
-                    selectedPeriod={periodType}
-                    onPeriodChange={setPeriodType}
+                  <Image
+                    source={require("@/assets/icons/calendar.svg")}
+                    style={{ width: 24, height: 24 }}
                   />
-                  <View className="flex-row gap-2">
-                    <Pressable
-                      onPress={() => {
-                        if (periodType === "daily") {
-                          setDailyViewMode("list");
-                        } else {
-                          setMonthlyViewMode("list");
-                        }
-                      }}
-                      className={`rounded-lg border px-3 py-1.5 ${(periodType === "daily" ? dailyViewMode === "list" : monthlyViewMode === "list") ? "border-primary_400 bg-primary_100" : "border-grayLight/80 bg-white"}`}
-                    >
-                      <Ionicons
-                        name="list-outline"
-                        size={16}
-                        color={
-                          (
-                            periodType === "daily"
-                              ? dailyViewMode === "list"
-                              : monthlyViewMode === "list"
-                          )
-                            ? COLORS.primary_400
-                            : COLORS.textColor
-                        }
-                      />
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        if (periodType === "daily") {
-                          setDailyViewMode("chart");
-                        } else {
-                          setMonthlyViewMode("chart");
-                        }
-                      }}
-                      className={`rounded-lg border px-3 py-1.5 ${(periodType === "daily" ? dailyViewMode === "chart" : monthlyViewMode === "chart") ? "border-primary_400 bg-primary_100" : "border-grayLight/80 bg-white"}`}
-                    >
-                      <Ionicons
-                        name="bar-chart-outline"
-                        size={16}
-                        color={
-                          (
-                            periodType === "daily"
-                              ? dailyViewMode === "chart"
-                              : monthlyViewMode === "chart"
-                          )
-                            ? COLORS.primary_400
-                            : COLORS.textColor
-                        }
-                      />
-                    </Pressable>
-                  </View>
-                </View>
+                </Pressable>
               </View>
 
-              <View style={styles.dailyExpenseCard}>
-                {periodType === "daily" ? (
-                  dailyViewMode === "chart" ? (
-                    <DailyExpenseChart
-                      dailyExpenses={dailyExpensesArray}
-                      isLoading={isDailyExpensesLoading}
+              <View style={styles.chartWrapper}>
+                <ExpenseChart
+                  segments={summarySegments}
+                  total={currentSummary.total}
+                  totalLabel={`Total ${tabConfig.label.toLowerCase()}`}
+                  isLoading={isLoading}
+                  formatCurrency={formatCurrency}
+                />
+              </View>
+            </CollapsibleCard>
+
+            <View className="mt-8">
+              <Text weight="semibold" className="text-base text-textColor">
+                {tabConfig.rankingTitle}
+              </Text>
+
+              <View style={styles.rankingCard}>
+                <CategoryRanking
+                  segments={summarySegments}
+                  isLoading={isLoading}
+                  emptyMessage={`Add an entry to see your ${tabConfig.label.toLowerCase()} rankings.`}
+                  formatCurrency={formatCurrency}
+                />
+              </View>
+            </View>
+
+            {/* Daily/Monthly Spending Section */}
+            {activeTab === "expense" && (
+              <View className="mt-8">
+                <View className="flex-row items-center justify-between">
+                  <Text weight="semibold" className="text-base text-textColor">
+                    {periodType === "daily"
+                      ? "Daily Spending"
+                      : "Monthly Spending"}
+                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <PeriodSelector
+                      selectedPeriod={periodType}
+                      onPeriodChange={setPeriodType}
+                    />
+                    <View className="flex-row gap-2">
+                      <Pressable
+                        onPress={() => {
+                          if (periodType === "daily") {
+                            setDailyViewMode("list");
+                          } else {
+                            setMonthlyViewMode("list");
+                          }
+                        }}
+                        className={`rounded-lg border px-3 py-1.5 ${(periodType === "daily" ? dailyViewMode === "list" : monthlyViewMode === "list") ? "border-primary_400 bg-primary_100" : "border-grayLight/80 bg-white"}`}
+                      >
+                        <Ionicons
+                          name="list-outline"
+                          size={16}
+                          color={
+                            (
+                              periodType === "daily"
+                                ? dailyViewMode === "list"
+                                : monthlyViewMode === "list"
+                            )
+                              ? COLORS.primary_400
+                              : COLORS.textColor
+                          }
+                        />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => {
+                          if (periodType === "daily") {
+                            setDailyViewMode("chart");
+                          } else {
+                            setMonthlyViewMode("chart");
+                          }
+                        }}
+                        className={`rounded-lg border px-3 py-1.5 ${(periodType === "daily" ? dailyViewMode === "chart" : monthlyViewMode === "chart") ? "border-primary_400 bg-primary_100" : "border-grayLight/80 bg-white"}`}
+                      >
+                        <Ionicons
+                          name="bar-chart-outline"
+                          size={16}
+                          color={
+                            (
+                              periodType === "daily"
+                                ? dailyViewMode === "chart"
+                                : monthlyViewMode === "chart"
+                            )
+                              ? COLORS.primary_400
+                              : COLORS.textColor
+                          }
+                        />
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.dailyExpenseCard}>
+                  {periodType === "daily" ? (
+                    dailyViewMode === "chart" ? (
+                      <DailyExpenseChart
+                        dailyExpenses={dailyExpensesArray}
+                        isLoading={isDailyExpensesLoading}
+                        formatCurrency={formatCurrency}
+                      />
+                    ) : (
+                      <DailyExpenseList
+                        dailyExpenses={dailyExpensesArray}
+                        isLoading={isDailyExpensesLoading}
+                        formatCurrency={formatCurrency}
+                      />
+                    )
+                  ) : monthlyViewMode === "chart" ? (
+                    <MonthlyExpenseChart
+                      monthlyExpenses={monthlyExpensesArray}
+                      isLoading={isMonthlyExpensesLoading}
                       formatCurrency={formatCurrency}
                     />
                   ) : (
-                    <DailyExpenseList
-                      dailyExpenses={dailyExpensesArray}
-                      isLoading={isDailyExpensesLoading}
+                    <MonthlyExpenseList
+                      monthlyExpenses={monthlyExpensesArray}
+                      isLoading={isMonthlyExpensesLoading}
                       formatCurrency={formatCurrency}
                     />
-                  )
-                ) : monthlyViewMode === "chart" ? (
-                  <MonthlyExpenseChart
-                    monthlyExpenses={monthlyExpensesArray}
-                    isLoading={isMonthlyExpensesLoading}
-                    formatCurrency={formatCurrency}
-                  />
-                ) : (
-                  <MonthlyExpenseList
-                    monthlyExpenses={monthlyExpensesArray}
-                    isLoading={isMonthlyExpensesLoading}
-                    formatCurrency={formatCurrency}
-                  />
-                )}
+                  )}
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Expense/Income List Section */}
-          {(activeTab === "expense" || activeTab === "income") && (
-            <View className="mt-8">
-              <Text weight="semibold" className="text-base text-textColor">
-                {activeTab === "expense" ? "Recent Expenses" : "Recent Income"}
-              </Text>
+            {/* Expense/Income List Section */}
+            {(activeTab === "expense" || activeTab === "income") && (
+              <View className="mt-8">
+                <Text weight="semibold" className="text-base text-textColor">
+                  {activeTab === "expense"
+                    ? "Recent Expenses"
+                    : "Recent Income"}
+                </Text>
 
-              <View style={styles.expenseListCard}>
-                <ExpenseList
-                  expenses={
-                    activeTab === "expense" ? expensesArray : incomesArray
-                  }
-                  isLoading={
-                    activeTab === "expense"
-                      ? isExpensesLoading
-                      : isIncomesLoading
-                  }
-                  categoryColorMap={CATEGORY_COLOR_MAP}
-                  categoryIconMap={CATEGORY_ICON_MAP}
-                  categoryBgMap={CATEGORY_BG_COLOR_MAP}
-                  formatCurrency={formatCurrency}
-                  formatDate={formatExpenseDate}
-                  type={activeTab}
-                />
+                <View style={styles.expenseListCard}>
+                  <ExpenseList
+                    expenses={
+                      activeTab === "expense" ? expensesArray : incomesArray
+                    }
+                    isLoading={
+                      activeTab === "expense"
+                        ? isExpensesLoading
+                        : isIncomesLoading
+                    }
+                    categoryColorMap={CATEGORY_COLOR_MAP}
+                    categoryIconMap={CATEGORY_ICON_MAP}
+                    categoryBgMap={CATEGORY_BG_COLOR_MAP}
+                    formatCurrency={formatCurrency}
+                    formatDate={formatExpenseDate}
+                    type={activeTab}
+                  />
+                </View>
               </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-      {isLoading && (
-        <View
-          style={{ paddingBottom: bottom }}
-          className="absolute bottom-0  left-0 right-0 bg-white"
-        >
-          <View style={styles.emptyState}>
-            <Text weight="semibold" className="text-lg text-textColor/80">
-              {emptyStateContent.title}
-            </Text>
-            <Text className="mt-1 text-sm text-textColor/50">
-              {emptyStateContent.subtitle}
-            </Text>
+            )}
           </View>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.floatingButton, { bottom: 16 + bottom }]}
-            onPress={() => router.push(addEntryRoute)}
+        </ScrollView>
+        {isLoading && (
+          <View
+            style={{ paddingBottom: bottom }}
+            className="absolute bottom-0  left-0 right-0 bg-white"
           >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      )}
+            <View style={styles.emptyState}>
+              <Text weight="semibold" className="text-lg text-textColor/80">
+                {emptyStateContent.title}
+              </Text>
+              <Text className="mt-1 text-sm text-textColor/50">
+                {emptyStateContent.subtitle}
+              </Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.floatingButton, { bottom: 16 + bottom }]}
+              onPress={() => router.push(addEntryRoute)}
+            >
+              <Ionicons name="add" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={[styles.floatingButton, { bottom: 16 + bottom }]}
-        onPress={() => router.push(addEntryRoute)}
-      >
-        <Ionicons name="add" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[styles.floatingButton, { bottom: 16 + bottom }]}
+          onPress={() => router.push(addEntryRoute)}
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      </MainContainer>
       <SlideUpModal
-        visible={showMonthPicker}
-        onClose={() => setShowMonthPicker(false)}
+        isOpen={showMonthPicker}
+        onClose={() => (showMonthPicker.value = false)}
         title="Select period"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"
         closeIconColor="#fff"
       >
-        <View className="gap-2">
+        <View className="h-full gap-2 bg-gray-950">
           {monthOptions.map((option) => {
             const isSelected = option.key === selectedMonthKey;
             return (
@@ -711,7 +717,7 @@ const ExpensePlanningScreen = () => {
                 key={option.key}
                 onPress={() => {
                   setSelectedMonthKey(option.key);
-                  setShowMonthPicker(false);
+                  showMonthPicker.value = false;
                 }}
                 className={`rounded-2xl px-4 py-3 ${isSelected ? "bg-primary_100" : "bg-white"}`}
               >
@@ -735,7 +741,7 @@ const ExpensePlanningScreen = () => {
           })}
         </View>
       </SlideUpModal>
-    </MainContainer>
+    </>
   );
 };
 

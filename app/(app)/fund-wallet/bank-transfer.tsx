@@ -7,8 +7,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { ActivityIndicator, Alert, Pressable, Share, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 const transferDetails = {
@@ -38,7 +39,7 @@ const BankTransferScreen = () => {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [isShareOpen, setIsShareOpen] = useState(false);
+  const isShareOpen = useSharedValue(false);
 
   const formattedAmount = useMemo(() => formatAmount(amount), [amount]);
 
@@ -81,7 +82,7 @@ const BankTransferScreen = () => {
 
   const handleShare = async () => {
     try {
-      setIsShareOpen(false);
+      isShareOpen.value = false;
       await Share.share({
         message: `Account Name: ${transferDetails.name}\nAccount Number: ${transferDetails.accountNumber}\nBank: ${transferDetails.bank}\nAmount: ${formattedAmount}`,
       });
@@ -161,7 +162,7 @@ const BankTransferScreen = () => {
 
           <View className="mt-6 flex-row gap-4">
             <Pressable
-              onPress={() => setIsShareOpen(true)}
+              onPress={() => (isShareOpen.value = true)}
               className="flex-1 flex-row items-center justify-center rounded-xl border border-primary_400 bg-white py-3"
               accessibilityRole="button"
             >
@@ -226,8 +227,8 @@ const BankTransferScreen = () => {
       </MainContainer>
 
       <SlideUpModal
-        visible={isShareOpen}
-        onClose={() => setIsShareOpen(false)}
+        isOpen={isShareOpen}
+        onClose={() => (isShareOpen.value = false)}
         title="Share"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"

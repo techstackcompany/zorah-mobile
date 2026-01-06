@@ -11,6 +11,7 @@ import { ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { PermissionsAndroid, Platform, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
 const incomeSources = [
   { label: "Salary/Employment", value: "salary" },
@@ -41,9 +42,9 @@ const MonthlyIncomeScreen = () => {
   const [primarySource, setPrimarySource] = useState<string | undefined>();
   const [monthlyRange, setMonthlyRange] = useState<string | undefined>();
   const [hasShownSmsModal, setHasShownSmsModal] = useState(false);
-  const [isSmsModalVisible, setIsSmsModalVisible] = useState(false);
+  const isSmsModalVisible = useSharedValue(false);
 
-  useSetUpStep(2)
+  useSetUpStep(2);
 
   const handlePrevious = () => {
     setSetupStep(1);
@@ -55,7 +56,7 @@ const MonthlyIncomeScreen = () => {
       return;
     }
     if (!hasShownSmsModal) {
-      setIsSmsModalVisible(true);
+      isSmsModalVisible.value = true;
       return;
     }
     setSetupStep(3);
@@ -63,7 +64,7 @@ const MonthlyIncomeScreen = () => {
   };
 
   const handleAllowSmsAccess = async () => {
-    setIsSmsModalVisible(false);
+    isSmsModalVisible.value = false;
     setHasShownSmsModal(true);
     try {
       if (Platform.OS === "android") {
@@ -85,7 +86,7 @@ const MonthlyIncomeScreen = () => {
   };
 
   const handleSkipSmsAccess = () => {
-    setIsSmsModalVisible(false);
+    isSmsModalVisible.value = false;
     setHasShownSmsModal(true);
     setSetupStep(3);
     router.navigate("/(auth)/setup/your-banks");
@@ -141,7 +142,7 @@ const MonthlyIncomeScreen = () => {
       </View>
 
       <SlideUpModal
-        visible={isSmsModalVisible}
+        isOpen={isSmsModalVisible}
         onClose={handleSkipSmsAccess}
         title="SMS Access"
         headerBackgroundColor={COLORS.primary_400}
@@ -149,23 +150,20 @@ const MonthlyIncomeScreen = () => {
         closeIconColor="#fff"
         className="gap-5"
       >
-        <View
-          className="py-4"
-       
-        >
+        <View className="py-4">
           <Text className="text-sm leading-5 text-textColor/80">
-            Zorah helps you log expenses automatically by reading only
-            bank transaction SMS alerts. We don&apos;t need your login details,
-            and your data stays private on your device.
+            Zorah helps you log expenses automatically by reading only bank
+            transaction SMS alerts. We don&apos;t need your login details, and
+            your data stays private on your device.
           </Text>
         </View>
 
         <ImageBackground
-        source={require('@/assets/images/bg-patterns/fold-pattern.png')}
+          source={require("@/assets/images/bg-patterns/fold-pattern.png")}
           className="rounded-2xl "
           style={{
-           padding:20,
-          borderRadius:16,
+            padding: 20,
+            borderRadius: 16,
             backgroundColor: "#F1F5FF",
           }}
         >

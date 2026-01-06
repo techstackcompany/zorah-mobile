@@ -1,15 +1,15 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import DatePickerField from "@/components/ui/DatePickerField";
-import SlideUpModal from "@/components/ui/SlideUpModal";
 import AmountInput from "@/components/ui/AmountInput";
 import CategorySelector from "@/components/ui/CategorySelector";
+import DatePickerField from "@/components/ui/DatePickerField";
+import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { ImageSource } from "expo-image";
 import { useQueryClient } from "@tanstack/react-query";
+import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -20,6 +20,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type IncomeCategory = {
@@ -39,7 +40,7 @@ const AddIncomeScreen = () => {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const isPaymentModalOpen = useSharedValue(false);
 
   const {
     data: categoriesData,
@@ -56,7 +57,7 @@ const AddIncomeScreen = () => {
     return categoriesData.map((subcategory) => ({
       key: subcategory.name,
       label: subcategory.name,
-      icon: subcategory.image || "", 
+      icon: subcategory.image || "",
     }));
   }, [categoriesData]);
 
@@ -111,18 +112,18 @@ const AddIncomeScreen = () => {
   });
 
   const openPaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(true);
+    isPaymentModalOpen.value = true;
     setFocusedField("payment");
   }, []);
 
   const closePaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(false);
+    isPaymentModalOpen.value = false;
     setFocusedField(null);
   }, []);
 
   const handleSelectPaymentMethod = useCallback((method: string) => {
     setPaymentMethod(method);
-    setIsPaymentModalVisible(false);
+    isPaymentModalOpen.value = false;
     setFocusedField(null);
   }, []);
 
@@ -236,7 +237,9 @@ const AddIncomeScreen = () => {
                 <Text className="text-sm text-textColor/70">Category</Text>
                 {isCategoriesLoading ? (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">Loading categories...</Text>
+                    <Text className="text-textColor/50">
+                      Loading categories...
+                    </Text>
                   </View>
                 ) : categoriesError ? (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-8">
@@ -252,7 +255,9 @@ const AddIncomeScreen = () => {
                   />
                 ) : (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
-                    <Text className="text-textColor/50">No categories available</Text>
+                    <Text className="text-textColor/50">
+                      No categories available
+                    </Text>
                   </View>
                 )}
               </View>
@@ -315,7 +320,7 @@ const AddIncomeScreen = () => {
                   onFocus={() => setFocusedField("description")}
                   onBlur={() => setFocusedField(null)}
                   className={cn(
-                    "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 text-base font-nunitoMedium",
+                    "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",
                     focusedField === "description"
                       ? "border-primary_400"
                       : "border-gray-200",
@@ -345,7 +350,7 @@ const AddIncomeScreen = () => {
         </View>
       </KeyboardAvoidingView>
       <SlideUpModal
-        visible={isPaymentModalVisible}
+        isOpen={isPaymentModalOpen}
         onClose={closePaymentModal}
         title="Payment Method"
         headerBackgroundColor={COLORS.primary_400}

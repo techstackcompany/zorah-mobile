@@ -3,6 +3,7 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import React from "react";
 import { Pressable, View } from "react-native";
+import { SharedValue } from "react-native-reanimated";
 
 export interface BudgetAction {
   label: string;
@@ -11,21 +12,21 @@ export interface BudgetAction {
 }
 
 interface BudgetActionSheetProps {
-  visible: boolean;
+  isOpen: SharedValue<boolean>;
   onClose: () => void;
   actions: BudgetAction[];
   onActionPress: (action: BudgetAction) => void;
 }
 
 const BudgetActionSheet: React.FC<BudgetActionSheetProps> = ({
-  visible,
+  isOpen,
   onClose,
   actions,
   onActionPress,
 }) => {
   return (
     <SlideUpModal
-      visible={visible}
+      isOpen={isOpen}
       onClose={onClose}
       title="Action"
       headerBackgroundColor={COLORS.primary_400}
@@ -59,4 +60,3 @@ const BudgetActionSheet: React.FC<BudgetActionSheetProps> = ({
 };
 
 export default BudgetActionSheet;
-

@@ -115,12 +115,14 @@ const FxRatesScreen = () => {
           toCurrencyCode={fx.toCurrency.code}
           fromFlag={fromFlag}
           toFlag={toFlag}
-          onOpenFromCurrency={() =>
-            fx.setShowCurrencyModal({ type: "from", visible: true })
-          }
-          onOpenToCurrency={() =>
-            fx.setShowCurrencyModal({ type: "to", visible: true })
-          }
+          onOpenFromCurrency={() => {
+            fx.setCurrencyModalType("from");
+            fx.currencyModalOpen.value = true;
+          }}
+          onOpenToCurrency={() => {
+            fx.setCurrencyModalType("to");
+            fx.currencyModalOpen.value = true;
+          }}
           onSwap={() => {
             const a = fx.fromCurrency;
             fx.setFromCurrency(fx.toCurrency);
@@ -138,11 +140,9 @@ const FxRatesScreen = () => {
       </ScrollView>
 
       <CurrencySelectModal
-        visible={fx.showCurrencyModal.visible}
-        type={fx.showCurrencyModal.type}
-        onClose={() =>
-          fx.setShowCurrencyModal({ type: "from", visible: false })
-        }
+        isOpen={fx.currencyModalOpen}
+        type={fx.currencyModalType}
+        onClose={() => (fx.currencyModalOpen.value = false)}
         onSelect={fx.handleSelectCurrency}
         activeFrom={fx.fromCurrency.code}
         activeTo={fx.toCurrency.code}

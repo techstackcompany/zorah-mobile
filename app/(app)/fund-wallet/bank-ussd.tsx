@@ -2,17 +2,12 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  Alert,
-  Linking,
-  Pressable,
-  TextInput,
-  View,
-} from "react-native";
-import { Image } from "expo-image";
+import { Alert, Linking, Pressable, TextInput, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
 type BankOption = {
   id: string;
@@ -25,9 +20,17 @@ const bankOptions: BankOption[] = [
   { id: "ecobank", name: "Ecobank Nigeria Plc", ussdCode: "*326#" },
   { id: "fcmb", name: "FCMB", ussdCode: "*329*amount*account#" },
   { id: "fidelity", name: "Fidelity Bank", ussdCode: "*770*" },
-  { id: "first-bank", name: "First Bank Of Nigeria", ussdCode: "*894*amount*account#" },
+  {
+    id: "first-bank",
+    name: "First Bank Of Nigeria",
+    ussdCode: "*894*amount*account#",
+  },
   { id: "globus", name: "Globus Bank", ussdCode: "*989#" },
-  { id: "gtbank", name: "Guaranty Trust Bank", ussdCode: "*737*1*amount*account#" },
+  {
+    id: "gtbank",
+    name: "Guaranty Trust Bank",
+    ussdCode: "*737*1*amount*account#",
+  },
   { id: "heritage", name: "Heritage Bank", ussdCode: "*745#" },
   { id: "keystone", name: "Keystone Bank", ussdCode: "*7111#" },
   { id: "zenith", name: "Zenith Bank", ussdCode: "*966*amount*account#" },
@@ -43,7 +46,7 @@ const formatAmount = (rawValue?: string) => {
 
 const BankUssdScreen = () => {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const isModalOpen = useSharedValue(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBank, setSelectedBank] = useState<BankOption | null>(null);
 
@@ -51,16 +54,14 @@ const BankUssdScreen = () => {
 
   const handleSelectBank = (bank: BankOption) => {
     setSelectedBank(bank);
-    setIsModalVisible(false);
+    isModalOpen.value = false;
     setSearchTerm("");
   };
 
   const filteredBanks = useMemo(() => {
     if (!searchTerm) return bankOptions;
     const term = searchTerm.toLowerCase();
-    return bankOptions.filter((bank) =>
-      bank.name.toLowerCase().includes(term),
-    );
+    return bankOptions.filter((bank) => bank.name.toLowerCase().includes(term));
   }, [searchTerm]);
 
   const handleDialCode = async () => {
@@ -73,7 +74,10 @@ const BankUssdScreen = () => {
 
     const canOpen = await Linking.canOpenURL(url);
     if (!canOpen) {
-      Alert.alert("Cannot Dial", "USSD dialing is not supported on this device.");
+      Alert.alert(
+        "Cannot Dial",
+        "USSD dialing is not supported on this device.",
+      );
       return;
     }
 
@@ -99,7 +103,7 @@ const BankUssdScreen = () => {
           <View className="mt-6">
             <Text className="text-base text-textColor/80">Bank</Text>
             <Pressable
-              onPress={() => setIsModalVisible(true)}
+              onPress={() => (isModalOpen.value = true)}
               className="mt-3 flex-row items-center justify-between rounded-2xl border border-grayLight/80 bg-white px-4 py-4"
               accessibilityRole="button"
             >
@@ -141,8 +145,8 @@ const BankUssdScreen = () => {
       </MainContainer>
 
       <SlideUpModal
-        visible={isModalVisible}
-        onClose={() => setIsModalVisible(false)}
+        isOpen={isModalOpen}
+        onClose={() => (isModalOpen.value = false)}
         title="Bank"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
@@ -152,7 +156,10 @@ const BankUssdScreen = () => {
       >
         <View className="rounded-2xl  px-4 py-3">
           <View className="flex-row items-center">
-<Image source={require("@/assets/icons/search.svg")} style={{width:24, height:24}} />
+            <Image
+              source={require("@/assets/icons/search.svg")}
+              style={{ width: 24, height: 24 }}
+            />
             <TextInput
               value={searchTerm}
               onChangeText={setSearchTerm}
@@ -172,11 +179,7 @@ const BankUssdScreen = () => {
               className="flex-row items-center justify-between border-b border-grayLight/60 py-4"
             >
               <Text className="text-base text-textColor">{bank.name}</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color="#B0B7C3"
-              />
+              <Ionicons name="chevron-forward" size={18} color="#B0B7C3" />
             </Pressable>
           ))}
           {filteredBanks.length === 0 ? (

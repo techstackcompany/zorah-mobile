@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 const LANGUAGE_OPTIONS = [
@@ -30,8 +31,8 @@ const LANGUAGE_OPTIONS = [
 const AccountScreen = () => {
   const router = useRouter();
   const [allowBankNotification, setAllowBankNotification] = useState(true);
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [showPinSetupModal, setShowPinSetupModal] = useState(false);
+  const showLanguageModal = useSharedValue(false);
+  const showPinSetupModal = useSharedValue(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const { signOut, userData, kycVerificationStatus } = useSession();
   const { settings, updateSetting } = useAppSettings();
@@ -145,7 +146,7 @@ const AccountScreen = () => {
   const handleBiometricToggle = (value: boolean) => {
     if (value) {
       // When enabling biometrics, show PIN setup prompt
-      setShowPinSetupModal(true);
+      showPinSetupModal.value = true;
     } else {
       // When disabling, show confirmation modal
       setShowDisableModal(true);
@@ -158,7 +159,7 @@ const AccountScreen = () => {
   };
 
   const handleSetPin = () => {
-    setShowPinSetupModal(false);
+    showPinSetupModal.value = false;
     // Navigate to PIN setup screen
     router.push("/(app)/settings/pin" as RelativePathString);
   };
@@ -257,7 +258,7 @@ const AccountScreen = () => {
                   {settings.language.label}
                 </Text>
               }
-              onPress={() => setShowLanguageModal(true)}
+              onPress={() => (showLanguageModal.value = true)}
             />
           </View>
 
@@ -310,8 +311,8 @@ const AccountScreen = () => {
       </ScrollView>
 
       <SlideUpModal
-        visible={showLanguageModal}
-        onClose={() => setShowLanguageModal(false)}
+        isOpen={showLanguageModal}
+        onClose={() => (showLanguageModal.value = false)}
         title="Select Language"
         headerBackgroundColor="#1643F5"
         headerTextColor="#FFFFFF"
@@ -326,7 +327,7 @@ const AccountScreen = () => {
                 accessibilityRole="button"
                 onPress={() => {
                   updateSetting("language", option);
-                  setShowLanguageModal(false);
+                  showLanguageModal.value = false;
                 }}
               >
                 <View>
@@ -346,9 +347,9 @@ const AccountScreen = () => {
 
       {/* PIN Setup Prompt Modal */}
       <SlideUpModal
-        visible={showPinSetupModal}
+        isOpen={showPinSetupModal}
         onClose={() => {
-          setShowPinSetupModal(false);
+          showPinSetupModal.value = false;
           updateSetting("enableBiometrics", false);
         }}
         title="Set Up PIN"
@@ -390,7 +391,7 @@ const AccountScreen = () => {
             </Pressable>
             <Pressable
               onPress={() => {
-                setShowPinSetupModal(false);
+                showPinSetupModal.value = false;
                 // Reset toggle since PIN wasn't set
                 updateSetting("enableBiometrics", false);
               }}

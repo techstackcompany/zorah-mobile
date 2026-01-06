@@ -27,6 +27,7 @@ import {
   ScrollView,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type ExpenseCategory = {
@@ -95,7 +96,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const isPaymentModalVisible = useSharedValue(false);
 
   const isIncomeScreen = route === "income";
 
@@ -219,18 +220,18 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
   });
 
   const openPaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(true);
+    isPaymentModalVisible.value = true;
     setFocusedField("payment");
   }, []);
 
   const closePaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(false);
+    isPaymentModalVisible.value = false;
     setFocusedField(null);
   }, []);
 
   const handleSelectPaymentMethod = useCallback((methodValue: string) => {
     setPaymentMethod(methodValue);
-    setIsPaymentModalVisible(false);
+    isPaymentModalVisible.value = false;
     setFocusedField(null);
   }, []);
 
@@ -505,7 +506,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
         </View>
       </KeyboardAvoidingView>
       <SlideUpModal
-        visible={isPaymentModalVisible}
+        isOpen={isPaymentModalVisible}
         onClose={closePaymentModal}
         title={isIncomeScreen ? "Income Source" : "Payment Method"}
         headerBackgroundColor={COLORS.primary_400}

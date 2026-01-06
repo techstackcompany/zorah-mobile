@@ -6,6 +6,7 @@ import {
 } from "@/src/api/hooks";
 import type { FxRatePair } from "@/src/api/types";
 import { useCallback, useMemo, useState } from "react";
+import { useSharedValue } from "react-native-reanimated";
 
 type CurrencyOption = { code: string; name?: string; flag?: any };
 
@@ -19,10 +20,10 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     FX_CONVERTER_OPTIONS[1],
   );
   const [amount, setAmount] = useState<string>("0");
-  const [showCurrencyModal, setShowCurrencyModal] = useState<{
-    type: "from" | "to";
-    visible: boolean;
-  }>({ type: "from", visible: false });
+  const currencyModalOpen = useSharedValue(false);
+  const [currencyModalType, setCurrencyModalType] = useState<"from" | "to">(
+    "from",
+  );
 
   const {
     data: usdRates,
@@ -51,7 +52,7 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     error: pairsError,
     refetch: refetchPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
-  
+
   const converterRates = useMemo(() => {
     const rates: Record<string, number> = { NGN: 1 };
     if (usdRates?.conversion_rates) {
@@ -243,10 +244,10 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
         (option) => option.code === code,
       );
       if (!selectedOption) return;
-      if (showCurrencyModal.type === "from") setFromCurrency(selectedOption);
+      if (currencyModalType === "from") setFromCurrency(selectedOption);
       else setToCurrency(selectedOption);
     },
-    [showCurrencyModal.type],
+    [currencyModalType],
   );
 
   return {
@@ -260,8 +261,9 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     setToCurrency,
     amount,
     setAmount,
-    showCurrencyModal,
-    setShowCurrencyModal,
+    currencyModalOpen,
+    currencyModalType,
+    setCurrencyModalType,
     isLoading,
     isRefreshing,
     isFetchingPairs,

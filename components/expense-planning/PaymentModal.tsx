@@ -1,14 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
+import { SharedValue } from "react-native-reanimated";
 
 type PaymentModalProps = {
-  visible: boolean;
+  isOpen: SharedValue<boolean>;
   onClose: () => void;
   paymentMethods: { label: string; value: string }[];
   selectedMethod: string;
@@ -17,7 +18,7 @@ type PaymentModalProps = {
 };
 
 const PaymentModal = ({
-  visible,
+  isOpen,
   onClose,
   paymentMethods,
   selectedMethod,
@@ -26,7 +27,7 @@ const PaymentModal = ({
 }: PaymentModalProps) => {
   return (
     <SlideUpModal
-      visible={visible}
+      isOpen={isOpen}
       onClose={onClose}
       title={title}
       headerBackgroundColor={COLORS.primary_400}
@@ -50,7 +51,7 @@ const PaymentModal = ({
                 <Text
                   weight="semibold"
                   className={cn(
-                    "text-base text-textColor capitalize",
+                    "text-base capitalize text-textColor",
                     isSelected && "text-primary_400",
                   )}
                 >

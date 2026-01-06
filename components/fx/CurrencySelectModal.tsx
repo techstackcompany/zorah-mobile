@@ -1,13 +1,14 @@
-import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import { FX_CONVERTER_OPTIONS } from "@/constants/fx";
 import { Image } from "expo-image";
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { SharedValue } from "react-native-reanimated";
 import { SelectionDot } from "./SelectionDot";
 
 export type CurrencySelectModalProps = {
-  visible: boolean;
+  isOpen: SharedValue<boolean>;
   type: "from" | "to";
   onClose: () => void;
   onSelect: (code: string) => void;
@@ -15,10 +16,17 @@ export type CurrencySelectModalProps = {
   activeTo: string;
 };
 
-const CurrencySelectModal = ({ visible, type, onClose, onSelect, activeFrom, activeTo }: CurrencySelectModalProps) => {
+const CurrencySelectModal = ({
+  isOpen,
+  type,
+  onClose,
+  onSelect,
+  activeFrom,
+  activeTo,
+}: CurrencySelectModalProps) => {
   return (
     <SlideUpModal
-      visible={visible}
+      isOpen={isOpen}
       onClose={onClose}
       title="Select Currency"
       headerBackgroundColor="#1643F5"
@@ -26,7 +34,8 @@ const CurrencySelectModal = ({ visible, type, onClose, onSelect, activeFrom, act
     >
       <View className="space-y-2">
         {FX_CONVERTER_OPTIONS.map((option) => {
-          const isSelected = (type === "from" ? activeFrom : activeTo) === option.code;
+          const isSelected =
+            (type === "from" ? activeFrom : activeTo) === option.code;
           const optionFlag = option.flag;
           return (
             <Pressable
@@ -39,7 +48,11 @@ const CurrencySelectModal = ({ visible, type, onClose, onSelect, activeFrom, act
               }}
             >
               {optionFlag ? (
-                <Image source={optionFlag} style={styles.modalFlag} contentFit="cover" />
+                <Image
+                  source={optionFlag}
+                  style={styles.modalFlag}
+                  contentFit="cover"
+                />
               ) : null}
               <View style={styles.modalText}>
                 <Text weight="semibold" className="text-sm text-textColor">

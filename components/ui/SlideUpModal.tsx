@@ -1,10 +1,9 @@
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode } from "react";
 import {
   DimensionValue,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -12,13 +11,16 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  SharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
+  withDelay,
   withTiming,
 } from "react-native-reanimated";
 
 type SlideUpModalProps = {
-  visible: boolean;
+  isOpen: SharedValue<boolean>;
   title?: string;
   onClose: () => void;
   children: ReactNode;
@@ -27,10 +29,11 @@ type SlideUpModalProps = {
   closeIconColor?: string;
   height?: DimensionValue | undefined;
   className?: string;
+  duration?: number;
 };
 
 const SlideUpModal = ({
-  visible,
+  isOpen,
   title,
   onClose,
   children,
@@ -39,51 +42,45 @@ const SlideUpModal = ({
   closeIconColor,
   height = "auto",
   className,
+  duration = 300,
 }: SlideUpModalProps) => {
-  // Shared animation values
-  const [show, setShow] = useState(false);
-  const overlayOpacity = useSharedValue(0);
-  const translateY = useSharedValue(400);
+  const contentHeight = useSharedValue(0);
 
-  useEffect(() => {
-    if (visible) {
-      setShow(visible);
-      overlayOpacity.value = withTiming(1, { duration: 250 });
-      translateY.value = withTiming(0, { duration: 300 });
-    } else {
-      overlayOpacity.value = withTiming(0, { duration: 200 });
-      translateY.value = withTiming(400, { duration: 300 });
-      const timeout = setTimeout(() => setShow(false), 300);
-      return () => clearTimeout(timeout);
-    }
-  }, [visible]);
+  // Derived value for animation progress (1 = closed, 0 = open)
+  const progress = useDerivedValue(() =>
+    withTiming(isOpen.value ? 0 : 1, { duration }),
+  );
 
-  // Animated styles
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value,
+  // Backdrop opacity animation
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: 1 - progress.value,
+    zIndex: isOpen.value
+      ? 1
+      : withDelay(duration, withTiming(-1, { duration: 0 })),
+    pointerEvents: isOpen.value ? "auto" : "none",
   }));
 
+  // Modal slide animation
   const modalStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: progress.value * 2 * contentHeight.value }],
+    zIndex: isOpen.value
+      ? 2
+      : withDelay(duration, withTiming(-1, { duration: 0 })),
+    pointerEvents: isOpen.value ? "auto" : "none",
   }));
 
   return (
-    <Modal
-      visible={show}
-      transparent
-      animationType="none" // we handle animations manually
-      onRequestClose={onClose}
-      statusBarTranslucent
-      allowSwipeDismissal
-      navigationBarTranslucent
-    >
-      {/* Overlay with fade animation */}
-      <Animated.View style={[styles.overlay, overlayStyle]}>
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
+    <>
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
+        <Pressable style={styles.backdropPressable} onPress={onClose} />
       </Animated.View>
 
-      {/* Bottom sheet modal with slide animation */}
-      <Animated.View style={[styles.modal, { height }, modalStyle]}>
+      <Animated.View
+        onLayout={(e) => {
+          contentHeight.value = e.nativeEvent.layout.height;
+        }}
+        style={[styles.modal, { height }, modalStyle]}
+      >
         {title && (
           <View
             style={[styles.header, { backgroundColor: headerBackgroundColor }]}
@@ -103,16 +100,19 @@ const SlideUpModal = ({
 
         <View className={cn("px-6 py-4", className)}>{children}</View>
       </Animated.View>
-    </Modal>
+    </>
   );
 };
 
 export default SlideUpModal;
 
 const styles = StyleSheet.create({
-  overlay: {
+  backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  backdropPressable: {
+    flex: 1,
   },
   modal: {
     position: "absolute",

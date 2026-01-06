@@ -19,6 +19,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
 type TransactionType = "income" | "expense";
 
@@ -314,7 +315,7 @@ const TransactionHistoryScreen = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TransactionTab>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const isFilterOpen = useSharedValue(false);
   const [selectedCategories, setSelectedCategories] = useState<
     FilterCategoryId[]
   >(["all"]);
@@ -448,7 +449,7 @@ const TransactionHistoryScreen = () => {
                 />
               </View>
               <Pressable
-                onPress={() => setIsFilterVisible(true)}
+                onPress={() => (isFilterOpen.value = true)}
                 className="h-14 w-14 items-center justify-center rounded-lg border border-grayLight/80"
                 accessibilityRole="button"
               >
@@ -646,8 +647,8 @@ const TransactionHistoryScreen = () => {
       </MainContainer>
 
       <SlideUpModal
-        visible={isFilterVisible}
-        onClose={() => setIsFilterVisible(false)}
+        isOpen={isFilterOpen}
+        onClose={() => (isFilterOpen.value = false)}
         title="Filter Transactions"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
@@ -716,7 +717,7 @@ const TransactionHistoryScreen = () => {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setIsFilterVisible(false)}
+              onPress={() => (isFilterOpen.value = false)}
               className="flex-1 items-center justify-center rounded-lg bg-primary_400 py-3"
               accessibilityRole="button"
             >

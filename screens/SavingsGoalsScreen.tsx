@@ -24,10 +24,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
 const SavingsGoalsScreen = () => {
   const router = useRouter();
-  const [showGoalModal, setShowGoalModal] = useState(false);
+  const showGoalModal = useSharedValue(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   // Fetch goals from API
@@ -91,7 +92,7 @@ const SavingsGoalsScreen = () => {
 
   const handleOpenGoal = (goalId: string) => {
     setSelectedGoalId(goalId);
-    setShowGoalModal(true);
+    showGoalModal.value = true;
   };
 
   if (isGoalsLoading && !goalsData) {
@@ -178,110 +179,115 @@ const SavingsGoalsScreen = () => {
             </View>
           ) : (
             uiGoals.map((goal) => {
-            const progress = calculateGoalProgress(
-              goal.currentAmount,
-              goal.targetAmount,
-            );
-            const tone = getStatusTone(goal.status);
-            return (
-              <Pressable
-                key={goal.id}
-                accessibilityRole="button"
-                onPress={() => handleOpenGoal(goal.id)}
-                style={[styles.goalCard]}
-              >
-                <View style={styles.goalHeader}>
-                  <View style={styles.goalTitleRow}>
+              const progress = calculateGoalProgress(
+                goal.currentAmount,
+                goal.targetAmount,
+              );
+              const tone = getStatusTone(goal.status);
+              return (
+                <Pressable
+                  key={goal.id}
+                  accessibilityRole="button"
+                  onPress={() => handleOpenGoal(goal.id)}
+                  style={[styles.goalCard]}
+                >
+                  <View style={styles.goalHeader}>
+                    <View style={styles.goalTitleRow}>
+                      <View
+                        style={[
+                          styles.goalIcon,
+                          { backgroundColor: goal.iconBackground },
+                        ]}
+                      >
+                        <Ionicons
+                          name={goal.icon}
+                          size={20}
+                          color={goal.iconColor}
+                        />
+                      </View>
+                      <View style={styles.goalTitleText}>
+                        <Text
+                          weight="semibold"
+                          className="text-lg text-textColor"
+                        >
+                          {goal.name}
+                        </Text>
+                        <Text
+                          numberOfLines={2}
+                          className="mt-1 text-xs text-textColor/60"
+                        >
+                          {goal.description}
+                        </Text>
+                      </View>
+                    </View>
                     <View
                       style={[
-                        styles.goalIcon,
-                        { backgroundColor: goal.iconBackground },
+                        styles.statusBadge,
+                        { backgroundColor: tone.background },
                       ]}
                     >
-                      <Ionicons
-                        name={goal.icon}
-                        size={20}
-                        color={goal.iconColor}
-                      />
-                    </View>
-                    <View style={styles.goalTitleText}>
                       <Text
-                        weight="semibold"
-                        className="text-lg text-textColor"
+                        weight="bold"
+                        className="text-xs"
+                        style={{ color: tone.color }}
                       >
-                        {goal.name}
-                      </Text>
-                      <Text
-                        numberOfLines={2}
-                        className="mt-1 text-xs text-textColor/60"
-                      >
-                        {goal.description}
+                        {tone.label}
                       </Text>
                     </View>
                   </View>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: tone.background },
-                    ]}
-                  >
-                    <Text
-                      weight="bold"
-                      className="text-xs"
-                      style={{ color: tone.color }}
-                    >
-                      {tone.label}
-                    </Text>
-                  </View>
-                </View>
 
-                <View style={styles.amountRow}>
-                  <View>
-                    <Text className="text-xs text-textColor/60">
-                      Current Amount
-                    </Text>
-                    <Text
-                      weight="bold"
-                      className="mt-1 text-lg"
-                      style={{ color: COLORS.secondary_500 }}
-                    >
-                      {formatCurrency(goal.currentAmount)}
-                    </Text>
+                  <View style={styles.amountRow}>
+                    <View>
+                      <Text className="text-xs text-textColor/60">
+                        Current Amount
+                      </Text>
+                      <Text
+                        weight="bold"
+                        className="mt-1 text-lg"
+                        style={{ color: COLORS.secondary_500 }}
+                      >
+                        {formatCurrency(goal.currentAmount)}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text className="text-xs text-textColor/60">Target</Text>
+                      <Text
+                        weight="bold"
+                        className="mt-1 text-lg text-textColor"
+                      >
+                        {formatCurrency(goal.targetAmount)}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text className="text-xs text-textColor/60">Target</Text>
-                    <Text weight="bold" className="mt-1 text-lg text-textColor">
-                      {formatCurrency(goal.targetAmount)}
-                    </Text>
-                  </View>
-                </View>
 
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${progress * 100}%`,
-                        backgroundColor:
-                          goal.status === "completed"
-                            ? COLORS.secondary_500
-                            : COLORS.primary_400,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text className="mt-2 text-xs text-textColor/70">
-                  {(progress * 100).toFixed(0)}% Complete
-                </Text>
-              </Pressable>
-            );
+                  <View style={styles.progressTrack}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${progress * 100}%`,
+                          backgroundColor:
+                            goal.status === "completed"
+                              ? COLORS.secondary_500
+                              : COLORS.primary_400,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text className="mt-2 text-xs text-textColor/70">
+                    {(progress * 100).toFixed(0)}% Complete
+                  </Text>
+                </Pressable>
+              );
             })
           )}
         </View>
       </ScrollView>
       <SlideUpModal
-        visible={showGoalModal && !!selectedGoal}
-        onClose={() => setShowGoalModal(false)}
+        isOpen={showGoalModal}
+        onClose={() => {
+          showGoalModal.value = false;
+        }}
         title="Goal Details"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
@@ -317,7 +323,7 @@ const SavingsGoalsScreen = () => {
                     if (!selectedGoal) {
                       return;
                     }
-                    setShowGoalModal(false);
+                    showGoalModal.value = false;
                     router.push({
                       pathname: "/savings-goals/edit",
                       params: { id: selectedGoal.id },
@@ -456,7 +462,7 @@ const SavingsGoalsScreen = () => {
                 title="Add Money"
                 className="flex-1"
                 onPress={() => {
-                  setShowGoalModal(false);
+                  showGoalModal.value = false;
                   if (selectedGoal) {
                     router.push({
                       pathname: "/savings-goals/add-money",
