@@ -53,7 +53,7 @@ const PasswordTextInput = ({
       </View>
       {error ? (
         <Text className="mt-1 text-sm text-red-500">{error}</Text>
-      ) : null}{" "}
+      ) : null}
     </View>
   );
 };
