@@ -1,38 +1,8 @@
 import { useSession } from "@/contexts/auth-context/useSession";
-import { RelativePathString, Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { Stack } from "expo-router";
 
 function RootNavigator() {
-  const { isAuthenticated, isLoading, hasCompletedSetup, setupStep } =
-    useSession();
-  const router = useRouter();
-  const segments = useSegments();
-
-
-  useEffect(() => {
-    if (isLoading || !isAuthenticated || hasCompletedSetup) return;
-
-    const stepRoutes: Record<number, string> = {
-      1: "/(auth)/setup/choose-language",
-      2: "/(auth)/setup/monthly-income",
-      3: "/(auth)/setup/your-banks",
-      4: "/(auth)/setup/summary",
-    };
-
-    const targetRoute = stepRoutes[setupStep ?? 1];
-    const currentPath =
-      `/${segments.join("/") || ""}`.replace(/\/+$/, "") || "/";
-    if (currentPath !== targetRoute) {
-      router.replace(targetRoute as RelativePathString);
-    }
-  }, [
-    isAuthenticated,
-    hasCompletedSetup,
-    setupStep,
-    segments,
-    router,
-    isLoading,
-  ]);
+  const { isAuthenticated, isLoading, hasCompletedSetup } = useSession();
 
   if (isLoading) {
     return null;
