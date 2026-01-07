@@ -2,7 +2,7 @@ import CreateBudgetScreen from "@/screens/CreateBudgetScreen";
 import React from "react";
 
 const create = () => {
-  return <CreateBudgetScreen />;
+  return <CreateBudgetScreen/>;
 };
 
 export default create;

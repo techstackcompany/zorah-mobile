@@ -5,10 +5,10 @@ const COLORS = {
   textColor: "#2A3A50",
   grey: "#D9D9D9",
   primary_100: "#F6FAFF",
-  primary_200:'#EAEFFF',
+  primary_200: "#EAEFFF",
   secondary_100: "#EBF9F3",
   secondary_150: "#DDFFE5",
-  secondary_200:"#B7FFD5",
+  secondary_200: "#B7FFD5",
   light: "#FDFCFB",
   lightMuted: "#FAFAFA",
   lightBg: "#EFEFEF",
@@ -16,12 +16,14 @@ const COLORS = {
   grayLight: "#EFEFEF",
   peach: "#BE5E1A",
   peachTint: "#FFEBE2",
-  orange:'#F8924F',
-  amber:'#D59007',
-  purple:'#6165D7',
+  orange: "#F8924F",
+  amber: "#D59007",
+  purple: "#6165D7",
   coral: "#F36F56",
   error: "#EF4444",
-  purpleLight:'#EAEFFF'
+  purpleLight: "#EAEFFF",
+  white: "#FFFFFF",
+  black: "#000000",
 };
 
 export default COLORS;
