@@ -28,8 +28,7 @@ export const useAddExpenseMutation = (
     mutationKey: ["expenses", "addExpense"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<Expense>>({
-        method: API_ENDPOINTS.expenses.addExpense.method,
-        url: API_ENDPOINTS.expenses.addExpense.path,
+        ...API_ENDPOINTS.expenses.addExpense,
         data: payload,
       }),
     ...options,
@@ -70,8 +69,7 @@ export const useVoiceExpenseLoggingMutation = (
     mutationKey: ["expenses", "voiceLogExpense"],
     mutationFn: (payload) =>
       apiRequest<VoiceExpenseResponse>({
-        method: API_ENDPOINTS.expenses.voiceLogExpense.method,
-        url: API_ENDPOINTS.expenses.voiceLogExpense.path,
+        ...API_ENDPOINTS.expenses.voiceLogExpense,
         data: payload,
       }),
     ...options,
@@ -93,8 +91,7 @@ export const useUpdateExpenseMutation = (
       }
       const endpoint = API_ENDPOINTS.expenses.updateExpense(expenseId);
       return apiRequest<ApiEnvelope<Expense>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
         data: payload,
       });
     },
@@ -131,8 +128,7 @@ export const useGetExpensesQuery = (
     queryKey: ["expenses", "all"],
     queryFn: async () => {
       const response = await apiRequest<ApiEnvelope<Expense[]>>({
-        method: API_ENDPOINTS.expenses.getExpenses.method,
-        url: API_ENDPOINTS.expenses.getExpenses.path,
+        ...API_ENDPOINTS.expenses.getExpenses,
       });
       return response;
     },
@@ -151,8 +147,7 @@ export const useGetExpenseQuery = (
       }
       const endpoint = API_ENDPOINTS.expenses.getExpense(expenseId);
       const response = await apiRequest<ApiEnvelope<Expense>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
       });
       return response;
     },

@@ -14,142 +14,153 @@ export interface EndpointConfig {
 
 export const API_ENDPOINTS = {
   auth: {
-    register: { method: HttpMethod.POST, path: "/auth/register" },
-    login: { method: HttpMethod.POST, path: "/auth/login" },
-    profile: { method: HttpMethod.GET, path: "/auth/profile" },
-    setPin: { method: HttpMethod.POST, path: "/auth/set-pin" },
-    verifyPin: { method: HttpMethod.POST, path: "/auth/verify-pin" },
+    register: { method: HttpMethod.POST, url: "/auth/register" },
+    login: { method: HttpMethod.POST, url: "/auth/login" },
+    profile: { method: HttpMethod.GET, url: "/auth/profile" },
+    setPin: { method: HttpMethod.POST, url: "/auth/set-pin" },
+    verifyPin: { method: HttpMethod.POST, url: "/auth/verify-pin" },
     toggleBiometrics: {
       method: HttpMethod.POST,
-      path: "/auth/toggle-biometrics",
+      url: "/auth/toggle-biometrics",
     },
     requestPasswordReset: {
       method: HttpMethod.POST,
-      path: "/auth/request-reset",
+      url: "/auth/request-reset",
     },
-    resetPassword: { method: HttpMethod.POST, path: "/auth/reset-password" },
-    refreshToken: { method: HttpMethod.POST, path: "/auth/refresh-token" },
+    resetPassword: { method: HttpMethod.POST, url: "/auth/reset-password" },
+    refreshToken: { method: HttpMethod.POST, url: "/auth/refresh-token" },
   },
   expenses: {
-    addExpense: { method: HttpMethod.POST, path: "/expenses/add-expense" },
-    getExpenses: { method: HttpMethod.GET, path: "/expenses/get-expense" },
-    voiceLogExpense: { method: HttpMethod.POST, path: "/voice/log-expense" },
+    addExpense: { method: HttpMethod.POST, url: "/expenses/add-expense" },
+    getExpenses: { method: HttpMethod.GET, url: "/expenses/get-expense" },
+    voiceLogExpense: { method: HttpMethod.POST, url: "/voice/log-expense" },
     getExpense: (expenseId: string) => ({
       method: HttpMethod.GET,
-      path: `/expenses/${expenseId}`,
+      url: `/expenses/${expenseId}`,
     }),
     updateExpense: (expenseId: string) => ({
       method: HttpMethod.PATCH,
-      path: `/expenses/${expenseId}`,
+      url: `/expenses/${expenseId}`,
     }),
     deleteExpense: (expenseId: string) => ({
       method: HttpMethod.DELETE,
-      path: `/expenses/${expenseId}`,
+      url: `/expenses/${expenseId}`,
     }),
-    summary: { method: HttpMethod.GET, path: "/expenses/summary" },
-    daily: { method: HttpMethod.GET, path: "/expenses/daily" },
-    monthly: { method: HttpMethod.GET, path: "/expenses/monthly" },
+    summary: { method: HttpMethod.GET, url: "/expenses/summary" },
+    daily: { method: HttpMethod.GET, url: "/expenses/daily" },
+    monthly: { method: HttpMethod.GET, url: "/expenses/monthly" },
   },
   income: {
-    addIncome: { method: HttpMethod.POST, path: "/income/add-income" },
-    getIncomes: { method: HttpMethod.GET, path: "/income/get-income" },
+    addIncome: { method: HttpMethod.POST, url: "/income/add-income" },
+    getIncomes: { method: HttpMethod.GET, url: "/income/get-income" },
     getIncome: (incomeId: string) => ({
       method: HttpMethod.GET,
-      path: `/income/${incomeId}`,
+      url: `/income/${incomeId}`,
     }),
     deleteIncome: (incomeId: string) => ({
       method: HttpMethod.DELETE,
-      path: `/income/${incomeId}`,
+      url: `/income/${incomeId}`,
     }),
     editIncome: (incomeId: string) => ({
       method: HttpMethod.PUT,
-      path: `/income/${incomeId}`,
+      url: `/income/${incomeId}`,
     }),
   },
   budgets: {
-    createBudget: { method: HttpMethod.POST, path: "/budgets" },
-    getBudgets: { method: HttpMethod.GET, path: "/budgets/get-budgets" },
+    createBudget: { method: HttpMethod.POST, url: "/budgets" },
+    getBudgets: { method: HttpMethod.GET, url: "/budgets/get-budgets" },
     getBudget: (budgetId: string) => ({
       method: HttpMethod.GET,
-      path: `/budgets/${budgetId}`,
+      url: `/budgets/${budgetId}`,
     }),
     updateBudget: (budgetId: string) => ({
       method: HttpMethod.PATCH,
-      path: `/budgets/${budgetId}`,
+      url: `/budgets/${budgetId}`,
     }),
     deleteBudget: (budgetId: string) => ({
       method: HttpMethod.DELETE,
-      path: `/budgets/${budgetId}`,
+      url: `/budgets/${budgetId}`,
     }),
     archiveBudget: (budgetId: string) => ({
       method: HttpMethod.PATCH,
-      path: `/budgets/${budgetId}/archive`,
+      url: `/budgets/${budgetId}/archive`,
     }),
     restoreBudget: (budgetId: string) => ({
       method: HttpMethod.PATCH,
-      path: `/budgets/${budgetId}/restore`,
+      url: `/budgets/${budgetId}/restore`,
     }),
     getArchivedBudgets: {
       method: HttpMethod.GET,
-      path: "/budgets/archived",
+      url: "/budgets/archived",
     },
   },
   notifications: {
     getNotifications: {
       method: HttpMethod.GET,
-      path: "/notifications/get-not",
+      url: "/notifications/get-not",
     },
     readNotification: (notificationId: string) => ({
       method: HttpMethod.PATCH,
-      path: `/notifications/${notificationId}/read`,
+      url: `/notifications/${notificationId}/read`,
     }),
     registerToken: {
       method: HttpMethod.POST,
-      path: "/notifications/register-token",
+      url: "/notifications/register-token",
     },
-    sendTestNotification: {
-      method: HttpMethod.POST,
-      path: "https://flashily-unintegrable-holden.ngrok-free.dev/api/notifications/test",
-      isExternal: true,
-    },
+    // sendTestNotification: {
+    //   method: HttpMethod.POST,
+    //   url: "https://flashily-unintegrable-holden.ngrok-free.dev/api/notifications/test",
+    //   isExternal: true,
+    // },
   },
   savings: {
-    createGoal: { method: HttpMethod.POST, path: "/savings/create" },
-    contribute: { method: HttpMethod.POST, path: "/savings/contribute" },
-    getGoals: { method: HttpMethod.GET, path: "/savings/get-goals" },
+    createGoal: { method: HttpMethod.POST, url: "/savings/create" },
+    contribute: { method: HttpMethod.POST, url: "/savings/contribute" },
+    getGoals: { method: HttpMethod.GET, url: "/savings/get-goals" },
     getGoal: (goalId: string) => ({
       method: HttpMethod.GET,
-      path: `/savings/${goalId}`,
+      url: `/savings/${goalId}`,
     }),
     updateGoal: (goalId: string) => ({
       method: HttpMethod.PUT,
-      path: `/savings/${goalId}`,
+      url: `/savings/${goalId}`,
     }),
   },
   wallet: {
-    getOrCreate: { method: HttpMethod.GET, path: "/wallet/create" },
-    deposit: { method: HttpMethod.POST, path: "/wallet/deposit" },
-    withdraw: { method: HttpMethod.POST, path: "/wallet/withdraw" },
-    balance: { method: HttpMethod.GET, path: "/wallet/balance" },
-    transactions: { method: HttpMethod.GET, path: "/wallet/transactions" },
+    getOrCreate: { method: HttpMethod.GET, url: "/wallet/create" },
+    deposit: { method: HttpMethod.POST, url: "/wallet/deposit" },
+    withdraw: { method: HttpMethod.POST, url: "/wallet/withdraw" },
+    balance: { method: HttpMethod.GET, url: "/wallet/balance" },
+    transactions: { method: HttpMethod.GET, url: "/wallet/transactions" },
   },
   categories: {
     getCategories: (type: string) => ({
       method: HttpMethod.GET,
-      path: `/categories?type=${type}`,
+      url: `/categories?type=${type}`,
     }),
   },
+
+  financialTips: {
+    getFinancialTips: { method: HttpMethod.GET, url: "/tips" },
+  },
   fx: {
-    rates: { method: HttpMethod.GET, path: "/fx/rates" },
-    pair: { method: HttpMethod.GET, path: "/fx/pair" },
-    pairs: { method: HttpMethod.GET, path: "/fx/pairs" },
-    history: { method: HttpMethod.GET, path: "/fx/history" },
+    rates: { method: HttpMethod.GET, url: "/fx/rates" },
+    pair: { method: HttpMethod.GET, url: "/fx/pair" },
+    pairs: { method: HttpMethod.GET, url: "/fx/pairs" },
+    history: { method: HttpMethod.GET, url: "/fx/history" },
   },
   kyc: {
-    submit: { method: HttpMethod.POST, path: "/kyc/submit" },
+    submit: { method: HttpMethod.POST, url: "/kyc/submit" },
   },
   ai: {
-    ask: { method: HttpMethod.POST, path: "/ai/ask" },
+    ask: { method: HttpMethod.POST, url: "/ai/ask" },
+  },
+
+  billReminders: {
+    getBills: {
+      method: HttpMethod.GET,
+      url: "/bills",
+    },
   },
 } as const;
 

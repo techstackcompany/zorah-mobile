@@ -17,8 +17,7 @@ export const useGetOrCreateWalletQuery = (
     queryKey: ["wallet", "details"],
     queryFn: () =>
       apiRequest<ApiEnvelope<WalletDetails>>({
-        method: API_ENDPOINTS.wallet.getOrCreate.method,
-        url: API_ENDPOINTS.wallet.getOrCreate.path,
+        ...API_ENDPOINTS.wallet.getOrCreate,
       }),
     ...options,
   });
@@ -30,8 +29,7 @@ export const useDepositFundsMutation = (
     mutationKey: ["wallet", "deposit"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<WalletDetails>>({
-        method: API_ENDPOINTS.wallet.deposit.method,
-        url: API_ENDPOINTS.wallet.deposit.path,
+        ...API_ENDPOINTS.wallet.deposit,
         data: payload,
       }),
     ...options,
@@ -44,8 +42,7 @@ export const useWithdrawFundsMutation = (
     mutationKey: ["wallet", "withdraw"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<WalletDetails>>({
-        method: API_ENDPOINTS.wallet.withdraw.method,
-        url: API_ENDPOINTS.wallet.withdraw.path,
+        ...API_ENDPOINTS.wallet.withdraw,
         data: payload,
       }),
     ...options,
@@ -58,8 +55,7 @@ export const useGetWalletBalanceQuery = (
     queryKey: ["wallet", "balance"],
     queryFn: () =>
       apiRequest<ApiEnvelope<WalletBalance>>({
-        method: API_ENDPOINTS.wallet.balance.method,
-        url: API_ENDPOINTS.wallet.balance.path,
+        ...API_ENDPOINTS.wallet.balance,
       }),
     ...options,
   });
@@ -74,8 +70,7 @@ export const useGetWalletTransactionsQuery = (
         | ApiEnvelope<WalletTransaction[]>
         | { success: boolean; transactions: WalletTransaction[] }
       >({
-        method: API_ENDPOINTS.wallet.transactions.method,
-        url: API_ENDPOINTS.wallet.transactions.path,
+        ...API_ENDPOINTS.wallet.transactions,
       });
 
       // Handle { success: true, transactions: [...] } structure
@@ -101,8 +96,7 @@ export const useWalletHealthQuery = (
     queryKey: ["wallet", "health"],
     queryFn: () =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.wallet.healthCheck.method,
-        url: API_ENDPOINTS.wallet.healthCheck.path,
+        ...API_ENDPOINTS.wallet.healthCheck,
       }),
     ...options,
   });

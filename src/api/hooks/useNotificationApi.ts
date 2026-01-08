@@ -17,8 +17,7 @@ export const useGetNotificationsQuery = (
     queryKey: ["notifications", "list"],
     queryFn: () =>
       apiRequest<ApiEnvelope<Notification[]>>({
-        method: API_ENDPOINTS.notifications.getNotifications.method,
-        url: API_ENDPOINTS.notifications.getNotifications.path,
+        ...API_ENDPOINTS.notifications.getNotifications,
       }),
     ...options,
   });
@@ -37,8 +36,7 @@ export const useReadNotificationMutation = (
       const endpoint =
         API_ENDPOINTS.notifications.readNotification(notificationId);
       return apiRequest<ApiEnvelope<Notification>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
       });
     },
     ...options,
@@ -57,8 +55,7 @@ export const useRegisterNotificationTokenMutation = (
     mutationKey: ["notifications", "registerToken"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.notifications.registerToken.method,
-        url: API_ENDPOINTS.notifications.registerToken.path,
+        ...API_ENDPOINTS.notifications.registerToken,
         data: payload,
       }),
     ...options,
@@ -75,8 +72,7 @@ export const useSendTestNotificationMutation = (
     mutationKey: ["notifications", "sendTest"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.notifications.sendTestNotification.method,
-        url: API_ENDPOINTS.notifications.sendTestNotification.path,
+        ...API_ENDPOINTS.notifications.sendTestNotification,
         data: payload,
       }),
     ...options,

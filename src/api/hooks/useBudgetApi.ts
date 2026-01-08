@@ -1,4 +1,9 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -12,37 +17,37 @@ import {
 } from "../types";
 
 export const useCreateBudgetMutation = (
-  options?: UseMutationOptions<CreateBudgetResponse, ApiError, CreateBudgetRequest>,
+  options?: UseMutationOptions<
+    CreateBudgetResponse,
+    ApiError,
+    CreateBudgetRequest
+  >,
 ) =>
   useMutation<CreateBudgetResponse, ApiError, CreateBudgetRequest>({
     mutationKey: ["budgets", "create"],
-    mutationFn: (payload) =>
-      apiRequest<CreateBudgetResponse>({
-        method: API_ENDPOINTS.budgets.createBudget.method,
-        url: API_ENDPOINTS.budgets.createBudget.path,
+    mutationFn: (payload) => {
+      const endpoint = API_ENDPOINTS.budgets.createBudget;
+      return apiRequest<CreateBudgetResponse>({
+        ...endpoint,
         data: payload,
-      }),
+      });
+    },
     ...options,
   });
 
 export const useGetBudgetsQuery = (
-  options?: UseQueryOptions<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>,
+  options?: UseQueryOptions<
+    BudgetListItem[] | ApiEnvelope<BudgetListItem[]>,
+    ApiError
+  >,
 ) =>
   useQuery<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>({
     queryKey: ["budgets", "list"],
     queryFn: async () => {
-      const response = await apiRequest<
-        ApiEnvelope<BudgetListItem[]> | BudgetListItem[]
-      >({
-        method: API_ENDPOINTS.budgets.getBudgets.method,
-        url: API_ENDPOINTS.budgets.getBudgets.path,
+      const endpoint = API_ENDPOINTS.budgets.getBudgets;
+      return apiRequest<ApiEnvelope<BudgetListItem[]> | BudgetListItem[]>({
+        ...endpoint,
       });
-
-      if (Array.isArray(response)) {
-        return response;
-      }
-
-      return response;
     },
     ...options,
   });
@@ -59,8 +64,7 @@ export const useGetBudgetQuery = (
       }
       const endpoint = API_ENDPOINTS.budgets.getBudget(budgetId);
       const response = await apiRequest<Budget | ApiEnvelope<Budget>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
       });
 
       // The API might return either ApiEnvelope<Budget> or a raw Budget object
@@ -81,7 +85,11 @@ export const useGetBudgetQuery = (
 
 export const useUpdateBudgetMutation = (
   budgetId: string | undefined,
-  options?: UseMutationOptions<UpdateBudgetResponse, ApiError, UpdateBudgetRequest>,
+  options?: UseMutationOptions<
+    UpdateBudgetResponse,
+    ApiError,
+    UpdateBudgetRequest
+  >,
 ) =>
   useMutation<UpdateBudgetResponse, ApiError, UpdateBudgetRequest>({
     mutationKey: ["budgets", "update", budgetId],
@@ -91,8 +99,7 @@ export const useUpdateBudgetMutation = (
       }
       const endpoint = API_ENDPOINTS.budgets.updateBudget(budgetId);
       return apiRequest<UpdateBudgetResponse>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
         data: payload,
       });
     },
@@ -101,7 +108,11 @@ export const useUpdateBudgetMutation = (
 
 export const useDeleteBudgetMutation = (
   budgetId: string | undefined,
-  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
+  options?: UseMutationOptions<
+    ApiEnvelope<{ message: string }>,
+    ApiError,
+    void
+  >,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "delete", budgetId],
@@ -120,7 +131,11 @@ export const useDeleteBudgetMutation = (
 
 export const useArchiveBudgetMutation = (
   budgetId: string | undefined,
-  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
+  options?: UseMutationOptions<
+    ApiEnvelope<{ message: string }>,
+    ApiError,
+    void
+  >,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "archive", budgetId],
@@ -139,7 +154,11 @@ export const useArchiveBudgetMutation = (
 
 export const useRestoreBudgetMutation = (
   budgetId: string | undefined,
-  options?: UseMutationOptions<ApiEnvelope<{ message: string }>, ApiError, void>,
+  options?: UseMutationOptions<
+    ApiEnvelope<{ message: string }>,
+    ApiError,
+    void
+  >,
 ) =>
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "restore", budgetId],
@@ -157,7 +176,10 @@ export const useRestoreBudgetMutation = (
   });
 
 export const useGetArchivedBudgetsQuery = (
-  options?: UseQueryOptions<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>,
+  options?: UseQueryOptions<
+    BudgetListItem[] | ApiEnvelope<BudgetListItem[]>,
+    ApiError
+  >,
 ) =>
   useQuery<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>({
     queryKey: ["budgets", "archived"],

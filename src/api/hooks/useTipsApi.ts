@@ -1,9 +1,6 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
-import axios, { AxiosInstance } from "axios";
-import { ApiError } from "../client";
-import { FX_FINANCIAL_TIPS_CONFIG } from "@/src/config/api";
-
-const apiClient: AxiosInstance = axios.create(FX_FINANCIAL_TIPS_CONFIG);
+import { ApiError, apiRequest, fxTipsClient } from "../client";
+import { API_ENDPOINTS } from "../endpoints";
 
 type FinancialTipResponse = {
   result: string;
@@ -17,13 +14,19 @@ export const useGetFinancialTipQuery = (
   useQuery<FinancialTipResponse, ApiError>({
     queryKey: ["financial-tip", amount],
     queryFn: async () => {
-      const response = await apiClient.get<FinancialTipResponse>("/tips", {
-        params: { amount },
-      });
-      return response.data;
+      const endpoint = API_ENDPOINTS.financialTips.getFinancialTips;
+      const response = await apiRequest<FinancialTipResponse>(
+        {
+          method: endpoint.method,
+          url: endpoint.path,
+          params: { amount },
+        },
+        fxTipsClient,
+      );
+      return response;
     },
     staleTime: 1000 * 60 * 60 * 24,
     refetchOnWindowFocus: false,
-    retry: 1,
+    retry: 3,
     ...options,
   });

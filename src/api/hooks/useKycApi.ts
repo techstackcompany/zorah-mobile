@@ -10,8 +10,7 @@ export const useSubmitKycMutation = (
     mutationKey: ["kyc", "submit"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<SubmitKycResponse>>({
-        method: API_ENDPOINTS.kyc.submit.method,
-        url: API_ENDPOINTS.kyc.submit.path,
+        ...API_ENDPOINTS.kyc.submit,
         data: payload,
       }),
     ...options,

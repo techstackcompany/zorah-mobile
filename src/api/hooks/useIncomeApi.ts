@@ -20,8 +20,7 @@ export const useAddIncomeMutation = (
     mutationKey: ["income", "addIncome"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<Income>>({
-        method: API_ENDPOINTS.income.addIncome.method,
-        url: API_ENDPOINTS.income.addIncome.path,
+        ...API_ENDPOINTS.income.addIncome,
         data: payload,
       }),
     ...options,
@@ -38,8 +37,7 @@ export const useGetIncomesQuery = (
         | Income[]
         | { success: boolean; count: number; data: Income[] }
       >({
-        method: API_ENDPOINTS.income.getIncomes.method,
-        url: API_ENDPOINTS.income.getIncomes.path,
+        ...API_ENDPOINTS.income.getIncomes,
       });
 
       // Handle case where API returns { success, count, data }
@@ -77,8 +75,7 @@ export const useGetIncomeQuery = (
       const response = await apiRequest<
         ApiEnvelope<Income> | Income | { success: boolean; data: Income }
       >({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
       });
 
       // Handle case where API returns { success, data }
@@ -140,8 +137,7 @@ export const useUpdateIncomeMutation = (
       }
       const endpoint = API_ENDPOINTS.income.editIncome(incomeId);
       return apiRequest<ApiEnvelope<Income>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
         data: payload,
       });
     },

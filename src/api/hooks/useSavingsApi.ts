@@ -16,8 +16,7 @@ export const useCreateSavingsGoalMutation = (
     mutationKey: ["savings", "createGoal"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<SavingsGoal>>({
-        method: API_ENDPOINTS.savings.createGoal.method,
-        url: API_ENDPOINTS.savings.createGoal.path,
+        ...API_ENDPOINTS.savings.createGoal,
         data: payload,
       }),
     ...options,
@@ -30,8 +29,7 @@ export const useContributeToSavingsMutation = (
     mutationKey: ["savings", "contribute"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<SavingsGoal>>({
-        method: API_ENDPOINTS.savings.contribute.method,
-        url: API_ENDPOINTS.savings.contribute.path,
+        ...API_ENDPOINTS.savings.contribute,
         data: payload,
       }),
     ...options,
@@ -46,8 +44,7 @@ export const useGetSavingsGoalsQuery = (
       const response = await apiRequest<
         ApiEnvelope<SavingsGoal[]> | SavingsGoal[]
       >({
-        method: API_ENDPOINTS.savings.getGoals.method,
-        url: API_ENDPOINTS.savings.getGoals.path,
+        ...API_ENDPOINTS.savings.getGoals,
       });
 
       // Handle case where API returns array directly
@@ -73,8 +70,7 @@ export const useGetSavingsGoalQuery = (
       const endpoint = API_ENDPOINTS.savings.getGoal(goalId);
       const response = await apiRequest<ApiEnvelope<SavingsGoal> | SavingsGoal>(
         {
-          method: endpoint.method,
-          url: endpoint.path,
+          ...endpoint,
         },
       );
 
@@ -100,8 +96,7 @@ export const useUpdateSavingsGoalMutation = (
     mutationFn: (payload) => {
       const endpoint = API_ENDPOINTS.savings.updateGoal(goalId);
       return apiRequest<ApiEnvelope<SavingsGoal>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
         data: payload,
       });
     },

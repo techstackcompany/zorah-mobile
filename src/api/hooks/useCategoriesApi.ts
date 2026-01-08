@@ -19,8 +19,7 @@ export const useGetCategoriesQuery = (
       const response = await apiRequest<
         ApiEnvelope<{ subcategories: CategoryResponseItem[] }>
       >({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...endpoint,
       });
       return (
         response.data?.subcategories.map(

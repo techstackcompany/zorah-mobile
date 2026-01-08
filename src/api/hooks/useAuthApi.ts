@@ -24,8 +24,7 @@ export const useRegisterUserMutation = (
     mutationKey: ["auth", "register"],
     mutationFn: (payload) =>
       apiRequest<RegisterUserResponse>({
-        method: API_ENDPOINTS.auth.register.method,
-        url: API_ENDPOINTS.auth.register.path,
+        ...API_ENDPOINTS.auth.register,
         data: payload,
       }),
     ...options,
@@ -38,8 +37,7 @@ export const useLoginUserMutation = (
     mutationKey: ["auth", "login"],
     mutationFn: (payload) =>
       apiRequest<LoginUserResponse>({
-        method: API_ENDPOINTS.auth.login.method,
-        url: API_ENDPOINTS.auth.login.path,
+        ...API_ENDPOINTS.auth.login,
         data: payload,
       }),
     ...options,
@@ -52,8 +50,7 @@ export const useGetUserProfileQuery = (
     queryKey: ["auth", "profile"],
     queryFn: () =>
       apiRequest<ApiEnvelope<UserProfile>>({
-        method: API_ENDPOINTS.auth.profile.method,
-        url: API_ENDPOINTS.auth.profile.path,
+        ...API_ENDPOINTS.auth.profile,
       }),
     ...options,
   });
@@ -65,8 +62,7 @@ export const useSetUserPinMutation = (
     mutationKey: ["auth", "setPin"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.auth.setPin.method,
-        url: API_ENDPOINTS.auth.setPin.path,
+        ...API_ENDPOINTS.auth.setPin,
         data: payload,
       }),
     ...options,
@@ -79,8 +75,7 @@ export const useVerifyUserPinMutation = (
     mutationKey: ["auth", "verifyPin"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.auth.verifyPin.method,
-        url: API_ENDPOINTS.auth.verifyPin.path,
+        ...API_ENDPOINTS.auth.verifyPin,
         data: payload,
       }),
     ...options,
@@ -93,8 +88,7 @@ export const useToggleBiometricsMutation = (
     mutationKey: ["auth", "toggleBiometrics"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.auth.toggleBiometrics.method,
-        url: API_ENDPOINTS.auth.toggleBiometrics.path,
+        ...API_ENDPOINTS.auth.toggleBiometrics,
         data: payload,
       }),
     ...options,
@@ -107,8 +101,7 @@ export const useRequestPasswordResetMutation = (
     mutationKey: ["auth", "requestReset"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.auth.requestPasswordReset.method,
-        url: API_ENDPOINTS.auth.requestPasswordReset.path,
+        ...API_ENDPOINTS.auth.requestPasswordReset,
         data: payload,
       }),
     ...options,
@@ -121,8 +114,7 @@ export const useResetPasswordMutation = (
     mutationKey: ["auth", "resetPassword"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
-        method: API_ENDPOINTS.auth.resetPassword.method,
-        url: API_ENDPOINTS.auth.resetPassword.path,
+        ...API_ENDPOINTS.auth.resetPassword,
         data: payload,
       }),
     ...options,
@@ -135,8 +127,7 @@ export const useRefreshAccessTokenMutation = (
     mutationKey: ["auth", "refreshToken"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<RefreshTokenResponse>>({
-        method: API_ENDPOINTS.auth.refreshToken.method,
-        url: API_ENDPOINTS.auth.refreshToken.path,
+        ...API_ENDPOINTS.auth.refreshToken,
         data: payload,
       }),
     ...options,

@@ -27,8 +27,7 @@ export const useAskAiMutation = (
     mutationKey: ["ai", "ask"],
     mutationFn: (payload) =>
       apiRequest<AskAiResponse>({
-        method: API_ENDPOINTS.ai.ask.method,
-        url: API_ENDPOINTS.ai.ask.path,
+        ...API_ENDPOINTS.ai.ask,
         data: payload,
       }),
     ...options,
@@ -41,8 +40,7 @@ export const useTranscribeExpenseMutation = (
     mutationKey: ["ai", "transcribeExpense"],
     mutationFn: (formData) =>
       apiRequest<TranscribeExpenseResponse>({
-        method: API_ENDPOINTS.ai.transcribeExpense.method,
-        url: API_ENDPOINTS.ai.transcribeExpense.path,
+        ...API_ENDPOINTS.ai.transcribeExpense,
         data: formData,
         headers: {
           "Content-Type": "multipart/form-data",
