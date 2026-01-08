@@ -8,7 +8,7 @@ import axios, {
 } from "axios";
 
 import * as SecureStore from "expo-secure-store";
-import { API_CONFIG } from "../config/api";
+import { API_CONFIG, FX_FINANCIAL_TIPS_CONFIG } from "../config/api";
 import { API_ENDPOINTS } from "./endpoints";
 
 export interface ApiError {
@@ -94,7 +94,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
-export const apiClient: AxiosInstance = axios.create({
+export const baseClient: AxiosInstance = axios.create({
   baseURL: API_CONFIG.baseURL,
   timeout: API_CONFIG.timeout,
   headers: {
@@ -102,7 +102,11 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(
+export const fxTipsClient: AxiosInstance = axios.create(
+  FX_FINANCIAL_TIPS_CONFIG,
+);
+
+baseClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAuthToken();
     if (token) {
@@ -125,7 +129,7 @@ apiClient.interceptors.request.use(
   },
 );
 
-apiClient.interceptors.response.use(
+baseClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
@@ -160,7 +164,7 @@ apiClient.interceptors.response.use(
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
-            return apiClient(originalRequest);
+            return baseClient(originalRequest);
           })
           .catch((err) => {
             return Promise.reject(err);
@@ -209,7 +213,7 @@ apiClient.interceptors.response.use(
 
         processQueue(null, newAccessToken);
 
-        return apiClient(originalRequest);
+        return baseClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error);
         await clearAuthTokens();
@@ -256,14 +260,15 @@ export function handleApiError(error: unknown): ApiError {
   };
 }
 
-export async function apiRequest<TResponse>(
+export const apiRequest = async <TResponse>(
   config: AxiosRequestConfig,
-): Promise<TResponse> {
+  client = baseClient,
+): Promise<TResponse> => {
   try {
     const response: AxiosResponse<TResponse> =
-      await apiClient.request<TResponse>(config);
+      await client.request<TResponse>(config);
     return response.data;
   } catch (error) {
     throw handleApiError(error);
   }
-}
+};
