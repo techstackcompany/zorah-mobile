@@ -9,16 +9,12 @@ import {
   FxRateResponse,
 } from "../types";
 import axios, { AxiosInstance } from "axios";
+import { FX_FINANCIAL_TIPS_CONFIG } from "@/src/config/api";
 
 const DEFAULT_HISTORY_DAYS = 7;
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
- const apiClient: AxiosInstance  = axios.create({
-  baseURL: "https://seal-app-jjgmw.ondigitalocean.app",
-  headers: {
-    Accept: "application/json",
-  },
-});
+ const apiClient: AxiosInstance  = axios.create(FX_FINANCIAL_TIPS_CONFIG);
 
 
 /**

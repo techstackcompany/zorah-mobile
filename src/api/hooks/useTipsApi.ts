@@ -1,22 +1,15 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import axios, { AxiosInstance } from "axios";
 import { ApiError } from "../client";
+import { FX_FINANCIAL_TIPS_CONFIG } from "@/src/config/api";
 
-const apiClient: AxiosInstance = axios.create({
-  baseURL: "https://fx-rates-api.onrender.com",
-  headers: {
-    Accept: "application/json",
-  },
-});
+const apiClient: AxiosInstance = axios.create(FX_FINANCIAL_TIPS_CONFIG);
 
 type FinancialTipResponse = {
   result: string;
   tip: string;
 };
 
-/**
- * Fetch a financial tip from the API.
- */
 export const useGetFinancialTipQuery = (
   amount: number = 500,
   options?: UseQueryOptions<FinancialTipResponse, ApiError>,
