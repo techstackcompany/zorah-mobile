@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { handleApiError, setRefreshToken } from "@/src/api/client";
 import { useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
-import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -98,7 +97,21 @@ const SignInScreen = () => {
             : "You’re now signed in.",
       });
 
-      router.replace("/");
+      // Navigate based on setup completion status
+      if (computedHasCompletedSetup) {
+        router.replace("/(app)/(home)");
+      } else {
+        // User needs to complete setup, redirect to setup flow
+        const setupRoutes: Record<number, string> = {
+          1: "/(auth)/setup/choose-language",
+          2: "/(auth)/setup/monthly-income",
+          3: "/(auth)/setup/your-banks",
+          4: "/(auth)/setup/summary",
+        };
+        const targetRoute =
+          setupRoutes[nextSetupStep ?? 1] || "/(auth)/setup/choose-language";
+        router.replace(targetRoute);
+      }
     },
     [
       router,
@@ -226,8 +239,6 @@ const SignInScreen = () => {
         </Text>
         <View className="h-[1px] flex-1 bg-gray-200" />
       </View>
-
-   
 
       <Link asChild href={"/signUp"}>
         <Pressable className="mb-10 flex-row items-center justify-center gap-2">

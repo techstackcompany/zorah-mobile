@@ -5,7 +5,6 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { formatCurrency } from "@/constants/investments";
 import {
-  GOAL_CONTRIBUTIONS,
   calculateGoalProgress,
   getStatusTone,
   mapApiGoalToUiGoal,

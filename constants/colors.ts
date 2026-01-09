@@ -21,6 +21,7 @@ const COLORS = {
   purple: "#6165D7",
   coral: "#F36F56",
   error: "#EF4444",
+  darkRed:'#AF2B2B',
   purpleLight: "#EAEFFF",
   white: "#FFFFFF",
   black: "#000000",

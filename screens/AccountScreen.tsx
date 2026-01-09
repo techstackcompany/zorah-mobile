@@ -39,7 +39,6 @@ const AccountScreen = () => {
 
   const toggleBiometricsMutation = useToggleBiometricsMutation({
     onSuccess: () => {
-      // Update local settings after API call succeeds
       updateSetting("enableBiometrics", false);
       updateSetting("faceIdEnabled", false);
       updateSetting("fingerprintEnabled", false);

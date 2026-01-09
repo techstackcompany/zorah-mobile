@@ -231,7 +231,7 @@ export function formatCurrency(value: number): string {
  */
 export function formatTransactionPurpose(purpose: string): string {
   if (!purpose) return "";
-  
+
   return purpose
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -285,21 +285,17 @@ export function getAccentColorForGroup(groupName: string): {
   accentColor: string;
   backgroundColor: string;
 } {
-  // Hash function to convert string to number
   let hash = 0;
   for (let i = 0; i < groupName.length; i++) {
     hash = groupName.charCodeAt(i) + ((hash << 5) - hash);
-    hash = hash & hash; // Convert to 32-bit integer
+    hash = hash & hash;
   }
 
-  // Determine if using primary or secondary color (50/50 split)
   const usePrimary = Math.abs(hash) % 2 === 0;
   const baseColor = usePrimary ? COLORS.primary_400 : COLORS.secondary_400;
 
-  // Generate variant intensity (0-30% variation)
   const variation = (Math.abs(hash) % 31) / 100; // 0-0.3
 
-  // Create accent color by slightly adjusting the base color
   const baseRgb = hexToRgb(baseColor);
   const accentR = Math.max(
     0,
@@ -315,22 +311,19 @@ export function getAccentColorForGroup(groupName: string): {
   );
   const accentColor = rgbToHex(accentR, accentG, accentB);
 
-  // Generate lighter background color (70-85% lighter)
-  const lightnessPercent = 70 + (Math.abs(hash) % 16); // 70-85%
+  const lightnessPercent = 70 + (Math.abs(hash) % 16);
   const backgroundColor = lightenColor(accentColor, lightnessPercent);
 
   return { accentColor, backgroundColor };
 }
 
-
-export function addKeyboardBehavior(){
-  return Platform.OS === "ios" ? "padding" : "height"
+export function addKeyboardBehavior() {
+  return Platform.OS === "ios" ? "padding" : "height";
 }
 
-export function capitalizeWord(word:string){
-  return word.charAt(0).toUpperCase() + word.slice(1)
+export function capitalizeWord(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
 }
-
 
 export const formatTimeAgo = (dateString?: string): string => {
   if (!dateString) return "Just now";
@@ -344,4 +337,36 @@ export const formatTimeAgo = (dateString?: string): string => {
   if (diffInSeconds < 604800)
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+export const formatLongDate = (date: string, locale = "en-NG"): string => {
+  return new Date(date).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+export const formatNairaCurrency = (value: number) => {
+  const currencyFormatter = new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  });
+
+  return currencyFormatter.format(Math.abs(value));
+};
+
+export const generateColorsFromString = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+
+  return {
+    background: `hsl(${hue}, 70%, 90%)`,
+    accent: `hsl(${hue}, 70%, 30%)`,
+  };
 };

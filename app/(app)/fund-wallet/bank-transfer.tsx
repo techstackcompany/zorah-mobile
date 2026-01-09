@@ -45,7 +45,6 @@ const BankTransferScreen = () => {
 
   const depositMutation = useDepositFundsMutation({
     onSuccess: (response) => {
-      // Invalidate wallet balance and transactions queries to refetch updated data
       queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
       queryClient.invalidateQueries({ queryKey: ["wallet", "transactions"] });
 

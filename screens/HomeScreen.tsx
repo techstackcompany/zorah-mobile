@@ -267,7 +267,6 @@ const HomeScreen = () => {
     }
   };
 
-  // Transform and limit recent transactions (show latest 4)
   const recentTransactions = useMemo(() => {
     if (!transactionsData?.data || !Array.isArray(transactionsData.data)) {
       return [];

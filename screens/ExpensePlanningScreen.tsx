@@ -62,6 +62,15 @@ type TabContent = {
   rankingTitle: string;
 };
 
+const PERIOD_OPTIONS: {
+  value: PeriodType;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { value: "daily", label: "Daily", icon: "calendar-outline" },
+  { value: "monthly", label: "Monthly", icon: "calendar-number-outline" },
+];
+
 const EMPTY_STATE_MESSAGES: Record<
   TabKey,
   { title: string; subtitle: string }
@@ -111,6 +120,7 @@ const ExpensePlanningScreen = () => {
   const [periodType, setPeriodType] = useState<PeriodType>("daily");
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("all");
   const showMonthPicker = useSharedValue(false);
+  const isPeriodModalOpen = useSharedValue(false);
 
   const {
     data: expenseSummaryData,
@@ -129,7 +139,6 @@ const ExpensePlanningScreen = () => {
     isLoading: isDailyExpensesLoading,
     refetch: refetchDailyExpenses,
   } = useGetDailyExpensesQuery();
-
   const {
     data: monthlyExpensesData,
     isLoading: isMonthlyExpensesLoading,
@@ -181,6 +190,12 @@ const ExpensePlanningScreen = () => {
     refetchIncomes,
   ]);
 
+  const handleSelect = (period: PeriodType) => {
+    setPeriodType(period);
+    isPeriodModalOpen.value = false;
+  };
+  const selectedOption =
+    PERIOD_OPTIONS.find((opt) => opt.value === periodType) || PERIOD_OPTIONS[0];
   const tabConfig = useMemo(
     () => TAB_ITEMS.find((item) => item.key === activeTab)!,
     [activeTab],
@@ -305,7 +320,6 @@ const ExpensePlanningScreen = () => {
         }
       }
 
-      // Fallback to building from filtered expenses list
       return buildExpenseSummaryFromList(filteredExpenses);
     }
 
@@ -315,9 +329,8 @@ const ExpensePlanningScreen = () => {
         : [];
 
       if (incomesArray.length > 0) {
-        // Group incomes by category
         const categoryMap = new Map<string, number>();
-        incomesArray.forEach((income: any) => {
+        incomesArray.forEach((income: Record<string, any>) => {
           const category = income.category || "Other";
           const amount = income.amount || 0;
           categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
@@ -420,7 +433,6 @@ const ExpensePlanningScreen = () => {
     });
   }, [incomesData, activeTab]);
 
-  // Get daily expenses array for DailyExpenseChart component
   const dailyExpensesArray = useMemo(() => {
     if (activeTab !== "expense" || periodType !== "daily") return [];
     const byDay = new Map<
@@ -448,7 +460,6 @@ const ExpensePlanningScreen = () => {
     return Array.from(byDay.values());
   }, [activeTab, filteredExpenses, periodType]);
 
-  // Get monthly expenses array for MonthlyExpenseList component
   const monthlyExpensesArray = useMemo(() => {
     if (activeTab !== "expense" || periodType !== "monthly") return [];
     const byMonth = new Map<
@@ -540,7 +551,6 @@ const ExpensePlanningScreen = () => {
               </View>
             </View>
 
-            {/* Daily/Monthly Spending Section */}
             {activeTab === "expense" && (
               <View className="mt-8">
                 <View className="flex-row items-center justify-between">
@@ -550,10 +560,7 @@ const ExpensePlanningScreen = () => {
                       : "Monthly Spending"}
                   </Text>
                   <View className="flex-row items-center gap-2">
-                    <PeriodSelector
-                      selectedPeriod={periodType}
-                      onPeriodChange={setPeriodType}
-                    />
+                    <PeriodSelector selectedOption={selectedOption}  isModalOpen={isPeriodModalOpen}/>
                     <View className="flex-row gap-2">
                       <Pressable
                         onPress={() => {
@@ -709,7 +716,7 @@ const ExpensePlanningScreen = () => {
         headerTextColor="#fff"
         closeIconColor="#fff"
       >
-        <View className="h-full gap-2 bg-gray-950">
+        <View className="h-full gap-2">
           {monthOptions.map((option) => {
             const isSelected = option.key === selectedMonthKey;
             return (
@@ -740,6 +747,49 @@ const ExpensePlanningScreen = () => {
             );
           })}
         </View>
+      </SlideUpModal>
+      <SlideUpModal
+        isOpen={isPeriodModalOpen}
+        onClose={() => (isPeriodModalOpen.value = false)}
+        title="Select Period"
+        headerBackgroundColor={COLORS.primary_400}
+        headerTextColor="#fff"
+        closeIconColor="#fff"
+        className="gap-2"
+      >
+        {PERIOD_OPTIONS.map((option) => {
+          const isSelected = option.value === periodType;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => handleSelect(option.value)}
+              className={`flex-row items-center justify-between rounded-2xl px-4 py-4 ${isSelected ? "bg-primary_100" : "bg-white"}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+            >
+              <View className="flex-row items-center gap-3">
+                <Ionicons
+                  name={option.icon}
+                  size={20}
+                  color={isSelected ? COLORS.primary_400 : COLORS.textColor}
+                />
+                <Text
+                  weight={isSelected ? "semibold" : "medium"}
+                  className={`text-sm ${isSelected ? "text-primary_400" : "text-textColor"}`}
+                >
+                  {option.label}
+                </Text>
+              </View>
+              {isSelected && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={22}
+                  color={COLORS.primary_400}
+                />
+              )}
+            </Pressable>
+          );
+        })}
       </SlideUpModal>
     </>
   );

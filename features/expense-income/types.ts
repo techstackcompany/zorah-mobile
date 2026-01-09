@@ -29,3 +29,8 @@ export type ExpenseItem = {
   date?: string;
   paymentMethod?: string;
 };
+export interface PeriodOption {
+    value: PeriodType;
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+}

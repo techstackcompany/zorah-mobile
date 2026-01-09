@@ -70,7 +70,7 @@ const FinancialGoalsScreen = () => {
   const handleFinish = () => {
     setHasCompletedSetup(true);
     setSetupStep(null);
-    router.replace("/");
+    router.replace("/(app)/(home)");
   };
 
   return (

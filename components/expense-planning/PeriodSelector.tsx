@@ -1,40 +1,17 @@
-import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { PeriodType } from "@/features/expense-income/types";
+import { PeriodOption } from "@/features/expense-income/types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+import { Pressable, Share } from "react-native";
+import { SharedValue, } from "react-native-reanimated";
 
 type PeriodSelectorProps = {
-  selectedPeriod: PeriodType;
-  onPeriodChange: (period: PeriodType) => void;
+  selectedOption: PeriodOption;
+  isModalOpen :SharedValue<boolean>;
 };
 
-const PERIOD_OPTIONS: {
-  value: PeriodType;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  { value: "daily", label: "Daily", icon: "calendar-outline" },
-  { value: "monthly", label: "Monthly", icon: "calendar-number-outline" },
-];
-
-const PeriodSelector = ({
-  selectedPeriod,
-  onPeriodChange,
-}: PeriodSelectorProps) => {
-  const isModalOpen = useSharedValue(false);
-
-  const selectedOption =
-    PERIOD_OPTIONS.find((opt) => opt.value === selectedPeriod) ||
-    PERIOD_OPTIONS[0];
-
-  const handleSelect = (period: PeriodType) => {
-    onPeriodChange(period);
-    isModalOpen.value = false;
-  };
+const PeriodSelector = ({ selectedOption,isModalOpen }: PeriodSelectorProps) => {
 
   return (
     <>
@@ -58,50 +35,6 @@ const PeriodSelector = ({
           color={COLORS.textColor}
         />
       </Pressable>
-
-      <SlideUpModal
-        isOpen={isModalOpen}
-        onClose={() => (isModalOpen.value = false)}
-        title="Select Period"
-        headerBackgroundColor={COLORS.primary_400}
-        headerTextColor="#fff"
-        closeIconColor="#fff"
-        className="gap-2"
-      >
-        {PERIOD_OPTIONS.map((option) => {
-          const isSelected = option.value === selectedPeriod;
-          return (
-            <Pressable
-              key={option.value}
-              onPress={() => handleSelect(option.value)}
-              className={`flex-row items-center justify-between rounded-2xl px-4 py-4 ${isSelected ? "bg-primary_100" : "bg-white"}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-            >
-              <View className="flex-row items-center gap-3">
-                <Ionicons
-                  name={option.icon}
-                  size={20}
-                  color={isSelected ? COLORS.primary_400 : COLORS.textColor}
-                />
-                <Text
-                  weight={isSelected ? "semibold" : "medium"}
-                  className={`text-sm ${isSelected ? "text-primary_400" : "text-textColor"}`}
-                >
-                  {option.label}
-                </Text>
-              </View>
-              {isSelected && (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={22}
-                  color={COLORS.primary_400}
-                />
-              )}
-            </Pressable>
-          );
-        })}
-      </SlideUpModal>
     </>
   );
 };
