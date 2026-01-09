@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from "../endpoints";
 import {
   AddIncomeRequest,
   ApiEnvelope,
+  GetIncomesResponse,
   Income,
   UpdateIncomeRequest,
 } from "../types";
@@ -27,73 +28,30 @@ export const useAddIncomeMutation = (
   });
 
 export const useGetIncomesQuery = (
-  options?: UseQueryOptions<ApiEnvelope<Income[]>, ApiError>,
+  options?: UseQueryOptions<GetIncomesResponse, ApiError>,
 ) =>
-  useQuery<ApiEnvelope<Income[]>, ApiError>({
+  useQuery<GetIncomesResponse, ApiError>({
     queryKey: ["income", "list"],
     queryFn: async () => {
-      const response = await apiRequest<
-        | ApiEnvelope<Income[]>
-        | Income[]
-        | { success: boolean; count: number; data: Income[] }
-      >({
+      const response = await apiRequest<GetIncomesResponse>({
         ...API_ENDPOINTS.income.getIncomes,
       });
 
-      // Handle case where API returns { success, count, data }
-      if (
-        response &&
-        typeof response === "object" &&
-        "success" in response &&
-        "data" in response
-      ) {
-        return { data: response.data };
-      }
-
-      // Handle case where API returns array directly
-      if (Array.isArray(response)) {
-        return { data: response };
-      }
-
-      // Handle ApiEnvelope format
-      return response as ApiEnvelope<Income[]>;
+      return response;
     },
     ...options,
   });
 
 export const useGetIncomeQuery = (
-  incomeId: string | undefined,
-  options?: Partial<UseQueryOptions<ApiEnvelope<Income>, ApiError>>,
+  incomeId: string,
+  options?: UseQueryOptions<ApiEnvelope<Income>, ApiError>,
 ) =>
   useQuery<ApiEnvelope<Income>, ApiError>({
     queryKey: ["income", "detail", incomeId],
     queryFn: async () => {
-      if (!incomeId) {
-        throw new Error("Income ID is required");
-      }
-      const endpoint = API_ENDPOINTS.income.getIncome(incomeId);
-      const response = await apiRequest<
-        ApiEnvelope<Income> | Income | { success: boolean; data: Income }
-      >({
-        ...endpoint,
+      return apiRequest<ApiEnvelope<Income>>({
+        ...API_ENDPOINTS.income.getIncome(incomeId),
       });
-
-      // Handle case where API returns { success, data }
-      if (
-        response &&
-        typeof response === "object" &&
-        "success" in response &&
-        "data" in response
-      ) {
-        return { data: response.data };
-      }
-
-      // Handle case where API returns object directly
-      if (!response || typeof response !== "object" || "data" in response) {
-        return response as ApiEnvelope<Income>;
-      }
-
-      return { data: response as Income };
     },
     enabled: !!incomeId,
     ...options,
@@ -113,10 +71,8 @@ export const useDeleteIncomeMutation = (
       if (!incomeId) {
         throw new Error("Income ID is required");
       }
-      const endpoint = API_ENDPOINTS.income.deleteIncome(incomeId);
       return apiRequest<ApiEnvelope<{ message: string }>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...API_ENDPOINTS.income.deleteIncome(incomeId),
       });
     },
     ...options,

@@ -1,5 +1,10 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { apiRequest, ApiError } from "../client";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
+import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   ApiEnvelope,
@@ -7,8 +12,6 @@ import {
   RegisterNotificationTokenRequest,
   SendTestNotificationRequest,
 } from "../types";
-
-
 
 export const useGetNotificationsQuery = (
   options?: UseQueryOptions<ApiEnvelope<Notification[]>, ApiError>,
@@ -22,15 +25,14 @@ export const useGetNotificationsQuery = (
     ...options,
   });
 
-
 export const useReadNotificationMutation = (
-  options?: UseMutationOptions<ApiEnvelope<Notification>, ApiError, { notificationId: string }>,
-) =>
-  useMutation<
+  options?: UseMutationOptions<
     ApiEnvelope<Notification>,
     ApiError,
     { notificationId: string }
-  >({
+  >,
+) =>
+  useMutation<ApiEnvelope<Notification>, ApiError, { notificationId: string }>({
     mutationKey: ["notifications", "read"],
     mutationFn: ({ notificationId }) => {
       const endpoint =
@@ -42,38 +44,38 @@ export const useReadNotificationMutation = (
     ...options,
   });
 
-
-  
 export const useRegisterNotificationTokenMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, RegisterNotificationTokenRequest>,
-) =>
-  useMutation<
+  options?: UseMutationOptions<
     ApiEnvelope<unknown>,
     ApiError,
     RegisterNotificationTokenRequest
-  >({
-    mutationKey: ["notifications", "registerToken"],
-    mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<unknown>>({
-        ...API_ENDPOINTS.notifications.registerToken,
-        data: payload,
-      }),
-    ...options,
-  });
-
-export const useSendTestNotificationMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, SendTestNotificationRequest>,
+  >,
 ) =>
-  useMutation<
-    ApiEnvelope<unknown>,
-    ApiError,
-    SendTestNotificationRequest
-  >({
-    mutationKey: ["notifications", "sendTest"],
-    mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<unknown>>({
-        ...API_ENDPOINTS.notifications.sendTestNotification,
-        data: payload,
-      }),
-    ...options,
-  });
+  useMutation<ApiEnvelope<unknown>, ApiError, RegisterNotificationTokenRequest>(
+    {
+      mutationKey: ["notifications", "registerToken"],
+      mutationFn: (payload) =>
+        apiRequest<ApiEnvelope<unknown>>({
+          ...API_ENDPOINTS.notifications.registerToken,
+          data: payload,
+        }),
+      ...options,
+    },
+  );
+
+// export const useSendTestNotificationMutation = (
+//   options?: UseMutationOptions<
+//     ApiEnvelope<unknown>,
+//     ApiError,
+//     SendTestNotificationRequest
+//   >,
+// ) =>
+//   useMutation<ApiEnvelope<unknown>, ApiError, SendTestNotificationRequest>({
+//     mutationKey: ["notifications", "sendTest"],
+//     mutationFn: (payload) =>
+//       apiRequest<ApiEnvelope<unknown>>({
+//         ...API_ENDPOINTS.notifications.sendTestNotification,
+//         data: payload,
+//       }),
+//     ...options,
+//   });

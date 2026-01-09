@@ -1,4 +1,9 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
@@ -10,7 +15,11 @@ import {
 } from "../types";
 
 export const useCreateSavingsGoalMutation = (
-  options?: UseMutationOptions<ApiEnvelope<SavingsGoal>, ApiError, CreateSavingsGoalRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<SavingsGoal>,
+    ApiError,
+    CreateSavingsGoalRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<SavingsGoal>, ApiError, CreateSavingsGoalRequest>({
     mutationKey: ["savings", "createGoal"],
@@ -23,7 +32,11 @@ export const useCreateSavingsGoalMutation = (
   });
 
 export const useContributeToSavingsMutation = (
-  options?: UseMutationOptions<ApiEnvelope<SavingsGoal>, ApiError, ContributeToSavingsRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<SavingsGoal>,
+    ApiError,
+    ContributeToSavingsRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<SavingsGoal>, ApiError, ContributeToSavingsRequest>({
     mutationKey: ["savings", "contribute"],
@@ -89,7 +102,11 @@ export const useGetSavingsGoalQuery = (
 
 export const useUpdateSavingsGoalMutation = (
   goalId: string,
-  options?: UseMutationOptions<ApiEnvelope<SavingsGoal>, ApiError, UpdateSavingsGoalRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<SavingsGoal>,
+    ApiError,
+    UpdateSavingsGoalRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<SavingsGoal>, ApiError, UpdateSavingsGoalRequest>({
     mutationKey: ["savings", "updateGoal", goalId],

@@ -112,10 +112,8 @@ export const useDeleteExpenseMutation = (
       if (!expenseId) {
         throw new Error("Expense ID is required");
       }
-      const endpoint = API_ENDPOINTS.expenses.deleteExpense(expenseId);
       return apiRequest<ApiEnvelope<{ message: string }>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...API_ENDPOINTS.expenses.deleteExpense(expenseId),
       });
     },
     ...options,
@@ -163,8 +161,7 @@ export const useGetExpenseSummaryQuery = (
     queryKey: ["expenses", "summary", type],
     queryFn: async () => {
       const response = await apiRequest<ApiEnvelope<ExpenseSummary>>({
-        method: API_ENDPOINTS.expenses.summary.method,
-        url: API_ENDPOINTS.expenses.summary.path,
+        ...API_ENDPOINTS.expenses.summary,
         params: { type },
       });
 
@@ -191,11 +188,9 @@ export const useGetDailyExpensesQuery = (
       const response = await apiRequest<
         ApiEnvelope<DailyExpenseTotal[]> | DailyExpenseTotal[]
       >({
-        method: API_ENDPOINTS.expenses.daily.method,
-        url: API_ENDPOINTS.expenses.daily.path,
+        ...API_ENDPOINTS.expenses.daily,
       });
 
-      // Handle case where API returns array directly
       if (Array.isArray(response)) {
         return { data: response };
       }
@@ -214,11 +209,9 @@ export const useGetMonthlyExpensesQuery = (
       const response = await apiRequest<
         ApiEnvelope<MonthlyExpenseTotal[]> | MonthlyExpenseTotal[]
       >({
-        method: API_ENDPOINTS.expenses.monthly.method,
-        url: API_ENDPOINTS.expenses.monthly.path,
+        ...API_ENDPOINTS.expenses.monthly,
       });
 
-      // Handle case where API returns array directly
       if (Array.isArray(response)) {
         return { data: response };
       }

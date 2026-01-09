@@ -1,6 +1,6 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
-import { ApiError,  } from "../client";
+import { ApiError, apiRequest, fxTipsClient } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   FxHistoricalData,
@@ -8,18 +8,15 @@ import {
   FxRatePair,
   FxRateResponse,
 } from "../types";
-import axios, { AxiosInstance } from "axios";
-import { FX_FINANCIAL_TIPS_CONFIG } from "@/src/config/api";
 
 const DEFAULT_HISTORY_DAYS = 7;
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
- const apiClient: AxiosInstance  = axios.create(FX_FINANCIAL_TIPS_CONFIG);
+const timeConfig = {
+  staleTime: ONE_DAY,
+  refetchInterval: ONE_DAY,
+};
 
-
-/**
- * Fetch current exchange rates for a base currency from the proxy API
- */
 export const useGetFxRatesQuery = (
   baseCurrency: string = "USD",
   options?: UseQueryOptions<FxRateResponse, ApiError>,
@@ -27,20 +24,17 @@ export const useGetFxRatesQuery = (
   useQuery<FxRateResponse, ApiError>({
     queryKey: ["fx-rates", baseCurrency],
     queryFn: async () => {
-      const response = await apiClient.get<FxRateResponse>(
-        API_ENDPOINTS.fx.rates.path,
-        {
-          params: { base: baseCurrency },
-        },
-      );
+      const response = await apiRequest<FxRateResponse>({
+        ...API_ENDPOINTS.fx.rates,
+        params: { base: baseCurrency },
+      }, fxTipsClient);
 
       return {
-        ...response.data,
-        conversion_rates: response.data.conversion_rates || {},
+        ...response,
+        conversion_rates: response.conversion_rates || {},
       };
     },
-    staleTime: ONE_DAY,
-    refetchInterval: ONE_DAY,
+    ...timeConfig,
     ...options,
   });
 
@@ -55,23 +49,17 @@ export const useGetFxRatePairQuery = (
   useQuery<FxPairQuote, ApiError>({
     queryKey: ["fx-rate-pair", baseCurrency, quoteCurrency],
     queryFn: async () => {
-      const response = await apiClient.get<{ pair: FxPairQuote }>(
-        API_ENDPOINTS.fx.pair.path,
-        {
-          params: { base: baseCurrency, target: quoteCurrency },
-        },
-      );
+      const response = await apiRequest<{ pair: FxPairQuote }>({
+        ...API_ENDPOINTS.fx.pair,
+        params: { base: baseCurrency, target: quoteCurrency },
+      }, fxTipsClient);
 
-      return response.data.pair;
+      return response.pair;
     },
-
-    staleTime: ONE_DAY,
-    refetchInterval: ONE_DAY,
+    ...timeConfig,
     enabled: !!baseCurrency && !!quoteCurrency,
     ...options,
   });
-
-
 
 /**
  * Get multiple exchange rate pairs at once with change calculations
@@ -92,23 +80,18 @@ export const useGetFxRatePairsQuery = (
         .map((pair) => `${pair.base}:${pair.quote}`)
         .join(",");
 
-      const response = await apiClient.get(
-        API_ENDPOINTS.fx.pairs.path,
-        {
-          params: { pairs: pairsParam },
-        },
-      );
+      const response = await apiRequest<{ pairs: FxRatePair[] }>({
+        ...API_ENDPOINTS.fx.pairs,
+        params: { pairs: pairsParam },
+      }, fxTipsClient);
 
-      return response.data.pairs || [];
+      return response.pairs || [];
     },
-    staleTime: ONE_DAY,
-    refetchInterval: ONE_DAY,
+    ...timeConfig,
     enabled: pairs.length > 0,
     ...options,
   });
 
-
-  
 /**
  * Get rate history for a currency pair (for charts) from the proxy API
  */
@@ -120,17 +103,18 @@ export const useGetRateHistoryQuery = (
   useQuery<FxHistoricalData[], ApiError>({
     queryKey: ["fx-rate-history", baseCurrency, quoteCurrency],
     queryFn: async () => {
-      const response = await apiClient.get(API_ENDPOINTS.fx.history.path, {
+      const response = await apiRequest<{ history: FxHistoricalData[] }>({
+        ...API_ENDPOINTS.fx.history,
         params: {
           base: baseCurrency,
           quote: quoteCurrency,
           days: DEFAULT_HISTORY_DAYS,
         },
-      });
+      }, fxTipsClient);
 
-      return response.data.history || [];
+      return response.history || [];
     },
-    staleTime: ONE_DAY,
+    ...timeConfig,
     enabled: !!baseCurrency && !!quoteCurrency,
     ...options,
   });

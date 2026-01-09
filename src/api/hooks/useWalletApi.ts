@@ -1,5 +1,10 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { apiRequest, ApiError } from "../client";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
+import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   ApiEnvelope,
@@ -23,7 +28,11 @@ export const useGetOrCreateWalletQuery = (
   });
 
 export const useDepositFundsMutation = (
-  options?: UseMutationOptions<ApiEnvelope<WalletDetails>, ApiError, DepositFundsRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<WalletDetails>,
+    ApiError,
+    DepositFundsRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<WalletDetails>, ApiError, DepositFundsRequest>({
     mutationKey: ["wallet", "deposit"],
@@ -36,7 +45,11 @@ export const useDepositFundsMutation = (
   });
 
 export const useWithdrawFundsMutation = (
-  options?: UseMutationOptions<ApiEnvelope<WalletDetails>, ApiError, WithdrawFundsRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<WalletDetails>,
+    ApiError,
+    WithdrawFundsRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<WalletDetails>, ApiError, WithdrawFundsRequest>({
     mutationKey: ["wallet", "withdraw"],

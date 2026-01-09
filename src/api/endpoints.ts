@@ -157,10 +157,16 @@ export const API_ENDPOINTS = {
   },
 
   billReminders: {
+    addBill: { method: HttpMethod.POST, url: "/bills" },
     getBills: {
       method: HttpMethod.GET,
       url: "/bills",
     },
+    payBill: (id: string) => ({
+      method: HttpMethod.PATCH,
+      url: `/bills/${id}/pay`,
+    }),
+
   },
 } as const;
 

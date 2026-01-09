@@ -21,6 +21,7 @@ export const useGetCategoriesQuery = (
       >({
         ...endpoint,
       });
+      console.log('response.data', response.data)
       return (
         response.data?.subcategories.map(
           ({ _id, image, name }: CategoryResponseItem) => ({

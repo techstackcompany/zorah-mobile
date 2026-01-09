@@ -4,7 +4,11 @@ import { API_ENDPOINTS } from "../endpoints";
 import { ApiEnvelope, SubmitKycRequest, SubmitKycResponse } from "../types";
 
 export const useSubmitKycMutation = (
-  options?: UseMutationOptions<ApiEnvelope<SubmitKycResponse>, ApiError, SubmitKycRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<SubmitKycResponse>,
+    ApiError,
+    SubmitKycRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<SubmitKycResponse>, ApiError, SubmitKycRequest>({
     mutationKey: ["kyc", "submit"],

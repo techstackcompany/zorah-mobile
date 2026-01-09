@@ -12,13 +12,13 @@ type AskAiResponse = {
   intent?: string;
 };
 
-type TranscribeExpenseResponse = {
-  amount: number;
-  category: string;
-  description: string;
-  paymentMethod: string;
-  date: string;
-};
+// type TranscribeExpenseResponse = {
+//   amount: number;
+//   category: string;
+//   description: string;
+//   paymentMethod: string;
+//   date: string;
+// };
 
 export const useAskAiMutation = (
   options?: UseMutationOptions<AskAiResponse, ApiError, AskAiRequest>,
@@ -33,18 +33,18 @@ export const useAskAiMutation = (
     ...options,
   });
 
-export const useTranscribeExpenseMutation = (
-  options?: UseMutationOptions<TranscribeExpenseResponse, ApiError, FormData>,
-) =>
-  useMutation<TranscribeExpenseResponse, ApiError, FormData>({
-    mutationKey: ["ai", "transcribeExpense"],
-    mutationFn: (formData) =>
-      apiRequest<TranscribeExpenseResponse>({
-        ...API_ENDPOINTS.ai.transcribeExpense,
-        data: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }),
-    ...options,
-  });
+// export const useTranscribeExpenseMutation = (
+//   options?: UseMutationOptions<TranscribeExpenseResponse, ApiError, FormData>,
+// ) =>
+//   useMutation<TranscribeExpenseResponse, ApiError, FormData>({
+//     mutationKey: ["ai", "transcribeExpense"],
+//     mutationFn: (formData) =>
+//       apiRequest<TranscribeExpenseResponse>({
+//         ...API_ENDPOINTS.ai.transcribeExpense,
+//         data: formData,
+//         headers: {
+//           "Content-Type": "multipart/form-data",
+//         },
+//       }),
+//     ...options,
+//   });

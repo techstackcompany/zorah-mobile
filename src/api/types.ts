@@ -53,7 +53,6 @@ export interface UserProfile {
   KycStatus?: "unverified" | "pending" | "verified" | (string & {});
   createdAt?: string;
   updatedAt?: string;
-  __v?: number;
   [key: string]: unknown;
 }
 
@@ -155,12 +154,15 @@ export type UpdateIncomeRequest = Partial<AddIncomeRequest>;
 
 export interface Income extends AddIncomeRequest {
   _id?: string;
-  id?: string;
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  __v?: number;
-  [key: string]: unknown;
+  user: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetIncomesResponse {
+  success: boolean;
+  count: number;
+  data: Income[];
 }
 
 /* ---------------------------------------------
@@ -169,7 +171,7 @@ export interface Income extends AddIncomeRequest {
 export interface CreateBudgetRequest {
   category: string;
   amount: number;
-  period: "weekly" | "monthly" | "yearly" | (string & {});
+  period: "weekly" | "monthly" | "yearly";
   startDate: string;
   endDate: string;
 }
@@ -180,7 +182,7 @@ export interface Budget {
   category: string;
   amount?: number;
   Limit?: number;
-  period?: "weekly" | "monthly" | "yearly" | string;
+  period?: "weekly" | "monthly" | "yearly";
   month?: number;
   year?: number;
   startDate?: string;
@@ -192,7 +194,6 @@ export interface Budget {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
-  __v?: number;
 }
 
 export interface BudgetListItem {
@@ -201,7 +202,7 @@ export interface BudgetListItem {
   category: string;
   amount?: number;
   Limit?: number;
-  period?: "weekly" | "monthly" | "yearly" | (string & {});
+  period?: "weekly" | "monthly" | "yearly";
   month?: number | null;
   year?: number | null;
   startDate?: string;
@@ -214,7 +215,6 @@ export interface BudgetListItem {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
-  __v?: number;
 }
 
 export interface CreateBudgetResponse {
@@ -225,7 +225,7 @@ export interface CreateBudgetResponse {
 export interface UpdateBudgetRequest {
   category: string;
   amount: number;
-  period: "weekly" | "monthly" | "yearly" | (string & {});
+  period: "weekly" | "monthly" | "yearly";
   startDate: string;
   endDate: string;
 }
@@ -270,14 +270,11 @@ export interface CreateSavingsGoalRequest {
 
 export interface SavingsGoal extends CreateSavingsGoalRequest {
   _id?: string;
-  id?: string; // For backward compatibility
   user?: string;
   currentAmount?: number;
-  status?: "active" | "completed" | "paused" | (string & {});
+  status?: "active" | "completed" | "paused";
   createdAt?: string;
   updatedAt?: string;
-  __v?: number;
-  [key: string]: unknown;
 }
 
 export interface ContributeToSavingsRequest {
@@ -319,7 +316,7 @@ export interface WalletTransaction {
     | "savings_contribution"
     | "other";
   reference: string;
-  status: "pending" | "successful" | "failed" | string;
+  status: "pending" | "successful" | "failed";
   metadata?: {
     category?: string;
     description?: string;
@@ -328,7 +325,6 @@ export interface WalletTransaction {
   createdAt?: string;
   updatedAt?: string;
   user: string;
-  __v: number;
 }
 
 export interface WalletDetails {
@@ -409,5 +405,65 @@ export interface SubmitKycRequest {
 export interface SubmitKycResponse {
   status?: string;
   reference?: string;
-  [key: string]: unknown;
+}
+
+/* ---------------------------------------------
+   Bill  Reminders
+----------------------------------------------*/
+
+export interface BillReminder {
+  _id: string;
+  user: string;
+  name: string;
+  amount: number;
+  dueDate: string;
+  category: string;
+  frequency: string;
+  status: string;
+  reminderEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetBillRemindersResponse {
+  summary: {
+    totalMonthly: number;
+    totalPaid: number;
+    totalDue: number;
+  };
+  bills: BillReminder[];
+}
+
+export interface PayBillReminderResponse {
+  message: string;
+  bill: BillReminder;
+}
+
+export interface AddBillReminderRequest {
+  name: string;
+  amount: number;
+  dueDate: string;
+  category: string;
+  paymentMethod: string;
+  reminderEnabled: boolean;
+}
+
+export interface AddBillReminderResponse {
+  status: string;
+  data: {
+    user: {
+      _id: string;
+      email: string;
+    };
+    name: string;
+    amount: number;
+    dueDate: string;
+    category: string;
+    frequency: string;
+    status: string;
+    reminderEnabled: boolean;
+    _id: string;
+    createdAt: string;
+    updatedAt: string;
+  };
 }

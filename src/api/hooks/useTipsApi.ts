@@ -14,11 +14,9 @@ export const useGetFinancialTipQuery = (
   useQuery<FinancialTipResponse, ApiError>({
     queryKey: ["financial-tip", amount],
     queryFn: async () => {
-      const endpoint = API_ENDPOINTS.financialTips.getFinancialTips;
       const response = await apiRequest<FinancialTipResponse>(
         {
-          method: endpoint.method,
-          url: endpoint.path,
+          ...API_ENDPOINTS.financialTips.getFinancialTips,
           params: { amount },
         },
         fxTipsClient,

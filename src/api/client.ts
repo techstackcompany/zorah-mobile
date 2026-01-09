@@ -137,11 +137,11 @@ baseClient.interceptors.response.use(
     };
 
     const isRefreshTokenEndpoint = originalRequest.url?.includes(
-      API_ENDPOINTS.auth.refreshToken.path,
+      API_ENDPOINTS.auth.refreshToken.url,
     );
 
     const isLoginEndpoint = originalRequest.url?.includes(
-      API_ENDPOINTS.auth.login.path,
+      API_ENDPOINTS.auth.login.url,
     );
 
     const isWithinGracePeriod =
@@ -188,7 +188,7 @@ baseClient.interceptors.response.use(
           accessToken?: string;
           refreshToken?: string;
         }>(
-          `${API_CONFIG.baseURL}${API_ENDPOINTS.auth.refreshToken.path}`,
+          `${API_CONFIG.baseURL}${API_ENDPOINTS.auth.refreshToken.url}`,
           { refreshToken },
           {
             headers: {

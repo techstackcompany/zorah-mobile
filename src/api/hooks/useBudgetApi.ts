@@ -26,9 +26,8 @@ export const useCreateBudgetMutation = (
   useMutation<CreateBudgetResponse, ApiError, CreateBudgetRequest>({
     mutationKey: ["budgets", "create"],
     mutationFn: (payload) => {
-      const endpoint = API_ENDPOINTS.budgets.createBudget;
       return apiRequest<CreateBudgetResponse>({
-        ...endpoint,
+        ...API_ENDPOINTS.budgets.createBudget,
         data: payload,
       });
     },
@@ -44,35 +43,24 @@ export const useGetBudgetsQuery = (
   useQuery<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>, ApiError>({
     queryKey: ["budgets", "list"],
     queryFn: async () => {
-      const endpoint = API_ENDPOINTS.budgets.getBudgets;
       return apiRequest<ApiEnvelope<BudgetListItem[]> | BudgetListItem[]>({
-        ...endpoint,
+        ...API_ENDPOINTS.budgets.getBudgets,
       });
     },
     ...options,
   });
 
 export const useGetBudgetQuery = (
-  budgetId: string | undefined,
+  budgetId: string,
   options?: UseQueryOptions<Budget, ApiError>,
 ) =>
   useQuery<Budget, ApiError>({
     queryKey: ["budgets", "detail", budgetId],
     queryFn: async () => {
-      if (!budgetId) {
-        throw new Error("Budget ID is required");
-      }
-      const endpoint = API_ENDPOINTS.budgets.getBudget(budgetId);
       const response = await apiRequest<Budget | ApiEnvelope<Budget>>({
-        ...endpoint,
+        ...API_ENDPOINTS.budgets.getBudget(budgetId),
       });
 
-      // The API might return either ApiEnvelope<Budget> or a raw Budget object
-      if (Array.isArray(response)) {
-        throw new Error("Unexpected array response for single budget");
-      }
-
-      // Unwrap ApiEnvelope if needed
       if (response && typeof response === "object" && "data" in response) {
         return (response as ApiEnvelope<Budget>).data as Budget;
       }
@@ -120,17 +108,15 @@ export const useDeleteBudgetMutation = (
       if (!budgetId) {
         throw new Error("Budget ID is required");
       }
-      const endpoint = API_ENDPOINTS.budgets.deleteBudget(budgetId);
       return apiRequest<ApiEnvelope<{ message: string }>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...API_ENDPOINTS.budgets.deleteBudget(budgetId),
       });
     },
     ...options,
   });
 
 export const useArchiveBudgetMutation = (
-  budgetId: string | undefined,
+  budgetId: string,
   options?: UseMutationOptions<
     ApiEnvelope<{ message: string }>,
     ApiError,
@@ -140,20 +126,15 @@ export const useArchiveBudgetMutation = (
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "archive", budgetId],
     mutationFn: () => {
-      if (!budgetId) {
-        throw new Error("Budget ID is required");
-      }
-      const endpoint = API_ENDPOINTS.budgets.archiveBudget(budgetId);
       return apiRequest<ApiEnvelope<{ message: string }>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...API_ENDPOINTS.budgets.archiveBudget(budgetId),
       });
     },
     ...options,
   });
 
 export const useRestoreBudgetMutation = (
-  budgetId: string | undefined,
+  budgetId: string,
   options?: UseMutationOptions<
     ApiEnvelope<{ message: string }>,
     ApiError,
@@ -163,13 +144,8 @@ export const useRestoreBudgetMutation = (
   useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "restore", budgetId],
     mutationFn: () => {
-      if (!budgetId) {
-        throw new Error("Budget ID is required");
-      }
-      const endpoint = API_ENDPOINTS.budgets.restoreBudget(budgetId);
       return apiRequest<ApiEnvelope<{ message: string }>>({
-        method: endpoint.method,
-        url: endpoint.path,
+        ...API_ENDPOINTS.budgets.restoreBudget(budgetId),
       });
     },
     ...options,
@@ -187,8 +163,7 @@ export const useGetArchivedBudgetsQuery = (
       const response = await apiRequest<
         ApiEnvelope<BudgetListItem[]> | BudgetListItem[]
       >({
-        method: API_ENDPOINTS.budgets.getArchivedBudgets.method,
-        url: API_ENDPOINTS.budgets.getArchivedBudgets.path,
+        ...API_ENDPOINTS.budgets.getArchivedBudgets,
       });
 
       if (Array.isArray(response)) {
