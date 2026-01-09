@@ -54,11 +54,7 @@ const AddIncomeScreen = () => {
       return [];
     }
 
-    return categoriesData.map((subcategory) => ({
-      key: subcategory.name,
-      label: subcategory.name,
-      icon: subcategory.image || "",
-    }));
+   return categoriesData
   }, [categoriesData]);
 
   // Set default selected category when categories are loaded
@@ -70,12 +66,8 @@ const AddIncomeScreen = () => {
 
   const addIncomeMutation = useAddIncomeMutation({
     onSuccess: (response) => {
-      console.log("=== ADD INCOME SUCCESS ===");
-      console.log("Full response:", JSON.stringify(response, null, 2));
-      console.log("Response data:", response?.data);
-      console.log("========================\n");
+     
 
-      // Invalidate income queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["income"] });
 
       Toast.show({
@@ -90,18 +82,12 @@ const AddIncomeScreen = () => {
       setDate("");
       setDescription("");
 
-      // Navigate back after a short delay
       setTimeout(() => {
         router.back();
       }, 1500);
     },
     onError: (error) => {
-      console.log("=== ADD INCOME ERROR ===");
-      console.log("Error object:", error);
-      console.log("Error message:", error.message);
-      console.log("Error status:", error.status);
-      console.log("Error data:", error.data);
-      console.log("========================\n");
+     
 
       Toast.show({
         type: "error",

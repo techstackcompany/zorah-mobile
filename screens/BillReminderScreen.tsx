@@ -2,186 +2,97 @@ import MainContainer from "@/components/layouts/MainContainer";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { formatCurrency } from "@/constants/investments";
-import { Image } from "expo-image";
+import {
+  cn,
+  formatLongDate,
+  formatNairaCurrency,
+  generateColorsFromString,
+} from "@/lib/utils";
+import { useGetCategoriesQuery } from "@/src/api/hooks";
+import {
+  useGetBillsQuery,
+  usePayBillMutation,
+} from "@/src/api/hooks/useBillRemindersApi";
+import { BillReminder } from "@/src/api/types";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import { Image, ImageSource } from "expo-image";
 import { Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   View,
 } from "react-native";
-
-type BillStatus = "due" | "paid" | "overdue";
-
-type BillRecord = {
-  id: string;
-  name: string;
-  amount: number;
-  dueDate: string;
-  status: BillStatus;
-  category: keyof typeof BILL_CATEGORY_META;
-  reminderEnabled: boolean;
-};
+import Toast from "react-native-toast-message";
 
 type FilterKey = "all" | "overdue" | "paid";
 
-const BILL_FILTERS: Array<{ key: FilterKey; label: string }> = [
+const BILL_FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "overdue", label: "Overdue" },
   { key: "paid", label: "Paid" },
 ];
 
-const BILL_CATEGORY_META = {
-  electricity: {
-    icon: "flash-outline" as const,
-    accent: "#F2994A",
-    background: "#FFF5E6",
-  },
-  phone: {
-    icon: "call-outline" as const,
-    accent: "#27AE60",
-    background: "#E8F7EE",
-  },
-  rent: {
-    icon: "home-outline" as const,
-    accent: "#6C5DD3",
-    background: "#F1EEFF",
-  },
-  internet: {
-    icon: "wifi-outline" as const,
-    accent: "#2D9CDB",
-    background: "#E8F4FF",
-  },
-  water: {
-    icon: "water-outline" as const,
-    accent: "#56CCF2",
-    background: "#E6F9FF",
-  },
-} as const;
-
-const INITIAL_BILLS: BillRecord[] = [
-  {
-    id: "electricity",
-    name: "Electricity Bill",
-    amount: 2500,
-    dueDate: "2025-09-30",
-    status: "overdue",
-    category: "electricity",
-    reminderEnabled: true,
-  },
-  {
-    id: "internet",
-    name: "Internet Bill",
-    amount: 10350,
-    dueDate: "2025-09-30",
-    status: "due",
-    category: "internet",
-    reminderEnabled: true,
-  },
-  {
-    id: "water",
-    name: "Water Bill",
-    amount: 500,
-    dueDate: "2025-09-30",
-    status: "overdue",
-    category: "water",
-    reminderEnabled: true,
-  },
-  {
-    id: "phone",
-    name: "Phone Bill",
-    amount: 2500,
-    dueDate: "2025-08-30",
-    status: "paid",
-    category: "phone",
-    reminderEnabled: true,
-  },
-  {
-    id: "house-rent",
-    name: "House Rent",
-    amount: 45000,
-    dueDate: "2025-08-30",
-    status: "paid",
-    category: "rent",
-    reminderEnabled: true,
-  },
-];
-
-const MONTHLY_SUMMARY = {
-  total: 50000,
-  paid: 10210,
-  due: 39483,
-};
-
 const BillReminderScreen = () => {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [records, setRecords] = useState<BillRecord[]>(INITIAL_BILLS);
+  const {
+    data: billsResponseData,
+    error: billsError,
+    isPending: isBillsPending,
+    refetch: refetchBills,
+  } = useGetBillsQuery();
+  const {
+    data: categoryData,
+    error: categoryError,
+    isPending: isCategoryPending,
+    refetch: refetchCategories,
+  } = useGetCategoriesQuery("budget");
+  console.log("categoryData", categoryData);
+  const formattedSummary = useMemo(() => {
+    const summary = billsResponseData?.summary;
+    return {
+      totalMonthly: formatNairaCurrency(summary ? summary.totalMonthly : 0),
+      totalDue: formatNairaCurrency(summary ? summary.totalDue : 0),
+      totalPaid: formatNairaCurrency(summary ? summary.totalPaid : 0),
+    };
+  }, [billsResponseData]);
 
-  const filteredRecords = useMemo(() => {
+  const bills = useMemo(() => {
+    if (!billsResponseData?.bills) return [];
+    return billsResponseData.bills.map((bill) => ({
+      ...bill,
+      categoryImage:
+        categoryData?.find(
+          (category) =>
+            category.label.toLowerCase() === bill.category.toLowerCase(),
+        )?.icon ?? "",
+    }));
+  }, [billsResponseData, categoryData]);
+
+  const overdueBills = bills.filter((bill) => bill.status === "overdue");
+
+  const filteredBills = useMemo(() => {
     if (activeFilter === "all") {
-      return records;
+      return bills;
     }
     if (activeFilter === "overdue") {
-      return records.filter((record) => record.status === "overdue");
+      return bills.filter((bill) => bill.status === "overdue");
     }
-    return records.filter((record) => record.status === "paid");
-  }, [activeFilter, records]);
-
-  const overdueRecords = useMemo(
-    () => records.filter((record) => record.status === "overdue"),
-    [records],
-  );
-
-  const overdueTotal = useMemo(
-    () => overdueRecords.reduce((sum, record) => sum + record.amount, 0),
-    [overdueRecords],
-  );
-
-  const formattedSummary = useMemo(
-    () => ({
-      total: formatCurrency(MONTHLY_SUMMARY.total),
-      paid: formatCurrency(MONTHLY_SUMMARY.paid),
-      due: formatCurrency(MONTHLY_SUMMARY.due),
-    }),
-    [],
-  );
-
-  const handleToggleReminder = (id: string, value: boolean) => {
-    setRecords((prev) =>
-      prev.map((record) =>
-        record.id === id ? { ...record, reminderEnabled: value } : record,
-      ),
-    );
-  };
-
-  const handleMarkAsPaid = (id: string) => {
-    setRecords((prev) =>
-      prev.map((record) =>
-        record.id === id
-          ? {
-              ...record,
-              status: "paid" as const,
-            }
-          : record,
-      ),
-    );
-  };
+    return bills.filter((bill) => bill.status === "paid");
+  }, [activeFilter, bills]);
 
   const handleAddBill = () => {
     router.push("/(app)/bill-reminder/add-bill");
   };
 
-  const sectionTitle =
-    activeFilter === "all" ? "All Bills" : "My Bills";
-  const totalBillsLabel =
-    activeFilter === "all"
-      ? `${records.length} Bills`
-      : `${filteredRecords.length} Bills`;
+  const sectionTitle = activeFilter === "all" ? "All Bills" : "My Bills";
+  const totalBillsLabel = `${filteredBills.length} Bills`;
 
   return (
     <>
@@ -193,63 +104,49 @@ const BillReminderScreen = () => {
               onPress={handleAddBill}
               accessibilityRole="button"
               accessibilityLabel="Add Bill"
-              className="h-10 w-10 items-center justify-center rounded-full bg-primary_400/10"
+              hitSlop={5}
+              className="h-10 w-10 items-center justify-center rounded-full"
             >
               <Image
                 source={require("@/assets/icons/add-budget.svg")}
-                style={{ width: 20, height: 20 }}
+                style={{ width: 24, height: 24 }}
                 tintColor={COLORS.primary_400}
               />
             </Pressable>
           ),
         }}
       />
-      <MainContainer edges={["top"]} className="bg-lightMuted">
+      <MainContainer edges={[]} className="bg-lightMuted">
         <ScrollView
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.summaryCard}>
-            <View className="flex-row items-center justify-between">
+            <View className="gap-5">
               <View>
                 <Text className="text-xs uppercase text-textColor/60">
                   Monthly Bills
                 </Text>
-                <Text
-                  weight="bold"
-                  className="mt-2 text-3xl text-textColor"
-                >
-                  {formattedSummary.total}
+                <Text weight="bold" className="mt-2 text-4xl text-textColor">
+                  {formattedSummary.totalMonthly}
                 </Text>
               </View>
 
               <View style={styles.summaryBreakdown}>
                 <View style={styles.summaryBreakdownItem}>
                   <View style={styles.summaryBadgeHeader}>
-                    <View
-                      style={[
-                        styles.summaryDot,
-                        { backgroundColor: "#2FA89A" },
-                      ]}
-                    />
                     <Text className="text-xs text-textColor/70">Paid</Text>
                   </View>
                   <Text weight="bold" className="text-base text-secondary_500">
-                    {formattedSummary.paid}
+                    {formattedSummary.totalPaid}
                   </Text>
                 </View>
                 <View style={styles.summaryBreakdownItem}>
                   <View style={styles.summaryBadgeHeader}>
-                    <View
-                      style={[
-                        styles.summaryDot,
-                        { backgroundColor: "#EB5757" },
-                      ]}
-                    />
                     <Text className="text-xs text-textColor/70">Due</Text>
                   </View>
                   <Text weight="bold" className="text-base text-[#EB5757]">
-                    {formattedSummary.due}
+                    {formattedSummary.totalDue}
                   </Text>
                 </View>
               </View>
@@ -281,20 +178,29 @@ const BillReminderScreen = () => {
             })}
           </View>
 
-          {overdueRecords.length > 0 && activeFilter !== "paid" ? (
-            <View style={styles.overdueNotice}>
-              <View style={styles.overdueBadge} />
+          {overdueBills.length > 0 && activeFilter !== "paid" ? (
+            <Pressable
+              style={styles.overdueNotice}
+              onPress={() => setActiveFilter("overdue")}
+            >
+              <View>
+                <MaterialIcons
+                  name="error-outline"
+                  size={24}
+                  color={COLORS.error}
+                />
+              </View>
               <View style={{ flex: 1 }}>
-                <Text weight="semibold" className="text-sm text-[#C0392B]">
+                <Text weight="bold" className="text-darkRed text-sm">
                   Overdue Bill
                 </Text>
-                <Text className="mt-1 text-xs text-[#C0392B]">
-                  You have {overdueRecords.length} overdue bill
-                  {overdueRecords.length > 1 ? "s" : ""} totaling{" "}
-                  {formatCurrency(overdueTotal)}
+                <Text className="mt-1 text-xs text-error">
+                  You have {overdueBills.length} overdue bill
+                  {overdueBills.length > 1 ? "s" : ""} totaling{" "}
+                  {formattedSummary.totalDue}
                 </Text>
               </View>
-            </View>
+            </Pressable>
           ) : null}
 
           <View style={styles.sectionHeader}>
@@ -304,99 +210,169 @@ const BillReminderScreen = () => {
             <Text className="text-xs text-primary_400">{totalBillsLabel}</Text>
           </View>
 
-          <View style={styles.billList}>
-            {filteredRecords.map((bill) => (
-              <View key={bill.id} style={styles.billCard}>
-                <View style={styles.billCardHeader}>
-                  <View
-                    style={[
-                      styles.billIconBackground,
-                      {
-                        backgroundColor:
-                          BILL_CATEGORY_META[bill.category].background,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={BILL_CATEGORY_META[bill.category].icon}
-                      size={22}
-                      color={BILL_CATEGORY_META[bill.category].accent}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text weight="semibold" className="text-base text-textColor">
-                      {bill.name}
-                    </Text>
-                    <Text className="mt-1 text-xs text-textColor/60">
-                      Due:{" "}
-                      {new Date(bill.dueDate).toLocaleDateString("en-NG", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-xs text-textColor/60">Reminder</Text>
-                    <Switch
-                      value={bill.reminderEnabled}
-                      onValueChange={(value) =>
-                        handleToggleReminder(bill.id, value)
-                      }
-                      trackColor={{ false: "#D7DCE5", true: COLORS.primary_400 }}
-                      thumbColor="#FFFFFF"
-                      ios_backgroundColor="#D7DCE5"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.billCardFooter}>
-                  <Text weight="bold" className="text-lg text-textColor">
-                    {formatCurrency(bill.amount)}
-                  </Text>
-                  {bill.status === "paid" ? (
-                    <View style={styles.paidBadge}>
-                      <Image
-                        source={require("@/assets/icons/circle-check.svg")}
-                        style={{ width: 18, height: 18 }}
-                        tintColor={COLORS.secondary_500}
-                      />
-                      <Text
-                        weight="semibold"
-                        className="ml-2 text-sm text-secondary_500"
-                      >
-                        Paid
-                      </Text>
-                    </View>
-                  ) : (
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => handleMarkAsPaid(bill.id)}
-                      style={styles.markAsPaidButton}
-                    >
-                      <Text weight="semibold" className="text-sm text-white">
-                        Mark as Paid
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
-          {filteredRecords.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text weight="semibold" className="text-base text-textColor">
-                No bills found
+          {isBillsPending || isCategoryPending ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary_400} />
+              <Text className="mt-4 text-sm text-textColor/60">
+                Loading bills...
               </Text>
-              <Text className="mt-2 text-sm text-textColor/60 text-center">
-                Add a new bill or adjust your filter to see reminders.
-              </Text>
-              <Button title="Add Bill" className="mt-5" onPress={handleAddBill} />
             </View>
-          ) : null}
+          ) : (
+            <FlatList
+              data={filteredBills}
+              renderItem={({ item }) => <BillReminderCard bill={item} />}
+              keyExtractor={(item) => item._id}
+              contentContainerStyle={styles.billList}
+              scrollEnabled={false}
+              ListEmptyComponent={
+                filteredBills.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Text
+                      weight="semibold"
+                      className="text-base text-textColor"
+                    >
+                      No bills found
+                    </Text>
+                    <Text className="mt-2 text-center text-sm text-textColor/60">
+                      Add a new bill{" "}
+                      {activeFilter !== "all" &&
+                        "or adjust your filter to see reminders."}
+                    </Text>
+                    <Button
+                      title="Add Bill"
+                      className="mt-5"
+                      onPress={handleAddBill}
+                    />
+                  </View>
+                ) : null
+              }
+            />
+          )}
+
+          {(categoryError || billsError) && (
+            <View style={styles.errorContainer}>
+              <MaterialIcons
+                name="error-outline"
+                size={48}
+                color={COLORS.error}
+              />
+              <Text weight="semibold" className="mt-4 text-base text-textColor">
+                Unable to Load Bills
+              </Text>
+              <Text className="mt-2 text-center text-sm text-textColor/60">
+                {billsError?.message ||
+                  categoryError?.message ||
+                  "Something went wrong. Please try again."}
+              </Text>
+              <Button
+                title="Retry"
+                className="mt-5"
+                onPress={() => {
+                  refetchBills();
+                  refetchCategories();
+                }}
+              />
+            </View>
+          )}
         </ScrollView>
       </MainContainer>
     </>
+  );
+};
+
+interface BillCardProps {
+  bill: BillReminder & { categoryImage: string | ImageSource };
+}
+
+const BillReminderCard = ({ bill }: BillCardProps) => {
+  const [isEnabled, setIsEnabled] = useState(bill.reminderEnabled);
+  const { mutate, isPending: isSubmitting } = usePayBillMutation(bill._id);
+  const handleToggleReminder = (id: string, value: boolean) => {
+    setIsEnabled(!isEnabled);
+  };
+  const queryClient = useQueryClient();
+  const handleMarkAsPaid = () => {
+    mutate(undefined, {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ["billReminders"] });
+        Toast.show({ text1: data.message });
+      },
+    });
+  };
+  const categoryMeta = generateColorsFromString(bill.category);
+  return (
+    <View key={bill._id} style={styles.billCard}>
+      <View style={styles.billCardHeader}>
+        <View
+          style={[
+            styles.billIconBackground,
+            {
+              backgroundColor: categoryMeta.background,
+            },
+          ]}
+        >
+          <Image
+            source={{ uri: bill.categoryImage as string }}
+            style={{ width: 20, height: 20 }}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text weight="semibold" className="text-base text-textColor">
+            {bill.name}
+          </Text>
+          <Text className="mt-1 text-xs text-textColor/60">
+            Due: {formatLongDate(bill.dueDate)}
+          </Text>
+        </View>
+        <Pressable className="flex-row items-center">
+          <Text className="text-xs text-textColor/60">Reminder</Text>
+          <Switch
+            value={isEnabled}
+            onValueChange={(value) => handleToggleReminder(bill._id, value)}
+            trackColor={{
+              false: COLORS.grey,
+              true: COLORS.secondary_400,
+            }}
+            thumbColor={COLORS.white}
+            ios_backgroundColor="#D7DCE5"
+            style={{ transform: [{ scale: 0.9 }] }}
+          />
+        </Pressable>
+      </View>
+
+      <View style={styles.billCardFooter}>
+        <Text weight="bold" className="text-lg text-textColor">
+          {formatNairaCurrency(bill.amount)}
+        </Text>
+        {bill.status === "paid" ? (
+          <View style={styles.paidBadge}>
+            <Ionicons name="checkmark" size={16} color={COLORS.secondary_500} />
+            <Text weight="semibold" className="ml-2 text-sm text-secondary_500">
+              Paid
+            </Text>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleMarkAsPaid}
+            style={styles.markAsPaidButton}
+          >
+            <View className="absolute w-full items-center justify-center">
+              {isSubmitting && <ActivityIndicator color={COLORS.primary_400} />}
+            </View>
+            <Text
+              weight="semibold"
+              className={cn(
+                "text-sm text-primary_400",
+                isSubmitting && "opacity-0",
+              )}
+            >
+              Mark as Paid
+            </Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
   );
 };
 
@@ -408,7 +384,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   summaryCard: {
-    borderRadius: 24,
+    borderRadius: 8,
     backgroundColor: "#E5ECFF",
     paddingHorizontal: 20,
     paddingVertical: 24,
@@ -416,20 +392,16 @@ const styles = StyleSheet.create({
   summaryBreakdown: {
     gap: 12,
     alignItems: "flex-end",
+    flexDirection: "row",
   },
   summaryBreakdownItem: {
     alignItems: "flex-start",
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     minWidth: 132,
-    shadowColor: "#1A1F36",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 14,
-    elevation: 3,
-    gap: 6,
+    gap: 4,
   },
   summaryDot: {
     width: 8,
@@ -456,21 +428,17 @@ const styles = StyleSheet.create({
   },
   segmentButtonActive: {
     backgroundColor: "#FFFFFF",
-    shadowColor: "#1A1F36",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 3,
   },
   overdueNotice: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    borderRadius: 20,
+    alignItems: "center",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#FAD4D4",
+    borderColor: COLORS.error,
     backgroundColor: "#FFF3F3",
     paddingHorizontal: 16,
     paddingVertical: 14,
+
     gap: 12,
   },
   overdueBadge: {
@@ -494,11 +462,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     gap: 16,
-    shadowColor: "#1A1F36",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 2,
   },
   billCardHeader: {
     flexDirection: "row",
@@ -520,16 +483,22 @@ const styles = StyleSheet.create({
   paidBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.secondary_150,
+    backgroundColor: COLORS.secondary_100,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: COLORS.secondary_500,
   },
   markAsPaidButton: {
-    backgroundColor: COLORS.primary_400,
-    borderRadius: 999,
+    backgroundColor: COLORS.primary_200,
+    borderRadius: 6,
     paddingHorizontal: 20,
     paddingVertical: 10,
+    justifyContent:"center",
+    alignItems:'center',
+    borderWidth: 1,
+    borderColor: COLORS.primary_400,
   },
   emptyState: {
     marginTop: 32,
@@ -538,6 +507,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 32,
     alignItems: "center",
+  },
+  loadingContainer: {
+    marginTop: 32,
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorContainer: {
+    marginTop: 32,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.error + "20",
   },
 });
 

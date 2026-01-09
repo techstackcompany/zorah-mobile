@@ -29,6 +29,7 @@ import {
   Switch,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type ExpenseCategory = {
@@ -121,26 +122,26 @@ const getPaymentMethodLabel = (value: string) =>
 const usePaymentMethodActions = (
   setFocusedField: React.Dispatch<React.SetStateAction<string | null>>,
 ) => {
-  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const isPaymentModalVisible = useSharedValue(false);
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const openPaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(true);
+    isPaymentModalVisible.value = true;
     setFocusedField("payment");
-  }, [setFocusedField]);
+  }, [isPaymentModalVisible, setFocusedField]);
 
   const closePaymentModal = useCallback(() => {
-    setIsPaymentModalVisible(false);
+    isPaymentModalVisible.value = false;
     setFocusedField(null);
-  }, [setFocusedField]);
+  }, [isPaymentModalVisible, setFocusedField]);
 
   const handleSelectPaymentMethod = useCallback(
     (method: string) => {
       setPaymentMethod(method);
-      setIsPaymentModalVisible(false);
+      isPaymentModalVisible.value = false;
       setFocusedField(null);
     },
-    [setFocusedField],
+    [isPaymentModalVisible, setFocusedField],
   );
 
   return {
@@ -160,16 +161,13 @@ const useExpenseSubCategories = () => {
     error: categoriesError,
   } = useGetCategoriesQuery("expense");
 
+
   const expenseCategories = useMemo<ExpenseCategory[]>(() => {
-    if (!categoriesData?.data?.subcategories) {
+    if (!categoriesData) {
       return [];
     }
 
-    return categoriesData.data.subcategories.map(({ name, image }) => ({
-      key: name,
-      label: name,
-      icon: image || "",
-    }));
+    return categoriesData;
   }, [categoriesData]);
 
   return { expenseCategories, isCategoriesLoading, categoriesError };
@@ -199,7 +197,7 @@ const AddExpenseScreen = () => {
 
   const { expenseCategories, isCategoriesLoading, categoriesError } =
     useExpenseSubCategories();
-
+  console.log("expenseCategories", expenseCategories);
   const {
     recognizing,
     transcript,
@@ -226,7 +224,7 @@ const AddExpenseScreen = () => {
       setIsVoiceMode(enabled);
       setFocusedField(null);
       resetVoiceAssist();
-      if (enabled && isPaymentModalVisible) {
+      if (enabled && isPaymentModalVisible.value) {
         closePaymentModal();
       }
     },
@@ -321,7 +319,6 @@ const AddExpenseScreen = () => {
   const handleMicPress = async () => {
     if (recognizing) {
       await stopTranscription();
-
     } else {
       resetTranscript();
       setDetectedExpense(null);
@@ -350,7 +347,6 @@ const AddExpenseScreen = () => {
   }, [transcriptionError]);
 
   const handleSubmit = useCallback(() => {
-    // If in voice mode and have transcript, send to API for processing
     if (isVoiceMode && editableTranscript.trim()) {
       logVoiceExpenseMutation.mutate({ message: editableTranscript });
       return;
@@ -616,7 +612,7 @@ const AddExpenseScreen = () => {
                       value={paymentMethod}
                       placeholder="Select payment method"
                       onPress={openPaymentModal}
-                      isOpen={isPaymentModalVisible}
+                      isOpen={isPaymentModalVisible.value}
                       isFocused={focusedField === "payment"}
                     />
                   </View>
@@ -655,7 +651,10 @@ const AddExpenseScreen = () => {
           <View className="px-6 pb-6">
             <PrimaryButton
               onPress={handleSubmit}
-              loading={addExpenseMutation.isPending || logVoiceExpenseMutation.isPending}
+              loading={
+                addExpenseMutation.isPending ||
+                logVoiceExpenseMutation.isPending
+              }
               label="Add New Expense"
               disabled={isSubmitDisabled}
             />
@@ -663,7 +662,7 @@ const AddExpenseScreen = () => {
         </View>
       </KeyboardAvoidingView>
       <PaymentModal
-        visible={isPaymentModalVisible}
+        isOpen={isPaymentModalVisible}
         onClose={closePaymentModal}
         paymentMethods={PAYMENT_METHODS}
         selectedMethod={paymentMethod}

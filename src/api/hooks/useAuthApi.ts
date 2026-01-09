@@ -1,5 +1,10 @@
-import { useMutation, UseMutationOptions, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { apiRequest, ApiError } from "../client";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
+} from "@tanstack/react-query";
+import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   ApiEnvelope,
@@ -18,7 +23,11 @@ import {
 } from "../types";
 
 export const useRegisterUserMutation = (
-  options?: UseMutationOptions<RegisterUserResponse, ApiError, RegisterUserRequest>,
+  options?: UseMutationOptions<
+    RegisterUserResponse,
+    ApiError,
+    RegisterUserRequest
+  >,
 ) =>
   useMutation<RegisterUserResponse, ApiError, RegisterUserRequest>({
     mutationKey: ["auth", "register"],
@@ -69,7 +78,11 @@ export const useSetUserPinMutation = (
   });
 
 export const useVerifyUserPinMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, VerifyPinRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<unknown>,
+    ApiError,
+    VerifyPinRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<unknown>, ApiError, VerifyPinRequest>({
     mutationKey: ["auth", "verifyPin"],
@@ -82,7 +95,11 @@ export const useVerifyUserPinMutation = (
   });
 
 export const useToggleBiometricsMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, ToggleBiometricsRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<unknown>,
+    ApiError,
+    ToggleBiometricsRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<unknown>, ApiError, ToggleBiometricsRequest>({
     mutationKey: ["auth", "toggleBiometrics"],
@@ -95,7 +112,11 @@ export const useToggleBiometricsMutation = (
   });
 
 export const useRequestPasswordResetMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, RequestPasswordResetRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<unknown>,
+    ApiError,
+    RequestPasswordResetRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<unknown>, ApiError, RequestPasswordResetRequest>({
     mutationKey: ["auth", "requestReset"],
@@ -108,7 +129,11 @@ export const useRequestPasswordResetMutation = (
   });
 
 export const useResetPasswordMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, ResetPasswordRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<unknown>,
+    ApiError,
+    ResetPasswordRequest
+  >,
 ) =>
   useMutation<ApiEnvelope<unknown>, ApiError, ResetPasswordRequest>({
     mutationKey: ["auth", "resetPassword"],
@@ -121,14 +146,20 @@ export const useResetPasswordMutation = (
   });
 
 export const useRefreshAccessTokenMutation = (
-  options?: UseMutationOptions<ApiEnvelope<RefreshTokenResponse>, ApiError, RefreshTokenRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<RefreshTokenResponse>,
+    ApiError,
+    RefreshTokenRequest
+  >,
 ) =>
-  useMutation<ApiEnvelope<RefreshTokenResponse>, ApiError, RefreshTokenRequest>({
-    mutationKey: ["auth", "refreshToken"],
-    mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<RefreshTokenResponse>>({
-        ...API_ENDPOINTS.auth.refreshToken,
-        data: payload,
-      }),
-    ...options,
-  });
+  useMutation<ApiEnvelope<RefreshTokenResponse>, ApiError, RefreshTokenRequest>(
+    {
+      mutationKey: ["auth", "refreshToken"],
+      mutationFn: (payload) =>
+        apiRequest<ApiEnvelope<RefreshTokenResponse>>({
+          ...API_ENDPOINTS.auth.refreshToken,
+          data: payload,
+        }),
+      ...options,
+    },
+  );

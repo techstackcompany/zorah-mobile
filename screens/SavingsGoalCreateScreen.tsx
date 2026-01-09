@@ -191,7 +191,7 @@ const SavingsGoalCreateScreen = () => {
             <View className="mt-6">
               <Text className="text-sm text-textColor">Goal Category</Text>
               <CategorySelector
-                categories={categoriesData}
+                categories={categories}
                 selectedKey={category}
                 onSelect={setCategory}
               />

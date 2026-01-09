@@ -10,6 +10,7 @@ import {
   useGetBudgetQuery,
   useUpdateBudgetMutation,
 } from "@/src/api/hooks/useBudgetApi";
+import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -126,19 +127,7 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
-const CATEGORY_MAP: Record<string, string> = {
-  food: "Food",
-  entertainment: "Entertainment",
-  transport: "Transport",
-  shopping: "Shopping",
-};
 
-const REVERSE_CATEGORY_MAP: Record<string, string> = {
-  Food: "food",
-  Entertainment: "entertainment",
-  Transport: "transport",
-  Shopping: "shopping",
-};
 
 // Map UI period keys to API period values
 const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
@@ -162,7 +151,6 @@ const formatDateForAPI = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Determine period from date range
 const determinePeriodFromRange = (
   range: DateRange,
 ): "weekly" | "monthly" | "yearly" => {
@@ -225,7 +213,10 @@ const EditBudgetScreen = () => {
     data: budget,
     isLoading: isLoadingBudget,
     error: budgetError,
-  } = useGetBudgetQuery(budgetId);
+  } = useGetBudgetQuery(budgetId!);
+
+  const { data: budgetCategories, isLoading: isCategoriesLoading } =
+    useGetCategoriesQuery("budget");
 
   const initialRange = useMemo(() => {
     if (budget?.startDate && budget?.endDate) {
@@ -279,9 +270,12 @@ const EditBudgetScreen = () => {
   useEffect(() => {
     if (budget) {
       if (budget.category) {
-        const mappedCategory = REVERSE_CATEGORY_MAP[budget.category];
-        if (mappedCategory) {
-          setSelectedCategory(mappedCategory);
+        // Set the category key - find matching category from API data
+        const matchingCategory = budgetCategories?.find(
+          (cat) => cat.label.toLowerCase() === budget.category.toLowerCase()
+        );
+        if (matchingCategory) {
+          setSelectedCategory(matchingCategory.key);
         }
         setBudgetName(budget.category);
       }
@@ -300,7 +294,7 @@ const EditBudgetScreen = () => {
         }
       }
     }
-  }, [budget]);
+  }, [budget, budgetCategories]);
 
   const updateBudgetMutation = useUpdateBudgetMutation(budgetId, {
     onSuccess: (response) => {
@@ -321,12 +315,7 @@ const EditBudgetScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.log("=== UPDATE BUDGET ERROR ===");
-      console.log("Error object:", error);
-      console.log("Error message:", error.message);
-      console.log("Error status:", error.status);
-      console.log("Error data:", error.data);
-      console.log("========================\n");
+    
 
       Toast.show({
         type: "error",
@@ -382,8 +371,11 @@ const EditBudgetScreen = () => {
         ? determinePeriodFromRange(selectedRange)
         : PERIOD_MAP[periodKey];
 
-    // Use budgetName if it's been edited, otherwise use the mapped category
-    const categoryName = budgetName.trim() || CATEGORY_MAP[selectedCategory];
+    // Use budgetName if it's been edited, otherwise use the selected category label
+    const selectedCategoryData = budgetCategories?.find(
+      (cat) => cat.key === selectedCategory
+    );
+    const categoryName = budgetName.trim() || selectedCategoryData?.label || "";
 
     const payload = {
       category: categoryName,
@@ -488,7 +480,7 @@ const EditBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
                 <CategorySelector
-                  categories={[]}
+                  categories={budgetCategories || []}
                   selectedKey={selectedCategory}
                   onSelect={setSelectedCategory}
                   className="mt-3"

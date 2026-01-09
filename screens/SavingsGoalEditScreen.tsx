@@ -6,13 +6,14 @@ import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 import {
+  useGetCategoriesQuery,
   useGetSavingsGoalQuery,
   useUpdateSavingsGoalMutation,
 } from "@/src/api/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -37,12 +38,19 @@ const SavingsGoalEditScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Fetch existing goal data
   const {
     data: goalData,
     isLoading: isGoalLoading,
     error: goalError,
   } = useGetSavingsGoalQuery(id);
+
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useGetCategoriesQuery("savings");
+
+  const categories = useMemo(() => {
+    if (!categoriesData) return [];
+    return categoriesData;
+  }, [categoriesData]);
 
   useEffect(() => {
     if (goalData?.data) {
@@ -81,8 +89,6 @@ const SavingsGoalEditScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-    
-
       Toast.show({
         type: "error",
         text1: "Error",
@@ -103,7 +109,6 @@ const SavingsGoalEditScreen = () => {
 
     Keyboard.dismiss();
 
-    // Validate required fields
     if (!name || !name.trim()) {
       Toast.show({
         type: "error",
@@ -141,13 +146,11 @@ const SavingsGoalEditScreen = () => {
     }
 
     const payload = {
-      title: name.trim(), 
+      title: name.trim(),
       targetAmount: numericAmount,
       deadline: formattedDate,
       description: note.trim() || undefined,
     };
-
-   
 
     updateGoalMutation.mutate(payload);
   }, [id, name, amount, targetDate, note, updateGoalMutation]);
@@ -159,7 +162,6 @@ const SavingsGoalEditScreen = () => {
     updateGoalMutation.isPending ||
     isGoalLoading;
 
-  // Loading state
   if (isGoalLoading) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -171,7 +173,6 @@ const SavingsGoalEditScreen = () => {
     );
   }
 
-  // Error state
   if (goalError || !goalData?.data) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -200,13 +201,13 @@ const SavingsGoalEditScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
       >
         <View className="flex-1">
-          {showSuccess ? (
+          {/* {showSuccess ? (
             <View className="bg-[#DFF5E5] px-6 py-4">
               <Text weight="semibold" className="text-sm text-textColor">
                 Goal updated successfully
               </Text>
             </View>
-          ) : null}
+          ) : null} */}
 
           <ScrollView
             contentContainerClassName="px-6 pb-32"
@@ -245,7 +246,7 @@ const SavingsGoalEditScreen = () => {
             <View className="mt-6">
               <Text className="text-sm text-textColor">Goal Category</Text>
               <CategorySelector
-                categories={[]}
+                categories={categories}
                 selectedKey={category}
                 onSelect={setCategory}
               />

@@ -149,7 +149,7 @@ const determinePeriodFromRange = (
 const CreateBudgetScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: budgetCategories } = useGetCategoriesQuery("budget");
+  const { data: budgetCategories, isLoading: isCategoriesLoading } = useGetCategoriesQuery("budget");
   const firstCategory = budgetCategories?.[0]?.key;
   const [budgetName, setBudgetName] = useState("");
   const [amount, setAmount] = useState("");
@@ -286,6 +286,7 @@ const CreateBudgetScreen = () => {
                   selectedKey={selectedCategory}
                   onSelect={(key) => setSelectedCategory(key)}
                   className="mt-3"
+                  
                 />
               </View>
 

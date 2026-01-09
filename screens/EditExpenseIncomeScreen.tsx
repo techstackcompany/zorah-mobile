@@ -129,14 +129,14 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
   }, [expenseData, incomeData, isIncomeScreen]);
 
   const expenseCategories = useMemo<ExpenseCategory[]>(() => {
-    if (!categoriesData?.data?.subcategories) {
+    if (!categoriesData || categoriesData.length === 0) {
       return [];
     }
 
-    return categoriesData.data.subcategories.map((subcategory) => ({
-      key: subcategory.name.toLowerCase(),
-      label: subcategory.name,
-      icon: subcategory.image || "",
+    return categoriesData.map((category) => ({
+      key: category.key,
+      label: category.label,
+      icon: category.icon || "",
     }));
   }, [categoriesData]);
 
