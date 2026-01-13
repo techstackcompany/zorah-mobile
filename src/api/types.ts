@@ -139,6 +139,29 @@ export interface MonthlyExpenseTotal {
   total: number;
 }
 
+export type SpendingOverviewTimeframe = "daily" | "weekly" | "monthly";
+
+export interface SpendingOverviewChartDataItem {
+  _id: {
+    day?: number;
+    month?: number;
+    year?: number;
+    week?: number;
+  };
+  totalAmount: number;
+}
+
+export interface SpendingOverviewComparison {
+  isIncrease: boolean;
+  percentage: string;
+}
+
+export interface SpendingOverviewResponse {
+  timeframe: SpendingOverviewTimeframe;
+  chartData: SpendingOverviewChartDataItem[];
+  comparison: SpendingOverviewComparison;
+}
+
 /* ---------------------------------------------
    Income
 ----------------------------------------------*/
@@ -238,14 +261,18 @@ export interface UpdateBudgetResponse {
 /* ---------------------------------------------
    Notifications
 ----------------------------------------------*/
+export type NotificationType = "bill_alert" | "bill_reminder";
+
 export interface Notification {
-  id?: string;
-  title?: string;
-  body?: string;
-  isRead?: boolean;
-  type?: string;
-  createdAt?: string;
-  [key: string]: unknown;
+  _id: string;
+  user: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 export interface RegisterNotificationTokenRequest {
@@ -270,11 +297,18 @@ export interface CreateSavingsGoalRequest {
 
 export interface SavingsGoal extends CreateSavingsGoalRequest {
   _id?: string;
-  user?: string;
-  currentAmount?: number;
-  status?: "active" | "completed" | "paused";
-  createdAt?: string;
-  updatedAt?: string;
+  user: string;
+  currentAmount: number;
+  status: "active" | "completed" | "paused";
+  createdAt: string;
+  updatedAt: string;
+  fundingHistory: SavingsGoalContribution[];
+}
+
+export interface SavingsGoalContribution {
+  _id: string;
+  amount: number;
+  date: string;
 }
 
 export interface ContributeToSavingsRequest {
