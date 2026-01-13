@@ -14,6 +14,8 @@ import {
   ExpenseSummary,
   ExpenseSummaryFilter,
   MonthlyExpenseTotal,
+  SpendingOverviewResponse,
+  SpendingOverviewTimeframe,
   UpdateExpenseRequest,
 } from "../types";
 
@@ -120,7 +122,7 @@ export const useDeleteExpenseMutation = (
   });
 
 export const useGetExpensesQuery = (
-  options?: UseQueryOptions<ApiEnvelope<Expense[]>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<Expense[]>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<Expense[]>, ApiError>({
     queryKey: ["expenses", "all"],
@@ -155,7 +157,7 @@ export const useGetExpenseQuery = (
 
 export const useGetExpenseSummaryQuery = (
   type: ExpenseSummaryFilter["type"],
-  options?: UseQueryOptions<ApiEnvelope<ExpenseSummary>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<ExpenseSummary>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<ExpenseSummary>, ApiError>({
     queryKey: ["expenses", "summary", type],
@@ -180,7 +182,7 @@ export const useGetExpenseSummaryQuery = (
   });
 
 export const useGetDailyExpensesQuery = (
-  options?: UseQueryOptions<ApiEnvelope<DailyExpenseTotal[]>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<DailyExpenseTotal[]>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<DailyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "daily"],
@@ -201,7 +203,7 @@ export const useGetDailyExpensesQuery = (
   });
 
 export const useGetMonthlyExpensesQuery = (
-  options?: UseQueryOptions<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "monthly"],
@@ -217,6 +219,30 @@ export const useGetMonthlyExpensesQuery = (
       }
 
       return response;
+    },
+    ...options,
+  });
+
+export const useGetSpendingOverviewQuery = (
+  timeframe: SpendingOverviewTimeframe = "monthly",
+  options?: Partial<UseQueryOptions<SpendingOverviewResponse, ApiError>>,
+) =>
+  useQuery<SpendingOverviewResponse, ApiError>({
+    queryKey: ["expenses", "spendingOverview", timeframe],
+    queryFn: async () => {
+      const endpoint = API_ENDPOINTS.expenses.spendingOverview(timeframe);
+      const response = await apiRequest<
+        SpendingOverviewResponse | ApiEnvelope<SpendingOverviewResponse>
+      >({
+        ...endpoint,
+      });
+
+      if ("chartData" in response) {
+        return response as SpendingOverviewResponse;
+      }
+
+      return (response as ApiEnvelope<SpendingOverviewResponse>)
+        .data as SpendingOverviewResponse;
     },
     ...options,
   });
