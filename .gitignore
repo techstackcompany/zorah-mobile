@@ -45,3 +45,6 @@ app-example
 *.postman_collection.json
 
 credentials.json
+
+# Editor/automation backups
+*.bak
