@@ -17,6 +17,7 @@ export type SavingsGoal = {
   iconBackground: string;
   iconColor: string;
   icon: keyof typeof Ionicons.glyphMap;
+  fundingHistory: GoalContribution[];
 };
 
 export type GoalContribution = {
@@ -26,10 +27,6 @@ export type GoalContribution = {
   source: string;
   createdAt: string;
 };
-
-
-
-
 
 export const PAYMENT_SOURCES = [
   {
@@ -57,10 +54,10 @@ export const getStatusTone = (status: GoalStatus) =>
 export const calculateGoalProgress = (current: number, target: number) =>
   target === 0 ? 0 : Math.min(current / target, 1);
 
-export const mapApiGoalToUiGoal = (
-  apiGoal: ApiSavingsGoal,
-): SavingsGoal => {
-  const getDefaultIcon = (title: string): {
+export const mapApiGoalToUiGoal = (apiGoal: ApiSavingsGoal): SavingsGoal => {
+  const getDefaultIcon = (
+    title: string,
+  ): {
     icon: keyof typeof Ionicons.glyphMap;
     iconBackground: string;
     iconColor: string;
@@ -141,18 +138,26 @@ export const mapApiGoalToUiGoal = (
   };
 
   const defaults = getDefaultIcon(apiGoal.title);
-  const goalId = apiGoal._id || apiGoal.id || "";
+  const goalId = apiGoal._id || "";
 
-  // Parse deadline from ISO format to YYYY-MM-DD
   let targetDate = "";
   if (apiGoal.deadline) {
     try {
       targetDate = new Date(apiGoal.deadline).toISOString().split("T")[0];
     } catch {
-      // If date parsing fails, use empty string
       targetDate = "";
     }
   }
+
+  const fundingHistory: GoalContribution[] = (apiGoal.fundingHistory || []).map(
+    (contribution) => ({
+      id: contribution._id,
+      goalId,
+      amount: contribution.amount,
+      source: "Wallet", // Default source since API doesn't provide it
+      createdAt: contribution.date,
+    }),
+  );
 
   return {
     id: goalId,
@@ -160,12 +165,15 @@ export const mapApiGoalToUiGoal = (
     description: apiGoal.description || "",
     currentAmount: apiGoal.currentAmount ?? 0,
     targetAmount: apiGoal.targetAmount,
-    status: (apiGoal.status === "completed" ? "completed" : "active") as GoalStatus,
+    status: (apiGoal.status === "completed"
+      ? "completed"
+      : "active") as GoalStatus,
     category: defaults.category,
     targetDate,
     accent: defaults.accent,
     iconBackground: defaults.iconBackground,
     iconColor: defaults.iconColor,
     icon: defaults.icon,
+    fundingHistory,
   };
 };

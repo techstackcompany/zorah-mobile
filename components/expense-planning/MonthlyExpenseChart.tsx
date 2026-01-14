@@ -13,8 +13,8 @@ type MonthlyExpenseChartProps = {
 };
 
 const MAX_BAR_HEIGHT = 120;
-const BAR_WIDTH = 40; // Fixed bar width - consistent across all months
-const BAR_GAP = 16; // Spacing between each bar container
+const BAR_WIDTH = 40; 
+const BAR_GAP = 16; 
 
 const formatMonthlyDate = (month: number, year: number): string => {
   const monthNames = [
@@ -43,14 +43,14 @@ const MonthlyExpenseChart = ({
   const transformedData = useMemo(() => {
     if (!monthlyExpenses || monthlyExpenses.length === 0) return [];
 
-    // Sort by date (newest first)
+    
     const sorted = [...monthlyExpenses].sort((a, b) => {
       const dateA = new Date(a._id.year, a._id.month - 1, 1);
       const dateB = new Date(b._id.year, b._id.month - 1, 1);
       return dateB.getTime() - dateA.getTime();
     });
 
-    // Get max total for scaling
+    
     const maxTotal = Math.max(...sorted.map((item) => item.total), 1);
 
     return sorted.map((item) => ({
@@ -99,7 +99,7 @@ const MonthlyExpenseChart = ({
             style={[
               styles.bar,
               {
-                height: Math.max(item.barHeight, 8), // Minimum height for visibility
+                height: Math.max(item.barHeight, 8), 
                 backgroundColor: COLORS.primary_400,
               },
             ]}
@@ -158,28 +158,28 @@ const styles = StyleSheet.create({
   barContainer: {
     alignItems: "center",
     justifyContent: "flex-end",
-    // Container width will be determined by its content (amount text)
-    // No fixed width - will expand to fit the amount text
+    
+    
   },
   barWrapper: {
     alignItems: "center",
-    // Width will be determined by the amount text inside
+    
   },
   bar: {
-    width: BAR_WIDTH, // Fixed bar width - consistent across all months
+    width: BAR_WIDTH, 
     borderRadius: 8,
     backgroundColor: COLORS.primary_400,
-    alignSelf: "center", // Center the bar within the container
+    alignSelf: "center", 
   },
   amountLabel: {
     textAlign: "center",
-    // Width will be determined by text content, preventing wrapping
-    // No fixed width - container will expand to fit
+    
+    
   },
   dateLabel: {
     textAlign: "center",
-    // Width will match the container (determined by amount)
-    // No fixed width - will match container width
+    
+    
   },
   emptyState: {
     width: "100%",

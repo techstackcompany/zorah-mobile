@@ -32,12 +32,12 @@ const formatMonthlyDate = (month: number, year: number): string => {
   const currentMonth = today.getMonth() + 1;
   const currentYear = today.getFullYear();
 
-  // Check if it's current month
+  
   if (month === currentMonth && year === currentYear) {
     return `This Month (${monthNames[month - 1]})`;
   }
 
-  // Check if it's last month
+  
   const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
   if (month === lastMonth && year === lastMonthYear) {
@@ -56,7 +56,7 @@ const MonthlyExpenseList = ({
   const transformedData = useMemo(() => {
     if (!monthlyExpenses || monthlyExpenses.length === 0) return [];
 
-    // Sort by date (newest first)
+    
     return [...monthlyExpenses]
       .sort((a, b) => {
         const dateA = new Date(a._id.year, a._id.month - 1, 1);

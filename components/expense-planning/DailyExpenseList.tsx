@@ -18,7 +18,7 @@ const formatDailyDate = (day: number, month: number, year: number): string => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  // Check if it's today
+  
   if (
     date.getDate() === today.getDate() &&
     date.getMonth() === today.getMonth() &&
@@ -27,7 +27,7 @@ const formatDailyDate = (day: number, month: number, year: number): string => {
     return "Today";
   }
 
-  // Check if it's yesterday
+  
   if (
     date.getDate() === yesterday.getDate() &&
     date.getMonth() === yesterday.getMonth() &&
@@ -36,7 +36,7 @@ const formatDailyDate = (day: number, month: number, year: number): string => {
     return "Yesterday";
   }
 
-  // Format as "Mon DD, YYYY" or "Mon DD" if current year
+  
   const monthNames = [
     "Jan",
     "Feb",
@@ -72,7 +72,7 @@ const DailyExpenseList = ({
   const transformedData = useMemo(() => {
     if (!dailyExpenses || dailyExpenses.length === 0) return [];
 
-    // Sort by date (newest first)
+    
     return [...dailyExpenses]
       .sort((a, b) => {
         const dateA = new Date(a._id.year, a._id.month - 1, a._id.day);

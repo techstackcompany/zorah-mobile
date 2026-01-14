@@ -14,7 +14,7 @@ type ExpenseListProps = {
   categoryBgMap: Record<string, string>;
   formatCurrency: (value: number) => string;
   formatDate: (date: string) => string;
-  type?: "expense" | "income"; // Add type to determine navigation
+  type?: "expense" | "income"; 
 };
 
 const SKELETON_ROWS = Array.from({ length: 3 }, (_, index) => index);
