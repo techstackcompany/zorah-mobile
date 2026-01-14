@@ -1,15 +1,14 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useSubmitKycMutation } from "@/src/api/hooks";
+import { useNigerianStatesApi } from "@/src/api/hooks/useCountriesApi";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Keyboard,
-  KeyboardEvent,
   LayoutChangeEvent,
   Pressable,
   ScrollView,
@@ -19,30 +18,10 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-type NigerianState = {
-  name: string;
-  state_code: string;
-};
-
-const fetchNigerianStates = async (): Promise<NigerianState[]> => {
-  const response = await fetch(
-    "https://countriesnow.space/api/v0.1/countries/states",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ country: "Nigeria" }),
-    },
-  );
-  const data = await response.json();
-  return data.data.states || [];
-};
-
 const KYC_TIERS = [
   { value: 1, label: "Tier 1" },
-  { value: 2, label: "Tier 2" },
-  { value: 3, label: "Tier 3" },
+  // { value: 2, label: "Tier 2" },
+  // { value: 3, label: "Tier 3" },
 ];
 
 const SubmitKycScreen = () => {
@@ -55,16 +34,11 @@ const SubmitKycScreen = () => {
   const [nin, setNin] = useState("");
   const [showTierList, setShowTierList] = useState(false);
   const [showStateList, setShowStateList] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const { data: nigerianStates = [], isLoading: isLoadingStates } =
+    useNigerianStatesApi();
+
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});
-
-  const { data: nigerianStates = [], isLoading: isLoadingStates } = useQuery({
-    queryKey: ["nigerian-states"],
-    queryFn: fetchNigerianStates,
-    staleTime: Infinity,
-  });
 
   const submitKycMutation = useSubmitKycMutation({
     onSuccess: () => {
@@ -84,23 +58,7 @@ const SubmitKycScreen = () => {
     },
   });
 
-  useEffect(() => {
-    const showSub = Keyboard.addListener(
-      "keyboardDidShow",
-      (event: KeyboardEvent) => {
-        setKeyboardVisible(true);
-        setKeyboardHeight(event.endCoordinates.height);
-      },
-    );
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
-      setKeyboardVisible(false);
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const { keyboardHeight } = useKeyboardHeight();
 
   const handleFieldLayout =
     (key: string) =>
@@ -154,7 +112,7 @@ const SubmitKycScreen = () => {
         ref={scrollRef}
         contentContainerStyle={[
           styles.content,
-          keyboardVisible && { paddingBottom: keyboardHeight + 40 },
+          !!keyboardHeight && { paddingBottom: keyboardHeight + 40 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -288,11 +246,11 @@ const SubmitKycScreen = () => {
                   </Text>
                 </Pressable>
               ))}
-                </ScrollView>
-              ) : null}
-            </View>
+            </ScrollView>
+          ) : null}
+        </View>
 
-            <View style={styles.field} onLayout={handleFieldLayout("bvn")}>
+        <View style={styles.field} onLayout={handleFieldLayout("bvn")}>
           <Text className="text-sm text-textColor">BVN</Text>
           <TextInput
             value={bvn}

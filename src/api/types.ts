@@ -1,5 +1,3 @@
-import { ImageSource } from "expo-image";
-
 export interface ApiEnvelope<T = unknown> {
   success?: boolean;
   message?: string;
@@ -377,14 +375,14 @@ export type CategoryType = "income" | "expense" | "budget" | "savings";
 
 export interface CategoryResponseItem {
   _id: string;
-  name: string;
+  name: Lowercase<string>;
   image: string;
 }
 
 export type CategoryItem<K extends string = string> = {
   key: K;
   label: string;
-  icon: ImageSource | string;
+  icon: string;
 };
 
 /* ---------------------------------------------
@@ -501,3 +499,11 @@ export interface AddBillReminderResponse {
     updatedAt: string;
   };
 }
+/* ---------------------------------------------
+   Countries   
+----------------------------------------------*/
+
+export type NigerianState = {
+  name: string;
+  state_code: string;
+};

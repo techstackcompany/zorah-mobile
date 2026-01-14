@@ -8,7 +8,11 @@ import axios, {
 } from "axios";
 
 import * as SecureStore from "expo-secure-store";
-import { API_CONFIG, FX_FINANCIAL_TIPS_CONFIG } from "../config/api";
+import {
+  API_CONFIG,
+  COUNTRIES_CONFIG,
+  FX_FINANCIAL_TIPS_CONFIG,
+} from "../config/api";
 import { API_ENDPOINTS } from "./endpoints";
 
 export interface ApiError {
@@ -94,13 +98,8 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
-export const baseClient: AxiosInstance = axios.create({
-  baseURL: API_CONFIG.baseURL,
-  timeout: API_CONFIG.timeout,
-  headers: {
-    Accept: "application/json",
-  },
-});
+export const baseClient: AxiosInstance = axios.create(API_CONFIG);
+export const countriesClient: AxiosInstance = axios.create(COUNTRIES_CONFIG);
 
 export const fxTipsClient: AxiosInstance = axios.create(
   FX_FINANCIAL_TIPS_CONFIG,
@@ -147,8 +146,6 @@ baseClient.interceptors.response.use(
     const isWithinGracePeriod =
       lastLoginTime !== null && Date.now() - lastLoginTime < LOGIN_GRACE_PERIOD;
 
-    
-    
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -180,7 +177,6 @@ baseClient.interceptors.response.use(
           throw new Error("No refresh token available");
         }
 
-        
         console.log("🔄.");
 
         const response = await axios.post<{

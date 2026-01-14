@@ -111,11 +111,6 @@ export const API_ENDPOINTS = {
       method: HttpMethod.POST,
       url: "/notifications/register-token",
     },
-    
-    
-    
-    
-    
   },
   savings: {
     createGoal: { method: HttpMethod.POST, url: "/savings/create" },
@@ -170,6 +165,12 @@ export const API_ENDPOINTS = {
       method: HttpMethod.PATCH,
       url: `/bills/${id}/pay`,
     }),
+  },
+  countries: {
+    nigerianStates: {
+      method: HttpMethod.POST,
+      url: "/countries/states",
+    },
   },
 } as const;
 
