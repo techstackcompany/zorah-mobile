@@ -13,10 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
-  investment: {
-    label: "Investment",
-    iconSource: require("@/assets/icons/investment.svg"),
-  },
+
   fxRates: {
     label: "Fx Rates",
     iconSource: require("@/assets/icons/fxRates.svg"),
