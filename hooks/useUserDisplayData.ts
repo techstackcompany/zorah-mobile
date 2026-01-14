@@ -7,11 +7,7 @@ type UserDisplayData = {
   welcomeName: string;
 };
 
-/**
- * Hook to extract and format user display data (initials and welcome name)
- * @param fallback - Optional fallback values if user data is not available
- * @returns Object containing initials and welcomeName
- */
+
 export function useUserDisplayData(fallback?: {
   initials?: string;
   welcomeName?: string;

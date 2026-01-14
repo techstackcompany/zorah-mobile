@@ -25,7 +25,7 @@ const asyncStoragePersister: Persister = {
       const serialized = JSON.stringify(client);
       await AsyncStorage.setItem(QUERY_CACHE_KEY, serialized);
     } catch {
-      // Swallow persist errors to avoid blocking UI
+      
     }
   },
   restoreClient: async (): Promise<PersistedClient | undefined> => {
@@ -41,7 +41,7 @@ const asyncStoragePersister: Persister = {
     try {
       await AsyncStorage.removeItem(QUERY_CACHE_KEY);
     } catch {
-      // Ignore cache cleanup failures
+      
     }
   },
 };

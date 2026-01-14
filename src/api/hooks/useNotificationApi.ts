@@ -10,16 +10,15 @@ import {
   ApiEnvelope,
   Notification,
   RegisterNotificationTokenRequest,
-  SendTestNotificationRequest,
 } from "../types";
 
 export const useGetNotificationsQuery = (
-  options?: UseQueryOptions<ApiEnvelope<Notification[]>, ApiError>,
+  options?: UseQueryOptions<Notification[], ApiError>,
 ) =>
-  useQuery<ApiEnvelope<Notification[]>, ApiError>({
+  useQuery<Notification[], ApiError>({
     queryKey: ["notifications", "list"],
     queryFn: () =>
-      apiRequest<ApiEnvelope<Notification[]>>({
+      apiRequest<Notification[]>({
         ...API_ENDPOINTS.notifications.getNotifications,
       }),
     ...options,
@@ -27,17 +26,17 @@ export const useGetNotificationsQuery = (
 
 export const useReadNotificationMutation = (
   options?: UseMutationOptions<
-    ApiEnvelope<Notification>,
+    Notification,
     ApiError,
     { notificationId: string }
   >,
 ) =>
-  useMutation<ApiEnvelope<Notification>, ApiError, { notificationId: string }>({
+  useMutation<Notification, ApiError, { notificationId: string }>({
     mutationKey: ["notifications", "read"],
     mutationFn: ({ notificationId }) => {
       const endpoint =
         API_ENDPOINTS.notifications.readNotification(notificationId);
-      return apiRequest<ApiEnvelope<Notification>>({
+      return apiRequest<Notification>({
         ...endpoint,
       });
     },
@@ -63,19 +62,19 @@ export const useRegisterNotificationTokenMutation = (
     },
   );
 
-// export const useSendTestNotificationMutation = (
-//   options?: UseMutationOptions<
-//     ApiEnvelope<unknown>,
-//     ApiError,
-//     SendTestNotificationRequest
-//   >,
-// ) =>
-//   useMutation<ApiEnvelope<unknown>, ApiError, SendTestNotificationRequest>({
-//     mutationKey: ["notifications", "sendTest"],
-//     mutationFn: (payload) =>
-//       apiRequest<ApiEnvelope<unknown>>({
-//         ...API_ENDPOINTS.notifications.sendTestNotification,
-//         data: payload,
-//       }),
-//     ...options,
-//   });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

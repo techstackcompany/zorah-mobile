@@ -3,7 +3,7 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-// export async function sendPushNotification(expoPushToken: string) {
+/ export async function sendPushNotification(expoPushToken: string) {
 //   const message = {
 //     to: expoPushToken,
 //     sound: "default",
@@ -23,10 +23,28 @@ import { Platform } from "react-native";
 //   });
 // }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function handleRegistrationError(errorMessage: string) {
   console.error("Push Notification Registration Error:", errorMessage);
-  // Return null instead of throwing to allow graceful handling
-  // Don't show alert as it interrupts user flows (e.g., sign up)
+  
+  
   return null;
 }
 
@@ -34,7 +52,7 @@ export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
   try {
-    // Set up Android notification channel
+    
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
         name: "default",
@@ -44,7 +62,7 @@ export async function registerForPushNotificationsAsync(): Promise<
       });
     }
 
-    // Check if running on a physical device
+    
     if (!Device.isDevice) {
       console.warn("Push notifications require a physical device");
       return handleRegistrationError(
@@ -52,7 +70,7 @@ export async function registerForPushNotificationsAsync(): Promise<
       );
     }
 
-    // Request permissions
+    
     const { status: existingStatus } =
       await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -68,7 +86,7 @@ export async function registerForPushNotificationsAsync(): Promise<
       );
     }
 
-    // Get project ID
+    
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
@@ -78,12 +96,12 @@ export async function registerForPushNotificationsAsync(): Promise<
       return handleRegistrationError("Project ID not found");
     }
 
-    // Get push token
+    
     try {
       const pushToken = await Notifications.getExpoPushTokenAsync({
         projectId,
-        // For Android, you may need to configure FCM credentials
-        // See: https://docs.expo.dev/push-notifications/fcm-credentials/
+        
+        
       });
       const pushTokenString = pushToken.data;
       console.log("Push token registered successfully:", pushTokenString);
@@ -93,7 +111,7 @@ export async function registerForPushNotificationsAsync(): Promise<
         tokenError instanceof Error ? tokenError.message : String(tokenError);
       console.error("Error getting push token:", errorMessage);
 
-      // Check if it's a Firebase initialization error
+      
       if (
         errorMessage.includes("FirebaseApp") ||
         errorMessage.includes("FCM") ||

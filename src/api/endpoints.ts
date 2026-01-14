@@ -49,6 +49,10 @@ export const API_ENDPOINTS = {
     summary: { method: HttpMethod.GET, url: "/expenses/summary" },
     daily: { method: HttpMethod.GET, url: "/expenses/daily" },
     monthly: { method: HttpMethod.GET, url: "/expenses/monthly" },
+    spendingOverview: (timeframe: string) => ({
+      method: HttpMethod.GET,
+      url: `/expenses/spending-overview?timeframe=${timeframe}`,
+    }),
   },
   income: {
     addIncome: { method: HttpMethod.POST, url: "/income/add-income" },
@@ -107,11 +111,11 @@ export const API_ENDPOINTS = {
       method: HttpMethod.POST,
       url: "/notifications/register-token",
     },
-    // sendTestNotification: {
-    //   method: HttpMethod.POST,
-    //   url: "https://flashily-unintegrable-holden.ngrok-free.dev/api/notifications/test",
-    //   isExternal: true,
-    // },
+    
+    
+    
+    
+    
   },
   savings: {
     createGoal: { method: HttpMethod.POST, url: "/savings/create" },
@@ -157,7 +161,7 @@ export const API_ENDPOINTS = {
   },
 
   billReminders: {
-    addBill: { method: HttpMethod.POST, url: "/bills" },
+    addBill: { method: HttpMethod.POST, url: "/bills/add-bill" },
     getBills: {
       method: HttpMethod.GET,
       url: "/bills",
@@ -166,7 +170,6 @@ export const API_ENDPOINTS = {
       method: HttpMethod.PATCH,
       url: `/bills/${id}/pay`,
     }),
-
   },
 } as const;
 

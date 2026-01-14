@@ -38,7 +38,7 @@ export const useSpeechRecognition = (
     }
   }, []);
 
-  // Check permissions on mount
+  
   useEffect(() => {
     const checkPermissions = async () => {
       try {
@@ -52,7 +52,7 @@ export const useSpeechRecognition = (
     checkPermissions();
   }, []);
 
-  // Handle speech recognition results
+  
   useSpeechRecognitionEvent("result", (event) => {
     const transcribedText = event.results[0]?.transcript || "";
     setTranscript(transcribedText);
@@ -72,7 +72,7 @@ export const useSpeechRecognition = (
     setTimeout(() => setState("idle"), 2000);
   });
 
-  // Handle speech recognition end
+  
   useSpeechRecognitionEvent("end", () => {
     setState("idle");
     if (timeoutRef.current) {
@@ -81,10 +81,10 @@ export const useSpeechRecognition = (
     }
   });
 
-  // Start recording
+  
   const startRecording = useCallback(async () => {
     try {
-      // Check permissions first
+      
       let granted = hasPermission;
       if (!granted) {
         granted = await requestPermission();
@@ -97,7 +97,7 @@ export const useSpeechRecognition = (
         return false;
       }
 
-      // Start speech recognition
+      
       setState("recording");
       setTranscript("");
 
@@ -109,7 +109,7 @@ export const useSpeechRecognition = (
         requiresOnDeviceRecognition: false,
       };
 
-      // Platform-specific settings
+      
       if (Platform.OS === "ios") {
         options.contextualStrings = [
           "expense",
@@ -122,7 +122,7 @@ export const useSpeechRecognition = (
 
       ExpoSpeechRecognitionModule.start(options);
 
-      // Auto-stop after maxDuration
+      
       if (autoStop) {
         timeoutRef.current = setTimeout(() => {
           stopRecording();
@@ -146,7 +146,7 @@ export const useSpeechRecognition = (
     stopRecording,
   ]);
 
-  // Stop recording
+  
   const stopRecording = useCallback(() => {
     try {
       if (timeoutRef.current) {
@@ -161,7 +161,7 @@ export const useSpeechRecognition = (
     }
   }, []);
 
-  // Cancel recording
+  
   const cancelRecording = useCallback(() => {
     try {
       if (timeoutRef.current) {
@@ -177,7 +177,7 @@ export const useSpeechRecognition = (
     }
   }, []);
 
-  // Cleanup on unmount
+  
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -186,7 +186,7 @@ export const useSpeechRecognition = (
       try {
         ExpoSpeechRecognitionModule.abort();
       } catch {
-        // Ignore cleanup errors
+        
       }
     };
   }, []);

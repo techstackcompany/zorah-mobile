@@ -38,9 +38,7 @@ export const useGetFxRatesQuery = (
     ...options,
   });
 
-/**
- * Get a specific exchange rate pair
- */
+
 export const useGetFxRatePairQuery = (
   baseCurrency: string,
   quoteCurrency: string,
@@ -61,9 +59,7 @@ export const useGetFxRatePairQuery = (
     ...options,
   });
 
-/**
- * Get multiple exchange rate pairs at once with change calculations
- */
+
 type FxRatePairQueryResponse = FxRatePair[];
 type FxRatePairRequest = {
   base: string;
@@ -92,9 +88,7 @@ export const useGetFxRatePairsQuery = (
     ...options,
   });
 
-/**
- * Get rate history for a currency pair (for charts) from the proxy API
- */
+
 export const useGetRateHistoryQuery = (
   baseCurrency: string,
   quoteCurrency: string,

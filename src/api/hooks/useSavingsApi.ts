@@ -49,22 +49,14 @@ export const useContributeToSavingsMutation = (
   });
 
 export const useGetSavingsGoalsQuery = (
-  options?: UseQueryOptions<ApiEnvelope<SavingsGoal[]>, ApiError>,
+  options?: Partial<UseQueryOptions<SavingsGoal[], ApiError>>,
 ) =>
-  useQuery<ApiEnvelope<SavingsGoal[]>, ApiError>({
+  useQuery<SavingsGoal[], ApiError>({
     queryKey: ["savings", "goals"],
     queryFn: async () => {
-      const response = await apiRequest<
-        ApiEnvelope<SavingsGoal[]> | SavingsGoal[]
-      >({
+      const response = await apiRequest<SavingsGoal[]>({
         ...API_ENDPOINTS.savings.getGoals,
       });
-
-      // Handle case where API returns array directly
-      if (Array.isArray(response)) {
-        return { data: response };
-      }
-
       return response;
     },
     ...options,
@@ -87,13 +79,13 @@ export const useGetSavingsGoalQuery = (
         },
       );
 
-      // Handle case where API returns object directly
+      
       if (!response || typeof response !== "object" || "data" in response) {
-        // It's already an ApiEnvelope
+        
         return response as ApiEnvelope<SavingsGoal>;
       }
 
-      // Wrap direct object in ApiEnvelope
+      
       return { data: response as SavingsGoal };
     },
     enabled: !!goalId,

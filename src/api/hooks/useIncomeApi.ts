@@ -28,7 +28,7 @@ export const useAddIncomeMutation = (
   });
 
 export const useGetIncomesQuery = (
-  options?: UseQueryOptions<GetIncomesResponse, ApiError>,
+  options?: Partial<UseQueryOptions<GetIncomesResponse, ApiError>>,
 ) =>
   useQuery<GetIncomesResponse, ApiError>({
     queryKey: ["income", "list"],
@@ -44,7 +44,7 @@ export const useGetIncomesQuery = (
 
 export const useGetIncomeQuery = (
   incomeId: string,
-  options?: UseQueryOptions<ApiEnvelope<Income>, ApiError>,
+  options?: Partial<UseQueryOptions<ApiEnvelope<Income>, ApiError>>,
 ) =>
   useQuery<ApiEnvelope<Income>, ApiError>({
     queryKey: ["income", "detail", incomeId],

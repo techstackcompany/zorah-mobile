@@ -86,7 +86,7 @@ export const useGetWalletTransactionsQuery = (
         ...API_ENDPOINTS.wallet.transactions,
       });
 
-      // Handle { success: true, transactions: [...] } structure
+      
       if (
         response &&
         typeof response === "object" &&
@@ -96,7 +96,7 @@ export const useGetWalletTransactionsQuery = (
         return { data: response.transactions };
       }
 
-      // Handle ApiEnvelope structure
+      
       return response as ApiEnvelope<WalletTransaction[]>;
     },
     ...options,

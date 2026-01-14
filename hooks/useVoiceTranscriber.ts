@@ -55,7 +55,7 @@ const useVoiceTranscriber = (enableSounds = true) => {
     endPlayerStatus.isLoaded,
   ]);
 
-  // Speech recognition event handlers
+  
   useSpeechRecognitionEvent("start", () => {
     setRecognizing(true);
     setError(null);
@@ -97,7 +97,7 @@ const useVoiceTranscriber = (enableSounds = true) => {
     try {
       setError(null);
       
-      // Check permission first
+      
       if (!hasPermission.current) {
         const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
         if (result.granted) {

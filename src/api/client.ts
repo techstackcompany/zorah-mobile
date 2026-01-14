@@ -147,8 +147,8 @@ baseClient.interceptors.response.use(
     const isWithinGracePeriod =
       lastLoginTime !== null && Date.now() - lastLoginTime < LOGIN_GRACE_PERIOD;
 
-    // If error is 401 and we haven't retried yet and it's not the refresh/login endpoint
-    // and we're not within the login grace period
+    
+    
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -180,7 +180,7 @@ baseClient.interceptors.response.use(
           throw new Error("No refresh token available");
         }
 
-        // console.log("🔄 Attempting to refresh access token...");
+        
         console.log("🔄.");
 
         const response = await axios.post<{

@@ -72,9 +72,7 @@ export const formatTime = (seconds: number): string => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 };
 
-/* ---------------------------------------------
-   User Data Utilities
-----------------------------------------------*/
+
 
 type ExtractUserDataOptions = {
   fallbackName?: string;
@@ -89,9 +87,7 @@ type ExtractedUserData = {
   initials: string;
 };
 
-/**
- * Helper function to pick the first non-empty string from multiple values
- */
+
 function pickString(...values: unknown[]): string | null {
   for (const value of values) {
     if (typeof value === "string") {
@@ -102,10 +98,7 @@ function pickString(...values: unknown[]): string | null {
   return null;
 }
 
-/**
- * Extracts and formats user data from userData object.
- * Handles nested user objects and various field name variations.
- */
+
 export function extractUserData(
   userData: unknown,
   options: ExtractUserDataOptions = {},
@@ -122,7 +115,7 @@ export function extractUserData(
       ? (safeUser.user as Record<string, unknown>)
       : null;
 
-  // Extract name
+  
   const resolvedName =
     pickString(
       safeUser.name,
@@ -170,14 +163,9 @@ export function extractUserData(
   };
 }
 
-/* ---------------------------------------------
-   Date Utilities
-----------------------------------------------*/
 
-/**
- * Formats the current date as "Day Month, Year" (e.g., "15 January, 2025")
- * @returns Formatted date string
- */
+
+
 export function formatCurrentDate(): string {
   const now = new Date();
   const day = now.getDate();
@@ -186,18 +174,9 @@ export function formatCurrentDate(): string {
   return `${day} ${month}, ${year}`;
 }
 
-/* ---------------------------------------------
-   Currency Utilities
-----------------------------------------------*/
 
-/**
- * Formats a number as currency with a custom symbol
- * @param value - The numeric value to format
- * @param symbol - The currency symbol to use (e.g., "₦", "$", "₵")
- * @param locale - The locale for number formatting (default: "en-NG")
- * @param options - Optional Intl.NumberFormatOptions
- * @returns Formatted currency string (e.g., "₦1,234.56")
- */
+
+
 export function formatCurrencyWithSymbol(
   value: number,
   symbol: string,
@@ -211,11 +190,7 @@ export function formatCurrencyWithSymbol(
   return `${symbol}${formatted}`;
 }
 
-/**
- * Formats a number as Nigerian Naira currency (₦) with no decimal places
- * @param value - The numeric value to format
- * @returns Formatted currency string (e.g., "₦1,234")
- */
+
 export function formatCurrency(value: number): string {
   return `₦${value.toLocaleString("en-NG", {
     maximumFractionDigits: 0,
@@ -223,12 +198,7 @@ export function formatCurrency(value: number): string {
   })}`;
 }
 
-/**
- * Formats a transaction purpose string to a readable title
- * Replaces underscores with spaces and capitalizes each word
- * @param purpose - The transaction purpose (e.g., "savings_contribution")
- * @returns Formatted title (e.g., "Savings Contribution")
- */
+
 export function formatTransactionPurpose(purpose: string): string {
   if (!purpose) return "";
 
@@ -238,13 +208,9 @@ export function formatTransactionPurpose(purpose: string): string {
     .join(" ");
 }
 
-/* ---------------------------------------------
-   Color Utilities
-----------------------------------------------*/
 
-/**
- * Converts hex color to RGB
- */
+
+
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -256,16 +222,12 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 0, g: 0, b: 0 };
 }
 
-/**
- * Converts RGB to hex
- */
+
 export function rgbToHex(r: number, g: number, b: number): string {
   return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }
 
-/**
- * Lightens a color by a percentage
- */
+
 export function lightenColor(hex: string, percent: number): string {
   const rgb = hexToRgb(hex);
   const factor = percent / 100;
@@ -275,12 +237,7 @@ export function lightenColor(hex: string, percent: number): string {
   return rgbToHex(r, g, b);
 }
 
-/**
- * Generates a consistent color variant for a group based on its name.
- * Returns variants of primary or secondary colors only.
- * @param groupName - The name of the group
- * @returns Object with accentColor (for icon) and backgroundColor (lighter variant)
- */
+
 export function getAccentColorForGroup(groupName: string): {
   accentColor: string;
   backgroundColor: string;
@@ -294,7 +251,7 @@ export function getAccentColorForGroup(groupName: string): {
   const usePrimary = Math.abs(hash) % 2 === 0;
   const baseColor = usePrimary ? COLORS.primary_400 : COLORS.secondary_400;
 
-  const variation = (Math.abs(hash) % 31) / 100; // 0-0.3
+  const variation = (Math.abs(hash) % 31) / 100; 
 
   const baseRgb = hexToRgb(baseColor);
   const accentR = Math.max(
