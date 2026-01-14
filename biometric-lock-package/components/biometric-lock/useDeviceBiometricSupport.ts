@@ -10,10 +10,7 @@ export type BiometricSupport = {
   isAvailable: boolean;
 };
 
-/**
- * Hook to check device biometric support
- * Returns information about available biometric authentication methods
- */
+
 export const useDeviceBiometricSupport = (): BiometricSupport => {
   const [support, setSupport] = useState({
     hasHardware: false,

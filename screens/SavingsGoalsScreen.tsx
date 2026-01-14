@@ -30,7 +30,6 @@ const SavingsGoalsScreen = () => {
   const showGoalModal = useSharedValue(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
-  // Fetch goals from API
   const {
     data: goalsData,
     isLoading: isGoalsLoading,
@@ -39,12 +38,11 @@ const SavingsGoalsScreen = () => {
     isRefetching,
   } = useGetSavingsGoalsQuery();
 
-  // Map API goals to UI format
   const uiGoals = useMemo(() => {
-    if (!goalsData?.data || !Array.isArray(goalsData.data)) {
+    if (!goalsData) {
       return [];
     }
-    return goalsData.data.map(mapApiGoalToUiGoal);
+    return goalsData.map(mapApiGoalToUiGoal);
   }, [goalsData]);
 
   const totalSavings = useMemo(
@@ -62,10 +60,7 @@ const SavingsGoalsScreen = () => {
     [selectedGoalId, uiGoals],
   );
 
-  const selectedGoalTone = useMemo(
-    () => (selectedGoal ? getStatusTone(selectedGoal.status) : null),
-    [selectedGoal],
-  );
+  
 
   const selectedGoalProgress = useMemo(() => {
     if (!selectedGoal) {
@@ -81,9 +76,7 @@ const SavingsGoalsScreen = () => {
     if (!selectedGoal) {
       return [];
     }
-    return GOAL_CONTRIBUTIONS.filter(
-      (item) => item.goalId === selectedGoal.id,
-    ).sort(
+    return [...selectedGoal.fundingHistory].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
@@ -425,8 +418,11 @@ const SavingsGoalsScreen = () => {
                       No contributions yet.
                     </Text>
                   ) : (
-                    selectedGoalContributions.map((item) => (
-                      <View key={item.id} style={styles.goalModalHistoryItem}>
+                    selectedGoalContributions.map((item, index) => (
+                      <View
+                        key={item.id || index}
+                        style={styles.goalModalHistoryItem}
+                      >
                         <View>
                           <Text
                             weight="bold"

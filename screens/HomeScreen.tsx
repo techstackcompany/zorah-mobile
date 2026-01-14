@@ -17,6 +17,7 @@ import {
   useGetExpenseSummaryQuery,
   useGetFxRatePairsQuery,
   useGetIncomesQuery,
+  useGetMonthlyExpensesQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
@@ -133,6 +134,10 @@ const HomeScreen = () => {
     isLoading: isLoadingIncomes,
     refetch: refetchIncomes,
   } = useGetIncomesQuery();
+  const {
+    data: monthlyExpensesData,
+    refetch: refetchMonthlyExpenses,
+  } = useGetMonthlyExpensesQuery();
 
   const fxPairsToFetch = useMemo(
     () => [
@@ -248,7 +253,38 @@ const HomeScreen = () => {
     isLoadingIncomes,
   ]);
 
-  const balanceSubtitle = "12% From Last Month";
+  const balanceSubtitle = useMemo(() => {
+    if (!monthlyExpensesData?.data || !Array.isArray(monthlyExpensesData.data)) {
+      return null;
+    }
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+    const currentMonthData = monthlyExpensesData.data.find(
+      (item) => item._id.month === currentMonth && item._id.year === currentYear,
+    );
+    const previousMonthData = monthlyExpensesData.data.find(
+      (item) => item._id.month === previousMonth && item._id.year === previousYear,
+    );
+
+    const currentTotal = currentMonthData?.total ?? 0;
+    const previousTotal = previousMonthData?.total ?? 0;
+
+    if (previousTotal === 0) {
+      return null;
+    }
+
+    const percentChange = ((currentTotal - previousTotal) / previousTotal) * 100;
+    const absPercent = Math.abs(percentChange).toFixed(0);
+    const direction = percentChange >= 0 ? "more" : "less";
+
+    return `${absPercent}% ${direction} than last month`;
+  }, [monthlyExpensesData]);
+
   const currentDate = formatCurrentDate();
 
   const handleQuickActionPress = (action: QuickAction) => {
@@ -303,6 +339,7 @@ const HomeScreen = () => {
                   refetchExpenseSummary();
                   refetchIncomes();
                   refetchFxPairs();
+                  refetchMonthlyExpenses();
                 }}
               />
             }

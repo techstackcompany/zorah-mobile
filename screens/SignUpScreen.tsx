@@ -128,7 +128,7 @@ const SignUpScreen = () => {
         Create Your Account
       </Text>
 
-      {/* Name Field */}
+      
       <View className="mb-4">
         <Text className="mb-2 text-sm text-tertiary">Name</Text>
         <TextInput
@@ -151,7 +151,7 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      {/* Email Field */}
+      
       <View className="mb-4">
         <Text className="mb-2 text-sm text-tertiary">Email</Text>
         <TextInput
@@ -176,7 +176,7 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      {/* Phone Field */}
+      
       <View className="mb-4">
         <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
         <TextInput
@@ -202,7 +202,7 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      {/* Password Field */}
+      
       <View className="mb-6">
         <Text className="mb-2 text-sm text-tertiary">Password</Text>
         <View
@@ -239,7 +239,7 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      {/* Terms */}
+      
       <Pressable
         onPress={() => {
           setApiErrorMessage(null);
@@ -270,7 +270,7 @@ const SignUpScreen = () => {
         </Link>
       </Pressable>
 
-      {/* Create Account Button */}
+      
       {apiErrorMessage ? (
         <Text className="mb-3 text-center text-sm text-red-500">
           {apiErrorMessage}
@@ -294,7 +294,7 @@ const SignUpScreen = () => {
         )}
       </Pressable>
 
-      {/* Divider */}
+      
       <View className="mb-6 flex-row items-center">
         <View className="h-[1px] flex-1 bg-gray-200" />
         <Text weight="semibold" className="mx-3 text-sm">
@@ -303,7 +303,7 @@ const SignUpScreen = () => {
         <View className="h-[1px] flex-1 bg-gray-200" />
       </View>
 
-      {/* Continue with Google */}
+      
       <Pressable className="mb-6 flex-row items-center justify-center rounded-xl border border-gray-300 py-4">
         <Image
           source={require("@/assets/icons/google.svg")}

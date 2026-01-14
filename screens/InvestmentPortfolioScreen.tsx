@@ -182,9 +182,6 @@ const InvestmentPortfolioScreen = () => {
                     <Text className="text-xs text-textColor/70">
                       {category.label}
                     </Text>
-                    {/* <Text className="ml-2 text-xs text-textColor/70">
-                      {formatPercentage(category.percentage)}
-                    </Text> */}
                   </View>
                 ))}
               </View>

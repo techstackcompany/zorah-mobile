@@ -35,7 +35,7 @@ const IncomeDetailsScreen = () => {
 
   const deleteIncomeMutation = useDeleteIncomeMutation(incomeId, {
     onSuccess: () => {
-      // Invalidate income queries to refetch the list
+      
       queryClient.invalidateQueries({ queryKey: ["income"] });
       Toast.show({ type: "success", text1: "Income deleted successfully" });
       setShowDeleteModal(false);
@@ -81,7 +81,7 @@ const IncomeDetailsScreen = () => {
         });
       }
     } catch {
-      // Fallback
+      
     }
     return income.date;
   }, [income?.date]);
@@ -167,7 +167,7 @@ const IncomeDetailsScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="px-6">
-            {/* Summary Card */}
+            
             <View
               className="rounded-t-lg p-6"
               style={{ backgroundColor: categoryBg }}
@@ -209,7 +209,7 @@ const IncomeDetailsScreen = () => {
               </View>
             </View>
 
-            {/* Details Card */}
+            
             <View className="bg-white p-6 shadow-sm">
               <Text weight="semibold" className="text-base text-textColor">
                 Income Details
@@ -238,7 +238,7 @@ const IncomeDetailsScreen = () => {
                 ))}
               </View>
 
-              {/* Description Section */}
+              
               {income.description && (
                 <View className="mt-6">
                   <Text weight="semibold" className="text-sm text-textColor">
@@ -255,7 +255,7 @@ const IncomeDetailsScreen = () => {
           </View>
         </ScrollView>
 
-        {/* Action Buttons */}
+        
         <View className="px-6 pb-8">
           <View className="flex-row gap-3">
             <Pressable

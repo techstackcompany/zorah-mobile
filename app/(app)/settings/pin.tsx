@@ -49,7 +49,7 @@ const PinSetupScreen = () => {
 
   const toggleBiometricsMutation = useToggleBiometricsMutation({
     onSuccess: () => {
-      // Update local settings after API call succeeds
+      
       updateSetting("enableBiometrics", true);
       console.log("success");
       Toast.show({
@@ -75,7 +75,7 @@ const PinSetupScreen = () => {
 
   const setPinMutation = useSetUserPinMutation({
     onSuccess: () => {
-      // After PIN is set successfully, enable biometrics via API
+      
       console.log("mutate calls");
       toggleBiometricsMutation.mutate({ enabled: true });
     },
@@ -138,7 +138,7 @@ const PinSetupScreen = () => {
         setStep("create");
         setPin("");
       } else {
-        // PINs match, submit to API
+        
         console.log("mutate calls", { pin });
 
         setPinMutation.mutate({ pin });

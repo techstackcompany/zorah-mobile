@@ -9,11 +9,11 @@ export default function RootIndex() {
     return null;
   }
 
-  // Authenticated and setup complete → go to app
+  
   if (isAuthenticated && hasCompletedSetup) {
     return <Redirect href="/(app)/(home)" />;
   }
 
-  // Not authenticated or setup incomplete → go to auth
+  
   return <Redirect href="/(auth)/welcome" />;
 }

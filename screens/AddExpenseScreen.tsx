@@ -276,7 +276,7 @@ const AddExpenseScreen = () => {
       const amount = data.transaction.amount;
       const category = data.transaction.metadata.category;
       const description = data.transaction.metadata.description;
-      // Note: paymentMethod is not in the API response, defaulting to empty
+      
       const paymentMethod = "";
 
       setAmount(amount.toString());

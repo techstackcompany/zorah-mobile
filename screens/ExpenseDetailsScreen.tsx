@@ -98,7 +98,7 @@ const ExpenseDetailsScreen = () => {
         });
       }
     } catch {
-      // Fallback
+      
     }
     return expense.date;
   }, [expense?.date]);
@@ -184,7 +184,7 @@ const ExpenseDetailsScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="px-6">
-            {/* Summary Card */}
+            
             <View
               className="rounded-t-lg p-6"
               style={{ backgroundColor: categoryBg }}
@@ -219,7 +219,7 @@ const ExpenseDetailsScreen = () => {
               </View>
             </View>
 
-            {/* Details Card */}
+            
             <View className="bg-white p-6 shadow-sm">
               <Text weight="semibold" className="text-base text-textColor">
                 Expense Details
@@ -248,7 +248,7 @@ const ExpenseDetailsScreen = () => {
                 ))}
               </View>
 
-              {/* Description Section */}
+              
               {expense.description && (
                 <View className="mt-6">
                   <Text weight="semibold" className="text-sm text-textColor">
@@ -265,7 +265,7 @@ const ExpenseDetailsScreen = () => {
           </View>
         </ScrollView>
 
-        {/* Action Buttons */}
+        
         <View className="px-6 pb-8">
           <View className="flex-row gap-3">
             <Pressable

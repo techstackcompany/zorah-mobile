@@ -201,13 +201,6 @@ const SavingsGoalEditScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
       >
         <View className="flex-1">
-          {/* {showSuccess ? (
-            <View className="bg-[#DFF5E5] px-6 py-4">
-              <Text weight="semibold" className="text-sm text-textColor">
-                Goal updated successfully
-              </Text>
-            </View>
-          ) : null} */}
 
           <ScrollView
             contentContainerClassName="px-6 pb-32"

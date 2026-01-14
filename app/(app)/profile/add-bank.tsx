@@ -13,7 +13,7 @@ const tryParseJsonStringArray = (raw: string) => {
         .filter(Boolean);
     }
   } catch {
-    // ignore JSON parse errors and fallback to comma parsing
+    
   }
   return null;
 };

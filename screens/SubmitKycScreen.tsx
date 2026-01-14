@@ -1,21 +1,43 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSubmitKycMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
+  KeyboardEvent,
   LayoutChangeEvent,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
-  KeyboardEvent,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import { useSubmitKycMutation } from "@/src/api/hooks";
+
+type NigerianState = {
+  name: string;
+  state_code: string;
+};
+
+const fetchNigerianStates = async (): Promise<NigerianState[]> => {
+  const response = await fetch(
+    "https://countriesnow.space/api/v0.1/countries/states",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ country: "Nigeria" }),
+    },
+  );
+  const data = await response.json();
+  return data.data.states || [];
+};
 
 const KYC_TIERS = [
   { value: 1, label: "Tier 1" },
@@ -26,16 +48,24 @@ const KYC_TIERS = [
 const SubmitKycScreen = () => {
   const [tier, setTier] = useState<number>(1);
   const [fullName, setFullName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState(""); 
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
   const [bvn, setBvn] = useState("");
   const [nin, setNin] = useState("");
   const [showTierList, setShowTierList] = useState(false);
+  const [showStateList, setShowStateList] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});
+
+  const { data: nigerianStates = [], isLoading: isLoadingStates } = useQuery({
+    queryKey: ["nigerian-states"],
+    queryFn: fetchNigerianStates,
+    staleTime: Infinity,
+  });
+
   const submitKycMutation = useSubmitKycMutation({
     onSuccess: () => {
       Toast.show({
@@ -73,7 +103,8 @@ const SubmitKycScreen = () => {
   }, []);
 
   const handleFieldLayout =
-    (key: string) => (event: LayoutChangeEvent): void => {
+    (key: string) =>
+    (event: LayoutChangeEvent): void => {
       fieldPositions.current[key] = event.nativeEvent.layout.y;
     };
 
@@ -132,7 +163,6 @@ const SubmitKycScreen = () => {
           Personal Details
         </Text>
 
-        {/* Tier */}
         <View style={styles.field} onLayout={handleFieldLayout("tier")}>
           <Text className="text-sm text-textColor">KYC Tier</Text>
           <Pressable
@@ -163,11 +193,7 @@ const SubmitKycScreen = () => {
           ) : null}
         </View>
 
-        {/* Full Name */}
-        <View
-          style={styles.field}
-          onLayout={handleFieldLayout("fullName")}
-        >
+        <View style={styles.field} onLayout={handleFieldLayout("fullName")}>
           <Text className="text-sm text-textColor">Full Name</Text>
           <TextInput
             value={fullName}
@@ -180,7 +206,6 @@ const SubmitKycScreen = () => {
           />
         </View>
 
-        {/* Date Of Birth */}
         <View style={styles.field} onLayout={handleFieldLayout("dob")}>
           <Text className="text-sm text-textColor">Date Of Birth</Text>
           <View style={styles.inputWithIcon}>
@@ -202,11 +227,7 @@ const SubmitKycScreen = () => {
           </View>
         </View>
 
-        {/* Phone Number */}
-        <View
-          style={styles.field}
-          onLayout={handleFieldLayout("phoneNumber")}
-        >
+        <View style={styles.field} onLayout={handleFieldLayout("phoneNumber")}>
           <Text className="text-sm text-textColor">Phone Number</Text>
           <TextInput
             value={phoneNumber}
@@ -219,21 +240,59 @@ const SubmitKycScreen = () => {
           />
         </View>
 
-        {/* Address */}
         <View style={styles.field} onLayout={handleFieldLayout("address")}>
-          <Text className="text-sm text-textColor">Address</Text>
-          <TextInput
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Lagos"
-            style={styles.input}
-            placeholderTextColor="#9AA5B1"
-            onFocus={() => scrollToField("address")}
-          />
-        </View>
+          <Text className="text-sm text-textColor">State</Text>
+          <Pressable
+            style={[styles.input, styles.selectInput]}
+            accessibilityRole="button"
+            onPress={() => {
+              setShowStateList((s) => !s);
+              setShowTierList(false);
+            }}
+          >
+            <Text className={address ? "text-textColor" : "text-[#9AA5B1]"}>
+              {address || "Select your state"}
+            </Text>
+            {isLoadingStates ? (
+              <ActivityIndicator size="small" color="#9AA5B1" />
+            ) : (
+              <Ionicons name="chevron-down" size={16} color="#9AA5B1" />
+            )}
+          </Pressable>
+          {showStateList && nigerianStates.length > 0 ? (
+            <ScrollView
+              style={styles.selectList}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+            >
+              {nigerianStates.map((state) => (
+                <Pressable
+                  key={state.state_code}
+                  style={[
+                    styles.selectItem,
+                    address === state.name && styles.selectItemActive,
+                  ]}
+                  onPress={() => {
+                    setAddress(state.name);
+                    setShowStateList(false);
+                  }}
+                >
+                  <Text
+                    className={`text-sm ${
+                      address === state.name
+                        ? "text-primary_400"
+                        : "text-textColor"
+                    }`}
+                  >
+                    {state.name}
+                  </Text>
+                </Pressable>
+              ))}
+                </ScrollView>
+              ) : null}
+            </View>
 
-        {/* BVN */}
-        <View style={styles.field} onLayout={handleFieldLayout("bvn")}>
+            <View style={styles.field} onLayout={handleFieldLayout("bvn")}>
           <Text className="text-sm text-textColor">BVN</Text>
           <TextInput
             value={bvn}
@@ -247,7 +306,6 @@ const SubmitKycScreen = () => {
           />
         </View>
 
-        {/* NIN */}
         <View style={styles.field} onLayout={handleFieldLayout("nin")}>
           <Text className="text-sm text-textColor">NIN</Text>
           <TextInput
@@ -261,8 +319,6 @@ const SubmitKycScreen = () => {
             onFocus={() => scrollToField("nin")}
           />
         </View>
-
-        {/* No progress UI, No upload proof section */}
 
         <Pressable
           style={[
@@ -336,10 +392,14 @@ const styles = StyleSheet.create({
     borderColor: "#E3E7EF",
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
+    maxHeight: 200,
   },
   selectItem: {
     paddingHorizontal: 14,
     paddingVertical: 10,
+  },
+  selectItemActive: {
+    backgroundColor: COLORS.primary_100,
   },
   submitBtn: {
     marginTop: 20,

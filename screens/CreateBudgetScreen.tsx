@@ -117,15 +117,15 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
-// Map UI period keys to API period values
+
 const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
   this_week: "weekly",
   this_month: "monthly",
   this_year: "yearly",
-  custom: "monthly", // Default for custom, will be determined by date range
+  custom: "monthly", 
 };
 
-// Format date to YYYY-MM-DD
+
 const formatDateForAPI = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -133,7 +133,7 @@ const formatDateForAPI = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Determine period from date range
+
 const determinePeriodFromRange = (
   range: DateRange,
 ): "weekly" | "monthly" | "yearly" => {

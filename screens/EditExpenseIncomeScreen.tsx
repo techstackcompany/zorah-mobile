@@ -112,7 +112,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
     data: incomeData,
     isLoading: isIncomeLoading,
     error: incomeError,
-  } = useGetIncomeQuery(itemId, {
+  } = useGetIncomeQuery(itemId!, {
     enabled: isIncomeScreen && !!itemId,
   });
 

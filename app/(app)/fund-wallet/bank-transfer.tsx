@@ -48,8 +48,8 @@ const BankTransferScreen = () => {
       queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
       queryClient.invalidateQueries({ queryKey: ["wallet", "transactions"] });
 
-      // Extract wallet and transaction from response
-      // Response structure: { message, success, transaction, wallet }
+      
+      
       const transaction = (
         response as unknown as {
           transaction?: { reference?: string; status?: string };
@@ -65,7 +65,7 @@ const BankTransferScreen = () => {
           : `₦${Number(amount || 0).toLocaleString("en-NG")} has been added to your wallet`,
       });
 
-      // Navigate back to FundWalletScreen after a short delay
+      
       setTimeout(() => {
         router.navigate("/(app)/fund-wallet");
       }, 1500);

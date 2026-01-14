@@ -1,10 +1,27 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import {
+  useGetBudgetsQuery,
+  useGetCategoriesQuery,
+  useGetExpenseSummaryQuery,
+  useGetSpendingOverviewQuery,
+} from "@/src/api/hooks";
+import {
+  BudgetListItem,
+  CategoryItem,
+  SpendingOverviewTimeframe,
+} from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
-import React, { ReactNode, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
 const TIMEFRAME_TABS = [
@@ -26,7 +43,8 @@ type MostSpendingItem = {
   id: string;
   label: string;
   change: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  amount: number;
+  icon: string | null;
   accent: string;
   tint: string;
 };
@@ -34,6 +52,7 @@ type MostSpendingItem = {
 type BreakdownItem = {
   id: string;
   label: string;
+  icon: string | null;
   usage: string;
   amount: number;
   variance: number;
@@ -48,18 +67,9 @@ type AlertItem = {
   id: string;
   label: string;
   description: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string | null;
   accent: string;
   background: string;
-};
-
-type TrackSpendingData = {
-  trendLabel: string;
-  chart: { bars: ChartBar[] };
-  mostSpending: MostSpendingItem[];
-  ai: { title: ReactNode; description: string };
-  breakdown: BreakdownItem[];
-  alerts: AlertItem[];
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-NG", {
@@ -71,204 +81,341 @@ const currencyFormatter = new Intl.NumberFormat("en-NG", {
 const formatCurrency = (value: number) =>
   currencyFormatter.format(Math.abs(value));
 
-const BASE_MOST_SPENDING: MostSpendingItem[] = [
-  {
-    id: "food",
-    label: "Food & Drinks",
-    change: "+50%",
-    icon: "fast-food-outline",
-    accent: "#F8924F",
-    tint: "#FFF3EA",
-  },
-  {
-    id: "transport",
-    label: "Transportation",
-    change: "+32%",
-    icon: "car-outline",
-    accent: "#2D9CDB",
-    tint: "#E8F4FF",
-  },
-  {
-    id: "utilities",
-    label: "Bill & Utility",
-    change: "+15%",
-    icon: "flash-outline",
-    accent: COLORS.purple,
-    tint: "#F1EEFF",
-  },
-  {
-    id: "others",
-    label: "Others",
-    change: "+15%",
-    icon: "grid-outline",
-    accent: COLORS.secondary_500,
-    tint: COLORS.secondary_100,
-  },
+const ACCENT_COLORS = [
+  { accent: "#F8924F", tint: "#FFF3EA" },
+  { accent: "#2D9CDB", tint: "#E8F4FF" },
+  { accent: COLORS.purple, tint: "#F1EEFF" },
+  { accent: "#27AE60", tint: "#E8F5E9" },
+  { accent: "#EB5757", tint: "#FFE5E5" },
+  { accent: "#9B51E0", tint: "#F3E8FF" },
 ];
 
-const BASE_BREAKDOWN: BreakdownItem[] = [
-  {
-    id: "food",
-    label: "Food & Drinks",
-    usage: "100% of budget used",
-    amount: 60700,
-    variance: -19750,
-    status: {
+const getAccentColor = (index: number) => {
+  return ACCENT_COLORS[index % ACCENT_COLORS.length];
+};
+
+const getBarColor = (value: number, average: number) => {
+  if (value > average * 1.2) return "#E75A7C";
+  if (value > average) return "#F8924F";
+  return "#32A34D";
+};
+
+const getBudgetStatus = (spent: number, limit: number) => {
+  const percentage = (spent / limit) * 100;
+  if (percentage >= 100) {
+    return {
       label: "Budget Exceed",
       textColor: "#D83A56",
       background: "#FFE6EA",
-    },
-  },
-  {
-    id: "transport",
-    label: "Transportation",
-    usage: "60% of budget used",
-    amount: 45630,
-    variance: 13800,
-    status: {
-      label: "On Track",
-      textColor: COLORS.secondary_500,
-      background: COLORS.secondary_150,
-    },
-  },
-  {
-    id: "utilities",
-    label: "Bills & Utility",
-    usage: "89% of budget used",
-    amount: 24600,
-    variance: 23750,
-    status: {
+    };
+  }
+  if (percentage >= 85) {
+    return {
       label: "Approaching Limit",
       textColor: "#C47F0E",
       background: "#FFF5DD",
-    },
-  },
-  {
-    id: "health",
-    label: "Healthcare",
-    usage: "98% of budget used",
-    amount: 20350,
-    variance: -12200,
-    status: {
-      label: "Approaching Limit",
-      textColor: "#C47F0E",
-      background: "#FFF5DD",
-    },
-  },
-];
+    };
+  }
+  return {
+    label: "On Track",
+    textColor: COLORS.secondary_500,
+    background: COLORS.secondary_150,
+  };
+};
 
-const BASE_ALERTS: AlertItem[] = [
-  {
-    id: "food-alert",
-    label: "Food & Dining",
-    description:
-      "You spent within your Food & Dining budget yesterday. Try to maintain this streak.",
-    icon: "fast-food-outline",
-    accent: "#E04646",
-    background: "#FFE5E5",
-  },
-  {
-    id: "transport-alert",
-    label: "Transportation",
-    description:
-      "Your spending on Transportation has increased by 7% compared to last cycle.",
-    icon: "car-outline",
-    accent: "#E04646",
-    background: "#FFE5E5",
-  },
-];
-
-const TRACK_SPENDING_DATA: Record<TimeframeKey, TrackSpendingData> = {
-  daily: {
-    trendLabel: "+7.1% vs yesterday",
-    chart: {
-      bars: [
-        { id: "mon", label: "Mon", value: 42, color: "#E75A7C" },
-        { id: "tue", label: "Tue", value: 58, color: "#E75A7C" },
-        { id: "wed", label: "Wed", value: 96, color: "#F8924F" },
-        { id: "thu", label: "Thu", value: 74, color: "#32A34D" },
-        { id: "fri", label: "Fri", value: 88, color: "#F8924F" },
-        { id: "sat", label: "Sat", value: 64, color: "#32A34D" },
-        { id: "sun", label: "Sun", value: 52, color: "#32A34D" },
-      ],
-    },
-    mostSpending: BASE_MOST_SPENDING,
-
-    ai: {
-      title: "Bobbie AI Assistance",
-      description:
-        "Oops, you've used 90% of your food budget this week. Maybe it's time to cook more at home. Tap to get tips.",
-    },
-    breakdown: BASE_BREAKDOWN,
-    alerts: BASE_ALERTS,
-  },
-  weekly: {
-    trendLabel: "+7.1% vs last month",
-    chart: {
-      bars: [
-        { id: "w1", label: "W1", value: 220, color: "#E75A7C" },
-        { id: "w2", label: "W2", value: 180, color: "#32A34D" },
-        { id: "w3", label: "W3", value: 260, color: "#F8924F" },
-        { id: "w4", label: "W4", value: 210, color: "#32A34D" },
-        { id: "w5", label: "W5", value: 270, color: "#F8924F" },
-        { id: "w6", label: "W6", value: 190, color: "#32A34D" },
-        { id: "w7", label: "W7", value: 225, color: "#32A34D" },
-      ],
-    },
-    mostSpending: BASE_MOST_SPENDING,
-    ai: {
-      title: (
-        <View className="flex-row items-baseline">
-          <Text weight="bold" className="text-lg text-textColor">
-            Bobbie
-          </Text>
-          <Text weight="semibold" className="ml-1 text-sm text-textColor">
-            AI Assistance
-          </Text>
-        </View>
-      ),
-      description:
-        "Oops, you've spent 87% of your weekly transport budget. Consider switching to ride pooling for the rest of the week.",
-    },
-    breakdown: BASE_BREAKDOWN,
-    alerts: BASE_ALERTS,
-  },
-  monthly: {
-    trendLabel: "+7.1% vs last month",
-    chart: {
-      bars: [
-        { id: "jan", label: "Jan", value: 180, color: "#32A34D" },
-        { id: "feb", label: "Feb", value: 210, color: "#32A34D" },
-        { id: "mar", label: "Mar", value: 260, color: "#F8924F" },
-        { id: "apr", label: "Apr", value: 195, color: "#32A34D" },
-        { id: "may", label: "May", value: 240, color: "#E75A7C" },
-        { id: "jun", label: "Jun", value: 205, color: "#32A34D" },
-        { id: "jul", label: "Jul", value: 230, color: "#32A34D" },
-      ],
-    },
-    mostSpending: BASE_MOST_SPENDING,
-    ai: {
-      title: "Bobbie",
-
-      description:
-        "Oops, you've used 92% of your monthly food budget. Plan more home meals to avoid overspending next month.",
-    },
-    breakdown: BASE_BREAKDOWN,
-    alerts: BASE_ALERTS,
-  },
+const findCategoryIcon = (
+  categoryName: string,
+  categories: CategoryItem[],
+): string | null => {
+  const category = categories.find(
+    (cat) => cat.label.toLowerCase() === categoryName.toLowerCase(),
+  );
+  return category?.icon && typeof category.icon === "string"
+    ? category.icon
+    : null;
 };
 
 const TrackSpendingScreen = () => {
   const [activeTab, setActiveTab] = useState<TimeframeKey>("daily");
-  const data = TRACK_SPENDING_DATA[activeTab];
-  const trendLabelParts = data.trendLabel.trim().split(" ");
-  const trendChange = trendLabelParts.shift() ?? "";
-  const trendRemainder = trendLabelParts.join(" ");
+
+  const { data: categories = [] } = useGetCategoriesQuery("expense");
+
+  const {
+    data: spendingOverviewData,
+    isLoading: isLoadingOverview,
+    isFetching: isFetchingOverview,
+    isError: isOverviewError,
+  } = useGetSpendingOverviewQuery(activeTab as SpendingOverviewTimeframe);
+
+  const {
+    data: expenseSummaryData,
+    isLoading: isLoadingSummary,
+    isFetching: isFetchingSummary,
+    isError: isSummaryError,
+  } = useGetExpenseSummaryQuery(activeTab);
+
+  const {
+    data: budgetsData,
+    isLoading: isLoadingBudgets,
+    isError: isBudgetsError,
+  } = useGetBudgetsQuery();
+
+  const isInitialLoading =
+    isLoadingOverview || isLoadingSummary || isLoadingBudgets;
+  const isFetching = isFetchingOverview || isFetchingSummary;
+  const isError = isOverviewError || isSummaryError || isBudgetsError;
+
+  const budgets = useMemo(() => {
+    if (!budgetsData) return [];
+    if (Array.isArray(budgetsData)) return budgetsData;
+    if ("data" in budgetsData && Array.isArray(budgetsData.data))
+      return budgetsData.data;
+    return [];
+  }, [budgetsData]);
+
+  const expenseSummary = useMemo(() => {
+    return expenseSummaryData?.data;
+  }, [expenseSummaryData]);
+
+  console.log("expenseSummary", expenseSummary);
+  console.log("spendingOverviewData", spendingOverviewData);
+
+  const chartData = useMemo((): ChartBar[] => {
+    if (!spendingOverviewData?.chartData?.length) {
+      return [];
+    }
+
+    
+    const aggregated = new Map<string, { label: string; value: number }>();
+
+    spendingOverviewData.chartData.forEach((item) => {
+      const { _id } = item;
+      let key = "";
+      let label = "";
+      const yearSuffix = _id.year ? `'${String(_id.year).slice(-2)}` : "";
+
+      if (_id.day !== undefined) {
+        key = `${_id.year}-${_id.month}-${_id.day}`;
+        label = `${_id.day}/${_id.month}`;
+      } else if (_id.week !== undefined) {
+        const weekNum = _id.week === 0 ? 1 : _id.week;
+        key = `${_id.year}-W${weekNum}`;
+        label = `W${weekNum}${yearSuffix}`;
+      } else if (_id.month !== undefined) {
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        key = `${_id.year}-${_id.month}`;
+        label = `${monthNames[(_id.month - 1) % 12]}${yearSuffix}`;
+      }
+
+      if (key) {
+        const existing = aggregated.get(key);
+        if (existing) {
+          existing.value += item.totalAmount;
+        } else {
+          aggregated.set(key, { label, value: item.totalAmount });
+        }
+      }
+    });
+
+    const aggregatedArray = Array.from(aggregated.values());
+    const totalSpent = aggregatedArray.reduce(
+      (sum, item) => sum + item.value,
+      0,
+    );
+    const average = totalSpent / aggregatedArray.length;
+
+    return aggregatedArray.map((item, index) => ({
+      id: `chart-${index}`,
+      label: item.label,
+      value: item.value,
+      color: getBarColor(item.value, average),
+    }));
+  }, [spendingOverviewData]);
+  console.log("chartData", chartData);
+
+  const trendInfo = useMemo(() => {
+    if (!spendingOverviewData?.comparison) {
+      return { change: "+0%", remainder: "no data" };
+    }
+
+    const { comparison } = spendingOverviewData;
+    const sign = comparison.isIncrease ? "+" : "-";
+    const timeframeLabel =
+      activeTab === "daily"
+        ? "vs yesterday"
+        : activeTab === "weekly"
+          ? "vs last week"
+          : "vs last month";
+
+    return {
+      change: `${sign}${comparison.percentage}%`,
+      remainder: timeframeLabel,
+    };
+  }, [spendingOverviewData, activeTab]);
+
+  const mostSpending = useMemo((): MostSpendingItem[] => {
+    if (!expenseSummary?.categories?.length) {
+      return [];
+    }
+
+    const sortedCategories = [...expenseSummary.categories]
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 4);
+
+    return sortedCategories.map((cat, index) => {
+      const colors = getAccentColor(index);
+      const percentageChange = cat.percentage
+        ? `+${cat.percentage.toFixed(0)}%`
+        : "+0%";
+      const icon = findCategoryIcon(cat.category, categories);
+
+      return {
+        id: cat.category,
+        label: cat.category,
+        change: percentageChange,
+        amount: cat.amount,
+        icon,
+        accent: colors.accent,
+        tint: colors.tint,
+      };
+    });
+  }, [expenseSummary, categories]);
+
+  const breakdown = useMemo((): BreakdownItem[] => {
+    if (!budgets.length) {
+      return [];
+    }
+    console.log("budgets", budgets);
+    return budgets
+      .filter((budget: BudgetListItem) => budget.Limit || budget.amount)
+      .map((budget: BudgetListItem) => {
+        const limit = budget.Limit || budget.amount || 0;
+        const spent = budget.spent || budget.totalSpent || 0;
+        const remaining = budget.remaining ?? limit - spent;
+        const usagePercentage = limit > 0 ? (spent / limit) * 100 : 0;
+        const icon = findCategoryIcon(budget.category, categories);
+
+        return {
+          id: budget._id,
+          label: budget.category,
+          icon,
+          usage: `${Math.min(usagePercentage, 100).toFixed(0)}% of budget used`,
+          amount: spent,
+          variance: remaining,
+          status: getBudgetStatus(spent, limit),
+        };
+      })
+      .slice(0, 5);
+  }, [budgets, categories]);
+
+  const alerts = useMemo((): AlertItem[] => {
+    if (!budgets.length) {
+      return [];
+    }
+
+    return budgets
+      .filter((budget: BudgetListItem) => {
+        const limit = budget.Limit || budget.amount || 0;
+        const spent = budget.spent || budget.totalSpent || 0;
+        const percentage = limit > 0 ? (spent / limit) * 100 : 0;
+        return percentage >= 85;
+      })
+      .map((budget: BudgetListItem) => {
+        const limit = budget.Limit || budget.amount || 0;
+        const spent = budget.spent || budget.totalSpent || 0;
+        const percentage = limit > 0 ? (spent / limit) * 100 : 0;
+        const icon = findCategoryIcon(budget.category, categories);
+
+        const description =
+          percentage >= 100
+            ? `You've exceeded your ${budget.category} budget by ${formatCurrency(spent - limit)}. Consider adjusting your spending.`
+            : `You've used ${percentage.toFixed(0)}% of your ${budget.category} budget. Only ${formatCurrency(limit - spent)} remaining.`;
+
+        return {
+          id: budget._id,
+          label: budget.category,
+          description,
+          icon,
+          accent: "#E04646",
+          background: "#FFE5E5",
+        };
+      })
+      .slice(0, 3);
+  }, [budgets, categories]);
+
+  const aiTip = useMemo(() => {
+    if (alerts.length > 0) {
+      const topAlert = alerts[0];
+      return {
+        title: "Bobbie AI Assistance",
+        description: `Watch out! Your ${topAlert.label} spending is high. Tap for personalized tips to save more.`,
+      };
+    }
+
+    if (mostSpending.length > 0) {
+      return {
+        title: "Bobbie AI Assistance",
+        description: `Your highest spending is on ${mostSpending[0].label}. Want tips on how to optimize this category?`,
+      };
+    }
+
+    return {
+      title: "Bobbie AI Assistance",
+      description:
+        "You're doing great! Keep tracking your expenses to maintain healthy financial habits.",
+    };
+  }, [alerts, mostSpending]);
 
   const maxBarValue = useMemo(() => {
-    const values = data.chart.bars.map((bar) => bar.value);
+    const values = chartData.map((bar) => bar.value);
     return values.length ? Math.max(...values) : 1;
-  }, [data.chart.bars]);
+  }, [chartData]);
+
+  if (isInitialLoading) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={COLORS.primary_400} />
+          <Text className="mt-4 text-textColor/60">
+            Loading spending data...
+          </Text>
+        </View>
+      </MainContainer>
+    );
+  }
+
+  if (isError) {
+    return (
+      <MainContainer edges={[]} className="bg-lightMuted">
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={COLORS.textColor}
+          />
+          <Text weight="semibold" className="mt-4 text-center text-textColor">
+            Unable to load spending data
+          </Text>
+          <Text className="mt-2 text-center text-textColor/60">
+            Please check your connection and try again
+          </Text>
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted">
@@ -303,88 +450,124 @@ const TrackSpendingScreen = () => {
 
         <View className="mt-6 rounded-3xl bg-white p-5">
           <View className="flex-row items-center justify-between">
-            <Text weight="semibold" className="text-lg text-textColor">
-              Spending Overview
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text weight="semibold" className="text-lg text-textColor">
+                Spending Overview
+              </Text>
+              {isFetching && (
+                <ActivityIndicator size="small" color={COLORS.primary_400} />
+              )}
+            </View>
             <Text weight="semibold" className="text-xs text-textColor">
               <Text weight="semibold" className="text-xs text-secondary_500">
-                {trendChange}
+                {trendInfo.change}
               </Text>
-              {trendRemainder ? ` ${trendRemainder}` : ""}
+              {trendInfo.remainder ? ` ${trendInfo.remainder}` : ""}
             </Text>
           </View>
-          <View className="mt-6 px-1">
-            <BarChart
-              data={data.chart.bars.map((bar) => ({
-                value: bar.value,
-                label: bar.label,
-                frontColor: bar.color,
-              }))}
-              maxValue={maxBarValue}
-              height={180}
-              barWidth={20}
-              spacing={18}
-              barBorderRadius={12}
-              yAxisThickness={0}
-              xAxisThickness={0}
-              disableScroll
-              isAnimated
-              labelWidth={24}
-              xAxisLabelTextStyle={{
-                fontFamily: "NunitoMedium",
-                fontSize: 12,
-                color: `${COLORS.textColor}60`,
-              }}
-              yAxisTextStyle={{
-                fontFamily: "NunitoMedium",
-                fontSize: 10,
-                color: `${COLORS.textColor}60`,
-              }}
-            />
-          </View>
 
-          <View className="mt-7">
-            <Text weight="semibold" className="text-base text-textColor">
-              Most Spending
-            </Text>
+          {chartData.length > 0 ? (
+            <View className="mt-6 px-1">
+              <BarChart
+                data={chartData.map((bar) => ({
+                  value: bar.value,
+                  label: bar.label,
+                  frontColor: bar.color,
+                }))}
+                maxValue={maxBarValue}
+                height={180}
+                barWidth={20}
+                spacing={30}
+                barBorderRadius={12}
+                yAxisThickness={0}
+                xAxisThickness={0}
+                disableScroll
+                isAnimated
+                xAxisLabelTextStyle={{
+                  fontFamily: "NunitoMedium",
+                  fontSize: 12,
+                  color: `${COLORS.textColor}60`,
+                }}
+                yAxisTextStyle={{
+                  fontFamily: "NunitoMedium",
+                  fontSize: 10,
+                  color: `${COLORS.textColor}60`,
+                }}
+              />
+            </View>
+          ) : (
+            <View className="mt-6 items-center py-8">
+              <Ionicons
+                name="bar-chart-outline"
+                size={40}
+                color={`${COLORS.textColor}40`}
+              />
+              <Text className="mt-2 text-textColor/50">
+                No spending data for this period
+              </Text>
+            </View>
+          )}
 
-            <View className="mt-3 flex-row flex-wrap justify-between">
-              {data.mostSpending.map((item) => (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.mostSpendingCard,
-                    { backgroundColor: item.tint },
-                  ]}
-                >
-                  <View className="i mb-4 flex-row justify-between">
-                    <View
-                      style={[
-                        styles.iconBadge,
-                        {
-                          borderColor: `${item.accent}`,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={item.icon}
-                        size={18}
-                        color={item.accent}
-                      />
+          {mostSpending.length > 0 && (
+            <View className="mt-7">
+              <Text weight="semibold" className="text-base text-textColor">
+                Most Spending
+              </Text>
+
+              <View className="mt-3 flex-row flex-wrap justify-between">
+                {mostSpending.map((item) => (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.mostSpendingCard,
+                      { backgroundColor: item.tint },
+                    ]}
+                  >
+                    <View className="mb-4 flex-row justify-between">
+                      <View
+                        style={[
+                          styles.iconBadge,
+                          {
+                            borderColor: item.accent,
+                            backgroundColor: "white",
+                          },
+                        ]}
+                      >
+                        {item.icon ? (
+                          <Image
+                            source={{ uri: item.icon }}
+                            style={{ width: 20, height: 20 }}
+                            contentFit="contain"
+                          />
+                        ) : (
+                          <Ionicons
+                            name="grid-outline"
+                            size={18}
+                            color={item.accent}
+                          />
+                        )}
+                      </View>
+                      <Text
+                        weight="semibold"
+                        className="text-base"
+                        style={{ color: item.accent }}
+                      >
+                        {item.change}
+                      </Text>
                     </View>
+                    <Text className="mt-1 text-textColor/70">{item.label}</Text>
                     <Text
                       weight="semibold"
-                      className="text-base text-textColor"
-                      style={{ color: item.accent }}
+                      className="text-xs text-textColor/50"
                     >
-                      {item.change}
+                      {formatCurrency(item.amount)}
                     </Text>
                   </View>
-                  <Text className="mt-1  text-textColor/70">{item.label}</Text>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
-          </View>
+          )}
+
           <ImageBackground
             style={[styles.aiCard]}
             source={require("@/assets/images/bg-patterns/fold-pattern.png")}
@@ -397,126 +580,168 @@ const TrackSpendingScreen = () => {
               />
             </View>
             <View className="ml-3 flex-1">
-              {typeof data.ai.title === "string" ? (
-                <Text weight="semibold" className="text-sm text-textColor">
-                  {data.ai.title}
-                </Text>
-              ) : (
-                data.ai.title
-              )}
+              <Text weight="semibold" className="text-sm text-textColor">
+                {aiTip.title}
+              </Text>
               <Text className="mt-1 text-xs text-textColor/70">
-                {data.ai.description}
+                {aiTip.description}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#8A94A6" />
           </ImageBackground>
         </View>
 
-        <View className="mt-6 rounded-3xl bg-white p-5">
-          <Text weight="semibold" className="text-base text-textColor">
-            Spending Breakdown
-          </Text>
+        {breakdown.length > 0 && (
+          <View className="mt-6 rounded-3xl bg-white p-5">
+            <Text weight="semibold" className="text-base text-textColor">
+              Spending Breakdown
+            </Text>
 
-          <View className="mt-4">
-            {data.breakdown.map((item, index) => {
-              const isLast = index === data.breakdown.length - 1;
-              return (
-                <View
-                  key={item.id}
-                  className={`flex-row justify-between py-4 ${isLast ? "" : "border-b border-grayLight/60"}`}
-                >
-                  <View className="flex-1 pr-4">
-                    <View className="flex-row items-center">
-                      <Text
-                        weight="semibold"
-                        className="text-base text-textColor"
-                      >
-                        {item.label}
-                      </Text>
-                      <View
-                        className="ml-2 rounded-full px-3 py-1"
-                        style={{
-                          backgroundColor: item.status.background,
-                        }}
-                      >
-                        <Text
-                          weight="semibold"
-                          className="text-[10px]"
-                          style={{ color: item.status.textColor }}
-                        >
-                          {item.status.label}
+            <View className="mt-4">
+              {breakdown.map((item, index) => {
+                const isLast = index === breakdown.length - 1;
+                return (
+                  <View
+                    key={item.id}
+                    className={`flex-row justify-between py-4 ${isLast ? "" : "border-b border-grayLight/60"}`}
+                  >
+                    <View className="flex-1 flex-row items-start pr-4">
+                      {item.icon && (
+                        <View style={styles.breakdownIcon}>
+                          <Image
+                            source={{ uri: item.icon }}
+                            style={{ width: 18, height: 18 }}
+                            contentFit="contain"
+                          />
+                        </View>
+                      )}
+                      <View className="flex-1">
+                        <View className="flex-row items-center">
+                          <Text
+                            weight="semibold"
+                            className="text-base text-textColor"
+                          >
+                            {item.label}
+                          </Text>
+                          <View
+                            className="ml-2 rounded-full px-3 py-1"
+                            style={{
+                              backgroundColor: item.status.background,
+                            }}
+                          >
+                            <Text
+                              weight="semibold"
+                              className="text-[10px]"
+                              style={{ color: item.status.textColor }}
+                            >
+                              {item.status.label}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text className="mt-2 text-xs text-textColor/60">
+                          {item.usage}
                         </Text>
                       </View>
                     </View>
-                    <Text className="mt-2 text-xs text-textColor/60">
-                      {item.usage}
-                    </Text>
+                    <View className="items-end">
+                      <Text weight="bold" className="text-sm text-textColor">
+                        {formatCurrency(item.amount)}
+                      </Text>
+                      <Text
+                        className="mt-1 text-xs"
+                        style={{
+                          color:
+                            item.variance >= 0
+                              ? COLORS.secondary_500
+                              : "#D83A56",
+                        }}
+                      >
+                        {item.variance >= 0 ? "+" : "-"}
+                        {formatCurrency(item.variance)}
+                      </Text>
+                    </View>
                   </View>
-                  <View className="items-end">
-                    <Text weight="bold" className="text-sm text-textColor">
-                      {formatCurrency(item.amount)}
-                    </Text>
-                    <Text
-                      className="mt-1 text-xs"
-                      style={{
-                        color:
-                          item.variance >= 0 ? COLORS.secondary_500 : "#D83A56",
-                      }}
-                    >
-                      {item.variance >= 0 ? "+" : "-"}
-                      {formatCurrency(item.variance)}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
           </View>
-        </View>
+        )}
 
-        <View className="mt-6 rounded-3xl bg-white p-5">
-          <Text weight="semibold" className="text-base text-textColor">
-            Spending Above Budget
-          </Text>
+        {alerts.length > 0 && (
+          <View className="mt-6 rounded-3xl bg-white p-5">
+            <Text weight="semibold" className="text-base text-textColor">
+              Spending Above Budget
+            </Text>
 
-          <View className="mt-4 gap-3">
-            {data.alerts.map((alert) => (
-              <View
-                key={alert.id}
-                style={[
-                  styles.alertCard,
-                  { backgroundColor: alert.background },
-                ]}
-              >
+            <View className="mt-4 gap-3">
+              {alerts.map((alert) => (
                 <View
+                  key={alert.id}
                   style={[
-                    styles.alertIcon,
-                    {
-                      backgroundColor: "white",
-                    },
+                    styles.alertCard,
+                    { backgroundColor: alert.background },
                   ]}
                 >
-                  <Ionicons
-                    name="trending-down-outline"
-                    size={20}
-                    color={alert.accent}
-                  />
-                </View>
-                <View className="ml-3 flex-1">
-                  <Text
-                    weight="bold"
-                    className="text-sm "
-                    style={{ color: alert.accent }}
+                  <View
+                    style={[
+                      styles.alertIcon,
+                      {
+                        backgroundColor: "white",
+                      },
+                    ]}
                   >
-                    {alert.label}
-                  </Text>
-                  <Text className="mt-1 text-xs leading-4 text-textColor/70">
-                    {alert.description}
-                  </Text>
+                    {alert.icon ? (
+                      <Image
+                        source={{ uri: alert.icon }}
+                        style={{ width: 22, height: 22 }}
+                        contentFit="contain"
+                      />
+                    ) : (
+                      <Ionicons
+                        name="trending-down-outline"
+                        size={20}
+                        color={alert.accent}
+                      />
+                    )}
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text
+                      weight="bold"
+                      className="text-sm"
+                      style={{ color: alert.accent }}
+                    >
+                      {alert.label}
+                    </Text>
+                    <Text className="mt-1 text-xs leading-4 text-textColor/70">
+                      {alert.description}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
-        </View>
+        )}
+
+        {breakdown.length === 0 && alerts.length === 0 && (
+          <View className="mt-6 rounded-3xl bg-white p-5">
+            <View className="items-center py-8">
+              <Ionicons
+                name="wallet-outline"
+                size={40}
+                color={`${COLORS.textColor}40`}
+              />
+              <Text
+                weight="semibold"
+                className="mt-4 text-center text-textColor"
+              >
+                No budgets set up yet
+              </Text>
+              <Text className="mt-2 text-center text-textColor/60">
+                Create budgets to track your spending by category
+              </Text>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </MainContainer>
   );
@@ -564,6 +789,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 12,
     borderWidth: 1,
+  },
+  breakdownIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F5F5F5",
+    marginRight: 12,
   },
   aiCard: {
     marginTop: 18,

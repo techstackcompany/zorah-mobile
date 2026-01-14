@@ -48,16 +48,15 @@ const AddIncomeScreen = () => {
     error: categoriesError,
   } = useGetCategoriesQuery("income");
 
-  // Map API categories to UI format
+
   const incomeCategories = useMemo<IncomeCategory[]>(() => {
     if (!categoriesData) {
       return [];
     }
 
-   return categoriesData
+    return categoriesData;
   }, [categoriesData]);
 
-  // Set default selected category when categories are loaded
   useEffect(() => {
     if (incomeCategories.length > 0 && !selectedCategory) {
       setSelectedCategory(incomeCategories[0].key);
@@ -66,8 +65,6 @@ const AddIncomeScreen = () => {
 
   const addIncomeMutation = useAddIncomeMutation({
     onSuccess: (response) => {
-     
-
       queryClient.invalidateQueries({ queryKey: ["income"] });
 
       Toast.show({
@@ -76,7 +73,6 @@ const AddIncomeScreen = () => {
         text2: "Your income has been recorded successfully.",
       });
 
-      // Reset form
       setAmount("");
       setPaymentMethod("");
       setDate("");
@@ -87,8 +83,6 @@ const AddIncomeScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-     
-
       Toast.show({
         type: "error",
         text1: "Error",
@@ -114,7 +108,6 @@ const AddIncomeScreen = () => {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    // Validate required fields
     if (!amount || Number(amount) <= 0) {
       Toast.show({
         type: "error",
@@ -153,21 +146,21 @@ const AddIncomeScreen = () => {
 
     const numericAmount = Number(amount);
 
-    // Format date to YYYY-MM-DD
-    // DatePickerField returns DD/MM/YY format
+    
+    
     let formattedDate = date;
     if (date.includes("/")) {
       const [day, month, yearStr] = date.split("/");
-      // Handle 2-digit year (YY) - assume 20XX for years 00-99
+      
       const fullYear =
         yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
     const payload = {
-      source: paymentMethod, // Payment method maps to "source" in API
+      source: paymentMethod, 
       amount: numericAmount,
-      category: selectedCategory.toLowerCase(), // API expects lowercase category
+      category: selectedCategory.toLowerCase(), 
       description: description.trim() || undefined,
       date: formattedDate,
     };
@@ -271,7 +264,9 @@ const AddIncomeScreen = () => {
                   </Text>
 
                   <Ionicons
-                    name={isPaymentModalVisible ? "chevron-up" : "chevron-down"}
+                    name={
+                      isPaymentModalOpen.value ? "chevron-up" : "chevron-down"
+                    }
                     size={20}
                     color={COLORS.textColor}
                   />

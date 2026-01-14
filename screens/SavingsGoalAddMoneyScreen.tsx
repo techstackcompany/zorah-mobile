@@ -36,14 +36,14 @@ const SavingsGoalAddMoneyScreen = () => {
   const [selectedSource, setSelectedSource] = useState(PAYMENT_SOURCES[0].id);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Fetch goal data from API
+  
   const {
     data: goalData,
     isLoading: isGoalLoading,
     error: goalError,
   } = useGetSavingsGoalQuery(id);
 
-  // Map API goal to UI format
+  
   const goal = useMemo(() => {
     if (!goalData?.data) {
       return null;
@@ -68,7 +68,7 @@ const SavingsGoalAddMoneyScreen = () => {
       console.log("Response data:", response?.data);
       console.log("========================\n");
 
-      // Invalidate savings goals queries to refresh data
+      
       queryClient.invalidateQueries({ queryKey: ["savings"] });
 
       setShowSuccess(true);
@@ -78,10 +78,10 @@ const SavingsGoalAddMoneyScreen = () => {
         text2: "Your contribution has been added successfully.",
       });
 
-      // Reset form
+      
       setAmount("");
 
-      // Navigate back after a short delay
+      
       setTimeout(() => {
         setShowSuccess(false);
         router.back();
@@ -115,7 +115,7 @@ const SavingsGoalAddMoneyScreen = () => {
 
     Keyboard.dismiss();
 
-    // Validate amount
+    
     if (!amount || Number(amount) <= 0) {
       Toast.show({
         type: "error",
@@ -140,7 +140,7 @@ const SavingsGoalAddMoneyScreen = () => {
     contributeMutation.mutate(payload);
   }, [id, amount, selectedSource, contributeMutation]);
 
-  // Loading state
+  
   if (isGoalLoading) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -152,7 +152,7 @@ const SavingsGoalAddMoneyScreen = () => {
     );
   }
 
-  // Error state
+  
   if (goalError || !goal) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">

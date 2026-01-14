@@ -28,7 +28,7 @@ console.log('userData', userData)
     });
   }, [userData]);
 
-  // Get note from userData if it exists
+  
   const initialNote = useMemo(() => {
     const safeUser = (userData ?? {}) as Record<string, unknown>;
     return (typeof safeUser.note === "string" ? safeUser.note : "") || "";
@@ -41,7 +41,7 @@ console.log('userData', userData)
     note: initialNote,
   });
 
-  // Update form when userData changes
+  
   useEffect(() => {
     setForm({
       name: displayName || "",
@@ -56,7 +56,7 @@ console.log('userData', userData)
   };
 
   const handleSubmit = () => {
-    // Check if there are changes
+    
     const hasChanges =
       (form.name.trim() && form.name !== displayName) ||
       (form.email.trim() && form.email !== displayEmail) ||
@@ -70,7 +70,7 @@ console.log('userData', userData)
         [{ text: "OK" }],
       );
     } else {
-      // No changes, just go back
+      
       router.back();
     }
   };

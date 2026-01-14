@@ -114,7 +114,7 @@ const LockScreen = ({
     supportsFingerprint,
   } = useDeviceBiometricSupport();
 
-  // Show fingerprint icon if Android OR if fingerprint is the primary method
+  
   const biometricIcon =
     Platform.OS === "android" || supportsFingerprint
       ? "fingerprint"
@@ -164,7 +164,7 @@ const LockScreen = ({
   });
 
   const onNumberPress = (number: number) => {
-    // Prevent input while verifying
+    
     if (
       code.length < CODE_FIELDS &&
       !isVerifying &&
@@ -175,7 +175,7 @@ const LockScreen = ({
     }
   };
   const onBackSpacePress = () => {
-    // Prevent backspace while verifying
+    
     if (code.length > 0 && !isVerifying && !verifyPinMutation.isPending) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setCode(code.slice(0, -1));
@@ -205,7 +205,7 @@ const LockScreen = ({
   }, [visible, handleUnlockSuccess]);
 
   useEffect(() => {
-    // Only verify if we have 4 digits, not already verifying, and mutation is not pending
+    
     if (
       code.length === CODE_FIELDS &&
       !isVerifying &&
@@ -215,8 +215,8 @@ const LockScreen = ({
       setIsVerifying(true);
       verifyPinMutation.mutate({ pin });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code.length]); // Only depend on code.length, not the entire code array or mutation
+    
+  }, [code.length]); 
 
   if (!visible) return null;
 

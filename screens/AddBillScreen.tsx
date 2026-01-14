@@ -1,14 +1,23 @@
+import PaymentModal from "@/components/expense-planning/PaymentModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
+import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
+import SelectButton from "@/components/ui/SelectButton";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { useAddBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -19,6 +28,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 const AddBillScreen = () => {
   const router = useRouter();
@@ -29,23 +40,29 @@ const AddBillScreen = () => {
   const [category, setCategory] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [reminderEnabled, setReminderEnabled] = useState(true);
-  const [note, setNote] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const isPaymentModalOpen = useSharedValue(false);
 
   const { data: categories = [], isPending: isCategoriesLoading } =
     useGetCategoriesQuery("budget");
   const { mutate: addBill, isPending: isSubmitting } =
     useAddBillReminderMutation({
       onSuccess: () => {
-        setShowSuccess(true);
+        Toast.show({
+          type: "success",
+          text1: "Bill Added",
+          text2: "Your bill reminder has been added successfully.",
+        });
         successTimeoutRef.current = setTimeout(() => {
-          setShowSuccess(false);
           router.back();
         }, 1200);
       },
       onError: (error) => {
-        console.error("Failed to add bill:", error);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: error?.message || "Failed to add bill. Please try again.",
+        });
       },
     });
 
@@ -55,6 +72,22 @@ const AddBillScreen = () => {
         clearTimeout(successTimeoutRef.current);
       }
     };
+  }, []);
+
+  const openPaymentModal = useCallback(() => {
+    isPaymentModalOpen.value = true;
+    setFocusedField("paymentMethod");
+  }, []);
+
+  const closePaymentModal = useCallback(() => {
+    isPaymentModalOpen.value = false;
+    setFocusedField(null);
+  }, []);
+
+  const handleSelectPaymentMethod = useCallback((method: string) => {
+    setPaymentMethod(method);
+    isPaymentModalOpen.value = false;
+    setFocusedField(null);
   }, []);
 
   const paymentMethods = [
@@ -73,10 +106,21 @@ const AddBillScreen = () => {
       return;
     }
     Keyboard.dismiss();
+
+    
+    let formattedDueDate = dueDate;
+    if (dueDate.includes("/")) {
+      const [day, month, yearStr] = dueDate.split("/");
+      const fullYear =
+        yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
+      const date = new Date(fullYear, Number(month) - 1, Number(day));
+      formattedDueDate = date.toISOString();
+    }
+
     addBill({
       name: billName,
       amount: parseFloat(amount),
-      dueDate,
+      dueDate: formattedDueDate,
       category,
       paymentMethod,
       reminderEnabled,
@@ -93,19 +137,6 @@ const AddBillScreen = () => {
           keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
         >
           <View className="flex-1">
-            {showSuccess ? (
-              <View
-                className="bg-[#DFF5E5] px-6 py-4"
-                style={{
-                  borderBottomColor: COLORS.secondary_500,
-                  borderBottomWidth: 1,
-                }}
-              >
-                <Text weight="semibold" className="text-sm text-textColor">
-                  Bill added successfully
-                </Text>
-              </View>
-            ) : null}
             <ScrollView
               keyboardDismissMode="on-drag"
               keyboardShouldPersistTaps="handled"
@@ -160,30 +191,24 @@ const AddBillScreen = () => {
 
               <View className="mt-6">
                 <Text className="text-sm text-textColor">Category</Text>
-                <SelectInput
-                  value={category}
-                  onValueChange={setCategory}
-                  items={categories}
-                  placeholder="Select category"
-                  onFocusChange={(focused) =>
-                    setFocusedField(focused ? "category" : null)
-                  }
-                  isFocused={focusedField === "category"}
-                  disabled={isCategoriesLoading}
+                <CategorySelector
+                  categories={categories}
+                  selectedKey={category}
+                  onSelect={setCategory}
                 />
               </View>
 
               <View className="mt-6">
                 <Text className="text-sm text-textColor">Payment Method</Text>
-                <SelectInput
-                  value={paymentMethod}
-                  onValueChange={setPaymentMethod}
-                  items={paymentMethods}
-                  placeholder="Select payment method"
-                  onFocusChange={(focused) =>
-                    setFocusedField(focused ? "paymentMethod" : null)
+                <SelectButton
+                  value={
+                    paymentMethods.find((m) => m.key === paymentMethod)?.label
                   }
+                  placeholder="Select payment method"
+                  onPress={openPaymentModal}
+                  isOpen={isPaymentModalOpen.value}
                   isFocused={focusedField === "paymentMethod"}
+                  className="mt-2"
                 />
               </View>
 
@@ -205,21 +230,6 @@ const AddBillScreen = () => {
                 </View>
               </View>
 
-              <View className="mt-6">
-                <Text className="text-sm text-textColor">Note (Optional)</Text>
-                <TextInput
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Message..."
-                  placeholderTextColor="#A0A8B2"
-                  multiline
-                  onFocus={() => setFocusedField("note")}
-                  onBlur={() => setFocusedField(null)}
-                  className={`mt-2 rounded-2xl border bg-white px-4 py-4 text-base text-textColor ${focusedField === "note" ? "border-primary_400" : "border-gray-200"}`}
-                  style={{ minHeight: 120, textAlignVertical: "top" }}
-                />
-              </View>
-
               <Button
                 title={isSubmitting ? "Adding..." : "Add Bill"}
                 className="mt-10"
@@ -236,6 +246,16 @@ const AddBillScreen = () => {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={closePaymentModal}
+          paymentMethods={paymentMethods.map((m) => ({
+            label: m.label,
+            value: m.key,
+          }))}
+          selectedMethod={paymentMethod}
+          onSelect={handleSelectPaymentMethod}
+        />
       </MainContainer>
     </>
   );

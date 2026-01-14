@@ -235,32 +235,8 @@ const BudgetArchiveScreen = () => {
               Loading archived budgets...
             </Text>
           </View>
-        ) : hasArchivedBudgets ? (
+          ) : hasArchivedBudgets ? (
           <>
-            {/* <View className="mt-6 rounded-3xl border border-grayLight/40 bg-white p-4 shadow-sm shadow-[#1018280D]">
-              <Text className="text-xs uppercase text-textColor/60">
-                Archive Summary
-              </Text>
-              <View className="mt-3 flex-row justify-between">
-                <View>
-                  <Text className="text-xs text-textColor/60">
-                    Total Archived
-                  </Text>
-                  <Text
-                    weight="semibold"
-                    className="mt-1 text-base text-textColor"
-                  >
-                    {formatCurrency(archiveTotal.allocated)}
-                  </Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-xs text-textColor/60">Total Spent</Text>
-                  <Text weight="semibold" className="mt-1 text-base text-orange">
-                    {formatCurrency(archiveTotal.spent)}
-                  </Text>
-                </View>
-              </View>
-            </View> */}
 
             <View className="mt-8">
               <Text weight="semibold" className="text-lg text-textColor">

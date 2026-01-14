@@ -151,7 +151,7 @@ const formatSectionDate = (dateString?: string): string => {
       return dayNames[date.getDay()];
     }
 
-    // Otherwise return month and year
+    
     return date.toLocaleDateString("en-US", {
       month: "short",
       year: "numeric",

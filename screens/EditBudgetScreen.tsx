@@ -6,11 +6,11 @@ import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useGetCategoriesQuery } from "@/src/api/hooks";
 import {
   useGetBudgetQuery,
   useUpdateBudgetMutation,
 } from "@/src/api/hooks/useBudgetApi";
-import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -127,17 +127,13 @@ const formatRangeLabel = (range: DateRange | null) => {
   return `${startLabel} - ${endLabel}`;
 };
 
-
-
-// Map UI period keys to API period values
 const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
   this_week: "weekly",
   this_month: "monthly",
   this_year: "yearly",
-  custom: "monthly", // Default for custom, will be determined by date range
+  custom: "monthly", 
 };
 
-// Reverse map: API period values to UI keys
 const REVERSE_PERIOD_MAP: Record<string, BudgetPeriodKey> = {
   weekly: "this_week",
   monthly: "this_month",
@@ -270,9 +266,9 @@ const EditBudgetScreen = () => {
   useEffect(() => {
     if (budget) {
       if (budget.category) {
-        // Set the category key - find matching category from API data
+        
         const matchingCategory = budgetCategories?.find(
-          (cat) => cat.label.toLowerCase() === budget.category.toLowerCase()
+          (cat) => cat.label.toLowerCase() === budget.category.toLowerCase(),
         );
         if (matchingCategory) {
           setSelectedCategory(matchingCategory.key);
@@ -309,14 +305,12 @@ const EditBudgetScreen = () => {
         text2: response.message || "Your budget has been updated successfully.",
       });
 
-      // Navigate back after a short delay
+      
       setTimeout(() => {
         router.back();
       }, 1500);
     },
     onError: (error) => {
-    
-
       Toast.show({
         type: "error",
         text1: "Error",
@@ -365,15 +359,15 @@ const EditBudgetScreen = () => {
       return;
     }
 
-    // Determine period - use mapped value or determine from custom range
+    
     const apiPeriod =
       periodKey === "custom"
         ? determinePeriodFromRange(selectedRange)
         : PERIOD_MAP[periodKey];
 
-    // Use budgetName if it's been edited, otherwise use the selected category label
+    
     const selectedCategoryData = budgetCategories?.find(
-      (cat) => cat.key === selectedCategory
+      (cat) => cat.key === selectedCategory,
     );
     const categoryName = budgetName.trim() || selectedCategoryData?.label || "";
 
@@ -402,7 +396,7 @@ const EditBudgetScreen = () => {
     customRangeDraft.start && customRangeDraft.end,
   );
 
-  // Show loading state
+  
   if (isLoadingBudget) {
     return (
       <MainContainer className="bg-light" edges={[]}>
@@ -414,7 +408,7 @@ const EditBudgetScreen = () => {
     );
   }
 
-  // Show error state
+  
   if (budgetError || !budget) {
     return (
       <MainContainer className="bg-light" edges={[]}>

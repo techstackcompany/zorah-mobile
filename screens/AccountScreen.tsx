@@ -144,22 +144,22 @@ const AccountScreen = () => {
 
   const handleBiometricToggle = (value: boolean) => {
     if (value) {
-      // When enabling biometrics, show PIN setup prompt
+      
       showPinSetupModal.value = true;
     } else {
-      // When disabling, show confirmation modal
+      
       setShowDisableModal(true);
     }
   };
 
   const handleDisableBiometrics = () => {
-    // Call API to disable biometrics
+    
     toggleBiometricsMutation.mutate({ enabled: false });
   };
 
   const handleSetPin = () => {
     showPinSetupModal.value = false;
-    // Navigate to PIN setup screen
+    
     router.push("/(app)/settings/pin" as RelativePathString);
   };
 
@@ -344,7 +344,7 @@ const AccountScreen = () => {
         </View>
       </SlideUpModal>
 
-      {/* PIN Setup Prompt Modal */}
+      
       <SlideUpModal
         isOpen={showPinSetupModal}
         onClose={() => {
@@ -362,14 +362,13 @@ const AccountScreen = () => {
                 name="lock-closed-outline"
                 size={32}
                 color={COLORS.primary_400}
-              />
-            </View>
-            <Text
-              weight="semibold"
-              className="text-center text-lg text-textColor"
-            >
-              PIN Required
-            </Text>
+              }
+                    </View>
+                  </View>
+                </View>
+              </SlideUpModal>
+
+            <Modal
             <Text className="mt-2 text-center text-sm text-textColor/70">
               To enable biometric login, you need to set up a PIN first. This
               PIN will be used as a backup authentication method.
@@ -391,7 +390,7 @@ const AccountScreen = () => {
             <Pressable
               onPress={() => {
                 showPinSetupModal.value = false;
-                // Reset toggle since PIN wasn't set
+                
                 updateSetting("enableBiometrics", false);
               }}
               className="rounded-2xl border border-gray-200 bg-white py-4"
@@ -407,7 +406,6 @@ const AccountScreen = () => {
         </View>
       </SlideUpModal>
 
-      {/* Disable Biometrics Confirmation Modal */}
       <Modal
         visible={showDisableModal}
         transparent

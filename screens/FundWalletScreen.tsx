@@ -42,7 +42,7 @@ const FundWalletScreen = () => {
   const router = useRouter();
   const [rawAmount, setRawAmount] = useState("0");
 
-  // Reset amount whenever screen comes into focus
+  
   useFocusEffect(
     useCallback(() => {
       setRawAmount("0");

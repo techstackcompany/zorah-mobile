@@ -97,11 +97,11 @@ const SignInScreen = () => {
             : "You’re now signed in.",
       });
 
-      // Navigate based on setup completion status
+      
       if (computedHasCompletedSetup) {
         router.replace("/(app)/(home)");
       } else {
-        // User needs to complete setup, redirect to setup flow
+        
         const setupRoutes: Record<number, string> = {
           1: "/(auth)/setup/choose-language",
           2: "/(auth)/setup/monthly-income",

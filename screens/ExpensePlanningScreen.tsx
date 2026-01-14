@@ -150,8 +150,6 @@ const ExpensePlanningScreen = () => {
     isLoading: isIncomesLoading,
     refetch: refetchIncomes,
   } = useGetIncomesQuery();
-  console.log("expensesData", expensesData);
-  console.log("error", error);
 
   const isLoading =
     (activeTab === "expense" &&
@@ -646,7 +644,7 @@ const ExpensePlanningScreen = () => {
               </View>
             )}
 
-            {/* Expense/Income List Section */}
+            
             {(activeTab === "expense" || activeTab === "income") && (
               <View className="mt-8">
                 <Text weight="semibold" className="text-base text-textColor">
