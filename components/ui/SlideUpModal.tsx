@@ -46,12 +46,10 @@ const SlideUpModal = ({
 }: SlideUpModalProps) => {
   const contentHeight = useSharedValue(0);
 
-  // Derived value for animation progress (1 = closed, 0 = open)
   const progress = useDerivedValue(() =>
     withTiming(isOpen.value ? 0 : 1, { duration }),
   );
 
-  // Backdrop opacity animation
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: 1 - progress.value,
     zIndex: isOpen.value
@@ -60,7 +58,6 @@ const SlideUpModal = ({
     pointerEvents: isOpen.value ? "auto" : "none",
   }));
 
-  // Modal slide animation
   const modalStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: progress.value * 2 * contentHeight.value }],
     zIndex: isOpen.value

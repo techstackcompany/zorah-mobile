@@ -19,7 +19,7 @@ type SummaryCard = {
 type WalletBalanceCardProps = {
   formattedBalance: string;
   balanceHidden: boolean;
-  balanceSubtitle: string;
+  balanceSubtitle: string | null;
   summaryCards: SummaryCard[];
   onToggleBalanceVisibility: () => void;
 };
@@ -55,10 +55,12 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
         </View>
 
       </View>
-      <View className="mt-2 flex-row items-center gap-2">
-        <Ionicons name="arrow-up" size={16} color={COLORS.secondary_500} />
-        <Text className="text-xs text-secondary_500">{balanceSubtitle}</Text>
-      </View>
+      {balanceSubtitle ? (
+        <View className="mt-2 flex-row items-center gap-2">
+          <Ionicons name="arrow-up" size={16} color={COLORS.secondary_500} />
+          <Text className="text-xs text-secondary_500">{balanceSubtitle}</Text>
+        </View>
+      ) : null}
 
       <View className="mt-5 flex-row gap-3">
         {summaryCards.map((item) => (

@@ -22,9 +22,7 @@ export default function RootLayout() {
               <SafeAreaProvider>
                 <View className="flex-1">
                   <OfflineNotice />
-                  {/* <PushNotificationsProvider> */}
                   <RootNavigator />
-                  {/* </PushNotificationsProvider> */}
                 </View>
               </SafeAreaProvider>
               <Toast config={toastConfig} />

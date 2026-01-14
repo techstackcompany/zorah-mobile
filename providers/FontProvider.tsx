@@ -7,7 +7,7 @@ SplashScreen.preventAutoHideAsync();
 
 const FontProvider = ({ children }: PropsWithChildren) => {
   const [fontsLoaded] = useFonts({
-    // Degular family
+    
     DegularRegular: require("../assets/fonts/degular-regular.otf"),
     DegularMedium: require("../assets/fonts/degular-medium.otf"),
     DegularMediumItalic: require("../assets/fonts/degular-medium_italic.otf"),
@@ -16,7 +16,7 @@ const FontProvider = ({ children }: PropsWithChildren) => {
     DegularBold: require("../assets/fonts/degular-bold.otf"),
     DegularBoldItalic: require("../assets/fonts/degular-bold_italic.otf"),
 
-    // Nunito Sans family
+    
     NunitoRegular: require("../assets/fonts/nunito-sans-regular.ttf"),
     NunitoRegularItalic: require("../assets/fonts/nunito-sans-regular_italic.ttf"),
     NunitoMedium: require("../assets/fonts/nunito-sans-medium.ttf"),
@@ -26,7 +26,7 @@ const FontProvider = ({ children }: PropsWithChildren) => {
     NunitoBold: require("../assets/fonts/nunito-sans-bold.ttf"),
     NunitoBoldItalic: require("../assets/fonts/nunito-sans-bold_italic.ttf"),
 
-    // Poppins family
+    
     PoppinsLight: require("../assets/fonts/poppins-light.ttf"),
     PoppinsLightItalic: require("../assets/fonts/poppins-light_italic.ttf"),
     PoppinsRegular: require("../assets/fonts/poppins-regular.ttf"),

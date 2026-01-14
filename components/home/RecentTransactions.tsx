@@ -71,7 +71,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                   ? COLORS.secondary_500
                   : "#D14343";
 
-              // Get icon for category
+              
               const categoryIcon =
                 CATEGORY_ICON_MAP[transaction.category] || "wallet-outline";
               const iconBgColor =

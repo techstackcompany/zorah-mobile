@@ -4,7 +4,7 @@ import { View, ViewStyle } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 type CircularProgressProps = {
-  progress: number; // 0-100
+  progress: number; 
   size?: number;
   strokeWidth?: number;
   backgroundColor?: string;
@@ -36,7 +36,6 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
       className={className}
     >
       <Svg width="100%" height="100%" viewBox={`0 0 ${size} ${size}`}>
-        {/* Background circle */}
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -45,7 +44,6 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           strokeWidth={strokeWidth}
           fill="none"
         />
-        {/* Progress circle */}
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -59,7 +57,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      {/* Center content */}
+      
       {children && (
         <View className="absolute inset-0 items-center justify-center">
           {children}

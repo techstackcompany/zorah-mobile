@@ -10,10 +10,8 @@ function RootNavigator() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false, statusBarStyle: "dark" }}>
-        {/* Root index handles initial routing */}
         <Stack.Screen name="index" options={{ animation: "none" }} />
 
-        {/* Fully ready → app group */}
         <Stack.Protected guard={isAuthenticated && hasCompletedSetup}>
           <Stack.Screen name="(app)" options={{ animation: "none" }} />
         </Stack.Protected>
