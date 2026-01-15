@@ -1,33 +1,29 @@
 import Text from "@/components/ui/Text";
 import { ExpenseItem } from "@/features/expense-income/types";
-import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-
-
 
 type ExpenseListItemProps = {
   expense: ExpenseItem;
   isLast?: boolean;
   categoryColor: string;
-  categoryIcon: keyof typeof Ionicons.glyphMap;
+  categoryIconSource: string;
   categoryBg: string;
   formattedDate: string;
   formatCurrency: (value: number) => string;
 };
 
-
-
 const ExpenseListItem = ({
   expense,
   isLast = false,
   categoryColor,
-  categoryIcon,
+  categoryIconSource,
   categoryBg,
   formatCurrency,
 }: ExpenseListItemProps) => {
   const categoryName = expense.category || "Other";
-  const expenseId = expense._id || expense.id || "";
+  const expenseId = expense._id || "";
 
   return (
     <View
@@ -35,7 +31,11 @@ const ExpenseListItem = ({
       className={`flex-row items-center gap-4 ${isLast ? "" : "border-b border-grayLight/60 pb-4"}`}
     >
       <View style={[styles.expenseIcon, { backgroundColor: categoryBg }]}>
-        <Ionicons name={categoryIcon} size={20} color={categoryColor} />
+        <Image
+          source={{ uri: categoryIconSource }}
+          style={{ width: 20, height: 20 }}
+          tintColor={categoryColor}
+        />
       </View>
 
       <View className="flex-1">

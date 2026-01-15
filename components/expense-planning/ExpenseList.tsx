@@ -1,20 +1,21 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useRouter } from "expo-router";
+import { ExpenseItem } from "@/features/expense-income/types";
+import { generateColorsFromString } from "@/lib/utils";
+import { CategoryItem } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import ExpenseListItem, { ExpenseItem } from "./ExpenseListItem";
+import ExpenseListItem from "./ExpenseListItem";
 
 type ExpenseListProps = {
   expenses: ExpenseItem[];
   isLoading?: boolean;
-  categoryColorMap: Record<string, string>;
-  categoryIconMap: Record<string, keyof typeof Ionicons.glyphMap>;
-  categoryBgMap: Record<string, string>;
+  categoryIconsData?: CategoryItem[];
   formatCurrency: (value: number) => string;
   formatDate: (date: string) => string;
-  type?: "expense" | "income"; 
+  type?: "expense" | "income";
 };
 
 const SKELETON_ROWS = Array.from({ length: 3 }, (_, index) => index);
@@ -22,13 +23,12 @@ const SKELETON_ROWS = Array.from({ length: 3 }, (_, index) => index);
 const ExpenseList = ({
   expenses,
   isLoading = false,
-  categoryColorMap,
-  categoryIconMap,
-  categoryBgMap,
+  categoryIconsData,
   formatCurrency,
   formatDate,
   type = "expense",
 }: ExpenseListProps) => {
+  
   const router = useRouter();
   if (isLoading) {
     return (
@@ -65,12 +65,10 @@ const ExpenseList = ({
   }
 
   const handleItemPress = (item: ExpenseItem) => {
-    const itemId = item._id || item.id;
+    const itemId = item._id;
     if (itemId) {
       const pathname =
-        type === "income"
-          ? "/(app)/income/details"
-          : "/(app)/expenses/details";
+        type === "income" ? "/(app)/income/details" : "/(app)/expenses/details";
       router.push({
         pathname,
         params: { id: itemId },
@@ -83,13 +81,16 @@ const ExpenseList = ({
       {expenses.slice(0, 10).map((expense, index, array) => {
         const isLast = index === array.length - 1;
         const categoryName = expense.category || "Other";
-        const categoryColor = categoryColorMap[categoryName] || "#5D5FFE";
-        const categoryIcon = categoryIconMap[categoryName] || "cash-outline";
-        const categoryBg = categoryBgMap[categoryName] || "#F6F5FF";
+        const { accent: categoryColor, background: categoryBg } =
+          generateColorsFromString(categoryName);
+        const categoryIconSource =
+          categoryIconsData
+            ?.find((cat) => cat.label === categoryName)
+            ?.icon.toLowerCase() || "@/assets/icons/categories.png";
 
         const formattedDate = expense.date ? formatDate(expense.date) : "";
-        const expenseId = expense._id || expense.id;
-
+        const expenseId = expense._id;
+        console.log(categoryColor, "\n\n", categoryBg);
         return (
           <Pressable
             key={expenseId || index}
@@ -100,7 +101,7 @@ const ExpenseList = ({
               expense={expense}
               isLast={isLast}
               categoryColor={categoryColor}
-              categoryIcon={categoryIcon}
+              categoryIconSource={categoryIconSource}
               categoryBg={categoryBg}
               formattedDate={formattedDate}
               formatCurrency={formatCurrency}
