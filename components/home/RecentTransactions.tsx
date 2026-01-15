@@ -1,11 +1,11 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { CATEGORY_ICON_MAP } from "@/features/expense-income/utils";
+import { getMatchingCategoryIconSource } from "@/features/expense-income/utils";
 import { cn } from "@/lib/utils";
-import { Ionicons } from "@expo/vector-icons";
+import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, View } from "react-native";
 
 type RecentTransactionItem = {
@@ -27,6 +27,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   showEmpty,
 }) => {
   const router = useRouter();
+
+  const { data: expenseCategoriesData } = useGetCategoriesQuery("expense");
+  const { data: incomeCategoriesData } = useGetCategoriesQuery("income");
+
+  const allCategories = useMemo(() => {
+    return [...(expenseCategoriesData || []), ...(incomeCategoriesData || [])];
+  }, [expenseCategoriesData, incomeCategoriesData]);
 
   return (
     <View className="mt-8">
@@ -63,17 +70,18 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               const amountDisplay = `${
                 transaction.amount >= 0 ? "" : "-"
               }₦${Math.abs(transaction.amount).toLocaleString("en-NG", {
-                maximumFractionDigits: 0,
-                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+                minimumFractionDigits: 2,
               })}`;
               const amountColor =
                 transaction.type === "income"
                   ? COLORS.secondary_500
                   : "#D14343";
 
-              
-              const categoryIcon =
-                CATEGORY_ICON_MAP[transaction.category] || "wallet-outline";
+              const categoryIconSource = getMatchingCategoryIconSource(
+                allCategories,
+                transaction.category,
+              );
               const iconBgColor =
                 transaction.type === "income" ? "#E5F6F0" : "#FFF1DD";
 
@@ -90,22 +98,35 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                     className="mr-3 h-10 w-10 items-center justify-center rounded-full"
                     style={{ backgroundColor: iconBgColor }}
                   >
-                    <Ionicons
-                      name={categoryIcon}
-                      size={20}
-                      color={amountColor}
+                    <Image
+                      source={
+                        typeof categoryIconSource === "string"
+                          ? { uri: categoryIconSource }
+                          : categoryIconSource
+                      }
+                      style={{ width: 20, height: 20 }}
+                      contentFit="contain"
+                      tintColor={
+                        transaction.type === "income"
+                          ? COLORS.secondary_500
+                          : COLORS.error
+                      }
                     />
                   </View>
 
                   <View className="flex-1">
-                    <Text weight="semibold" className="text-sm capitalize" numberOfLines={1}>
+                    <Text
+                      weight="semibold"
+                      className="text-sm capitalize"
+                      numberOfLines={1}
+                    >
                       {transaction.title}
                     </Text>
                     <Text className="mt-1 text-xs text-textColor/60">
                       {transaction.category}
                     </Text>
                   </View>
-                  <View className="items-end ms-5">
+                  <View className="ms-5 items-end">
                     <Text
                       weight="semibold"
                       className="text-sm"

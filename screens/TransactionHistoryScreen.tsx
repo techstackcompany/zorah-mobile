@@ -2,14 +2,17 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { CATEGORY_ICON_MAP } from "@/features/expense-income/utils";
+import { getMatchingCategoryIconSource } from "@/features/expense-income/utils";
 import { cn, formatCurrency, formatTransactionPurpose } from "@/lib/utils";
-import { useGetWalletTransactionsQuery } from "@/src/api/hooks";
+import {
+  useGetCategoriesQuery,
+  useGetWalletTransactionsQuery,
+} from "@/src/api/hooks";
 import { WalletTransaction } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -48,23 +51,6 @@ const transactionTabs: { id: TransactionTab; label: string }[] = [
   { id: "expense", label: "Expense" },
 ];
 
-const filterCategories = [
-  { id: "all", label: "All Categories" },
-  { id: "food-drink", label: "Food & Drink" },
-  { id: "transport", label: "Transportation" },
-  { id: "shopping", label: "Shopping" },
-  { id: "bills", label: "Bills & Utility" },
-  { id: "entertainment", label: "Entertainment" },
-  { id: "healthcare", label: "Healthcare" },
-  { id: "pos", label: "POS Charges" },
-  { id: "transfer", label: "Transfer" },
-  { id: "salary", label: "Salary" },
-  { id: "owambe", label: "Owambe" },
-  { id: "business", label: "Business" },
-  { id: "investment", label: "Investment" },
-  { id: "others", label: "Others" },
-] as const;
-
 const filterDateRanges = [
   { id: "all", label: "All Time" },
   { id: "today", label: "Today" },
@@ -75,19 +61,7 @@ const filterDateRanges = [
   { id: "custom", label: "Custom Range" },
 ] as const;
 
-const filterAccounts = [
-  { id: "all", label: "All Accounts" },
-  { id: "gtbank", label: "GTBank" },
-  { id: "zenith", label: "Zenith Bank" },
-  { id: "kuda", label: "Kuda" },
-  { id: "opay", label: "Opay" },
-  { id: "cash", label: "Cash" },
-  { id: "pos-business", label: "POS Business" },
-] as const;
-
-type FilterCategoryId = (typeof filterCategories)[number]["id"];
 type FilterDateRangeId = (typeof filterDateRanges)[number]["id"];
-type FilterAccountId = (typeof filterAccounts)[number]["id"];
 
 const formatAmountWithSign = (value: number) => {
   if (value === 0) {
@@ -151,7 +125,6 @@ const formatSectionDate = (dateString?: string): string => {
       return dayNames[date.getDay()];
     }
 
-    
     return date.toLocaleDateString("en-US", {
       month: "short",
       year: "numeric",
@@ -183,7 +156,8 @@ const transformTransactionForUI = (
     timeAgo: formatTimeAgo(txn.createdAt),
     amount,
     type: isCredit ? "income" : "expense",
-    category: txn.metadata?.category,
+    category:
+      txn.purpose !== "other" ? txn.purpose : txn.metadata?.category || "other",
     createdAt: txn.createdAt,
   };
 };
@@ -272,7 +246,64 @@ const buildSections = (
   sections: TransactionSection[],
   tab: TransactionTab,
   searchTerm: string,
+  selectedCategories: string[],
+  selectedDateRange: FilterDateRangeId,
 ) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const getDateRangeFilter = (dateRange: FilterDateRangeId) => {
+    if (dateRange === "all") return () => true;
+
+    return (item: TransactionItem & { createdAt?: string }) => {
+      if (!item.createdAt) return false;
+      const itemDate = new Date(item.createdAt);
+      const itemDateOnly = new Date(
+        itemDate.getFullYear(),
+        itemDate.getMonth(),
+        itemDate.getDate(),
+      );
+
+      switch (dateRange) {
+        case "today":
+          return itemDateOnly.getTime() === today.getTime();
+        case "this-week": {
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+          return itemDateOnly >= weekStart && itemDateOnly <= today;
+        }
+        case "last-week": {
+          const lastWeekEnd = new Date(today);
+          lastWeekEnd.setDate(today.getDate() - today.getDay() - 1);
+          const lastWeekStart = new Date(lastWeekEnd);
+          lastWeekStart.setDate(lastWeekEnd.getDate() - 6);
+          return itemDateOnly >= lastWeekStart && itemDateOnly <= lastWeekEnd;
+        }
+        case "this-month": {
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          return itemDateOnly >= monthStart && itemDateOnly <= today;
+        }
+        case "last-month": {
+          const lastMonthStart = new Date(
+            today.getFullYear(),
+            today.getMonth() - 1,
+            1,
+          );
+          const lastMonthEnd = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            0,
+          );
+          return itemDateOnly >= lastMonthStart && itemDateOnly <= lastMonthEnd;
+        }
+        default:
+          return true;
+      }
+    };
+  };
+
+  const dateFilter = getDateRangeFilter(selectedDateRange);
+
   return sections
     .map((section) => {
       let items =
@@ -281,6 +312,17 @@ const buildSections = (
           : section.items.filter((item) => item.type === tab);
 
       items = filterTransactionsBySearch(items, searchTerm);
+
+      if (!selectedCategories.includes("all")) {
+        items = items.filter((item) => {
+          const itemCategory = (item.category || "other").toLowerCase();
+          return selectedCategories.some(
+            (cat) => cat.toLowerCase() === itemCategory,
+          );
+        });
+      }
+
+      items = items.filter(dateFilter);
 
       if (!items.length) {
         return null;
@@ -316,21 +358,31 @@ const TransactionHistoryScreen = () => {
   const [activeTab, setActiveTab] = useState<TransactionTab>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const isFilterOpen = useSharedValue(false);
-  const [selectedCategories, setSelectedCategories] = useState<
-    FilterCategoryId[]
-  >(["all"]);
+  const [selectedCategories, setSelectedCategories] = useState(["all"]);
   const [selectedDateRange, setSelectedDateRange] =
     useState<FilterDateRangeId>("all");
-  const [selectedAccounts, setSelectedAccounts] = useState<FilterAccountId[]>([
-    "all",
-  ]);
+  const categoriesRef = useRef<(string | undefined)[]>([]);
+  const {
+    data: expenseCategoryData,
+    isLoading: isExpenseCategoryLoading,
+    error: expenseCategoryError,
+  } = useGetCategoriesQuery("expense");
+
+  const {
+    data: incomeCategoryData,
+    isLoading: isIncomeCategoryLoading,
+    error: incomeCategoryError,
+  } = useGetCategoriesQuery("income");
 
   const {
     data: transactionsData,
     isLoading: isLoadingTransactions,
     refetch: refetchTransactions,
   } = useGetWalletTransactionsQuery();
-
+  const categoriesData = useMemo(
+    () => [...(expenseCategoryData || []), ...(incomeCategoryData || [])],
+    [expenseCategoryData, incomeCategoryData],
+  );
   const transactionSections = useMemo(() => {
     if (!transactionsData?.data || !Array.isArray(transactionsData.data)) {
       return [];
@@ -343,17 +395,42 @@ const TransactionHistoryScreen = () => {
     return groupTransactionsByDate(transformed);
   }, [transactionsData]);
 
+  const filterCategories = useMemo(() => {
+    if (!transactionsData?.data) return [];
+    const categorySet = new Set<string>();
+    categorySet.add("all");
+    transactionsData.data.forEach((txn) => {
+      const purpose =
+        txn.purpose !== "other"
+          ? txn.purpose
+          : txn.metadata?.category || "other";
+      categorySet.add(purpose);
+    });
+    return Array.from(categorySet).map((cat) => ({
+      id: cat,
+      label: cat.charAt(0).toUpperCase() + cat.slice(1),
+    }));
+  }, [transactionsData]);
+
   const sections = useMemo(
-    () => buildSections(transactionSections, activeTab, searchTerm),
-    [transactionSections, activeTab, searchTerm],
+    () =>
+      buildSections(
+        transactionSections,
+        activeTab,
+        searchTerm,
+        selectedCategories,
+        selectedDateRange,
+      ),
+    [
+      transactionSections,
+      activeTab,
+      searchTerm,
+      selectedCategories,
+      selectedDateRange,
+    ],
   );
 
-  const backgroundClass =
-    activeTab === "income"
-      ? "bg-primary_100"
-      : activeTab === "expense"
-        ? "bg-lightMuted"
-        : "bg-light";
+  const backgroundClass = "bg-lightMuted";
 
   const handleTransactionPress = (transactionId: string) => {
     if (!transactionId) return;
@@ -363,20 +440,8 @@ const TransactionHistoryScreen = () => {
     });
   };
 
-  const toggleCategory = (id: FilterCategoryId) => {
+  const toggleCategory = (id: string) => {
     setSelectedCategories((prev) => {
-      if (id === "all") {
-        return ["all"];
-      }
-      const next = prev.includes(id)
-        ? prev.filter((value) => value !== id)
-        : [...prev.filter((value) => value !== "all"), id];
-      return next.length ? next : ["all"];
-    });
-  };
-
-  const toggleAccount = (id: FilterAccountId) => {
-    setSelectedAccounts((prev) => {
       if (id === "all") {
         return ["all"];
       }
@@ -389,7 +454,6 @@ const TransactionHistoryScreen = () => {
 
   const handleClearFilters = () => {
     setSelectedCategories(["all"]);
-    setSelectedAccounts(["all"]);
     setSelectedDateRange("all");
   };
 
@@ -470,7 +534,6 @@ const TransactionHistoryScreen = () => {
                       shadowColor: "#1A43BE",
                       shadowOpacity: 0.08,
                       shadowRadius: 8,
-                      shadowOffset: { width: 0, height: 4 },
                       elevation: 2,
                     }
                   : {};
@@ -571,9 +634,11 @@ const TransactionHistoryScreen = () => {
 
                     <View className="gap-3">
                       {section.items.map((item) => {
-                        const categoryIcon =
-                          CATEGORY_ICON_MAP[item.category || ""] ||
-                          "wallet-outline";
+                        const categoryIconSource =
+                          getMatchingCategoryIconSource(
+                            categoriesData,
+                            item?.category || "",
+                          );
                         const iconBgColor =
                           item.type === "income" ? "#E5F6F0" : "#FFF1DD";
                         const iconColor =
@@ -591,10 +656,14 @@ const TransactionHistoryScreen = () => {
                               className="mr-3 h-10 w-10 items-center justify-center rounded-full"
                               style={{ backgroundColor: iconBgColor }}
                             >
-                              <Ionicons
-                                name={categoryIcon}
-                                size={20}
-                                color={iconColor}
+                              <Image
+                                source={
+                                  typeof categoryIconSource === "string"
+                                    ? { uri: categoryIconSource }
+                                    : categoryIconSource
+                                }
+                                tintColor={iconColor}
+                                style={{ width: 20, height: 20 }}
                               />
                             </View>
 
@@ -683,23 +752,6 @@ const TransactionHistoryScreen = () => {
                   label={range.label}
                   active={selectedDateRange === range.id}
                   onPress={() => setSelectedDateRange(range.id)}
-                  compact
-                />
-              ))}
-            </View>
-          </View>
-
-          <View>
-            <Text weight="semibold" className="text-base text-textColor">
-              Account Type
-            </Text>
-            <View className="mt-3 flex-row flex-wrap gap-2">
-              {filterAccounts.map((account) => (
-                <FilterChip
-                  key={account.id}
-                  label={account.label}
-                  active={selectedAccounts.includes(account.id)}
-                  onPress={() => toggleAccount(account.id)}
                   compact
                 />
               ))}

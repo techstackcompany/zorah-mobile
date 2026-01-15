@@ -1,16 +1,20 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
+import COLORS from "@/constants/colors";
 import {
-  CATEGORY_BG_COLOR_MAP,
-  CATEGORY_COLOR_MAP,
-  CATEGORY_ICON_MAP,
   formatCurrency,
   formatExpenseDate,
+  getMatchingCategoryIconSource,
 } from "@/features/expense-income/utils";
-import COLORS from "@/constants/colors";
-import { useDeleteExpenseMutation, useGetExpenseQuery } from "@/src/api/hooks";
+import { generateColorsFromString } from "@/lib/utils";
+import {
+  useDeleteExpenseMutation,
+  useGetCategoriesQuery,
+  useGetExpenseQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
@@ -27,25 +31,23 @@ const ExpenseDetailsScreen = () => {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id?: string }>();
   const expenseId = params.id;
+  const { data: categoriesData } = useGetCategoriesQuery("expense");
 
   const {
     data: expenseData,
-    isLoading,
+    isLoading: isExpenseDataLoading,
     error,
+    refetch,
   } = useGetExpenseQuery(expenseId, {
-    onError: (error) => {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error.message || "Failed to load expense details.",
-      });
-    },
+    enabled: !!expenseId,
   });
 
   const deleteExpenseMutation = useDeleteExpenseMutation(expenseId, {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["expenses", "detail", expenseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["expenses", "detail", expenseId],
+      });
       const successMessage =
         response?.message ||
         (response?.data as { message?: string } | undefined)?.message ||
@@ -63,7 +65,8 @@ const ExpenseDetailsScreen = () => {
       Toast.show({
         type: "error",
         text1: "Delete Failed",
-        text2: error.message || "Unable to delete this expense. Please try again.",
+        text2:
+          error.message || "Unable to delete this expense. Please try again.",
       });
     },
   });
@@ -74,11 +77,13 @@ const ExpenseDetailsScreen = () => {
       ? expenseData[0]
       : expenseData.data || expenseData;
   }, [expenseData]);
-
   const categoryName = expense?.category || "Other";
-  const categoryColor = CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE";
-  const categoryIcon = CATEGORY_ICON_MAP[categoryName] || "cash-outline";
-  const categoryBg = CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF";
+  const { background: categoryBg, accent: categoryColor } =
+    generateColorsFromString(categoryName);
+  const categoryIcon = getMatchingCategoryIconSource(
+    categoriesData || [],
+    categoryName,
+  );
 
   const formattedDate = useMemo(() => {
     if (!expense?.date) return "";
@@ -97,13 +102,11 @@ const ExpenseDetailsScreen = () => {
           day: "numeric",
         });
       }
-    } catch {
-      
-    }
+    } catch {}
     return expense.date;
   }, [expense?.date]);
 
-  if (isLoading) {
+  if (isExpenseDataLoading) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0 pt-6">
         <View className="flex-1 items-center justify-center">
@@ -127,13 +130,13 @@ const ExpenseDetailsScreen = () => {
             style={{ opacity: 0.4 }}
           />
           <Text weight="semibold" className="mt-4 text-base text-textColor">
-            Expense Not Found
+            Expense Data Not Found
           </Text>
           <Text className="mt-2 text-center text-sm text-textColor/60">
             {error?.message || "The expense you're looking for doesn't exist."}
           </Text>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => refetch()}
             className="mt-6 rounded-lg bg-primary_400 px-6 py-3"
             accessibilityRole="button"
           >
@@ -184,7 +187,6 @@ const ExpenseDetailsScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="px-6">
-            
             <View
               className="rounded-t-lg p-6"
               style={{ backgroundColor: categoryBg }}
@@ -193,7 +195,15 @@ const ExpenseDetailsScreen = () => {
                 <View
                   style={[styles.expenseIcon, { backgroundColor: categoryBg }]}
                 >
-                  <Ionicons name={categoryIcon} size={32} color={categoryColor} />
+                  <Image
+                    source={
+                      typeof categoryIcon === "string"
+                        ? { uri: categoryIcon }
+                        : categoryIcon
+                    }
+                    tintColor={categoryColor}
+                    style={styles.expenseIcon}
+                  />
                 </View>
                 <Text
                   weight="semibold"
@@ -210,7 +220,10 @@ const ExpenseDetailsScreen = () => {
                 {formattedDate && (
                   <View className="mt-4">
                     <View className="rounded-full bg-white px-4 py-1.5">
-                      <Text weight="semibold" className="text-xs text-primary_400">
+                      <Text
+                        weight="semibold"
+                        className="text-xs text-primary_400"
+                      >
                         {formattedDate}
                       </Text>
                     </View>
@@ -219,7 +232,6 @@ const ExpenseDetailsScreen = () => {
               </View>
             </View>
 
-            
             <View className="bg-white p-6 shadow-sm">
               <Text weight="semibold" className="text-base text-textColor">
                 Expense Details
@@ -248,7 +260,6 @@ const ExpenseDetailsScreen = () => {
                 ))}
               </View>
 
-              
               {expense.description && (
                 <View className="mt-6">
                   <Text weight="semibold" className="text-sm text-textColor">
@@ -265,7 +276,6 @@ const ExpenseDetailsScreen = () => {
           </View>
         </ScrollView>
 
-        
         <View className="px-6 pb-8">
           <View className="flex-row gap-3">
             <Pressable
@@ -319,8 +329,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
 

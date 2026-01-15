@@ -1,8 +1,9 @@
 import Text from "@/components/ui/Text";
-import { Ionicons } from "@expo/vector-icons";
+import { ChartSegment } from "@/features/expense-income/types";
+import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { ChartSegment } from "./ExpenseChart";
+import {} from "./ExpenseChart";
 
 type CategoryRankingProps = {
   segments: ChartSegment[];
@@ -53,7 +54,16 @@ const CategoryRanking = ({
               { backgroundColor: segment.iconBackground },
             ]}
           >
-            <Ionicons name={segment.icon} size={20} color={segment.color} />
+            <Image
+              source={
+                typeof segment.iconSource === "string"
+                  ? { uri: segment.iconSource }
+                  : segment.iconSource
+              }
+              style={{ width: 20, height: 20 }}
+              tintColor={segment.color}
+              contentFit="contain"
+            />
           </View>
 
           <View className="flex-1">

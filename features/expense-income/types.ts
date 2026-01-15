@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
+import { ImageSource } from "expo-image";
 
- export type ChartSegment = {
+export type ChartSegment = {
   key: string;
   label: string;
   percentage: number;
   color: string;
   trackColor: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  iconSource: string | ImageSource;
   iconBackground: string;
   labelPosition: Partial<Record<"top" | "bottom" | "left" | "right", number>>;
   amount: number;
@@ -22,7 +23,6 @@ export type TabItem = {
 
 export type ExpenseItem = {
   _id?: string;
-  id?: string;
   category?: string;
   amount?: number;
   description?: string;
@@ -30,7 +30,15 @@ export type ExpenseItem = {
   paymentMethod?: string;
 };
 export interface PeriodOption {
-    value: PeriodType;
-    label: string;
-    icon: keyof typeof Ionicons.glyphMap;
+  value: PeriodType;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
 }
+
+export type TabContent = {
+  key: TabKey;
+  label: string;
+  categoryTitle: string;
+  breakdownTitle: string;
+  rankingTitle: string;
+};

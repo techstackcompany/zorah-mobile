@@ -1,18 +1,21 @@
 import DeleteBudgetModal from "@/components/budget/DeleteBudgetModal";
-import {
-  CATEGORY_BG_COLOR_MAP,
-  CATEGORY_COLOR_MAP,
-  CATEGORY_ICON_MAP,
-  formatCurrency,
-  formatExpenseDate,
-} from "@/features/expense-income/utils";
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { capitalizeWord } from "@/lib/utils";
-import { useDeleteIncomeMutation, useGetIncomeQuery } from "@/src/api/hooks";
+import {
+  formatCurrency,
+  formatExpenseDate,
+  getMatchingCategoryIconSource,
+} from "@/features/expense-income/utils";
+import { capitalizeWord, generateColorsFromString } from "@/lib/utils";
+import {
+  useDeleteIncomeMutation,
+  useGetCategoriesQuery,
+  useGetIncomeQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -30,12 +33,12 @@ const IncomeDetailsScreen = () => {
   const params = useLocalSearchParams<{ id?: string }>();
   const incomeId = params.id;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { data: categoriesData } = useGetCategoriesQuery("income");
 
-  const { data: incomeData, isLoading, error } = useGetIncomeQuery(incomeId);
+  const { data: incomeData, isLoading, error } = useGetIncomeQuery(incomeId!);
 
   const deleteIncomeMutation = useDeleteIncomeMutation(incomeId, {
     onSuccess: () => {
-      
       queryClient.invalidateQueries({ queryKey: ["income"] });
       Toast.show({ type: "success", text1: "Income deleted successfully" });
       setShowDeleteModal(false);
@@ -59,9 +62,12 @@ const IncomeDetailsScreen = () => {
   }, [incomeData]);
 
   const categoryName = income?.category || "Other";
-  const categoryColor = CATEGORY_COLOR_MAP[categoryName] || "#5D5FFE";
-  const categoryIcon = CATEGORY_ICON_MAP[categoryName] || "cash-outline";
-  const categoryBg = CATEGORY_BG_COLOR_MAP[categoryName] || "#F6F5FF";
+  const { background: categoryBg, accent: categoryColor } =
+    generateColorsFromString(categoryName);
+  const categoryIcon = getMatchingCategoryIconSource(
+    categoriesData || [],
+    categoryName,
+  );
 
   const formattedDate = useMemo(() => {
     if (!income?.date) return "";
@@ -80,9 +86,7 @@ const IncomeDetailsScreen = () => {
           day: "numeric",
         });
       }
-    } catch {
-      
-    }
+    } catch {}
     return income.date;
   }, [income?.date]);
 
@@ -133,7 +137,7 @@ const IncomeDetailsScreen = () => {
     {
       id: "category",
       label: "Category",
-      value: capitalizeWord(categoryName),
+      value: categoryName,
     },
     {
       id: "date",
@@ -143,7 +147,7 @@ const IncomeDetailsScreen = () => {
     {
       id: "source",
       label: "Payment Method",
-      value: capitalizeWord(income.source) || "Not specified",
+      value: income.source ? capitalizeWord(income.source) : "Not specified",
     },
     {
       id: "createdAt",
@@ -167,7 +171,6 @@ const IncomeDetailsScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="px-6">
-            
             <View
               className="rounded-t-lg p-6"
               style={{ backgroundColor: categoryBg }}
@@ -176,17 +179,21 @@ const IncomeDetailsScreen = () => {
                 <View
                   style={[styles.incomeIcon, { backgroundColor: categoryBg }]}
                 >
-                  <Ionicons
-                    name={categoryIcon}
-                    size={32}
-                    color={categoryColor}
+                  <Image
+                    source={
+                      typeof categoryIcon === "string"
+                        ? { uri: categoryIcon }
+                        : categoryIcon
+                    }
+                    tintColor={categoryColor}
+                    style={styles.incomeIcon}
                   />
                 </View>
                 <Text
                   weight="semibold"
                   className="mt-4 text-center text-base text-textColor"
                 >
-                  {capitalizeWord(income.category)}
+                  {categoryName}
                 </Text>
                 <Text
                   weight="bold"
@@ -209,7 +216,6 @@ const IncomeDetailsScreen = () => {
               </View>
             </View>
 
-            
             <View className="bg-white p-6 shadow-sm">
               <Text weight="semibold" className="text-base text-textColor">
                 Income Details
@@ -238,7 +244,6 @@ const IncomeDetailsScreen = () => {
                 ))}
               </View>
 
-              
               {income.description && (
                 <View className="mt-6">
                   <Text weight="semibold" className="text-sm text-textColor">
@@ -255,7 +260,6 @@ const IncomeDetailsScreen = () => {
           </View>
         </ScrollView>
 
-        
         <View className="px-6 pb-8">
           <View className="flex-row gap-3">
             <Pressable
@@ -297,7 +301,7 @@ const IncomeDetailsScreen = () => {
         onConfirm={handleDelete}
         budgetName={
           income
-            ? `${capitalizeWord(income.category)}${income.description ? ` - ${income.description}` : ""}`
+            ? `${categoryName}${income.description ? ` - ${income.description}` : ""}`
             : undefined
         }
         isDeleting={deleteIncomeMutation.isPending}
