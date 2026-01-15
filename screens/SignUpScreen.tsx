@@ -75,7 +75,7 @@ const SignUpScreen = () => {
           : "Welcome to Zorah!",
       });
 
-      router.replace("/(auth)/setup/choose-language");
+      router.replace("/(auth)/setup/kyc-details");
     } catch (error) {
       const apiError = error as ApiError;
       const serverMessage =

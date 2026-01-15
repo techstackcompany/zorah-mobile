@@ -201,7 +201,7 @@ const AccountScreen = () => {
               onPress={() => handleNavigate("/(app)/profile/edit-profile")}
             />
             <AccountRow
-              label="Status"
+              label="Update KYC Info"
               iconSource={require("@/assets/icons/circle-check.svg")}
               value={
                 isKycVerified ? (
