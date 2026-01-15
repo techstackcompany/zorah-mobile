@@ -148,7 +148,7 @@ const TrackSpendingScreen = () => {
   } = useGetSpendingOverviewQuery(activeTab as SpendingOverviewTimeframe);
 
   const {
-    data: expenseSummaryData,
+    data: expenseSummary,
     isLoading: isLoadingSummary,
     isFetching: isFetchingSummary,
     isError: isSummaryError,
@@ -173,10 +173,6 @@ const TrackSpendingScreen = () => {
     return [];
   }, [budgetsData]);
 
-  const expenseSummary = useMemo(() => {
-    return expenseSummaryData?.data;
-  }, [expenseSummaryData]);
-
   console.log("expenseSummary", expenseSummary);
   console.log("spendingOverviewData", spendingOverviewData);
 
@@ -185,7 +181,6 @@ const TrackSpendingScreen = () => {
       return [];
     }
 
-    
     const aggregated = new Map<string, { label: string; value: number }>();
 
     spendingOverviewData.chartData.forEach((item) => {
@@ -267,26 +262,24 @@ const TrackSpendingScreen = () => {
   }, [spendingOverviewData, activeTab]);
 
   const mostSpending = useMemo((): MostSpendingItem[] => {
-    if (!expenseSummary?.categories?.length) {
+    if (!expenseSummary?.byCategory?.length) {
       return [];
     }
 
-    const sortedCategories = [...expenseSummary.categories]
-      .sort((a, b) => b.amount - a.amount)
+    const sortedCategories = [...expenseSummary.byCategory]
+      .sort((a, b) => b.total - a.total)
       .slice(0, 4);
 
     return sortedCategories.map((cat, index) => {
       const colors = getAccentColor(index);
-      const percentageChange = cat.percentage
-        ? `+${cat.percentage.toFixed(0)}%`
-        : "+0%";
+      const percentageChange = "+0%";
       const icon = findCategoryIcon(cat.category, categories);
 
       return {
         id: cat.category,
         label: cat.category,
         change: percentageChange,
-        amount: cat.amount,
+        amount: cat.total,
         icon,
         accent: colors.accent,
         tint: colors.tint,

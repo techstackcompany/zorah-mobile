@@ -34,8 +34,11 @@ const SubmitKycScreen = () => {
   const [nin, setNin] = useState("");
   const [showTierList, setShowTierList] = useState(false);
   const [showStateList, setShowStateList] = useState(false);
-  const { data: nigerianStates = [], isLoading: isLoadingStates } =
+  const { data: nigerianStates = [], isLoading: isLoadingStates, error: statesError } =
     useNigerianStatesApi();
+
+    console.log('statesError', statesError)
+    console.log('statesError', nigerianStates)
 
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});

@@ -18,7 +18,7 @@ const Layout = () => {
       }}
     >
       <Stack.Screen
-        name="choose-language"
+        name="kyc-details"
         options={{ headerLeft: () => null, headerBackVisible: false }}
       />
       <Stack.Screen
