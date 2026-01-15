@@ -1,9 +1,8 @@
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import React from "react";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Pressable, View } from "react-native";
-import { SharedValue } from "react-native-reanimated";
 
 export interface BudgetAction {
   label: string;
@@ -12,21 +11,27 @@ export interface BudgetAction {
 }
 
 interface BudgetActionSheetProps {
-  isOpen: SharedValue<boolean>;
-  onClose: () => void;
+  onClose?: () => void;
   actions: BudgetAction[];
   onActionPress: (action: BudgetAction) => void;
 }
 
-const BudgetActionSheet: React.FC<BudgetActionSheetProps> = ({
-  isOpen,
-  onClose,
-  actions,
-  onActionPress,
-}) => {
+export type BudgetActionSheetRef = SlideUpModalRef;
+
+const BudgetActionSheet = forwardRef<
+  BudgetActionSheetRef,
+  BudgetActionSheetProps
+>(({ onClose, actions, onActionPress }, ref) => {
+  const modalRef = useRef<SlideUpModalRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    present: () => modalRef.current?.present(),
+    dismiss: () => modalRef.current?.dismiss(),
+  }));
+
   return (
     <SlideUpModal
-      isOpen={isOpen}
+      ref={modalRef}
       onClose={onClose}
       title="Action"
       headerBackgroundColor={COLORS.primary_400}
@@ -57,6 +62,8 @@ const BudgetActionSheet: React.FC<BudgetActionSheetProps> = ({
       </View>
     </SlideUpModal>
   );
-};
+});
+
+BudgetActionSheet.displayName = "BudgetActionSheet";
 
 export default BudgetActionSheet;

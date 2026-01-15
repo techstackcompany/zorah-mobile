@@ -1,4 +1,5 @@
 import { BudgetCategory } from "@/components/budget/BudgetCard";
+import type { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import { formatCurrency } from "@/lib/utils";
 import {
   useArchiveBudgetMutation,
@@ -9,8 +10,7 @@ import {
 import { BudgetListItem } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { useSharedValue } from "react-native-reanimated";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Toast from "react-native-toast-message";
 import { BudgetPeriod } from "./types";
 import { getBudgetPeriod, transformBudgets } from "./utils";
@@ -60,7 +60,7 @@ export const useBudgetActions = () => {
         Toast.show({ type: "success", text1: "Budget archived successfully" });
         setBudgetIdToArchive(null);
         setActiveCategory(null);
-        isActionSheetOpen.value = false;
+        actionSheetRef.current?.dismiss();
       },
       onError: (error) => {
         console.log("error", error.message);
@@ -79,15 +79,15 @@ export const useBudgetActions = () => {
   const handleArchiveBudget = (budgetId: string) => {
     setBudgetIdToArchive(budgetId);
   };
-  const isActionSheetOpen = useSharedValue(false);
+  const actionSheetRef = useRef<SlideUpModalRef>(null);
 
   const closeActionSheet = () => {
-    isActionSheetOpen.value = false;
+    actionSheetRef.current?.dismiss();
     setActiveCategory(null);
   };
 
   const openActionSheet = (category: BudgetCategory) => {
-    isActionSheetOpen.value = true;
+    actionSheetRef.current?.present();
     setActiveCategory(category);
   };
 
@@ -109,7 +109,7 @@ export const useBudgetActions = () => {
         if (activeCategory?.id) {
           setBudgetIdToDelete(activeCategory.id);
           setEnableDeleteWarning(true);
-          isActionSheetOpen.value = false;
+          actionSheetRef.current?.dismiss();
         }
       },
     },
@@ -118,7 +118,7 @@ export const useBudgetActions = () => {
       enabled: true,
       action: () => {
         if (activeCategory?.id) {
-          isActionSheetOpen.value = false;
+          actionSheetRef.current?.dismiss();
           handleArchiveBudget(activeCategory.id);
         }
       },
@@ -138,7 +138,7 @@ export const useBudgetActions = () => {
   return {
     activeCategory,
     setActiveCategory,
-    isActionSheetOpen,
+    actionSheetRef,
     actions,
     deleteBudget: handleDeleteBudget,
     enableDeleteWarning,

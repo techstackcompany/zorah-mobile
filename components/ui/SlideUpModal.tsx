@@ -1,126 +1,143 @@
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
-import React, { ReactNode } from "react";
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import React, {
+  forwardRef,
+  ReactNode,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
 import {
   DimensionValue,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, {
-  SharedValue,
-  useAnimatedStyle,
-  useDerivedValue,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from "react-native-reanimated";
 
 type SlideUpModalProps = {
-  isOpen: SharedValue<boolean>;
   title?: string;
-  onClose: () => void;
+  onClose?: () => void;
   children: ReactNode;
   headerBackgroundColor?: string;
   headerTextColor?: string;
   closeIconColor?: string;
   height?: DimensionValue | undefined;
   className?: string;
-  duration?: number;
+  snapPoints?: (string | number)[];
 };
 
-const SlideUpModal = ({
-  isOpen,
-  title,
-  onClose,
-  children,
-  headerBackgroundColor = COLORS.primary_400,
-  headerTextColor = "#222",
-  closeIconColor,
-  height = "auto",
-  className,
-  duration = 300,
-}: SlideUpModalProps) => {
-  const contentHeight = useSharedValue(0);
+export type SlideUpModalRef = {
+  present: () => void;
+  dismiss: () => void;
+};
 
-  const progress = useDerivedValue(() =>
-    withTiming(isOpen.value ? 0 : 1, { duration }),
-  );
+const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
+  (
+    {
+      title,
+      onClose,
+      children,
+      headerBackgroundColor = COLORS.primary_400,
+      headerTextColor = "#222",
+      closeIconColor,
+      height,
+      className,
+      snapPoints: customSnapPoints,
+    },
+    ref,
+  ) => {
+    const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-  const backdropStyle = useAnimatedStyle(() => ({
-    opacity: 1 - progress.value,
-    zIndex: isOpen.value
-      ? 1
-      : withDelay(duration, withTiming(-1, { duration: 0 })),
-    pointerEvents: isOpen.value ? "auto" : "none",
-  }));
+    const snapPoints = useMemo(() => {
+      if (customSnapPoints) return customSnapPoints;
+      if (height) {
+        if (typeof height === "number") return [height];
+        if (typeof height === "string" && height.includes("%")) {
+          return [height];
+        }
+      }
+      return ["50%"];
+    }, [customSnapPoints, height]);
 
-  const modalStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: progress.value * 2 * contentHeight.value }],
-    zIndex: isOpen.value
-      ? 2
-      : withDelay(duration, withTiming(-1, { duration: 0 })),
-    pointerEvents: isOpen.value ? "auto" : "none",
-  }));
+    const handleDismiss = useCallback(() => {
+      onClose?.();
+    }, [onClose]);
 
-  return (
-    <>
-      <Animated.View style={[styles.backdrop, backdropStyle]}>
-        <Pressable style={styles.backdropPressable} onPress={onClose} />
-      </Animated.View>
+    const renderBackdrop = useCallback(
+      (props: any) => (
+        <BottomSheetBackdrop
+          {...props}
+          disappearsOnIndex={-1}
+          appearsOnIndex={0}
+          opacity={0.4}
+        />
+      ),
+      [],
+    );
 
-      <Animated.View
-        onLayout={(e) => {
-          contentHeight.value = e.nativeEvent.layout.height;
-        }}
-        style={[styles.modal, { height }, modalStyle]}
+    useImperativeHandle(ref, () => ({
+      present: () => bottomSheetModalRef.current?.present(),
+      dismiss: () => bottomSheetModalRef.current?.dismiss(),
+    }));
+
+    return (
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        snapPoints={snapPoints}
+        onDismiss={handleDismiss}
+        backdropComponent={renderBackdrop}
+        enablePanDownToClose
+        backgroundStyle={styles.modal}
+        handleComponent={null}
       >
-        {title && (
-          <View
-            style={[styles.header, { backgroundColor: headerBackgroundColor }]}
-          >
-            <Text style={[styles.title, { color: headerTextColor }]}>
-              {title}
-            </Text>
-            <TouchableOpacity onPress={onClose} hitSlop={20}>
-              <Ionicons
-                name="close"
-                size={22}
-                color={closeIconColor ?? headerTextColor}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
+        <BottomSheetView>
+          {title && (
+            <View
+              style={[
+                styles.header,
+                { backgroundColor: headerBackgroundColor },
+              ]}
+            >
+              <Text style={[styles.title, { color: headerTextColor }]}>
+                {title}
+              </Text>
+              <TouchableOpacity
+                onPress={() => bottomSheetModalRef.current?.dismiss()}
+                hitSlop={20}
+              >
+                <Ionicons
+                  name="close"
+                  size={22}
+                  color={closeIconColor ?? headerTextColor}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
 
-        <View className={cn("px-6 py-4", className)}>{children}</View>
-      </Animated.View>
-    </>
-  );
-};
+          <View className={cn("px-6 py-4", className)}>{children}</View>
+        </BottomSheetView>
+      </BottomSheetModal>
+    );
+  },
+);
+
+SlideUpModal.displayName = "SlideUpModal";
 
 export default SlideUpModal;
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  backdropPressable: {
-    flex: 1,
-  },
   modal: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: "#fff",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    overflow: "hidden",
-    paddingBottom: 24,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: -3 },
@@ -133,6 +150,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   title: {
     fontSize: 14,

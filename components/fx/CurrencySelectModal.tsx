@@ -1,32 +1,38 @@
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, {
+  SlideUpModalRef,
+} from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import { FX_CONVERTER_OPTIONS } from "@/constants/fx";
 import { Image } from "expo-image";
-import React from "react";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { SharedValue } from "react-native-reanimated";
 import { SelectionDot } from "./SelectionDot";
 
 export type CurrencySelectModalProps = {
-  isOpen: SharedValue<boolean>;
   type: "from" | "to";
-  onClose: () => void;
+  onClose?: () => void;
   onSelect: (code: string) => void;
   activeFrom: string;
   activeTo: string;
 };
 
-const CurrencySelectModal = ({
-  isOpen,
-  type,
-  onClose,
-  onSelect,
-  activeFrom,
-  activeTo,
-}: CurrencySelectModalProps) => {
+export type CurrencySelectModalRef = SlideUpModalRef;
+
+const CurrencySelectModal = forwardRef<
+  CurrencySelectModalRef,
+  CurrencySelectModalProps
+>((props, ref) => {
+  const { type, onClose, onSelect, activeFrom, activeTo } = props;
+  const modalRef = useRef<SlideUpModalRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    present: () => modalRef.current?.present(),
+    dismiss: () => modalRef.current?.dismiss(),
+  }));
+
   return (
     <SlideUpModal
-      isOpen={isOpen}
+      ref={modalRef}
       onClose={onClose}
       title="Select Currency"
       headerBackgroundColor="#1643F5"
@@ -44,7 +50,7 @@ const CurrencySelectModal = ({
               accessibilityRole="button"
               onPress={() => {
                 onSelect(option.code);
-                onClose();
+                onClose?.();
               }}
             >
               {optionFlag ? (
@@ -67,7 +73,7 @@ const CurrencySelectModal = ({
       </View>
     </SlideUpModal>
   );
-};
+})
 
 const styles = StyleSheet.create({
   modalRow: {
@@ -88,5 +94,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+CurrencySelectModal.displayName = "CurrencySelectModal";
 
 export default CurrencySelectModal;

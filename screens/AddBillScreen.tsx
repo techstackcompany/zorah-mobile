@@ -1,4 +1,6 @@
-import PaymentModal from "@/components/expense-planning/PaymentModal";
+import PaymentModal, {
+  PaymentModalRef,
+} from "@/components/expense-planning/PaymentModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
@@ -28,7 +30,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 const AddBillScreen = () => {
@@ -41,7 +42,7 @@ const AddBillScreen = () => {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const isPaymentModalOpen = useSharedValue(false);
+  const paymentModalRef = useRef<PaymentModalRef>(null);
 
   const { data: categories = [], isPending: isCategoriesLoading } =
     useGetCategoriesQuery("budget");
@@ -75,18 +76,18 @@ const AddBillScreen = () => {
   }, []);
 
   const openPaymentModal = useCallback(() => {
-    isPaymentModalOpen.value = true;
-    setFocusedField("paymentMethod");
+    paymentModalRef.current?.present();
+    setFocusedField("payment");
   }, []);
 
   const closePaymentModal = useCallback(() => {
-    isPaymentModalOpen.value = false;
+    paymentModalRef.current?.dismiss();
     setFocusedField(null);
   }, []);
 
   const handleSelectPaymentMethod = useCallback((method: string) => {
     setPaymentMethod(method);
-    isPaymentModalOpen.value = false;
+    paymentModalRef.current?.dismiss();
     setFocusedField(null);
   }, []);
 
@@ -107,7 +108,6 @@ const AddBillScreen = () => {
     }
     Keyboard.dismiss();
 
-    
     let formattedDueDate = dueDate;
     if (dueDate.includes("/")) {
       const [day, month, yearStr] = dueDate.split("/");
@@ -206,7 +206,7 @@ const AddBillScreen = () => {
                   }
                   placeholder="Select payment method"
                   onPress={openPaymentModal}
-                  isOpen={isPaymentModalOpen.value}
+                  isSelected={!!paymentMethod}
                   isFocused={focusedField === "paymentMethod"}
                   className="mt-2"
                 />
@@ -247,7 +247,7 @@ const AddBillScreen = () => {
           </View>
         </KeyboardAvoidingView>
         <PaymentModal
-          isOpen={isPaymentModalOpen}
+          ref={paymentModalRef}
           onClose={closePaymentModal}
           paymentMethods={paymentMethods.map((m) => ({
             label: m.label,

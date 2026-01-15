@@ -1,11 +1,10 @@
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
-import React from "react";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Pressable, View } from "react-native";
-import { SharedValue } from "react-native-reanimated";
 
 type CurrencyOption = {
   code: string;
@@ -15,29 +14,35 @@ type CurrencyOption = {
 };
 
 type CurrencySelectorModalProps = {
-  isOpen: SharedValue<boolean>;
   currencies: CurrencyOption[];
   selectedCurrency: CurrencyOption;
-  onClose: () => void;
+  onClose?: () => void;
   onSelect: (currency: CurrencyOption) => void;
 };
 
-const CurrencySelectorModal: React.FC<CurrencySelectorModalProps> = ({
-  isOpen,
-  currencies,
-  selectedCurrency,
-  onClose,
-  onSelect,
-}) => {
+export type CurrencySelectorModalRef = SlideUpModalRef;
+
+const CurrencySelectorModal = forwardRef<
+  CurrencySelectorModalRef,
+  CurrencySelectorModalProps
+>(({ currencies, selectedCurrency, onClose, onSelect }, ref) => {
+  const modalRef = useRef<SlideUpModalRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    present: () => modalRef.current?.present(),
+    dismiss: () => modalRef.current?.dismiss(),
+  }));
+
   return (
     <SlideUpModal
-      isOpen={isOpen}
+      ref={modalRef}
       onClose={onClose}
       title="Currency"
       headerBackgroundColor={COLORS.primary_400}
       headerTextColor="#fff"
       closeIconColor="#fff"
       className="pt-4"
+      snapPoints={["60%"]}
     >
       <View className="gap-3">
         {currencies.map((option) => {
@@ -67,6 +72,8 @@ const CurrencySelectorModal: React.FC<CurrencySelectorModalProps> = ({
       </View>
     </SlideUpModal>
   );
-};
+});
+
+CurrencySelectorModal.displayName = "CurrencySelectorModal";
 
 export default CurrencySelectorModal;

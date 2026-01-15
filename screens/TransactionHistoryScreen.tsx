@@ -1,5 +1,5 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { getMatchingCategoryIconSource } from "@/features/expense-income/utils";
@@ -22,7 +22,6 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 
 type TransactionType = "income" | "expense";
 
@@ -357,7 +356,7 @@ const TransactionHistoryScreen = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TransactionTab>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const isFilterOpen = useSharedValue(false);
+  const filterModalRef = useRef<SlideUpModalRef>(null);
   const [selectedCategories, setSelectedCategories] = useState(["all"]);
   const [selectedDateRange, setSelectedDateRange] =
     useState<FilterDateRangeId>("all");
@@ -513,7 +512,7 @@ const TransactionHistoryScreen = () => {
                 />
               </View>
               <Pressable
-                onPress={() => (isFilterOpen.value = true)}
+                onPress={() => filterModalRef.current?.present()}
                 className="h-14 w-14 items-center justify-center rounded-lg border border-grayLight/80"
                 accessibilityRole="button"
               >
@@ -716,13 +715,14 @@ const TransactionHistoryScreen = () => {
       </MainContainer>
 
       <SlideUpModal
-        isOpen={isFilterOpen}
-        onClose={() => (isFilterOpen.value = false)}
+        ref={filterModalRef}
+        onClose={() => {}}
         title="Filter Transactions"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
         closeIconColor="#FFFFFF"
         className="bg-lightMuted pb-6"
+        snapPoints={["65%"]}
       >
         <View className="gap-6">
           <View>
@@ -769,7 +769,7 @@ const TransactionHistoryScreen = () => {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => (isFilterOpen.value = false)}
+              onPress={() => filterModalRef.current?.dismiss()}
               className="flex-1 items-center justify-center rounded-lg bg-primary_400 py-3"
               accessibilityRole="button"
             >

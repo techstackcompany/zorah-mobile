@@ -12,7 +12,7 @@ import {
 
 import MainContainer from "@/components/layouts/MainContainer";
 import CollapsibleCard from "@/components/ui/CollapsibleCard";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
@@ -36,7 +36,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -45,7 +45,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MonthOption = {
@@ -65,8 +64,8 @@ const ExpensePlanningScreen = () => {
   );
   const [periodType, setPeriodType] = useState<PeriodType>("daily");
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("all");
-  const showMonthPicker = useSharedValue(false);
-  const isPeriodModalOpen = useSharedValue(false);
+  const monthPickerModalRef = useRef<SlideUpModalRef>(null);
+  const periodModalRef = useRef<SlideUpModalRef>(null);
 
   const {
     data: expenseSummaryData,
@@ -116,7 +115,7 @@ const ExpensePlanningScreen = () => {
 
   const handleSelect = (period: PeriodType) => {
     setPeriodType(period);
-    isPeriodModalOpen.value = false;
+    periodModalRef.current?.dismiss();
   };
   const selectedOption =
     PERIOD_OPTIONS.find((opt) => opt.value === periodType) || PERIOD_OPTIONS[0];
@@ -412,7 +411,7 @@ const ExpensePlanningScreen = () => {
                 </Text>
                 <Pressable
                   style={styles.periodPill}
-                  onPress={() => (showMonthPicker.value = true)}
+                  onPress={() => monthPickerModalRef.current?.present()}
                 >
                   <Text weight="semibold" className="text-sm text-textColor">
                     {selectedMonthLabel}
@@ -462,7 +461,7 @@ const ExpensePlanningScreen = () => {
                   <View className="flex-row items-center gap-2">
                     <PeriodSelector
                       selectedOption={selectedOption}
-                      isModalOpen={isPeriodModalOpen}
+                      onPress={() => periodModalRef.current?.present()}
                     />
                     <View className="flex-row gap-2">
                       <Pressable
@@ -609,12 +608,13 @@ const ExpensePlanningScreen = () => {
         </TouchableOpacity>
       </MainContainer>
       <SlideUpModal
-        isOpen={showMonthPicker}
-        onClose={() => (showMonthPicker.value = false)}
+        ref={monthPickerModalRef}
+        onClose={() => {}}
         title="Select period"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"
         closeIconColor="#fff"
+        snapPoints={["50%"]}
       >
         <View className="h-full gap-2">
           {monthOptions.map((option) => {
@@ -624,7 +624,7 @@ const ExpensePlanningScreen = () => {
                 key={option.key}
                 onPress={() => {
                   setSelectedMonthKey(option.key);
-                  showMonthPicker.value = false;
+                  monthPickerModalRef.current?.dismiss();
                 }}
                 className={`rounded-2xl px-4 py-3 ${isSelected ? "bg-primary_100" : "bg-white"}`}
               >
@@ -649,13 +649,14 @@ const ExpensePlanningScreen = () => {
         </View>
       </SlideUpModal>
       <SlideUpModal
-        isOpen={isPeriodModalOpen}
-        onClose={() => (isPeriodModalOpen.value = false)}
+        ref={periodModalRef}
+        onClose={() => {}}
         title="Select Period"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"
         closeIconColor="#fff"
         className="gap-2"
+        snapPoints={["30%"]}
       >
         {PERIOD_OPTIONS.map((option) => {
           const isSelected = option.value === periodType;

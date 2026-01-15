@@ -3,7 +3,7 @@ import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
 import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
@@ -14,7 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,7 +24,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type BudgetPeriodKey = "this_week" | "this_month" | "this_year" | "custom";
@@ -131,7 +130,7 @@ const PERIOD_MAP: Record<BudgetPeriodKey, "weekly" | "monthly" | "yearly"> = {
   this_week: "weekly",
   this_month: "monthly",
   this_year: "yearly",
-  custom: "monthly", 
+  custom: "monthly",
 };
 
 const REVERSE_PERIOD_MAP: Record<string, BudgetPeriodKey> = {
@@ -256,8 +255,8 @@ const EditBudgetScreen = () => {
     return "this_month";
   });
   const [selectedRange, setSelectedRange] = useState<DateRange>(initialRange);
-  const isPeriodModalVisible = useSharedValue(false);
-  const isCustomModalVisible = useSharedValue(false);
+  const periodModalRef = useRef<SlideUpModalRef>(null);
+  const customModalRef = useRef<SlideUpModalRef>(null);
   const [customRangeDraft, setCustomRangeDraft] = useState<OptionalDateRange>({
     start: null,
     end: null,
@@ -266,7 +265,6 @@ const EditBudgetScreen = () => {
   useEffect(() => {
     if (budget) {
       if (budget.category) {
-        
         const matchingCategory = budgetCategories?.find(
           (cat) => cat.label.toLowerCase() === budget.category.toLowerCase(),
         );
@@ -305,7 +303,6 @@ const EditBudgetScreen = () => {
         text2: response.message || "Your budget has been updated successfully.",
       });
 
-      
       setTimeout(() => {
         router.back();
       }, 1500);
@@ -321,19 +318,19 @@ const EditBudgetScreen = () => {
 
   const handleSelectPeriod = (key: BudgetPeriodKey) => {
     if (key === "custom") {
-      isPeriodModalVisible.value = false;
+      periodModalRef.current?.dismiss();
       setCustomRangeDraft({
         start: selectedRange.start,
         end: selectedRange.end,
       });
-      isCustomModalVisible.value = true;
+      customModalRef.current?.present();
       return;
     }
 
     const range = getPresetRange(key);
     setSelectedRange(range);
     setPeriodKey(key);
-    isPeriodModalVisible.value = false;
+    periodModalRef.current?.dismiss();
   };
 
   const handleApplyCustomRange = () => {
@@ -351,7 +348,7 @@ const EditBudgetScreen = () => {
       end: new Date(end),
     });
     setPeriodKey("custom");
-    isCustomModalVisible.value = false;
+    customModalRef.current?.dismiss();
   };
 
   const handleSubmit = () => {
@@ -359,13 +356,11 @@ const EditBudgetScreen = () => {
       return;
     }
 
-    
     const apiPeriod =
       periodKey === "custom"
         ? determinePeriodFromRange(selectedRange)
         : PERIOD_MAP[periodKey];
 
-    
     const selectedCategoryData = budgetCategories?.find(
       (cat) => cat.key === selectedCategory,
     );
@@ -396,7 +391,6 @@ const EditBudgetScreen = () => {
     customRangeDraft.start && customRangeDraft.end,
   );
 
-  
   if (isLoadingBudget) {
     return (
       <MainContainer className="bg-light" edges={[]}>
@@ -408,7 +402,6 @@ const EditBudgetScreen = () => {
     );
   }
 
-  
   if (budgetError || !budget) {
     return (
       <MainContainer className="bg-light" edges={[]}>
@@ -484,7 +477,7 @@ const EditBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Period</Text>
                 <Pressable
-                  onPress={() => (isPeriodModalVisible.value = true)}
+                  onPress={() => periodModalRef.current?.present()}
                   className="mt-2 flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-4"
                 >
                   <Text
@@ -517,8 +510,8 @@ const EditBudgetScreen = () => {
         </View>
 
         <SlideUpModal
-          isOpen={isPeriodModalVisible}
-          onClose={() => (isPeriodModalVisible.value = false)}
+          ref={periodModalRef}
+          onClose={() => periodModalRef.current?.dismiss()}
           title="Budget Period"
           headerTextColor="white"
         >
@@ -562,8 +555,8 @@ const EditBudgetScreen = () => {
         </SlideUpModal>
 
         <SlideUpModal
-          isOpen={isCustomModalVisible}
-          onClose={() => (isCustomModalVisible.value = false)}
+          ref={customModalRef}
+          onClose={() => customModalRef.current?.dismiss()}
           title="Custom Period"
           headerBackgroundColor={COLORS.primary_400}
           headerTextColor="#fff"

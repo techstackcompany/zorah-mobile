@@ -1,5 +1,5 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
-import React, { ReactNode, useMemo, useState } from "react";
+import React, { ReactNode, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -20,7 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 const LANGUAGE_OPTIONS = [
@@ -30,7 +29,7 @@ const LANGUAGE_OPTIONS = [
 
 const AccountScreen = () => {
   const router = useRouter();
-  const showPinSetupModal = useSharedValue(false);
+  const pinSetupModalRef = useRef<SlideUpModalRef>(null);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const { signOut, userData, kycVerificationStatus } = useSession();
   const { settings, updateSetting } = useAppSettings();
@@ -142,7 +141,7 @@ const AccountScreen = () => {
 
   const handleBiometricToggle = (value: boolean) => {
     if (value) {
-      showPinSetupModal.value = true;
+      pinSetupModalRef.current?.present();
     } else {
       setShowDisableModal(true);
     }
@@ -153,7 +152,7 @@ const AccountScreen = () => {
   };
 
   const handleSetPin = () => {
-    showPinSetupModal.value = false;
+    pinSetupModalRef.current?.dismiss();
     router.push("/(app)/settings/pin" as RelativePathString);
   };
 
@@ -270,14 +269,14 @@ const AccountScreen = () => {
       </ScrollView>
 
       <SlideUpModal
-        isOpen={showPinSetupModal}
+        ref={pinSetupModalRef}
         onClose={() => {
-          showPinSetupModal.value = false;
           updateSetting("enableBiometrics", false);
         }}
         title="Set Up PIN"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
+        snapPoints={["55%"]}
       >
         <View className="gap-4">
           <View className="items-center">
@@ -314,7 +313,7 @@ const AccountScreen = () => {
             </Pressable>
             <Pressable
               onPress={() => {
-                showPinSetupModal.value = false;
+                pinSetupModalRef.current?.dismiss();
                 updateSetting("enableBiometrics", false);
               }}
               className="rounded-2xl border border-gray-200 bg-white py-4"

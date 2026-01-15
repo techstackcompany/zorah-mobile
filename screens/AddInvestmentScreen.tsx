@@ -18,7 +18,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 
 const AddInvestmentScreen = () => {
   const router = useRouter();
@@ -182,10 +181,10 @@ const AddInvestmentScreen = () => {
                 }
                 isFocused={focusedField === "purchaseDate"}
                 renderSelectIcon={() => (
-                    <Image
-                      source={require("@/assets/icons/calendar.svg")}
-                      style={{ width: 20, height: 20 }}
-                    />
+                  <Image
+                    source={require("@/assets/icons/calendar.svg")}
+                    style={{ width: 20, height: 20 }}
+                  />
                 )}
               />
             </View>
@@ -202,7 +201,7 @@ const AddInvestmentScreen = () => {
                 renderSelectIcon={() => (
                   <Image
                     source={require("@/assets/icons/calendar.svg")}
-                    style={{ width: 20, height: 20, }}
+                    style={{ width: 20, height: 20 }}
                   />
                 )}
               />

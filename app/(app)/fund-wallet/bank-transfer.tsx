@@ -9,7 +9,6 @@ import * as Clipboard from "expo-clipboard";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { ActivityIndicator, Alert, Pressable, Share, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 const transferDetails = {
@@ -48,8 +47,6 @@ const BankTransferScreen = () => {
       queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
       queryClient.invalidateQueries({ queryKey: ["wallet", "transactions"] });
 
-      
-      
       const transaction = (
         response as unknown as {
           transaction?: { reference?: string; status?: string };
@@ -65,7 +62,6 @@ const BankTransferScreen = () => {
           : `₦${Number(amount || 0).toLocaleString("en-NG")} has been added to your wallet`,
       });
 
-      
       setTimeout(() => {
         router.navigate("/(app)/fund-wallet");
       }, 1500);

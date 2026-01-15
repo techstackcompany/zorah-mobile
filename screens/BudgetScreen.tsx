@@ -144,7 +144,7 @@ const BudgetScreen = () => {
       </ScrollView>
 
       <BudgetActionSheet
-        isOpen={budgetActions.isActionSheetOpen}
+        ref={budgetActions.actionSheetRef}
         onClose={budgetActions.closeActionSheet}
         actions={budgetActions.actions}
         onActionPress={(action) => action.action()}

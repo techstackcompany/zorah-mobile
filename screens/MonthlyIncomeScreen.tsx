@@ -11,7 +11,6 @@ import { ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { PermissionsAndroid, Platform, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 
 const incomeSources = [
   { label: "Salary/Employment", value: "salary" },

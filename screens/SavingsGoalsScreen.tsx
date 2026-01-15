@@ -1,6 +1,6 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Button from "@/components/ui/Button";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { formatCurrency } from "@/constants/investments";
@@ -13,7 +13,7 @@ import { useGetSavingsGoalsQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -23,11 +23,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 
 const SavingsGoalsScreen = () => {
   const router = useRouter();
-  const showGoalModal = useSharedValue(false);
+  const goalModalRef = useRef<SlideUpModalRef>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   const {
@@ -60,8 +59,6 @@ const SavingsGoalsScreen = () => {
     [selectedGoalId, uiGoals],
   );
 
-  
-
   const selectedGoalProgress = useMemo(() => {
     if (!selectedGoal) {
       return 0;
@@ -84,7 +81,7 @@ const SavingsGoalsScreen = () => {
 
   const handleOpenGoal = (goalId: string) => {
     setSelectedGoalId(goalId);
-    showGoalModal.value = true;
+    goalModalRef.current?.present();
   };
 
   if (isGoalsLoading && !goalsData) {
@@ -276,13 +273,12 @@ const SavingsGoalsScreen = () => {
         </View>
       </ScrollView>
       <SlideUpModal
-        isOpen={showGoalModal}
-        onClose={() => {
-          showGoalModal.value = false;
-        }}
+        ref={goalModalRef}
+        onClose={() => {}}
         title="Goal Details"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
+        snapPoints={["75%"]}
       >
         {selectedGoal ? (
           <ScrollView
@@ -315,7 +311,7 @@ const SavingsGoalsScreen = () => {
                     if (!selectedGoal) {
                       return;
                     }
-                    showGoalModal.value = false;
+                    goalModalRef.current?.dismiss();
                     router.push({
                       pathname: "/savings-goals/edit",
                       params: { id: selectedGoal.id },
@@ -457,7 +453,7 @@ const SavingsGoalsScreen = () => {
                 title="Add Money"
                 className="flex-1"
                 onPress={() => {
-                  showGoalModal.value = false;
+                  goalModalRef.current?.dismiss();
                   if (selectedGoal) {
                     router.push({
                       pathname: "/savings-goals/add-money",

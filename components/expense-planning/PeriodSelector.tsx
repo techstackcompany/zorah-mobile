@@ -3,20 +3,18 @@ import COLORS from "@/constants/colors";
 import { PeriodOption } from "@/features/expense-income/types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, Share } from "react-native";
-import { SharedValue, } from "react-native-reanimated";
+import { Pressable } from "react-native";
 
 type PeriodSelectorProps = {
   selectedOption: PeriodOption;
-  isModalOpen :SharedValue<boolean>;
+  onPress: () => void;
 };
 
-const PeriodSelector = ({ selectedOption,isModalOpen }: PeriodSelectorProps) => {
-
+const PeriodSelector = ({ selectedOption, onPress }: PeriodSelectorProps) => {
   return (
     <>
       <Pressable
-        onPress={() => (isModalOpen.value = true)}
+        onPress={onPress}
         className="flex-row items-center gap-2 rounded-lg border border-grayLight/80 bg-white px-3 py-1.5"
         accessibilityRole="button"
         accessibilityLabel={`Select period. Current: ${selectedOption.label}`}

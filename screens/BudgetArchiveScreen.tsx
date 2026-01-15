@@ -1,5 +1,5 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { formatCurrency } from "@/lib/utils";
@@ -11,7 +11,7 @@ import {
 import { BudgetListItem } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image, ImageSource } from "expo-image";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,7 +19,6 @@ import {
   ScrollView,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type ArchiveStatus = "on-track" | "approaching" | "exceeded";
@@ -133,7 +132,7 @@ const BudgetArchiveScreen = () => {
   const [selectedBudget, setSelectedBudget] = useState<ArchivedBudget | null>(
     null,
   );
-  const isActionSheetOpen = useSharedValue(false);
+  const actionSheetRef = useRef<SlideUpModalRef>(null);
   const [budgetIdToRestore, setBudgetIdToRestore] = useState<string | null>(
     null,
   );
@@ -164,7 +163,7 @@ const BudgetArchiveScreen = () => {
         Toast.show({ type: "success", text1: "Budget restored successfully" });
         setBudgetIdToRestore(null);
         setSelectedBudget(null);
-        isActionSheetOpen.value = false;
+        actionSheetRef.current?.dismiss();
       },
       onError: (error) => {
         console.log("error", error.message);
@@ -186,11 +185,11 @@ const BudgetArchiveScreen = () => {
 
   const handleOpenActions = (budget: ArchivedBudget) => {
     setSelectedBudget(budget);
-    isActionSheetOpen.value = true;
+    actionSheetRef.current?.present();
   };
 
   const closeActionSheet = () => {
-    isActionSheetOpen.value = false;
+    actionSheetRef.current?.dismiss();
     setSelectedBudget(null);
   };
 
@@ -201,7 +200,7 @@ const BudgetArchiveScreen = () => {
         label: "Restore",
         enabled: true,
         action: () => {
-          isActionSheetOpen.value = false;
+          actionSheetRef.current?.dismiss();
           handleRestoreBudget(selectedBudget.id);
         },
       },
@@ -366,7 +365,7 @@ const BudgetArchiveScreen = () => {
       </ScrollView>
 
       <SlideUpModal
-        isOpen={isActionSheetOpen}
+        ref={actionSheetRef}
         onClose={closeActionSheet}
         title="Action"
         headerBackgroundColor={COLORS.primary_400}

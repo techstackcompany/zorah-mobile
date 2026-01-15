@@ -7,7 +7,6 @@ import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Alert, Linking, Pressable, TextInput, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 
 type BankOption = {
   id: string;

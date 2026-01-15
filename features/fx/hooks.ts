@@ -1,3 +1,4 @@
+import type { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import { FX_CONVERTER_OPTIONS, FX_PAIRS } from "@/constants/fx";
 import {
   useGetFxRatePairsQuery,
@@ -5,8 +6,7 @@ import {
   useGetRateHistoryQuery,
 } from "@/src/api/hooks";
 import type { FxRatePair } from "@/src/api/types";
-import { useCallback, useMemo, useState } from "react";
-import { useSharedValue } from "react-native-reanimated";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 type CurrencyOption = { code: string; name?: string; flag?: any };
 
@@ -20,7 +20,8 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     FX_CONVERTER_OPTIONS[1],
   );
   const [amount, setAmount] = useState<string>("0");
-  const currencyModalOpen = useSharedValue(false);
+  const fromCurrencyModalRef = useRef<SlideUpModalRef>(null);
+  const toCurrencyModalRef = useRef<SlideUpModalRef>(null);
   const [currencyModalType, setCurrencyModalType] = useState<"from" | "to">(
     "from",
   );
@@ -261,7 +262,8 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     setToCurrency,
     amount,
     setAmount,
-    currencyModalOpen,
+    fromCurrencyModalRef,
+    toCurrencyModalRef,
     currencyModalType,
     setCurrencyModalType,
     isLoading,

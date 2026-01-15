@@ -2,7 +2,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,13 @@ import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,7 +25,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 type IncomeCategory = {
@@ -39,7 +44,8 @@ const AddIncomeScreen = () => {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const isPaymentModalOpen = useSharedValue(false);
+  const paymentModalRef = useRef<SlideUpModalRef>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const {
     data: categoriesData,
@@ -90,18 +96,21 @@ const AddIncomeScreen = () => {
   });
 
   const openPaymentModal = useCallback(() => {
-    isPaymentModalOpen.value = true;
+    paymentModalRef.current?.present();
+    setIsPaymentModalOpen(true);
     setFocusedField("payment");
   }, []);
 
   const closePaymentModal = useCallback(() => {
-    isPaymentModalOpen.value = false;
+    paymentModalRef.current?.dismiss();
+    setIsPaymentModalOpen(false);
     setFocusedField(null);
   }, []);
 
   const handleSelectPaymentMethod = useCallback((method: string) => {
     setPaymentMethod(method);
-    isPaymentModalOpen.value = false;
+    paymentModalRef.current?.dismiss();
+    setIsPaymentModalOpen(false);
     setFocusedField(null);
   }, []);
 
@@ -260,9 +269,7 @@ const AddIncomeScreen = () => {
                   </Text>
 
                   <Ionicons
-                    name={
-                      isPaymentModalOpen.value ? "chevron-up" : "chevron-down"
-                    }
+                    name={isPaymentModalOpen ? "chevron-up" : "chevron-down"}
                     size={20}
                     color={COLORS.textColor}
                   />
@@ -327,13 +334,14 @@ const AddIncomeScreen = () => {
         </View>
       </KeyboardAvoidingView>
       <SlideUpModal
-        isOpen={isPaymentModalOpen}
+        ref={paymentModalRef}
         onClose={closePaymentModal}
         title="Payment Method"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"
         closeIconColor="#fff"
         className="px-0"
+        snapPoints={["50%"]}
       >
         <View className="gap-2">
           {PAYMENT_METHODS.map((method) => {

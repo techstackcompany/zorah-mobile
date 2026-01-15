@@ -1,4 +1,6 @@
-import PaymentModal from "@/components/expense-planning/PaymentModal";
+import PaymentModal, {
+  PaymentModalRef,
+} from "@/components/expense-planning/PaymentModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import CategorySelector from "@/components/ui/CategorySelector";
@@ -21,7 +23,13 @@ import useVoiceTranscriber from "../hooks/useVoiceTranscriber";
 
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   KeyboardAvoidingView,
   Pressable,
@@ -29,7 +37,7 @@ import {
   Switch,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+// useRef imported from react above
 import Toast from "react-native-toast-message";
 
 type ExpenseCategory = {
@@ -122,29 +130,34 @@ const getPaymentMethodLabel = (value: string) =>
 const usePaymentMethodActions = (
   setFocusedField: React.Dispatch<React.SetStateAction<string | null>>,
 ) => {
-  const isPaymentModalVisible = useSharedValue(false);
+  const paymentModalRef = useRef<PaymentModalRef>(null);
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const openPaymentModal = useCallback(() => {
-    isPaymentModalVisible.value = true;
-    setFocusedField("payment");
-  }, [isPaymentModalVisible, setFocusedField]);
+    paymentModalRef.current?.present();
+    setIsPaymentModalVisible(true);
+    setFocusedField("paymentMethod");
+  }, [setFocusedField]);
 
   const closePaymentModal = useCallback(() => {
-    isPaymentModalVisible.value = false;
+    paymentModalRef.current?.dismiss();
+    setIsPaymentModalVisible(false);
     setFocusedField(null);
-  }, [isPaymentModalVisible, setFocusedField]);
+  }, [setFocusedField]);
 
   const handleSelectPaymentMethod = useCallback(
     (method: string) => {
       setPaymentMethod(method);
-      isPaymentModalVisible.value = false;
+      paymentModalRef.current?.dismiss();
+      setIsPaymentModalVisible(false);
       setFocusedField(null);
     },
-    [isPaymentModalVisible, setFocusedField],
+    [setFocusedField],
   );
 
   return {
+    paymentModalRef,
     isPaymentModalVisible,
     paymentMethod,
     setPaymentMethod,
@@ -160,7 +173,6 @@ const useExpenseSubCategories = () => {
     isLoading: isCategoriesLoading,
     error: categoriesError,
   } = useGetCategoriesQuery("expense");
-
 
   const expenseCategories = useMemo<ExpenseCategory[]>(() => {
     if (!categoriesData) {
@@ -187,6 +199,7 @@ const AddExpenseScreen = () => {
     useState<DetectedExpenseDetails | null>(null);
   const [editableTranscript, setEditableTranscript] = useState("");
   const {
+    paymentModalRef,
     isPaymentModalVisible,
     paymentMethod,
     setPaymentMethod,
@@ -224,7 +237,7 @@ const AddExpenseScreen = () => {
       setIsVoiceMode(enabled);
       setFocusedField(null);
       resetVoiceAssist();
-      if (enabled && isPaymentModalVisible.value) {
+      if (enabled && isPaymentModalVisible) {
         closePaymentModal();
       }
     },
@@ -276,7 +289,7 @@ const AddExpenseScreen = () => {
       const amount = data.transaction.amount;
       const category = data.transaction.metadata.category;
       const description = data.transaction.metadata.description;
-      
+
       const paymentMethod = "";
 
       setAmount(amount.toString());
@@ -612,7 +625,7 @@ const AddExpenseScreen = () => {
                       value={paymentMethod}
                       placeholder="Select payment method"
                       onPress={openPaymentModal}
-                      isOpen={isPaymentModalVisible.value}
+                      isOpen={isPaymentModalVisible}
                       isFocused={focusedField === "payment"}
                     />
                   </View>
@@ -662,7 +675,7 @@ const AddExpenseScreen = () => {
         </View>
       </KeyboardAvoidingView>
       <PaymentModal
-        isOpen={isPaymentModalVisible}
+        ref={paymentModalRef}
         onClose={closePaymentModal}
         paymentMethods={PAYMENT_METHODS}
         selectedMethod={paymentMethod}
