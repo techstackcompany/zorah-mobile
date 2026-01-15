@@ -43,6 +43,11 @@ const featureItems: FeatureItem[] = [
     label: "Notifications",
     icon: require("@/assets/icons/notifications.svg"),
   },
+  {
+    id: "push-notification-test",
+    label: "Push Notification Test",
+    icon: require("@/assets/icons/notifications.svg"),
+  },
 ];
 
 const MoreScreen = () => {
@@ -61,6 +66,8 @@ const MoreScreen = () => {
       router.push("/(app)/bill-reminder");
     } else if (feature.id === "notifications") {
       router.push("/(app)/notifications");
+    } else if (feature.id === "push-notification-test") {
+      router.push("/push-notification-test");
     }
   };
 

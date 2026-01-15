@@ -275,11 +275,11 @@ export interface Notification {
 }
 
 export interface RegisterNotificationTokenRequest {
-  expoPushToken: string;
+  fcmToken: string;
 }
 
 export interface SendTestNotificationRequest {
-  expoPushToken: string;
+  fcmToken: string;
   title: string;
   body: string;
 }

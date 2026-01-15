@@ -1,6 +1,7 @@
 import OfflineNotice from "@/components/offline/OfflineNotice";
 import { SessionProvider } from "@/contexts/auth-context/SessionProvider";
 import { NetworkProvider } from "@/contexts/network/NetworkProvider";
+import PushNotificationsProvider from "@/contexts/push-notifications/PushNotificationsProvider";
 import { SettingsProvider } from "@/contexts/settings-context/SettingsProvider";
 import { ReactQueryProvider } from "@/lib/reactQuery";
 import RootNavigator from "@/navigation/RootNavigator";
@@ -16,17 +17,19 @@ export default function RootLayout() {
     <ReactQueryProvider>
       <NetworkProvider>
         <SessionProvider>
-          <SettingsProvider>
-            <FontProvider>
-              <SafeAreaProvider>
-                <View className="flex-1">
-                  <OfflineNotice />
-                  <RootNavigator />
-                </View>
-              </SafeAreaProvider>
-              <Toast config={toastConfig} />
-            </FontProvider>
-          </SettingsProvider>
+          <PushNotificationsProvider>
+            <SettingsProvider>
+              <FontProvider>
+                <SafeAreaProvider>
+                  <View className="flex-1">
+                    <OfflineNotice />
+                    <RootNavigator />
+                  </View>
+                </SafeAreaProvider>
+                <Toast config={toastConfig} />
+              </FontProvider>
+            </SettingsProvider>
+          </PushNotificationsProvider>
         </SessionProvider>
       </NetworkProvider>
     </ReactQueryProvider>
