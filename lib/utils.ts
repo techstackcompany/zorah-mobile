@@ -72,8 +72,6 @@ export const formatTime = (seconds: number): string => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 };
 
-
-
 type ExtractUserDataOptions = {
   fallbackName?: string;
   fallbackInitials?: string;
@@ -87,7 +85,6 @@ type ExtractedUserData = {
   initials: string;
 };
 
-
 function pickString(...values: unknown[]): string | null {
   for (const value of values) {
     if (typeof value === "string") {
@@ -97,7 +94,6 @@ function pickString(...values: unknown[]): string | null {
   }
   return null;
 }
-
 
 export function extractUserData(
   userData: unknown,
@@ -115,7 +111,6 @@ export function extractUserData(
       ? (safeUser.user as Record<string, unknown>)
       : null;
 
-  
   const resolvedName =
     pickString(
       safeUser.name,
@@ -163,9 +158,6 @@ export function extractUserData(
   };
 }
 
-
-
-
 export function formatCurrentDate(): string {
   const now = new Date();
   const day = now.getDate();
@@ -173,9 +165,6 @@ export function formatCurrentDate(): string {
   const year = now.getFullYear();
   return `${day} ${month}, ${year}`;
 }
-
-
-
 
 export function formatCurrencyWithSymbol(
   value: number,
@@ -190,14 +179,12 @@ export function formatCurrencyWithSymbol(
   return `${symbol}${formatted}`;
 }
 
-
 export function formatCurrency(value: number): string {
   return `₦${value.toLocaleString("en-NG", {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
   })}`;
 }
-
 
 export function formatTransactionPurpose(purpose: string): string {
   if (!purpose) return "";
@@ -207,9 +194,6 @@ export function formatTransactionPurpose(purpose: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }
-
-
-
 
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -222,11 +206,9 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 0, g: 0, b: 0 };
 }
 
-
 export function rgbToHex(r: number, g: number, b: number): string {
   return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }
-
 
 export function lightenColor(hex: string, percent: number): string {
   const rgb = hexToRgb(hex);
@@ -236,7 +218,6 @@ export function lightenColor(hex: string, percent: number): string {
   const b = Math.round(rgb.b + (255 - rgb.b) * factor);
   return rgbToHex(r, g, b);
 }
-
 
 export function getAccentColorForGroup(groupName: string): {
   accentColor: string;
@@ -251,7 +232,7 @@ export function getAccentColorForGroup(groupName: string): {
   const usePrimary = Math.abs(hash) % 2 === 0;
   const baseColor = usePrimary ? COLORS.primary_400 : COLORS.secondary_400;
 
-  const variation = (Math.abs(hash) % 31) / 100; 
+  const variation = (Math.abs(hash) % 31) / 100;
 
   const baseRgb = hexToRgb(baseColor);
   const accentR = Math.max(
@@ -324,6 +305,7 @@ export const generateColorsFromString = (name: string) => {
 
   return {
     background: `hsl(${hue}, 70%, 90%)`,
-    accent: `hsl(${hue}, 70%, 30%)`,
+    accent: `hsl(${hue}, 70%, 50%)`,
+    dark: `hsl(${hue}, 70%, 28%)`,
   };
 };
