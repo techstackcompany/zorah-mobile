@@ -12,6 +12,7 @@ import {
   DailyExpenseTotal,
   Expense,
   ExpenseSummary,
+  ExpenseSummaryApiResponse,
   ExpenseSummaryFilter,
   MonthlyExpenseTotal,
   SpendingOverviewResponse,
@@ -157,32 +158,33 @@ export const useGetExpenseQuery = (
 
 export const useGetExpenseSummaryQuery = (
   type: ExpenseSummaryFilter["type"],
-  options?: Partial<UseQueryOptions<ApiEnvelope<ExpenseSummary>, ApiError>>,
+  options?: Partial<UseQueryOptions<ExpenseSummary, ApiError>>,
 ) =>
-  useQuery<ApiEnvelope<ExpenseSummary>, ApiError>({
+  useQuery<ExpenseSummary, ApiError>({
     queryKey: ["expenses", "summary", type],
     queryFn: async () => {
-      const response = await apiRequest<ApiEnvelope<ExpenseSummary>>({
+      const response = await apiRequest<ExpenseSummaryApiResponse>({
         ...API_ENDPOINTS.expenses.summary,
         params: { type },
       });
-
-      if (Array.isArray(response)) {
+      console.log("response in useGetExpenseSummaryQuery", response, "\n\n");
+    
         const summary: ExpenseSummary = {
           type,
           total: response.reduce((acc, item) => acc + item.total, 0),
           byCategory: response,
         };
-        return { data: summary };
-      }
+        return summary;
+      
 
-      return response;
     },
     ...options,
   });
 
 export const useGetDailyExpensesQuery = (
-  options?: Partial<UseQueryOptions<ApiEnvelope<DailyExpenseTotal[]>, ApiError>>,
+  options?: Partial<
+    UseQueryOptions<ApiEnvelope<DailyExpenseTotal[]>, ApiError>
+  >,
 ) =>
   useQuery<ApiEnvelope<DailyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "daily"],
@@ -203,7 +205,9 @@ export const useGetDailyExpensesQuery = (
   });
 
 export const useGetMonthlyExpensesQuery = (
-  options?: Partial<UseQueryOptions<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>>,
+  options?: Partial<
+    UseQueryOptions<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>
+  >,
 ) =>
   useQuery<ApiEnvelope<MonthlyExpenseTotal[]>, ApiError>({
     queryKey: ["expenses", "monthly"],

@@ -108,17 +108,18 @@ export interface ExpenseSummaryFilter {
   type: "daily" | "weekly" | "monthly" | (string & {});
 }
 
-export interface ExpenseSummary {
-  type: string;
+export type ExpenseSummaryApiResponse = {
+  category: string;
+  count: number;
   total: number;
-  currency?: string;
-  categories?: {
-    category: string;
-    amount: number;
-    percentage?: number;
-  }[];
-  [key: string]: unknown;
-}
+}[];
+
+export type ExpenseSummary = {
+  type: ExpenseSummaryFilter["type"];
+  total: number;
+  byCategory: ExpenseSummaryApiResponse;
+};
+
 
 export interface DailyExpenseTotal {
   _id: {
@@ -174,7 +175,7 @@ export interface AddIncomeRequest {
 export type UpdateIncomeRequest = Partial<AddIncomeRequest>;
 
 export interface Income extends AddIncomeRequest {
-  _id?: string;
+  _id: string;
   user: string;
   createdAt: string;
   updatedAt: string;

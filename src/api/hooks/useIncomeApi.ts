@@ -36,7 +36,7 @@ export const useGetIncomesQuery = (
       const response = await apiRequest<GetIncomesResponse>({
         ...API_ENDPOINTS.income.getIncomes,
       });
-
+console.log('response income ', response )
       return response;
     },
     ...options,

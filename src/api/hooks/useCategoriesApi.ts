@@ -27,10 +27,13 @@ export const useGetCategoriesQuery = (
           ({ _id, image, name }: CategoryResponseItem) => ({
             key: _id,
             icon: image,
-            label: name,
+            label: name.toLowerCase(),
           }),
         ) || []
       );
     },
     ...options,
   });
+
+
+ 
