@@ -14,9 +14,9 @@ import {
   useUpdateExpenseMutation,
   useUpdateIncomeMutation,
 } from "@/src/api/hooks";
+import { CategoryItem } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { ImageSource } from "expo-image";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -30,11 +30,7 @@ import {
 import { useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
-type ExpenseCategory = {
-  key: string;
-  label: string;
-  icon: ImageSource | string;
-};
+
 
 const PAYMENT_METHODS = [
   { label: "Bank Transfer", value: "transfer" },
@@ -128,7 +124,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
     return Array.isArray(data) ? data[0] : data.data || data;
   }, [expenseData, incomeData, isIncomeScreen]);
 
-  const expenseCategories = useMemo<ExpenseCategory[]>(() => {
+  const expenseCategories = useMemo<CategoryItem[]>(() => {
     if (!categoriesData || categoriesData.length === 0) {
       return [];
     }

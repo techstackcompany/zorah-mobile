@@ -30,8 +30,6 @@ const LANGUAGE_OPTIONS = [
 
 const AccountScreen = () => {
   const router = useRouter();
-  const [allowBankNotification, setAllowBankNotification] = useState(true);
-  const showLanguageModal = useSharedValue(false);
   const showPinSetupModal = useSharedValue(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const { signOut, userData, kycVerificationStatus } = useSession();
@@ -144,22 +142,18 @@ const AccountScreen = () => {
 
   const handleBiometricToggle = (value: boolean) => {
     if (value) {
-      
       showPinSetupModal.value = true;
     } else {
-      
       setShowDisableModal(true);
     }
   };
 
   const handleDisableBiometrics = () => {
-    
     toggleBiometricsMutation.mutate({ enabled: false });
   };
 
   const handleSetPin = () => {
     showPinSetupModal.value = false;
-    
     router.push("/(app)/settings/pin" as RelativePathString);
   };
 
@@ -243,46 +237,12 @@ const AccountScreen = () => {
           </View>
 
           <View style={styles.sectionCard}>
-            <SectionHeader title="System Information" />
-            <SectionSubHeader subtitle="Language" />
-            <AccountRow
-              label="Change Language"
-              iconSource={require("@/assets/icons/language.svg")}
-              value={
-                <Text
-                  weight="semibold"
-                  className="ml-3 mr-auto rounded-full bg-white px-3 py-2
-                 text-sm text-primary_400"
-                >
-                  {settings.language.label}
-                </Text>
-              }
-              onPress={() => (showLanguageModal.value = true)}
-            />
-          </View>
-
-          <View style={styles.sectionCard}>
-            <SectionHeader title="Notifications" />
-            <SectionSubHeader subtitle="All Notification Settings" />
-            <ToggleRow
-              label="Allow Bank Notification"
-              description="Allow Zorah to access bank SMS alert"
-              value={allowBankNotification}
-              onChange={setAllowBankNotification}
-            />
-            <ToggleRow
-              label="Push Notification"
-              value={settings.pushNotification}
-              onChange={(value) => updateSetting("pushNotification", value)}
-            />
-          </View>
-          <View style={styles.sectionCard}>
             <SectionHeader title="Security" />
             <SectionSubHeader subtitle="Authentication & Login Settings" />
 
             <ToggleRow
               label="Biometric Login"
-              description="Use fingerprint or face ID to sign in"
+              description="Secure your app with fingerprint or face ID"
               value={settings.enableBiometrics}
               onChange={handleBiometricToggle}
             />
@@ -310,42 +270,6 @@ const AccountScreen = () => {
       </ScrollView>
 
       <SlideUpModal
-        isOpen={showLanguageModal}
-        onClose={() => (showLanguageModal.value = false)}
-        title="Select Language"
-        headerBackgroundColor="#1643F5"
-        headerTextColor="#FFFFFF"
-      >
-        <View className="space-y-2">
-          {LANGUAGE_OPTIONS.map((option) => {
-            const isSelected = settings.language.id === option.id;
-            return (
-              <Pressable
-                key={option.id}
-                style={styles.modalRow}
-                accessibilityRole="button"
-                onPress={() => {
-                  updateSetting("language", option);
-                  showLanguageModal.value = false;
-                }}
-              >
-                <View>
-                  <Text weight="semibold" className="text-sm text-textColor">
-                    {option.label}
-                  </Text>
-                  <Text className="text-xs text-textColor/60">
-                    {option.subLabel}
-                  </Text>
-                </View>
-                <SelectionDot selected={isSelected} />
-              </Pressable>
-            );
-          })}
-        </View>
-      </SlideUpModal>
-
-      
-      <SlideUpModal
         isOpen={showPinSetupModal}
         onClose={() => {
           showPinSetupModal.value = false;
@@ -362,16 +286,17 @@ const AccountScreen = () => {
                 name="lock-closed-outline"
                 size={32}
                 color={COLORS.primary_400}
-              }
-                    </View>
-                  </View>
-                </View>
-              </SlideUpModal>
-
-            <Modal
+              />
+            </View>
+            <Text
+              weight="semibold"
+              className="text-center text-lg text-textColor"
+            >
+              PIN Required
+            </Text>
             <Text className="mt-2 text-center text-sm text-textColor/70">
-              To enable biometric login, you need to set up a PIN first. This
-              PIN will be used as a backup authentication method.
+              Set up a PIN to secure your app. You can then use biometric
+              authentication for quick access while keeping your data safe.
             </Text>
           </View>
 
@@ -390,7 +315,6 @@ const AccountScreen = () => {
             <Pressable
               onPress={() => {
                 showPinSetupModal.value = false;
-                
                 updateSetting("enableBiometrics", false);
               }}
               className="rounded-2xl border border-gray-200 bg-white py-4"
@@ -419,11 +343,11 @@ const AccountScreen = () => {
                 <Ionicons name="warning-outline" size={32} color="#F59E0B" />
               </View>
               <Text weight="bold" className="mt-4 text-xl text-textColor">
-                Disable Biometrics Login?
+                Disable Biometric Login?
               </Text>
               <Text className="mt-2 text-center text-sm text-textColor/70">
-                You will need to enter your PIN every time you open the app. Are
-                you sure you want to disable biometric login?
+                Your app will be secured with PIN only. Are you sure you want to
+                disable biometric login?
               </Text>
             </View>
 
@@ -552,19 +476,6 @@ const ToggleRow = ({ label, description, value, onChange }: ToggleRowProps) => {
     </View>
   );
 };
-
-const SelectionDot = ({ selected }: { selected: boolean }) => (
-  <View
-    style={[
-      styles.selectionDot,
-      {
-        borderColor: selected ? COLORS.primary_400 : "#D1D6DE",
-      },
-    ]}
-  >
-    {selected ? <View style={styles.selectionDotInner} /> : null}
-  </View>
-);
 
 const styles = StyleSheet.create({
   contentContainer: {

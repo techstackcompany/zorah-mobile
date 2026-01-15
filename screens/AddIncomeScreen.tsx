@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -26,7 +25,7 @@ import Toast from "react-native-toast-message";
 type IncomeCategory = {
   key: string;
   label: string;
-  icon: ImageSource | string;
+  icon: string;
 };
 
 const PAYMENT_METHODS = ["Cash", "Card", "Transfer", "Wallet"];
@@ -47,7 +46,6 @@ const AddIncomeScreen = () => {
     isLoading: isCategoriesLoading,
     error: categoriesError,
   } = useGetCategoriesQuery("income");
-
 
   const incomeCategories = useMemo<IncomeCategory[]>(() => {
     if (!categoriesData) {
@@ -146,21 +144,19 @@ const AddIncomeScreen = () => {
 
     const numericAmount = Number(amount);
 
-    
-    
     let formattedDate = date;
     if (date.includes("/")) {
       const [day, month, yearStr] = date.split("/");
-      
+
       const fullYear =
         yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
     const payload = {
-      source: paymentMethod, 
+      source: paymentMethod,
       amount: numericAmount,
-      category: selectedCategory.toLowerCase(), 
+      category: selectedCategory.toLowerCase(),
       description: description.trim() || undefined,
       date: formattedDate,
     };

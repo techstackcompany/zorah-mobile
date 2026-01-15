@@ -235,9 +235,8 @@ const BudgetArchiveScreen = () => {
               Loading archived budgets...
             </Text>
           </View>
-          ) : hasArchivedBudgets ? (
+        ) : hasArchivedBudgets ? (
           <>
-
             <View className="mt-8">
               <Text weight="semibold" className="text-lg text-textColor">
                 My Archive

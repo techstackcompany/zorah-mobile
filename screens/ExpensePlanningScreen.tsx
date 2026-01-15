@@ -16,28 +16,22 @@ import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import {
-  ChartSegment,
-  PeriodType,
-  TabKey,
-} from "@/features/expense-income/types";
+  EMPTY_STATE_MESSAGES,
+  PERIOD_OPTIONS,
+  TAB_ITEMS,
+} from "@/features/expense-income/constants";
+import { PeriodType, TabKey } from "@/features/expense-income/types";
 import {
   buildExpenseSummaryFromList,
-  CATEGORY_BG_COLOR_MAP,
-  CATEGORY_COLOR_MAP,
-  CATEGORY_ICON_MAP,
   formatCurrency,
   formatExpenseDate,
-  getBgColorForCategory,
-  getColorForCategory,
-  getTrackColorForCategory,
 } from "@/features/expense-income/utils";
-import { capitalizeWord } from "@/lib/utils";
+
 import {
-  useGetDailyExpensesQuery,
+  useGetCategoriesQuery,
   useGetExpensesQuery,
   useGetExpenseSummaryQuery,
   useGetIncomesQuery,
-  useGetMonthlyExpensesQuery,
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -53,54 +47,6 @@ import {
 } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-type TabContent = {
-  key: TabKey;
-  label: string;
-  categoryTitle: string;
-  breakdownTitle: string;
-  rankingTitle: string;
-};
-
-const PERIOD_OPTIONS: {
-  value: PeriodType;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  { value: "daily", label: "Daily", icon: "calendar-outline" },
-  { value: "monthly", label: "Monthly", icon: "calendar-number-outline" },
-];
-
-const EMPTY_STATE_MESSAGES: Record<
-  TabKey,
-  { title: string; subtitle: string }
-> = {
-  expense: {
-    title: "No expense tracking information",
-    subtitle: "All expenses will appear here",
-  },
-  income: {
-    title: "No income tracking information",
-    subtitle: "All income will appear here",
-  },
-};
-
-const TAB_ITEMS: readonly TabContent[] = [
-  {
-    key: "expense",
-    label: "Expense",
-    categoryTitle: "Expense Category",
-    breakdownTitle: "Expense Breakdown",
-    rankingTitle: "Expense ranking",
-  },
-  {
-    key: "income",
-    label: "Income",
-    categoryTitle: "Income Category",
-    breakdownTitle: "Income Breakdown",
-    rankingTitle: "Income ranking",
-  },
-] as const;
 
 type MonthOption = {
   key: string;
@@ -129,48 +75,36 @@ const ExpensePlanningScreen = () => {
   } = useGetExpenseSummaryQuery("monthly");
 
   const {
+    data: categoriesData,
+    isLoading: isCategoriesLoading,
+    error: categoryError,
+  } = useGetCategoriesQuery(activeTab);
+
+  const {
     data: expensesData,
     isLoading: isExpensesLoading,
-    error,
+    error: expenseError,
     refetch: refetchExpenses,
   } = useGetExpensesQuery();
-  const {
-    data: dailyExpensesData,
-    isLoading: isDailyExpensesLoading,
-    refetch: refetchDailyExpenses,
-  } = useGetDailyExpensesQuery();
-  const {
-    data: monthlyExpensesData,
-    isLoading: isMonthlyExpensesLoading,
-    refetch: refetchMonthlyExpenses,
-  } = useGetMonthlyExpensesQuery();
 
   const {
     data: incomesData,
     isLoading: isIncomesLoading,
+    error: incomeError,
     refetch: refetchIncomes,
   } = useGetIncomesQuery();
 
   const isLoading =
-    (activeTab === "expense" &&
-      (isSummaryLoading ||
-        isExpensesLoading ||
-        (periodType === "daily" && isDailyExpensesLoading) ||
-        (periodType === "monthly" && isMonthlyExpensesLoading))) ||
-    (activeTab === "income" && isIncomesLoading);
+    (activeTab === "expense" && (isSummaryLoading || isExpensesLoading)) ||
+    (activeTab === "income" && isIncomesLoading) ||
+    isCategoriesLoading;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       if (activeTab === "expense") {
-        const promises = [
-          refetchSummary(),
-          refetchExpenses(),
-          periodType === "daily"
-            ? refetchDailyExpenses()
-            : refetchMonthlyExpenses(),
-        ];
+        const promises = [refetchSummary(), refetchExpenses()];
         await Promise.all(promises);
       } else if (activeTab === "income") {
         await refetchIncomes();
@@ -178,15 +112,7 @@ const ExpensePlanningScreen = () => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [
-    activeTab,
-    periodType,
-    refetchSummary,
-    refetchExpenses,
-    refetchDailyExpenses,
-    refetchMonthlyExpenses,
-    refetchIncomes,
-  ]);
+  }, [activeTab, refetchSummary, refetchExpenses, refetchIncomes]);
 
   const handleSelect = (period: PeriodType) => {
     setPeriodType(period);
@@ -211,8 +137,8 @@ const ExpensePlanningScreen = () => {
     const seen = new Set<string>();
     const options: MonthOption[] = [];
 
-    expensesArray.forEach((exp: any) => {
-      const rawDate = exp.date || exp.createdAt;
+    expensesArray.forEach((exp) => {
+      const rawDate = exp.date;
       if (!rawDate) return;
       const d = new Date(rawDate);
       if (Number.isNaN(d.getTime())) return;
@@ -255,8 +181,7 @@ const ExpensePlanningScreen = () => {
     if (!Number.isFinite(month) || !Number.isFinite(year)) return expensesArray;
 
     return expensesArray.filter((exp: any) => {
-      const rawDate = exp.date || exp.createdAt;
-      if (!rawDate) return false;
+      const rawDate = exp.date;
       const d = new Date(rawDate);
       return (
         !Number.isNaN(d.getTime()) &&
@@ -266,123 +191,67 @@ const ExpensePlanningScreen = () => {
     });
   }, [expensesArray, selectedMonthKey]);
 
+  const categoryIconsData = useMemo(
+    () => (categoriesData ? categoriesData : []),
+    [categoriesData],
+  );
+
   const currentSummary = useMemo(() => {
+    let list;
+
     if (activeTab === "expense") {
-      if (expenseSummaryData?.data) {
-        const summaryData = expenseSummaryData.data;
-        const categoryArray = (summaryData as any).byCategory || summaryData;
-
-        if (Array.isArray(categoryArray) && categoryArray.length > 0) {
-          const total = categoryArray.reduce(
-            (sum, item) => sum + (item.total || 0),
-            0,
-          );
-
-          const labelPositions = [
-            { bottom: 36, left: 24 },
-            { top: 42, right: 36 },
-            { top: 62, left: 26 },
-            { bottom: 58, right: 26 },
-          ];
-
-          const segments: ChartSegment[] = categoryArray
-            .sort((a, b) => (b.total || 0) - (a.total || 0))
-            .map((item, index) => {
-              const categoryName = item.category || "Other";
-              const amount = item.total || 0;
-              const percentage = total > 0 ? (amount / total) * 100 : 0;
-              const labelPosition =
-                labelPositions[index % labelPositions.length] || {};
-              const categoryColor = getColorForCategory(categoryName, index);
-
-              return {
-                key: `${categoryName}-${index}`,
-                label: capitalizeWord(categoryName),
-                percentage: Math.round(percentage),
-                color: categoryColor,
-                trackColor: getTrackColorForCategory(
-                  categoryName,
-                  categoryColor,
-                ),
-                icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
-                iconBackground: getBgColorForCategory(
-                  categoryName,
-                  categoryColor,
-                ),
-                labelPosition,
-                amount,
-              };
-            });
-
-          return { total, segments };
-        }
+      if (selectedMonthKey === "all" && expenseSummaryData?.byCategory) {
+        list = expenseSummaryData.byCategory;
+      } else {
+        list = filteredExpenses || [];
       }
-
-      return buildExpenseSummaryFromList(filteredExpenses);
-    }
-
-    if (activeTab === "income" && incomesData) {
-      const incomesArray = Array.isArray(incomesData.data)
+    } else if (activeTab === "income") {
+      const rawIncomes = Array.isArray(incomesData?.data)
         ? incomesData.data
         : [];
 
-      if (incomesArray.length > 0) {
-        const categoryMap = new Map<string, number>();
-        incomesArray.forEach((income: Record<string, any>) => {
-          const category = income.category || "Other";
-          const amount = income.amount || 0;
-          categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
-        });
+      let filteredIncomes = rawIncomes;
 
-        const total = Array.from(categoryMap.values()).reduce(
-          (sum, amount) => sum + amount,
-          0,
-        );
+      if (selectedMonthKey !== "all") {
+        const [yearStr, monthStr] = selectedMonthKey.split("-");
+        const month = Number(monthStr);
+        const year = Number(yearStr);
 
-        const segments: ChartSegment[] = Array.from(categoryMap.entries())
-          .sort((a, b) => b[1] - a[1])
-          .map(([categoryName, amount], index) => {
-            const percentage = total > 0 ? (amount / total) * 100 : 0;
-
-            const labelPositions = [
-              { bottom: 36, left: 24 },
-              { top: 42, right: 36 },
-              { top: 62, left: 26 },
-              { bottom: 58, right: 26 },
-            ];
-            const labelPosition =
-              labelPositions[index % labelPositions.length] || {};
-
-            const categoryColor = getColorForCategory(categoryName, index);
-
-            return {
-              key: `${categoryName}-${index}`,
-              label: capitalizeWord(categoryName),
-              percentage: Math.round(percentage),
-              color: categoryColor,
-              trackColor: getTrackColorForCategory(categoryName, categoryColor),
-              icon: CATEGORY_ICON_MAP[categoryName] || "cash-outline",
-              iconBackground: getBgColorForCategory(
-                categoryName,
-                categoryColor,
-              ),
-              labelPosition,
-              amount,
-            };
+        if (Number.isFinite(month) && Number.isFinite(year)) {
+          filteredIncomes = rawIncomes.filter((income: any) => {
+            const rawDate = income.date || income.createdAt;
+            const d = new Date(rawDate);
+            return (
+              !Number.isNaN(d.getTime()) &&
+              d.getFullYear() === year &&
+              d.getMonth() + 1 === month
+            );
           });
-
-        return {
-          total,
-          segments,
-        };
+        }
       }
+
+      const categoryMap = new Map<string, number>();
+      filteredIncomes.forEach((income: any) => {
+        const category = income.category || "Other";
+        const amount = income.amount || 0;
+        categoryMap.set(category, (categoryMap.get(category) || 0) + amount);
+      });
+
+      list = Array.from(categoryMap.entries()).map(([category, total]) => ({
+        category,
+        total,
+      }));
     }
 
-    return {
-      total: 0,
-      segments: [],
-    };
-  }, [activeTab, expenseSummaryData, filteredExpenses, incomesData]);
+    return buildExpenseSummaryFromList(list || [], categoryIconsData);
+  }, [
+    activeTab,
+    categoryIconsData,
+    expenseSummaryData,
+    filteredExpenses,
+    incomesData?.data,
+    selectedMonthKey,
+  ]);
 
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
@@ -480,9 +349,42 @@ const ExpensePlanningScreen = () => {
 
     return Array.from(byMonth.values());
   }, [activeTab, filteredExpenses, periodType]);
+
   return (
     <>
       <MainContainer className="bg-lightMuted pb-0" edges={[]}>
+        {(expenseError || incomeError || categoryError) && (
+          <View
+            style={{
+              padding: 16,
+              backgroundColor: "#FFF0F0",
+              borderRadius: 12,
+              margin: 16,
+            }}
+          >
+            <Text className="mb-2 text-center text-red-500" weight="semibold">
+              {expenseError?.message ||
+                incomeError?.message ||
+                categoryError?.message ||
+                "An error occurred."}
+            </Text>
+            <TouchableOpacity
+              style={{
+                alignSelf: "center",
+                backgroundColor: COLORS.primary_400,
+                borderRadius: 8,
+                paddingHorizontal: 18,
+                paddingVertical: 8,
+              }}
+              activeOpacity={0.8}
+              onPress={handleRefresh}
+            >
+              <Text className="text-white" weight="semibold">
+                Refresh
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -558,7 +460,10 @@ const ExpensePlanningScreen = () => {
                       : "Monthly Spending"}
                   </Text>
                   <View className="flex-row items-center gap-2">
-                    <PeriodSelector selectedOption={selectedOption}  isModalOpen={isPeriodModalOpen}/>
+                    <PeriodSelector
+                      selectedOption={selectedOption}
+                      isModalOpen={isPeriodModalOpen}
+                    />
                     <View className="flex-row gap-2">
                       <Pressable
                         onPress={() => {
@@ -617,26 +522,26 @@ const ExpensePlanningScreen = () => {
                     dailyViewMode === "chart" ? (
                       <DailyExpenseChart
                         dailyExpenses={dailyExpensesArray}
-                        isLoading={isDailyExpensesLoading}
+                        isLoading={isLoading}
                         formatCurrency={formatCurrency}
                       />
                     ) : (
                       <DailyExpenseList
                         dailyExpenses={dailyExpensesArray}
-                        isLoading={isDailyExpensesLoading}
+                        isLoading={isLoading}
                         formatCurrency={formatCurrency}
                       />
                     )
                   ) : monthlyViewMode === "chart" ? (
                     <MonthlyExpenseChart
                       monthlyExpenses={monthlyExpensesArray}
-                      isLoading={isMonthlyExpensesLoading}
+                      isLoading={isLoading}
                       formatCurrency={formatCurrency}
                     />
                   ) : (
                     <MonthlyExpenseList
                       monthlyExpenses={monthlyExpensesArray}
-                      isLoading={isMonthlyExpensesLoading}
+                      isLoading={isLoading}
                       formatCurrency={formatCurrency}
                     />
                   )}
@@ -644,7 +549,6 @@ const ExpensePlanningScreen = () => {
               </View>
             )}
 
-            
             {(activeTab === "expense" || activeTab === "income") && (
               <View className="mt-8">
                 <Text weight="semibold" className="text-base text-textColor">
@@ -655,6 +559,7 @@ const ExpensePlanningScreen = () => {
 
                 <View style={styles.expenseListCard}>
                   <ExpenseList
+                    categoryIconsData={categoryIconsData}
                     expenses={
                       activeTab === "expense" ? expensesArray : incomesArray
                     }
@@ -663,9 +568,6 @@ const ExpensePlanningScreen = () => {
                         ? isExpensesLoading
                         : isIncomesLoading
                     }
-                    categoryColorMap={CATEGORY_COLOR_MAP}
-                    categoryIconMap={CATEGORY_ICON_MAP}
-                    categoryBgMap={CATEGORY_BG_COLOR_MAP}
                     formatCurrency={formatCurrency}
                     formatDate={formatExpenseDate}
                     type={activeTab}

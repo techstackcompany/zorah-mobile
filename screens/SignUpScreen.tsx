@@ -77,7 +77,6 @@ const SignUpScreen = () => {
 
       router.replace("/(auth)/setup/choose-language");
     } catch (error) {
-      
       const apiError = error as ApiError;
       const serverMessage =
         typeof apiError?.data === "object" &&
@@ -128,7 +127,6 @@ const SignUpScreen = () => {
         Create Your Account
       </Text>
 
-      
       <View className="mb-4">
         <Text className="mb-2 text-sm text-tertiary">Name</Text>
         <TextInput
@@ -151,7 +149,6 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      
       <View className="mb-4">
         <Text className="mb-2 text-sm text-tertiary">Email</Text>
         <TextInput
@@ -176,7 +173,6 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      
       <View className="mb-4">
         <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
         <TextInput
@@ -202,7 +198,6 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      
       <View className="mb-6">
         <Text className="mb-2 text-sm text-tertiary">Password</Text>
         <View
@@ -239,7 +234,6 @@ const SignUpScreen = () => {
         )}
       </View>
 
-      
       <Pressable
         onPress={() => {
           setApiErrorMessage(null);
@@ -270,7 +264,6 @@ const SignUpScreen = () => {
         </Link>
       </Pressable>
 
-      
       {apiErrorMessage ? (
         <Text className="mb-3 text-center text-sm text-red-500">
           {apiErrorMessage}
@@ -294,7 +287,6 @@ const SignUpScreen = () => {
         )}
       </Pressable>
 
-      
       <View className="mb-6 flex-row items-center">
         <View className="h-[1px] flex-1 bg-gray-200" />
         <Text weight="semibold" className="mx-3 text-sm">
@@ -303,7 +295,6 @@ const SignUpScreen = () => {
         <View className="h-[1px] flex-1 bg-gray-200" />
       </View>
 
-      
       <Pressable className="mb-6 flex-row items-center justify-center rounded-xl border border-gray-300 py-4">
         <Image
           source={require("@/assets/icons/google.svg")}

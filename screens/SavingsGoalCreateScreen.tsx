@@ -57,7 +57,6 @@ const SavingsGoalCreateScreen = () => {
         text2: "Your savings goal has been created successfully.",
       });
 
-      
       setName("");
       setAmount("");
       setTargetDate("");
@@ -80,7 +79,6 @@ const SavingsGoalCreateScreen = () => {
   const handleSubmit = useCallback(() => {
     Keyboard.dismiss();
 
-    
     if (!name || !name.trim()) {
       Toast.show({
         type: "error",
@@ -183,7 +181,6 @@ const SavingsGoalCreateScreen = () => {
                 onFocus={() => setFocusedField("amount")}
                 onBlur={() => setFocusedField(null)}
               />
-              
             </View>
 
             <View className="mt-6">

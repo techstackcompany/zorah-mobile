@@ -52,8 +52,6 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
         renderItem={({ item }) => (
           <View className="flex-1 items-center " style={{ width }}>
-            
-
             <View
               style={{
                 paddingTop: 24,
@@ -72,7 +70,6 @@ export default function OnboardingScreen() {
 
             <View className="flex-1 px-6">
               <View className="mb-5 mt-10 flex-row justify-between">
-                
                 <View className="flex-1  flex-row items-center justify-start space-x-3 ">
                   {slides.map((_, index) => (
                     <View
@@ -98,7 +95,6 @@ export default function OnboardingScreen() {
                 </TouchableOpacity>
               </View>
 
-              
               <View className="mt-3">
                 <Text
                   family="degular"
@@ -119,7 +115,6 @@ export default function OnboardingScreen() {
                 </Text>
               </View>
 
-              
               <Button
                 onPress={handleNext}
                 className="mt-auto"

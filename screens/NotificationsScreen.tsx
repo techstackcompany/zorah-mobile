@@ -7,7 +7,7 @@ import {
 } from "@/src/api/hooks";
 import { Notification, NotificationType } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
-import { MutationFunctionContext, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
@@ -78,7 +78,9 @@ const NotificationsScreen = () => {
   } = useGetNotificationsQuery();
 
   const { mutate: markAsRead } = useReadNotificationMutation({
-    onMutate: async ({ notificationId }) => {
+    onMutate: async ({
+      notificationId,
+    }): Promise<{ previousNotifications?: Notification[] }> => {
       await queryClient.cancelQueries({ queryKey: ["notifications", "list"] });
 
       const previousNotifications = queryClient.getQueryData<Notification[]>([
@@ -96,8 +98,13 @@ const NotificationsScreen = () => {
 
       return { previousNotifications };
     },
-    onError: (_err, _variables,_onMutateResult, context:MutationFunctionContext) => {
-      if (context?.previousNotifications) {
+    onError: (
+      _err,
+      _variables,
+      onMutateResult,
+    ) => {
+      const context = onMutateResult as { previousNotifications?: Notification[] };
+      if (context.previousNotifications) {
         queryClient.setQueryData(
           ["notifications", "list"],
           context.previousNotifications,
@@ -217,7 +224,7 @@ const NotificationsScreen = () => {
                 Something went wrong
               </Text>
               <Text className="mt-2 text-center text-sm text-textColor/60">
-                We couldn't load your notifications
+                We couldn&apos;t load your notifications
               </Text>
               <Pressable
                 onPress={() => refetch()}

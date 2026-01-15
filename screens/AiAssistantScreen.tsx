@@ -38,7 +38,6 @@ type MessageBase = {
   timestamp: number;
 };
 
-
 const formatRelativeTime = (timestamp: number): string => {
   const now = Date.now();
   const diffMs = now - timestamp;
@@ -222,7 +221,6 @@ const AiAssistantScreen = () => {
       };
       setMessages((m) => [...m, userMsg]);
 
-      
       askMutation.mutate(
         { message: category.prompt },
         {
@@ -421,7 +419,6 @@ const AiAssistantScreen = () => {
               );
             })}
 
-            
             {askMutation.isPending && (
               <View style={styles.assistantMessageRow}>
                 <View style={styles.avatar}>

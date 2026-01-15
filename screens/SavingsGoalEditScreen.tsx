@@ -201,7 +201,6 @@ const SavingsGoalEditScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
       >
         <View className="flex-1">
-
           <ScrollView
             contentContainerClassName="px-6 pb-32"
             keyboardDismissMode="on-drag"
