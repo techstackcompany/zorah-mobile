@@ -74,12 +74,7 @@ let failedQueue: {
   reject: (error?: unknown) => void;
 }[];
 
-let lastLoginTime: number | null = null;
-const LOGIN_GRACE_PERIOD = 2000;
 
-export function setLastLoginTime() {
-  lastLoginTime = Date.now();
-}
 
 let onTokenRefreshFailure: (() => void) | null = null;
 
@@ -143,15 +138,13 @@ baseClient.interceptors.response.use(
       API_ENDPOINTS.auth.login.url,
     );
 
-    const isWithinGracePeriod =
-      lastLoginTime !== null && Date.now() - lastLoginTime < LOGIN_GRACE_PERIOD;
+   
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !isRefreshTokenEndpoint &&
-      !isLoginEndpoint &&
-      !isWithinGracePeriod
+      !isLoginEndpoint 
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
