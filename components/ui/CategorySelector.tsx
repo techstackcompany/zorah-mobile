@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { capitalizeWord, cn } from "@/lib/utils";
 import { CategoryItem } from "@/src/api/types";
 import { Image } from "expo-image";
 import React from "react";
@@ -46,7 +46,7 @@ const CategorySelector = <K extends string>({
           weight="bold"
           className="text-center text-xs leading-tight text-textColor"
         >
-          {category.label}
+          {capitalizeWord(category.label)}
         </Text>
       </Pressable>
     );

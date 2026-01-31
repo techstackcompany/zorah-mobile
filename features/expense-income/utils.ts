@@ -39,13 +39,20 @@ const getMatchingCategoryIconSource = (
   categoryName: string,
   fallbackIconSource?: string | ImageSource,
 ): string | ImageSource => {
-  const found = categories.find(
-    (cat) => cat.label === categoryName.toLowerCase(),
-  )?.icon;
-  if (found) return found;
-  if (fallbackIconSource) return fallbackIconSource;
-  return require("@/assets/icons/category.png");
+  const nameTokens = categoryName.toLowerCase().split(/\s+/);
+
+  const match = categories.find(({ label }) => {
+    const labelTokens = label.toLowerCase().split(/\s+/);
+    return labelTokens.some((token) => nameTokens.includes(token));
+  });
+
+  return (
+    match?.icon ??
+    fallbackIconSource ??
+    require("@/assets/icons/category.png")
+  );
 };
+
 
 const buildExpenseSummaryFromList = (
   list: any[],
