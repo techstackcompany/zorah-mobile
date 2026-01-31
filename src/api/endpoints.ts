@@ -165,6 +165,10 @@ export const API_ENDPOINTS = {
       method: HttpMethod.PATCH,
       url: `/bills/${id}/pay`,
     }),
+    updateBill: (id: string) => ({
+      method: HttpMethod.PUT,
+      url: `/bills/${id}`,
+    }),
   },
   countries: {
     nigerianStates: {

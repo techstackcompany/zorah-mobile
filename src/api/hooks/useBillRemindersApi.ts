@@ -10,6 +10,8 @@ import {
   AddBillReminderRequest,
   GetBillRemindersResponse,
   PayBillReminderResponse,
+  UpdateBillReminderRequest,
+  UpdateBillReminderResponse,
 } from "../types";
 
 export const useGetBillsQuery = (
@@ -51,6 +53,24 @@ export const useAddBillReminderMutation = (
     mutationFn: (body) =>
       apiRequest<AddBillReminderRequest>({
         ...API_ENDPOINTS.billReminders.addBill,
+        data: body,
+      }),
+    ...options,
+  });
+
+export const useUpdateBillReminderMutation = (
+  billId: string,
+  options?: UseMutationOptions<
+    UpdateBillReminderResponse,
+    ApiError,
+    UpdateBillReminderRequest
+  >,
+) =>
+  useMutation<UpdateBillReminderResponse, ApiError, UpdateBillReminderRequest>({
+    mutationKey: ["updateBillReminder", billId],
+    mutationFn: (body) =>
+      apiRequest<UpdateBillReminderResponse>({
+        ...API_ENDPOINTS.billReminders.updateBill(billId),
         data: body,
       }),
     ...options,

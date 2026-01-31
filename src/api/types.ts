@@ -120,7 +120,6 @@ export type ExpenseSummary = {
   byCategory: ExpenseSummaryApiResponse;
 };
 
-
 export interface DailyExpenseTotal {
   _id: {
     day: number;
@@ -271,7 +270,6 @@ export interface Notification {
   read: boolean;
   createdAt: string;
   updatedAt: string;
-  __v: number;
 }
 
 export interface RegisterNotificationTokenRequest {
@@ -499,6 +497,20 @@ export interface AddBillReminderResponse {
     createdAt: string;
     updatedAt: string;
   };
+}
+
+export interface UpdateBillReminderRequest {
+  name?: string;
+  amount?: number;
+  dueDate?: string;
+  category?: string;
+  paymentMethod?: string;
+  reminderEnabled?: boolean;
+}
+
+export interface UpdateBillReminderResponse {
+  message: string;
+  bill: BillReminder;
 }
 /* ---------------------------------------------
    Countries   

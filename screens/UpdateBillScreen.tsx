@@ -10,13 +10,15 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
-import { useAddBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
+import { useUpdateBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
+import { BillReminder } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -37,9 +39,6 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-/**
- * Format a Date object to DD/MM/YY display format
- */
 const formatDateDisplay = (date: Date | null): string => {
   if (!date) return "";
   const day = date.getDate().toString().padStart(2, "0");
@@ -48,9 +47,6 @@ const formatDateDisplay = (date: Date | null): string => {
   return `${day}/${month}/${year}`;
 };
 
-/**
- * Format a Date object to HH:MM display format (24-hour)
- */
 const formatTimeDisplay = (date: Date | null): string => {
   if (!date) return "";
   const hours = date.getHours().toString().padStart(2, "0");
@@ -58,29 +54,73 @@ const formatTimeDisplay = (date: Date | null): string => {
   return `${hours}:${minutes}`;
 };
 
-const AddBillScreen = () => {
+const parseISOToDate = (isoString: string | undefined): Date | null => {
+  if (!isoString) return null;
+  const parsed = new Date(isoString);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const UpdateBillScreen = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const params = useLocalSearchParams<{
+    billId: string;
+    billData?: string;
+  }>();
+
+  const existingBill = useMemo<BillReminder | null>(() => {
+    if (params.billData) {
+      try {
+        return JSON.parse(params.billData) as BillReminder;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [params.billData]);
+
+  const billId = params.billId || existingBill?._id || "";
+
   const successTimeoutRef = useRef<number | null>(null);
-  const [billName, setBillName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+
+  const [billName, setBillName] = useState(existingBill?.name ?? "");
+  const [amount, setAmount] = useState(
+    existingBill?.amount ? String(existingBill.amount) : "",
+  );
+  const [dueDate, setDueDate] = useState<Date | null>(
+    parseISOToDate(existingBill?.dueDate),
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(existingBill?.category ?? "");
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderEnabled, setReminderEnabled] = useState(
+    existingBill?.reminderEnabled ?? true,
+  );
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const paymentModalRef = useRef<PaymentModalRef>(null);
 
-  const { data: categories = [], isPending: isCategoriesLoading } =
-    useGetCategoriesQuery("budget");
-  const { mutate: addBill, isPending: isSubmitting } =
-    useAddBillReminderMutation({
+  useEffect(() => {
+    if (existingBill) {
+      setBillName(existingBill.name);
+      setAmount(String(existingBill.amount));
+      setDueDate(parseISOToDate(existingBill.dueDate));
+      setCategory(existingBill.category);
+      setReminderEnabled(existingBill.reminderEnabled);
+    }
+  }, [existingBill]);
+
+  const { data: categories = [] } = useGetCategoriesQuery("budget");
+  useGetCategoriesQuery("budget");
+
+  const { mutate: updateBill, isPending: isSubmitting } =
+    useUpdateBillReminderMutation(billId, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["billReminders"] });
         Toast.show({
           type: "success",
-          text1: "Bill Added",
-          text2: "Your bill reminder has been added successfully.",
+          text1: "Bill Updated",
+          text2: "Your bill has been updated successfully.",
         });
         successTimeoutRef.current = setTimeout(() => {
           router.back();
@@ -90,7 +130,7 @@ const AddBillScreen = () => {
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: error?.message || "Failed to add bill. Please try again.",
+          text2: error?.message || "Failed to update bill. Please try again.",
         });
       },
     });
@@ -126,7 +166,6 @@ const AddBillScreen = () => {
     { key: "mobile_money", label: "Mobile Money" },
   ];
 
-  // Date picker handlers
   const handleOpenDatePicker = useCallback(() => {
     Keyboard.dismiss();
     setShowDatePicker(true);
@@ -141,7 +180,6 @@ const AddBillScreen = () => {
 
   const handleDateChange = useCallback(
     (event: DateTimePickerEvent, selectedDate?: Date) => {
-      // On Android, picker closes automatically; on iOS, we close on any event
       if (Platform.OS === "android") {
         setShowDatePicker(false);
         setFocusedField(null);
@@ -169,7 +207,6 @@ const AddBillScreen = () => {
 
   const handleTimeChange = useCallback(
     (event: DateTimePickerEvent, selectedTime?: Date) => {
-      // On Android, picker closes automatically; on iOS, we close on any event
       if (Platform.OS === "android") {
         setShowTimePicker(false);
         setFocusedField(null);
@@ -196,10 +233,9 @@ const AddBillScreen = () => {
     [],
   );
 
-  // Validation: time selection is NOT required, only date
   const isSubmitDisabled = useMemo(() => {
-    return !billName || !amount || !dueDate || !category || !paymentMethod;
-  }, [billName, amount, dueDate, category, paymentMethod]);
+    return !billName || !amount || !dueDate || !category;
+  }, [billName, amount, dueDate, category]);
 
   const handleSubmit = () => {
     if (isSubmitDisabled || !dueDate) {
@@ -207,19 +243,47 @@ const AddBillScreen = () => {
     }
     Keyboard.dismiss();
 
-    addBill({
+    updateBill({
       name: billName,
       amount: parseFloat(amount),
-      dueDate: dueDate.toISOString(), // Direct ISO conversion with time
+      dueDate: dueDate.toISOString(),
       category,
-      paymentMethod,
+      ...(paymentMethod && { paymentMethod }),
       reminderEnabled,
     });
   };
 
+  if (!billId) {
+    return (
+      <>
+        <Stack.Screen options={{ title: "Edit Bill" }} />
+        <MainContainer edges={[]} className="bg-lightMuted pb-0">
+          <View className="flex-1 items-center justify-center px-6">
+            <Ionicons
+              name="alert-circle-outline"
+              size={48}
+              color={COLORS.error}
+            />
+            <Text weight="semibold" className="mt-4 text-base text-textColor">
+              Bill Not Found
+            </Text>
+            <Text className="mt-2 text-center text-sm text-textColor/60">
+              Unable to load bill data. Please go back and try again.
+            </Text>
+            <Button
+              title="Go Back"
+              className="mt-6"
+              onPress={() => router.back()}
+            />
+          </View>
+        </MainContainer>
+      </>
+    );
+  }
+
   return (
     <>
-      <Stack.Screen options={{ title: "Add Bill" }} />
+      <Stack.Screen options={{ title: "Edit Bill" }} />
       <MainContainer edges={[]} className="bg-lightMuted pb-0">
         <KeyboardAvoidingView
           className="flex-1"
@@ -260,11 +324,9 @@ const AddBillScreen = () => {
                 />
               </View>
 
-              {/* Date and Time Picker Fields */}
               <View className="mt-6">
                 <Text className="text-sm text-textColor">Due Date</Text>
                 <View className="mt-2 flex-row gap-3">
-                  {/* Date Field */}
                   <Pressable
                     onPress={handleOpenDatePicker}
                     className={cn(
@@ -290,7 +352,6 @@ const AddBillScreen = () => {
                     />
                   </Pressable>
 
-                  {/* Time Field */}
                   <Pressable
                     onPress={handleOpenTimePicker}
                     className={cn(
@@ -317,7 +378,6 @@ const AddBillScreen = () => {
                 </View>
               </View>
 
-              {/* Native Date Picker */}
               {showDatePicker && (
                 <DateTimePicker
                   value={dueDate || new Date()}
@@ -328,7 +388,6 @@ const AddBillScreen = () => {
                 />
               )}
 
-              {/* Native Time Picker */}
               {showTimePicker && (
                 <DateTimePicker
                   value={dueDate || new Date()}
@@ -381,7 +440,7 @@ const AddBillScreen = () => {
               </View>
 
               <Button
-                title={isSubmitting ? "Adding..." : "Add Bill"}
+                title={isSubmitting ? "Saving..." : "Save Changes"}
                 className="mt-10"
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled || isSubmitting}
@@ -411,4 +470,4 @@ const AddBillScreen = () => {
   );
 };
 
-export default AddBillScreen;
+export default UpdateBillScreen;
