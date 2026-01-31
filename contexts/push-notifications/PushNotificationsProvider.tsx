@@ -66,7 +66,7 @@ export default function PushNotificationsProvider({
       }
     },
     onError: (error) => {
-      console.error("Failed to register FCM token:", error.message);
+      console.log("Failed to register FCM token:", error.message);
       registrationAttempted.current = false;
     },
   });
@@ -78,7 +78,7 @@ export default function PushNotificationsProvider({
           await AsyncStorage.getItem(REGISTERED_TOKEN_KEY);
         return registeredToken === token;
       } catch (error) {
-        console.error("Error checking registered token:", error);
+        console.log("Error checking registered token:", error);
         return false;
       }
     },
