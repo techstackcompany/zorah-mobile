@@ -263,6 +263,9 @@ export function capitalizeWord(word: string) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
+
+
+
 export const formatTimeAgo = (dateString?: string): string => {
   if (!dateString) return "Just now";
   const date = new Date(dateString);
@@ -284,6 +287,15 @@ export const formatLongDate = (date: string, locale = "en-NG"): string => {
     day: "numeric",
   });
 };
+
+
+export const formatSlashDate = (value: Date) => {
+  const day = `${value.getDate()}`.padStart(2, "0");
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const year = `${value.getFullYear()}`.slice(-2);
+  return `${day}/${month}/${year}`;
+};
+
 
 export const formatNairaCurrency = (value: number) => {
   const currencyFormatter = new Intl.NumberFormat("en-NG", {
