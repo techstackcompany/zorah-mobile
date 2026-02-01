@@ -21,7 +21,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import useVoiceTranscriber from "../hooks/useVoiceTranscriber";
 
-import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, {
   useCallback,
@@ -37,13 +36,12 @@ import {
   Switch,
   View,
 } from "react-native";
-// useRef imported from react above
 import Toast from "react-native-toast-message";
 
 type ExpenseCategory = {
   key: string;
   label: string;
-  icon: ImageSource | string;
+  icon: string;
 };
 
 type VoiceStatus = "idle" | "recording" | "transcribed" | "detected";
@@ -66,12 +64,7 @@ const PAYMENT_METHODS = [
   { label: "Cash", value: "cash" },
 ];
 
-const formatDateForInput = (value: Date) => {
-  const day = `${value.getDate()}`.padStart(2, "0");
-  const month = `${value.getMonth() + 1}`.padStart(2, "0");
-  const year = `${value.getFullYear()}`.slice(-2);
-  return `${day}/${month}/${year}`;
-};
+
 
 type ValidateFieldsParams = {
   amount: string;
