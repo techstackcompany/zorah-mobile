@@ -74,8 +74,6 @@ let failedQueue: {
   reject: (error?: unknown) => void;
 }[];
 
-
-
 let onTokenRefreshFailure: (() => void) | null = null;
 
 export function setTokenRefreshFailureHandler(handler: () => void) {
@@ -100,10 +98,17 @@ export const fxTipsClient: AxiosInstance = axios.create(
   FX_FINANCIAL_TIPS_CONFIG,
 );
 
+const loginEndpoint = API_ENDPOINTS.auth.login.url;
+const registerEndpoint = API_ENDPOINTS.auth.register.url;
+
 baseClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAuthToken();
-    if (token) {
+    
+    
+    const isLoginEndpoint = config.url?.includes(loginEndpoint)
+    const isRegisterEndpoint = config.url?.includes(registerEndpoint)
+    if (token && !isLoginEndpoint && !isRegisterEndpoint) {
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -134,17 +139,14 @@ baseClient.interceptors.response.use(
       API_ENDPOINTS.auth.refreshToken.url,
     );
 
-    const isLoginEndpoint = originalRequest.url?.includes(
-      API_ENDPOINTS.auth.login.url,
-    );
-
-   
-
+    const isLoginEndpoint = originalRequest.url?.includes(loginEndpoint);
+    const isRegisterEndpoint = originalRequest.url?.includes(registerEndpoint);
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !isRefreshTokenEndpoint &&
-      !isLoginEndpoint 
+      !isLoginEndpoint &&
+      !isRegisterEndpoint
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -170,12 +172,8 @@ baseClient.interceptors.response.use(
           throw new Error("No refresh token available");
         }
 
-        console.log("🔄.");
-
         const response = await axios.post<{
-          data?: { accessToken?: string; refreshToken?: string };
           accessToken?: string;
-          refreshToken?: string;
         }>(
           `${API_CONFIG.baseURL}${API_ENDPOINTS.auth.refreshToken.url}`,
           { refreshToken },

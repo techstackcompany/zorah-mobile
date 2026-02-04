@@ -131,6 +131,7 @@ export const API_ENDPOINTS = {
     withdraw: { method: HttpMethod.POST, url: "/wallet/withdraw" },
     balance: { method: HttpMethod.GET, url: "/wallet/balance" },
     transactions: { method: HttpMethod.GET, url: "/wallet/transactions" },
+    overview: { method: HttpMethod.GET, url: "/wallet/overview" },
   },
   categories: {
     getCategories: (type: string) => ({

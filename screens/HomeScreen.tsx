@@ -75,7 +75,7 @@ const quickActions: QuickAction[] = [
   },
   {
     id: "goals",
-    label: "Set Goals",
+    label: "Saving Goals",
     icon: require("@/assets/icons/piggy.svg"),
     background: "bg-white",
   },
@@ -134,10 +134,8 @@ const HomeScreen = () => {
     isLoading: isLoadingIncomes,
     refetch: refetchIncomes,
   } = useGetIncomesQuery();
-  const {
-    data: monthlyExpensesData,
-    refetch: refetchMonthlyExpenses,
-  } = useGetMonthlyExpensesQuery();
+  const { data: monthlyExpensesData, refetch: refetchMonthlyExpenses } =
+    useGetMonthlyExpensesQuery();
 
   const fxPairsToFetch = useMemo(
     () => [
@@ -209,10 +207,13 @@ const HomeScreen = () => {
     }
     return formatCurrencyWithSymbol(walletBalance, currency.symbol);
   }, [balanceHidden, currency.symbol, walletBalance, isLoadingBalance]);
+
   const totalExpenses = useMemo(() => {
-    if (!expenseSummaryData?.data) return 0;
-    return expenseSummaryData.data.total || 0;
+    if (!expenseSummaryData) return 0;
+    return expenseSummaryData.total || 0;
   }, [expenseSummaryData]);
+
+
   const totalIncome = useMemo(() => {
     if (!incomesData?.data || !Array.isArray(incomesData.data)) return 0;
     return incomesData.data.reduce(
@@ -254,7 +255,10 @@ const HomeScreen = () => {
   ]);
 
   const balanceSubtitle = useMemo(() => {
-    if (!monthlyExpensesData?.data || !Array.isArray(monthlyExpensesData.data)) {
+    if (
+      !monthlyExpensesData?.data ||
+      !Array.isArray(monthlyExpensesData.data)
+    ) {
       return null;
     }
 
@@ -265,10 +269,12 @@ const HomeScreen = () => {
     const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
     const currentMonthData = monthlyExpensesData.data.find(
-      (item) => item._id.month === currentMonth && item._id.year === currentYear,
+      (item) =>
+        item._id.month === currentMonth && item._id.year === currentYear,
     );
     const previousMonthData = monthlyExpensesData.data.find(
-      (item) => item._id.month === previousMonth && item._id.year === previousYear,
+      (item) =>
+        item._id.month === previousMonth && item._id.year === previousYear,
     );
 
     const currentTotal = currentMonthData?.total ?? 0;
@@ -278,7 +284,8 @@ const HomeScreen = () => {
       return null;
     }
 
-    const percentChange = ((currentTotal - previousTotal) / previousTotal) * 100;
+    const percentChange =
+      ((currentTotal - previousTotal) / previousTotal) * 100;
     const absPercent = Math.abs(percentChange).toFixed(0);
     const direction = percentChange >= 0 ? "more" : "less";
 

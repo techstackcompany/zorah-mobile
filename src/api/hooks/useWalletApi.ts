@@ -11,6 +11,7 @@ import {
   DepositFundsRequest,
   WalletBalance,
   WalletDetails,
+  WalletOverviewResponse,
   WalletTransaction,
   WithdrawFundsRequest,
 } from "../types";
@@ -86,7 +87,6 @@ export const useGetWalletTransactionsQuery = (
         ...API_ENDPOINTS.wallet.transactions,
       });
 
-      
       if (
         response &&
         typeof response === "object" &&
@@ -96,20 +96,19 @@ export const useGetWalletTransactionsQuery = (
         return { data: response.transactions };
       }
 
-      
       return response as ApiEnvelope<WalletTransaction[]>;
     },
     ...options,
   });
 
-export const useWalletHealthQuery = (
-  options?: UseQueryOptions<ApiEnvelope<unknown>, ApiError>,
+export const useWalletOverViewQuery = (
+  options?: UseQueryOptions<WalletOverviewResponse, ApiError>,
 ) =>
-  useQuery<ApiEnvelope<unknown>, ApiError>({
-    queryKey: ["wallet", "health"],
+  useQuery({
+    queryKey: ["wallet", "overview"],
     queryFn: () =>
-      apiRequest<ApiEnvelope<unknown>>({
-        ...API_ENDPOINTS.wallet.healthCheck,
+      apiRequest<WalletOverviewResponse>({
+        ...API_ENDPOINTS.wallet.overview,
       }),
     ...options,
   });

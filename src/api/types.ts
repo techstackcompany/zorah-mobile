@@ -367,6 +367,23 @@ export interface WalletDetails {
   [key: string]: unknown;
 }
 
+export interface WalletOverviewResponse {
+  account: {
+    balance: number;
+    accountNumber: string;
+    accountName: string;
+    tier: number;
+  };
+  kyc: {
+    status: "ACTIVE" | string;
+    currentTier: number;
+  };
+  recentTransactions: WalletTransaction[];
+  userSettings: {
+    biometricEnabled: boolean;
+  };
+}
+
 /* ---------------------------------------------
    Categories
 ----------------------------------------------*/

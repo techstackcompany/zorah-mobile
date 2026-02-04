@@ -6,8 +6,6 @@ import { Image, ImageSource } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
 
-
-
 type SummaryCard = {
   id: string;
   label: string;
@@ -41,11 +39,15 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
         Wallet Balance
       </Text>
       <View className="mt-3 flex-row items-center justify-between">
-        <View >
-          <Pressable  className="flex-row items-baseline gap-2" hitSlop={10} onPress={onToggleBalanceVisibility}>
-          <Text weight="bold" className="text-3xl">
-            {formattedBalance}
-          </Text>
+        <View>
+          <Pressable
+            className="flex-row items-baseline gap-2"
+            hitSlop={10}
+            onPress={onToggleBalanceVisibility}
+          >
+            <Text weight="bold" className="text-3xl">
+              {formattedBalance}
+            </Text>
             <Ionicons
               name={balanceHidden ? "eye-off-outline" : "eye-outline"}
               size={20}
@@ -53,7 +55,6 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
             />
           </Pressable>
         </View>
-
       </View>
       {balanceSubtitle ? (
         <View className="mt-2 flex-row items-center gap-2">

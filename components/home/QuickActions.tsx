@@ -37,7 +37,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               action.aspectRatio === 1 && "aspect-square",
             )}
           >
-            <View className="h-8 w-8 items-center justify-center rounded-full">
+            <View className="h-6 w-6 items-center justify-center rounded-full">
               <Image
                 source={action.icon}
                 style={{ aspectRatio: 1, width: "100%" }}
@@ -45,7 +45,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               />
             </View>
             {action.label && (
-              <Text className="text-sm text-black" weight="semibold">
+              <Text className="text-xs text-black" weight="semibold">
                 {action.label}
               </Text>
             )}
