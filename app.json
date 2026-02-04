@@ -73,7 +73,8 @@
       ],
       "expo-notifications",
       "expo-secure-store",
-      "expo-audio"
+      "expo-audio",
+      "./plugins/withCustomDatePickerColors"
     ],
     "experiments": {
       "typedRoutes": true,

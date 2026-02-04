@@ -60,13 +60,14 @@ const SignUpScreen = () => {
         password: form.password,
       };
       const response = await registerMutation.mutateAsync(payload);
+ 
       setUserData({
         ...response,
         phone: form.phone.trim(),
       });
       setHasCompletedSetup(false);
       setSetupStep(1);
-      signIn(response.token);
+      await signIn(response.token);
       Toast.show({
         type: "success",
         text1: "Account created",

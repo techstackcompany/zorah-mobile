@@ -47,7 +47,7 @@ const WelcomeScreen = () => {
         Welcome Onboard, let’s help you get started
       </Text>
       <View className="flex-[2] gap-5">
-        <Button title="Sign Up" onPress={()=>router.navigate('/signUp')} className="mt-auto" />
+        <Button title="Sign Up" onPress={()=>router.navigate('/setup/kyc-details')} className="mt-auto" />
         <Button title="Sign In" onPress={()=>router.navigate('/signIn')}  variant="outline" />
       </View>
     </MainContainer>

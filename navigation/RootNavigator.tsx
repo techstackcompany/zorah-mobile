@@ -10,13 +10,13 @@ function RootNavigator() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false, statusBarStyle: "dark" }}>
-        <Stack.Screen name="index" options={{ animation: "none" }} />
+        <Stack.Protected guard={!isAuthenticated || !hasCompletedSetup}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Screen name="index" />
 
         <Stack.Protected guard={isAuthenticated && hasCompletedSetup}>
-          <Stack.Screen name="(app)" options={{ animation: "none" }} />
-        </Stack.Protected>
-        <Stack.Protected guard={!isAuthenticated || !hasCompletedSetup}>
-          <Stack.Screen name="(auth)" options={{ animation: "none" }} />
+          <Stack.Screen name="(app)" />
         </Stack.Protected>
         <Stack.Screen name="(test)" options={{ animation: "none" }} />
       </Stack>

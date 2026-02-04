@@ -2,10 +2,10 @@ import PasswordTextInput from "@/components/PasswordTextInput";
 import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
-import { handleApiError, setRefreshToken } from "@/src/api/client";
+import { setRefreshToken } from "@/src/api/client";
 import { useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
-import { Link, useRouter } from "expo-router";
+import { Link, RelativePathString, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -103,14 +103,14 @@ const SignInScreen = () => {
         router.replace("/(app)/(home)");
       } else {
         const setupRoutes: Record<number, string> = {
-          1: "/(auth)/setup/choose-language",
+          1: "/(auth)/setup/kyc-details",
           2: "/(auth)/setup/monthly-income",
           3: "/(auth)/setup/your-banks",
           4: "/(auth)/setup/summary",
         };
         const targetRoute =
-          setupRoutes[nextSetupStep ?? 1] || "/(auth)/setup/choose-language";
-        router.replace(targetRoute);
+          setupRoutes[nextSetupStep ?? 1] || "/(auth)/setup/kyc-details";
+        router.replace(targetRoute as RelativePathString);
       }
     },
     [
@@ -148,7 +148,8 @@ const SignInScreen = () => {
       const response = await loginMutation.mutateAsync(payload);
       await processSignInResponse(response);
     } catch (error) {
-      const message = handleApiError(error).message;
+      const message = (error as { message: string })?.message;
+      console.log("message.", message);
       Toast.show({
         type: "error",
         text1: "Sign in failed",

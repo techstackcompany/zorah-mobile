@@ -9,6 +9,10 @@ import useSetUpStep from "@/hooks/useSetUpStep";
 import { useSubmitKycMutation } from "@/src/api/hooks";
 import { useNigerianStatesApi } from "@/src/api/hooks/useCountriesApi";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -24,21 +28,28 @@ import Toast from "react-native-toast-message";
 
 const KYC_TIERS = [{ value: 1, label: "Tier 1" }];
 
+const getMaxDate = () => {
+    const today = new Date();
+    today.setFullYear(today.getFullYear() - 16);
+    return today;
+  };
 const SubmitKycSetupScreen = () => {
   const router = useRouter();
   const { setSetupStep } = useSession();
   const [tier, setTier] = useState<number>(1);
   const [fullName, setFullName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [dateOfBirthRaw, setDateOfBirthRaw] = useState<Date | null>(null);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
   const [bvn, setBvn] = useState("");
   const [nin, setNin] = useState("");
   const [showTierList, setShowTierList] = useState(false);
   const [showStateList, setShowStateList] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { data: nigerianStates = [], isLoading: isLoadingStates } =
     useNigerianStatesApi();
-
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});
 
@@ -81,22 +92,37 @@ const SubmitKycSetupScreen = () => {
     }
   };
 
-  const isValid = useMemo(() => {
-    const fullNameValid = fullName.trim().length >= 3;
-    const dateOfBirthValid = /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth.trim());
-    const phoneNumberValid = /^\d{10,15}$/.test(phoneNumber.trim());
-    const addressValid = address.trim().length > 3;
-    const bvnValid = /^\d{11}$/.test(bvn.trim());
-    const ninValid = /^\d{11}$/.test(nin.trim());
-    return (
-      fullNameValid &&
-      dateOfBirthValid &&
-      phoneNumberValid &&
-      addressValid &&
-      bvnValid &&
-      ninValid
-    );
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const dateOfBirth =
+    dateOfBirthRaw instanceof Date ? format(dateOfBirthRaw, "yyyy-MM-dd") : "";
+
+  const errors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    if (fullName.trim().length < 3) {
+      errs.fullName = "Full name must be at least 3 characters";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth.trim())) {
+      errs.dateOfBirth = "Enter date in YYYY-MM-DD format";
+    }
+    if (!/^\d{10,15}$/.test(phoneNumber.trim())) {
+      errs.phoneNumber = "Enter a valid phone number (10-15 digits)";
+    }
+    if (address.trim().length < 3) {
+      errs.address = "Please select your state";
+    }
+    if (!/^\d{11}$/.test(bvn.trim())) {
+      errs.bvn = "BVN must be 11 digits";
+    }
+    if (!/^\d{11}$/.test(nin.trim())) {
+      errs.nin = "NIN must be 11 digits";
+    }
+    return errs;
   }, [fullName, dateOfBirth, phoneNumber, address, bvn, nin]);
+
+  const isValid = Object.keys(errors).length === 0;
 
   const handleNext = () => {
     if (!isValid || submitKycMutation.isPending) return;
@@ -111,6 +137,19 @@ const SubmitKycSetupScreen = () => {
     };
     submitKycMutation.mutate(payload);
   };
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    date: Date | undefined,
+  ) => {
+    setShowDatePicker(false);
+    if (event.type === "set" && date) {
+      setDateOfBirthRaw(date);
+    }
+  };
+
+
+  const maxDate = getMaxDate();
 
   return (
     <SetupContainer>
@@ -168,24 +207,41 @@ const SubmitKycSetupScreen = () => {
               value={fullName}
               onChangeText={setFullName}
               placeholder="John Doe"
-              style={styles.input}
+              style={[
+                styles.input,
+                touched.fullName && errors.fullName && styles.inputError,
+              ]}
               placeholderTextColor="#9AA5B1"
               autoCapitalize="words"
               onFocus={() => scrollToField("fullName")}
+              onBlur={() => handleBlur("fullName")}
             />
+            {touched.fullName && errors.fullName && (
+              <Text className="text-xs text-red-500">{errors.fullName}</Text>
+            )}
           </View>
 
           <View style={styles.field} onLayout={handleFieldLayout("dob")}>
             <Text className="text-sm text-textColor">Date Of Birth</Text>
-            <View style={styles.inputWithIcon}>
+            <Pressable
+              onPress={() => setShowDatePicker(true)}
+              style={styles.inputWithIcon}
+            >
               <TextInput
                 value={dateOfBirth}
-                onChangeText={setDateOfBirth}
                 keyboardType="numbers-and-punctuation"
-                placeholder="1999-03-10"
-                style={[styles.input, { paddingRight: 36 }]}
+                placeholder="YYYY-MM-DD"
+                editable={false}
+                pointerEvents="none"
+                style={[
+                  styles.input,
+                  { paddingRight: 36 },
+                  touched.dateOfBirth &&
+                    errors.dateOfBirth &&
+                    styles.inputError,
+                ]}
                 placeholderTextColor="#9AA5B1"
-                onFocus={() => scrollToField("dob")}
+                onBlur={() => handleBlur("dateOfBirth")}
               />
               <Ionicons
                 name="calendar-outline"
@@ -193,7 +249,23 @@ const SubmitKycSetupScreen = () => {
                 color="#9AA5B1"
                 style={styles.inputIcon}
               />
-            </View>
+            </Pressable>
+            {touched.dateOfBirth && errors.dateOfBirth && (
+              <Text className="text-xs text-red-500">{errors.dateOfBirth}</Text>
+            )}
+            {showDatePicker  && (
+              <DateTimePicker
+                accentColor={COLORS.primary_400}
+                value={dateOfBirthRaw || maxDate}
+                onChange={handleDateChange}
+                maximumDate={maxDate}
+                positiveButton={{ label: "OK", textColor: COLORS.primary_400 }}
+                negativeButton={{
+                  label: "Cancel",
+                  textColor: COLORS.primary_400,
+                }}
+              />
+            )}
           </View>
 
           <View
@@ -206,20 +278,32 @@ const SubmitKycSetupScreen = () => {
               onChangeText={setPhoneNumber}
               keyboardType="phone-pad"
               placeholder="0912345678"
-              style={styles.input}
+              style={[
+                styles.input,
+                touched.phoneNumber && errors.phoneNumber && styles.inputError,
+              ]}
               placeholderTextColor="#9AA5B1"
               onFocus={() => scrollToField("phoneNumber")}
+              onBlur={() => handleBlur("phoneNumber")}
             />
+            {touched.phoneNumber && errors.phoneNumber && (
+              <Text className="text-xs text-red-500">{errors.phoneNumber}</Text>
+            )}
           </View>
 
           <View style={styles.field} onLayout={handleFieldLayout("address")}>
             <Text className="text-sm text-textColor">State</Text>
             <Pressable
-              style={[styles.input, styles.selectInput]}
+              style={[
+                styles.input,
+                styles.selectInput,
+                touched.address && errors.address && styles.inputError,
+              ]}
               accessibilityRole="button"
               onPress={() => {
                 setShowStateList((s) => !s);
                 setShowTierList(false);
+                handleBlur("address");
               }}
             >
               <Text className={address ? "text-textColor" : "text-[#9AA5B1]"}>
@@ -262,6 +346,9 @@ const SubmitKycSetupScreen = () => {
                 ))}
               </ScrollView>
             ) : null}
+            {touched.address && errors.address && (
+              <Text className="text-xs text-red-500">{errors.address}</Text>
+            )}
           </View>
 
           <View style={styles.field} onLayout={handleFieldLayout("bvn")}>
@@ -271,11 +358,18 @@ const SubmitKycSetupScreen = () => {
               onChangeText={setBvn}
               keyboardType="number-pad"
               placeholder="22624259105"
-              style={styles.input}
+              style={[
+                styles.input,
+                touched.bvn && errors.bvn && styles.inputError,
+              ]}
               placeholderTextColor="#9AA5B1"
               maxLength={11}
               onFocus={() => scrollToField("bvn")}
+              onBlur={() => handleBlur("bvn")}
             />
+            {touched.bvn && errors.bvn && (
+              <Text className="text-xs text-red-500">{errors.bvn}</Text>
+            )}
           </View>
 
           <View style={styles.field} onLayout={handleFieldLayout("nin")}>
@@ -285,21 +379,27 @@ const SubmitKycSetupScreen = () => {
               onChangeText={setNin}
               keyboardType="number-pad"
               placeholder="38074528687"
-              style={styles.input}
+              style={[
+                styles.input,
+                touched.nin && errors.nin && styles.inputError,
+              ]}
               placeholderTextColor="#9AA5B1"
               maxLength={11}
               onFocus={() => scrollToField("nin")}
+              onBlur={() => handleBlur("nin")}
             />
+            {touched.nin && errors.nin && (
+              <Text className="text-xs text-red-500">{errors.nin}</Text>
+            )}
           </View>
         </ScrollView>
 
         <View className="px-6 pb-6">
           <Button
+            title={submitKycMutation.isPending ? "Submitting..." : "Next"}
             onPress={handleNext}
             disabled={!isValid || submitKycMutation.isPending}
-          >
-            {submitKycMutation.isPending ? "Submitting..." : "Next"}
-          </Button>
+          />
         </View>
       </View>
     </SetupContainer>
@@ -323,6 +423,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: COLORS.textColor,
+  },
+  inputError: {
+    borderColor: "#EF4444",
   },
   inputWithIcon: {
     position: "relative",
