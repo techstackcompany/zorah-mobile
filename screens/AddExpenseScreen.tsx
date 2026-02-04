@@ -58,13 +58,11 @@ type DetectedExpenseDetails = {
 };
 
 const PAYMENT_METHODS = [
-  { label: "Bank Transfer", value: "transfer" },
-  { label: "Card", value: "card" },
-  { label: "Wallet", value: "wallet" },
-  { label: "Cash", value: "cash" },
+  { label: "Bank Transfer", value: "Transfer" },
+  { label: "Card", value: "Card" },
+  { label: "Wallet", value: "Wallet" },
+  { label: "Cash", value: "Cash" },
 ];
-
-
 
 type ValidateFieldsParams = {
   amount: string;
@@ -255,6 +253,7 @@ const AddExpenseScreen = () => {
     },
     onError: (error) => {
       console.log("error", error);
+
       Toast.show({
         type: "error",
         text1: "Error",

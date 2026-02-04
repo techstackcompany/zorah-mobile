@@ -5,7 +5,10 @@ import { useCallback, useEffect, useReducer } from "react";
     Small helper: async state hook
 ----------------------------------------------*/
 type AsyncState<T> = [boolean, T | null];
-type UseAsyncStateReturn<T> = [AsyncState<T>, (value: T | null) => void];
+type UseAsyncStateReturn<T> = [
+  AsyncState<T>,
+  (value: T | null) => Promise<void>,
+];
 
 function useAsyncState<T>(
   initialValue: AsyncState<T> = [true, null],
@@ -43,9 +46,9 @@ export function useStorageState(key: string): UseAsyncStateReturn<string> {
   }, [key, setState]);
 
   const setValue = useCallback(
-    (value: string | null) => {
+    async (value: string | null): Promise<void> => {
       setState(value);
-      setStorageItemAsync(key, value);
+      await setStorageItemAsync(key, value);
     },
     [key, setState],
   );

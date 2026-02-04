@@ -19,7 +19,7 @@ export type KycStatus = string;
 export type AuthContextType = {
   // Session & Auth
   session: string | null;
-  signIn: (session: string) => void;
+  signIn: (session: string) => Promise<void>;
   signOut: () => Promise<void>;
 
   // User progress flags
@@ -76,7 +76,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isLoading: isProfileLoading,
     isError: isProfileError,
   } = useGetUserProfileQuery({
-    enabled: Boolean(session)
+    enabled: Boolean(session),
   });
 
   const isLoading =
@@ -94,8 +94,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
      Authentication methods
   ----------------------------------------------*/
 
-
-  const signIn = (session: string) => setSession(session);
+  const signIn = async (session: string) => setSession(session);
 
   const signOut = useCallback(async () => {
     await clearPersistedQueryCache();
