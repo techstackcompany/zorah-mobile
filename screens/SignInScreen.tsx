@@ -100,13 +100,13 @@ const SignInScreen = () => {
       });
 
       if (computedHasCompletedSetup) {
-        router.replace("/(app)/(home)");
       } else {
         const setupRoutes: Record<number, string> = {
           1: "/(auth)/setup/kyc-details",
           2: "/(auth)/setup/monthly-income",
           3: "/(auth)/setup/your-banks",
           4: "/(auth)/setup/summary",
+          5: "/(auth)/setup/biometric-setup",
         };
         const targetRoute =
           setupRoutes[nextSetupStep ?? 1] || "/(auth)/setup/kyc-details";
@@ -114,12 +114,12 @@ const SignInScreen = () => {
       }
     },
     [
-      router,
       setHasCompletedSetup,
       setIsVerified,
       setSetupStep,
       setUserData,
       signIn,
+      router,
     ],
   );
 
@@ -131,6 +131,8 @@ const SignInScreen = () => {
       newErrors.email = "Please enter a valid email";
     if (!form.password.trim())
       newErrors.password = "Please enter your password";
+    if (!form.password.trim() || form.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [form.email, form.password]);
@@ -171,7 +173,7 @@ const SignInScreen = () => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 60}
     >
       <ScrollView
-        className="flex-1 px-6"
+        className="flex-1 bg-red-400 px-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -257,8 +259,11 @@ const SignInScreen = () => {
           </Link>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+       </KeyboardAvoidingView> 
+
   );
 };
 
 export default SignInScreen;
+{
+}

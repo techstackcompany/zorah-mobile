@@ -1,5 +1,5 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useDepositFundsMutation } from "@/src/api/hooks/useWalletApi";
@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { ActivityIndicator, Alert, Pressable, Share, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -18,7 +18,7 @@ const transferDetails = {
 };
 
 const shareOptions = [
-  { id: "telegram", label: "Telegram", icon: "logo-telegram" as const },
+  // { id: "telegram", label: "Telegram", icon: "logo-telegram" as const },
   { id: "whatsapp", label: "WhatsApp", icon: "logo-whatsapp" as const },
   { id: "facebook", label: "Facebook", icon: "logo-facebook" as const },
   { id: "sms", label: "SMS", icon: "chatbubble-ellipses-outline" as const },
@@ -38,7 +38,7 @@ const BankTransferScreen = () => {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const isShareOpen = useSharedValue(false);
+  const shareModalRef = useRef<SlideUpModalRef>(null);
 
   const formattedAmount = useMemo(() => formatAmount(amount), [amount]);
 
@@ -75,9 +75,17 @@ const BankTransferScreen = () => {
     },
   });
 
+  const openShareModal = () => {
+    shareModalRef.current?.present();
+  };
+
+  const closeShareModal = () => {
+    shareModalRef.current?.dismiss();
+  };
+
   const handleShare = async () => {
     try {
-      isShareOpen.value = false;
+      closeShareModal();
       await Share.share({
         message: `Account Name: ${transferDetails.name}\nAccount Number: ${transferDetails.accountNumber}\nBank: ${transferDetails.bank}\nAmount: ${formattedAmount}`,
       });
@@ -157,7 +165,7 @@ const BankTransferScreen = () => {
 
           <View className="mt-6 flex-row gap-4">
             <Pressable
-              onPress={() => (isShareOpen.value = true)}
+              onPress={openShareModal}
               className="flex-1 flex-row items-center justify-center rounded-xl border border-primary_400 bg-white py-3"
               accessibilityRole="button"
             >
@@ -222,12 +230,13 @@ const BankTransferScreen = () => {
       </MainContainer>
 
       <SlideUpModal
-        isOpen={isShareOpen}
-        onClose={() => (isShareOpen.value = false)}
+        ref={shareModalRef}
+        onClose={closeShareModal}
         title="Share"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"
         closeIconColor="#FFFFFF"
+        snapPoints={["40%"]}
       >
         <Text className="text-base text-textColor">
           Share Wallet Information
