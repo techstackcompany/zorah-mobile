@@ -1,18 +1,15 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useAppSettings from "@/contexts/settings-context/useAppSettings";
 import { cn, extractUserData } from "@/lib/utils";
-import { useToggleBiometricsMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
-import React, { ReactNode, useMemo, useRef, useState } from "react";
+import React, { ReactNode, useMemo } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
 
 const LANGUAGE_OPTIONS = [
   { id: "english", label: "English", subLabel: "British English" },
@@ -29,31 +25,8 @@ const LANGUAGE_OPTIONS = [
 
 const AccountScreen = () => {
   const router = useRouter();
-  const pinSetupModalRef = useRef<SlideUpModalRef>(null);
-  const [showDisableModal, setShowDisableModal] = useState(false);
   const { signOut, userData, kycVerificationStatus } = useSession();
   const { settings, updateSetting } = useAppSettings();
-
-  const toggleBiometricsMutation = useToggleBiometricsMutation({
-    onSuccess: () => {
-      updateSetting("enableBiometrics", false);
-      updateSetting("faceIdEnabled", false);
-      updateSetting("fingerprintEnabled", false);
-      setShowDisableModal(false);
-      Toast.show({
-        type: "success",
-        text1: "Biometric Login Disabled",
-        text2: "You will need to enter your PIN to unlock the app.",
-      });
-    },
-    onError: (error) => {
-      Toast.show({
-        type: "error",
-        text1: "Failed to Disable",
-        text2: error.message || "Please try again.",
-      });
-    },
-  });
 
   const {
     displayName,
@@ -139,23 +112,6 @@ const AccountScreen = () => {
     router.push(path as RelativePathString);
   };
 
-  const handleBiometricToggle = (value: boolean) => {
-    if (value) {
-      pinSetupModalRef.current?.present();
-    } else {
-      setShowDisableModal(true);
-    }
-  };
-
-  const handleDisableBiometrics = () => {
-    toggleBiometricsMutation.mutate({ enabled: false });
-  };
-
-  const handleSetPin = () => {
-    pinSetupModalRef.current?.dismiss();
-    router.push("/(app)/settings/pin" as RelativePathString);
-  };
-
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
       <ScrollView
@@ -239,12 +195,22 @@ const AccountScreen = () => {
             <SectionHeader title="Security" />
             <SectionSubHeader subtitle="Authentication & Login Settings" />
 
-            <ToggleRow
-              label="Biometric Login"
-              description="Secure your app with fingerprint or face ID"
-              value={settings.enableBiometrics}
-              onChange={handleBiometricToggle}
-            />
+            <View className="flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
+              <View className="flex-1">
+                <Text weight="semibold" className="text-base text-textColor">
+                  Biometric Login
+                </Text>
+                <Text className="mt-1 text-sm text-textColor/70">
+                  Your account is secured with biometric authentication
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-2">
+                <View className="h-2 w-2 rounded-full bg-green-500" />
+                <Text className="text-sm font-medium text-green-600">
+                  Enabled
+                </Text>
+              </View>
+            </View>
           </View>
           <View style={styles.sectionCard}>
             <SectionHeader title="Logout" />
@@ -267,110 +233,6 @@ const AccountScreen = () => {
           </View>
         </View>
       </ScrollView>
-
-      <SlideUpModal
-        ref={pinSetupModalRef}
-        onClose={() => {
-          updateSetting("enableBiometrics", false);
-        }}
-        title="Set Up PIN"
-        headerBackgroundColor={COLORS.primary_400}
-        headerTextColor="#FFFFFF"
-        snapPoints={["55%"]}
-      >
-        <View className="gap-4">
-          <View className="items-center">
-            <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-primary_100">
-              <Ionicons
-                name="lock-closed-outline"
-                size={32}
-                color={COLORS.primary_400}
-              />
-            </View>
-            <Text
-              weight="semibold"
-              className="text-center text-lg text-textColor"
-            >
-              PIN Required
-            </Text>
-            <Text className="mt-2 text-center text-sm text-textColor/70">
-              Set up a PIN to secure your app. You can then use biometric
-              authentication for quick access while keeping your data safe.
-            </Text>
-          </View>
-
-          <View className="mt-4 gap-3">
-            <Pressable
-              onPress={handleSetPin}
-              className="rounded-2xl bg-primary_400 py-4"
-            >
-              <Text
-                weight="semibold"
-                className="text-center text-base text-white"
-              >
-                Set Up PIN
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                pinSetupModalRef.current?.dismiss();
-                updateSetting("enableBiometrics", false);
-              }}
-              className="rounded-2xl border border-gray-200 bg-white py-4"
-            >
-              <Text
-                weight="semibold"
-                className="text-center text-base text-textColor"
-              >
-                Cancel
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </SlideUpModal>
-
-      <Modal
-        visible={showDisableModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDisableModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="warning-outline" size={32} color="#F59E0B" />
-              </View>
-              <Text weight="bold" className="mt-4 text-xl text-textColor">
-                Disable Biometric Login?
-              </Text>
-              <Text className="mt-2 text-center text-sm text-textColor/70">
-                Your app will be secured with PIN only. Are you sure you want to
-                disable biometric login?
-              </Text>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowDisableModal(false)}
-              >
-                <Text weight="semibold" className="text-base text-textColor">
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleDisableBiometrics}
-              >
-                <Text weight="semibold" className="text-base text-white">
-                  Disable
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </MainContainer>
   );
 };
