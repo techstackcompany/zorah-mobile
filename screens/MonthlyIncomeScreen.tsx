@@ -2,15 +2,12 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SelectField from "@/components/setup/SelectField";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
-import SlideUpModal from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
-import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
-import { ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { PermissionsAndroid, Platform, View } from "react-native";
+import { View } from "react-native";
 
 const incomeSources = [
   { label: "Salary/Employment", value: "salary" },
@@ -28,20 +25,11 @@ const incomeRanges = [
   { label: "Above NGN 500,000", value: "above-500000" },
 ];
 
-const howItWorksPoints = [
-  "We read your SMS bank alerts automatically",
-  "No need to share login details or passwords",
-  "Works completely offline for privacy",
-  "You can add more banks later",
-];
-
 const MonthlyIncomeScreen = () => {
   const router = useRouter();
   const { setSetupStep } = useSession();
   const [primarySource, setPrimarySource] = useState<string | undefined>();
   const [monthlyRange, setMonthlyRange] = useState<string | undefined>();
-  const [hasShownSmsModal, setHasShownSmsModal] = useState(false);
-  const isSmsModalVisible = useSharedValue(false);
 
   useSetUpStep(2);
 
@@ -49,44 +37,10 @@ const MonthlyIncomeScreen = () => {
     setSetupStep(1);
     router.back();
   };
-
   const handleNext = () => {
     if (!primarySource || !monthlyRange) {
       return;
     }
-    if (!hasShownSmsModal) {
-      isSmsModalVisible.value = true;
-      return;
-    }
-    setSetupStep(3);
-    router.navigate("/(auth)/setup/your-banks");
-  };
-
-  const handleAllowSmsAccess = async () => {
-    isSmsModalVisible.value = false;
-    setHasShownSmsModal(true);
-    try {
-      if (Platform.OS === "android") {
-        await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.READ_SMS,
-          {
-            title: "Allow SMS Access",
-            message:
-              "Zorah reads your bank SMS alerts to log expenses automatically. Please grant access.",
-            buttonPositive: "Allow",
-          },
-        );
-      }
-    } catch (error) {
-      console.warn("Failed to request SMS permission:", error);
-    }
-    setSetupStep(3);
-    router.navigate("/(auth)/setup/your-banks");
-  };
-
-  const handleSkipSmsAccess = () => {
-    isSmsModalVisible.value = false;
-    setHasShownSmsModal(true);
     setSetupStep(3);
     router.navigate("/(auth)/setup/your-banks");
   };
@@ -96,7 +50,7 @@ const MonthlyIncomeScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={2}
-          totalSteps={4}
+          totalSteps={5}
           title="Monthly Income"
           description="Help us personalize your budgeting experience"
         />
@@ -139,59 +93,6 @@ const MonthlyIncomeScreen = () => {
           </View>
         </View>
       </View>
-
-      <SlideUpModal
-        isOpen={isSmsModalVisible}
-        onClose={handleSkipSmsAccess}
-        title="SMS Access"
-        headerBackgroundColor={COLORS.primary_400}
-        headerTextColor="#fff"
-        closeIconColor="#fff"
-        className="gap-5"
-      >
-        <View className="py-4">
-          <Text className="text-sm leading-5 text-textColor/80">
-            Zorah helps you log expenses automatically by reading only bank
-            transaction SMS alerts. We don&apos;t need your login details, and
-            your data stays private on your device.
-          </Text>
-        </View>
-
-        <ImageBackground
-          source={require("@/assets/images/bg-patterns/fold-pattern.png")}
-          className="rounded-2xl "
-          style={{
-            padding: 20,
-            borderRadius: 16,
-            backgroundColor: "#F1F5FF",
-          }}
-        >
-          <Text
-            family="degular"
-            weight="semibold"
-            className="text-xl text-textColor"
-          >
-            How it works:
-          </Text>
-          <View className="mt-4">
-            {howItWorksPoints.map((point) => (
-              <View key={point} className="mb-4 flex-row items-start">
-                <View className="mt-1.5 h-2 w-2 rounded-full bg-textColor/90" />
-                <Text className="ml-3 flex-1 text-sm leading-5 text-textColor/80">
-                  {point}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </ImageBackground>
-
-        <Button title="Allow SMS Access" onPress={handleAllowSmsAccess} />
-        <Button
-          title="Not Now"
-          variant="outline"
-          onPress={handleSkipSmsAccess}
-        />
-      </SlideUpModal>
     </SetupContainer>
   );
 };

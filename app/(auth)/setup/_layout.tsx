@@ -33,6 +33,10 @@ const Layout = () => {
         name="summary"
         options={{ headerLeft: () => null, headerBackVisible: false }}
       />
+      <Stack.Screen
+        name="biometric-setup"
+        options={{ headerLeft: () => null, headerBackVisible: false }}
+      />
     </Stack>
   );
 };

@@ -167,6 +167,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
     normalizedSetupStep = Number.isNaN(parsed) ? null : parsed;
   }
 
+  const needsBiometricSetup = Boolean(
+    parsedUserData &&
+      (parsedUserData.hasPin !== true ||
+        parsedUserData.biometricEnabled !== true),
+  );
+
+
   const kycVerificationStatus: KycStatus =
     kycVerificationStatusRaw ?? "unverified";
 
@@ -189,8 +196,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isVerified: isVerified === "true",
     kycVerificationStatus,
     hasSetAffirmations: hasSetAffirmations === "true",
-    hasCompletedSetup,
-    setupStep: normalizedSetupStep,
+    hasCompletedSetup: hasCompletedSetup && !needsBiometricSetup,
+    setupStep: needsBiometricSetup ? 5 : normalizedSetupStep,
     userData: parsedUserData,
     isAuthenticated: !!session,
 

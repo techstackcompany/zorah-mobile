@@ -29,10 +29,10 @@ import Toast from "react-native-toast-message";
 const KYC_TIERS = [{ value: 1, label: "Tier 1" }];
 
 const getMaxDate = () => {
-    const today = new Date();
-    today.setFullYear(today.getFullYear() - 16);
-    return today;
-  };
+  const today = new Date();
+  today.setFullYear(today.getFullYear() - 16);
+  return today;
+};
 const SubmitKycSetupScreen = () => {
   const router = useRouter();
   const { setSetupStep } = useSession();
@@ -148,7 +148,6 @@ const SubmitKycSetupScreen = () => {
     }
   };
 
-
   const maxDate = getMaxDate();
 
   return (
@@ -156,7 +155,7 @@ const SubmitKycSetupScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={1}
-          totalSteps={4}
+          totalSteps={5}
           title="Personal Details"
           description="Please provide your KYC information"
         />
@@ -253,7 +252,7 @@ const SubmitKycSetupScreen = () => {
             {touched.dateOfBirth && errors.dateOfBirth && (
               <Text className="text-xs text-red-500">{errors.dateOfBirth}</Text>
             )}
-            {showDatePicker  && (
+            {showDatePicker && (
               <DateTimePicker
                 accentColor={COLORS.primary_400}
                 value={dateOfBirthRaw || maxDate}

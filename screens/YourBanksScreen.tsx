@@ -38,9 +38,7 @@ const banks: Bank[] = [
 const allowedBankIds = new Set(banks.map((bank) => bank.id));
 
 const sanitizeSelection = (selection: readonly string[] = []) =>
-  Array.from(
-    new Set(selection.filter((bankId) => allowedBankIds.has(bankId))),
-  );
+  Array.from(new Set(selection.filter((bankId) => allowedBankIds.has(bankId))));
 
 const arraysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((value, index) => value === b[index]);
@@ -54,9 +52,10 @@ const YourBanksScreen = ({
     () => sanitizeSelection(initialSelected),
     [initialSelected],
   );
-  const [selectedBanks, setSelectedBanks] = useState<string[]>(sanitizedInitial);
+  const [selectedBanks, setSelectedBanks] =
+    useState<string[]>(sanitizedInitial);
   const { setSetupStep } = useSession();
-  useSetUpStep(3)
+  useSetUpStep(3);
 
   useEffect(() => {
     setSelectedBanks((prev) =>
@@ -93,7 +92,7 @@ const YourBanksScreen = ({
       <View className="flex-1">
         <SetupHeader
           currentStep={3}
-          totalSteps={4}
+          totalSteps={5}
           title="Your Banks"
           description="Select your banks to enable automatic expense tracking"
         />
@@ -107,17 +106,19 @@ const YourBanksScreen = ({
                   key={bank.id}
                   onPress={() => toggleBank(bank.id)}
                   className={cn(
-                    "mb-4 w-[48%] flex-row items-center  gap-4 rounded-2xl border bg-white px-5 py-4 border-[#E2E8F0]",
+                    "mb-4 w-[48%] flex-row items-center  gap-4 rounded-2xl border border-[#E2E8F0] bg-white px-5 py-4",
                     selected && "bg-primary_100",
                   )}
                 >
                   <View
                     className={cn(
                       "h-7 w-7 items-center justify-center rounded-md border border-grey bg-white",
-                      selected && "border-primary_400 border-2 bg-primary_400",
+                      selected && "border-2 border-primary_400 bg-primary_400",
                     )}
                   >
-                    {selected ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
+                    {selected ? (
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    ) : null}
                   </View>
                   <Text weight="semibold" className="text-base text-textColor">
                     {bank.label}

@@ -58,7 +58,7 @@ const goals: Goal[] = [
 
 const FinancialGoalsScreen = () => {
   const router = useRouter();
-  const { setHasCompletedSetup, setSetupStep } = useSession();
+  const {setSetupStep } = useSession();
   const [selectedGoals, setSelectedGoals] = React.useState<string[]>([]);
   useSetUpStep(4);
 
@@ -68,9 +68,8 @@ const FinancialGoalsScreen = () => {
   };
 
   const handleFinish = () => {
-    setHasCompletedSetup(true);
-    setSetupStep(null);
-    router.replace("/(app)/(home)");
+    setSetupStep(5);
+    router.replace("/(auth)/setup/biometric-setup");
   };
 
   return (
@@ -78,7 +77,7 @@ const FinancialGoalsScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={4}
-          totalSteps={4}
+          totalSteps={5}
           title="Financial Goals"
           description="What would you like to achieve with Zorah?"
         />
