@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { setRefreshToken } from "@/src/api/client";
 import { useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
-import { Link, RelativePathString, useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,13 +23,7 @@ const SignInScreen = () => {
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const router = useRouter();
-  const {
-    signIn,
-    setIsVerified,
-    setUserData,
-    setHasCompletedSetup,
-    setSetupStep,
-  } = useSession();
+  const { signIn, setUserData, hasCompletedSetup } = useSession();
   const loginMutation = useLoginUserMutation();
 
   const focusField = (field: string) => {
@@ -42,16 +36,11 @@ const SignInScreen = () => {
 
   const processSignInResponse = useCallback(
     async (response: LoginUserResponse) => {
-      const accessToken =
-        typeof response.accessToken === "string" ? response.accessToken : null;
+      const accessToken = response.accessToken;
       if (!accessToken) {
         throw new Error("Missing access token from login response.");
       }
-      const refreshToken =
-        typeof response.refreshToken === "string"
-          ? response.refreshToken
-          : null;
-
+      const refreshToken = response.refreshToken;
       if (refreshToken) {
         await setRefreshToken(refreshToken);
       } else {
@@ -59,36 +48,14 @@ const SignInScreen = () => {
           "No refresh token in login response - token refresh will not work",
         );
       }
-      signIn(accessToken);
+      await signIn(accessToken);
 
-      const profileCandidate =
-        typeof response === "object" ? (response as any) : null;
-      const profile =
-        profileCandidate && typeof profileCandidate.user === "object"
-          ? profileCandidate.user
-          : null;
+      const profileCandidate = response;
+      const profile = profileCandidate.user;
 
       if (profile) {
         setUserData(profile);
       }
-
-      const computedIsVerified =
-        typeof profile?.isVerified === "boolean" ? profile.isVerified : true;
-      setIsVerified(computedIsVerified);
-
-      const computedHasCompletedSetup =
-        typeof profile?.hasCompletedSetup === "boolean"
-          ? profile.hasCompletedSetup
-          : true;
-      setHasCompletedSetup(computedHasCompletedSetup);
-
-      const nextSetupStep =
-        typeof profile?.setupStep === "number" ? profile.setupStep : null;
-      setSetupStep(
-        nextSetupStep == null || !Number.isFinite(nextSetupStep)
-          ? null
-          : nextSetupStep,
-      );
 
       Toast.show({
         type: "success",
@@ -98,29 +65,12 @@ const SignInScreen = () => {
             ? `Hi ${(profile.name ?? "").split(" ")[0]}`
             : "You’re now signed in.",
       });
-
-      if (computedHasCompletedSetup) {
-      } else {
-        const setupRoutes: Record<number, string> = {
-          1: "/(auth)/setup/kyc-details",
-          2: "/(auth)/setup/monthly-income",
-          3: "/(auth)/setup/your-banks",
-          4: "/(auth)/setup/summary",
-          5: "/(auth)/setup/biometric-setup",
-        };
-        const targetRoute =
-          setupRoutes[nextSetupStep ?? 1] || "/(auth)/setup/kyc-details";
-        router.replace(targetRoute as RelativePathString);
+      if (hasCompletedSetup || true) {
+        console.log("hasCompletedSetup", hasCompletedSetup);
       }
     },
-    [
-      setHasCompletedSetup,
-      setIsVerified,
-      setSetupStep,
-      setUserData,
-      signIn,
-      router,
-    ],
+
+    [setUserData, signIn, , hasCompletedSetup],
   );
 
   const isSubmitting = loginMutation.isPending;
@@ -168,12 +118,12 @@ const SignInScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-light"
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 60}
+      behavior="padding"
+      className="flex-1 bg-light "
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -60}
     >
       <ScrollView
-        className="flex-1 bg-red-400 px-6"
+        className="flex-1  px-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -259,8 +209,7 @@ const SignInScreen = () => {
           </Link>
         </View>
       </ScrollView>
-       </KeyboardAvoidingView> 
-
+    </KeyboardAvoidingView>
   );
 };
 

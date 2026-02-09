@@ -9,7 +9,9 @@ import {
   useCallback,
   useEffect,
 } from "react";
+import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
+import { RelativePathString, router } from "expo-router";
 
 /* ---------------------------------------------
    Auth Context & Types
@@ -109,6 +111,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setUserDataRaw(null);
     setHasCompletedSetupRaw(null);
     setSetupStepRaw(null);
+    router.replace('/(auth)/signIn');
   }, [
     queryClient,
     setSession,
@@ -123,10 +126,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     setTokenRefreshFailureHandler(() => {
       signOut();
+      Alert.alert(
+        "Session Expired",
+        "Your session has expired. Please sign in again.",
+        [{ text: "OK" }],
+      );
     });
 
     return () => {
-      setTokenRefreshFailureHandler(() => {});
+      setTokenRefreshFailureHandler(null);
     };
   }, [signOut]);
 
@@ -134,7 +142,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
      userData handling
   ----------------------------------------------*/
   const setUserData = useCallback(
-    (data: unknown | null) => {
+    async (data: unknown | null) => {
       if (data === null) {
         setUserDataRaw(null);
       } else {
@@ -172,7 +180,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
       (parsedUserData.hasPin !== true ||
         parsedUserData.biometricEnabled !== true),
   );
-
 
   const kycVerificationStatus: KycStatus =
     kycVerificationStatusRaw ?? "unverified";
