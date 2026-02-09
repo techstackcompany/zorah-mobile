@@ -1,13 +1,18 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { formatCurrency, formatTransactionPurpose } from "@/lib/utils";
+import { cn, formatCurrency, formatTransactionPurpose } from "@/lib/utils";
 import { useGetWalletTransactionsQuery } from "@/src/api/hooks";
 import { WalletTransaction } from "@/src/api/types";
+import { File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
+import * as MediaLibrary from "expo-media-library";
 import { useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
+import * as Sharing from "expo-sharing";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import Toast from "react-native-toast-message";
+import ViewShot from "react-native-view-shot";
 
 const formatAmountWithSign = (value: number): string => {
   if (value === 0) return formatCurrency(0);
@@ -46,7 +51,7 @@ const TransactionDetailsScreen = () => {
       : -Math.abs(transaction.amount)
     : 0;
   const title =
-    transaction?.description ||
+    transaction?.metadata?.description ||
     (transaction?.purpose
       ? formatTransactionPurpose(transaction.purpose)
       : "Transaction Details");
@@ -92,9 +97,112 @@ const TransactionDetailsScreen = () => {
       value: formatAmountWithSign(signedAmount),
     },
   ] as const;
-  console.log("transactionsData", transactionsData);
+
+  const viewShotRef = useRef<ViewShot>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const captureReceipt = useCallback(async (): Promise<string | null> => {
+    try {
+      if (!viewShotRef.current?.capture) {
+        throw new Error("ViewShot ref is not available");
+      }
+      const uri = await viewShotRef.current.capture();
+      return uri;
+    } catch (error) {
+      console.error("Error capturing receipt:", error);
+      return null;
+    }
+  }, []);
+
+  const handleDownload = useCallback(async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Toast.show({
+          type: "error",
+          text1: "Permission Required",
+          text2: "Please allow access to save to your gallery",
+        });
+        setIsDownloading(false);
+        return;
+      }
+
+      const uri = await captureReceipt();
+      if (!uri) {
+        throw new Error("Failed to capture receipt");
+      }
+
+      const fileName = `receipt_${transaction?.reference || Date.now()}.png`;
+      const fileUri = new File(Paths.cache, fileName);
+      const receipt = new File(uri);
+      receipt.copy(fileUri);
+
+      await MediaLibrary.saveToLibraryAsync(fileUri.uri);
+
+      Toast.show({
+        type: "success",
+        text1: "Receipt Saved",
+        text2: "The receipt has been saved to your gallery",
+      });
+    } catch (error) {
+      console.error("Download error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Download Failed",
+        text2: "Could not save receipt. Please try again.",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [isDownloading, captureReceipt, transaction?.reference]);
+
+  const handleShare = useCallback(async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Toast.show({
+          type: "error",
+          text1: "Sharing Unavailable",
+          text2: "Sharing is not available on this device",
+        });
+        setIsSharing(false);
+        return;
+      }
+
+      const uri = await captureReceipt();
+      if (!uri) {
+        throw new Error("Failed to capture receipt");
+      }
+
+      const fileName = `receipt_${transaction?.reference || Date.now()}.png`;
+      const fileUri = new File(Paths.cache, fileName);
+      const receipt = new File(uri);
+      receipt.copy(fileUri);
+      await Sharing.shareAsync(fileUri.uri, {
+        mimeType: "image/png",
+        dialogTitle: "Share Transaction Receipt",
+      });
+    } catch (error) {
+      console.error("Share error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Share Failed",
+        text2: "Could not share receipt. Please try again.",
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  }, [isSharing, captureReceipt, transaction?.reference]);
+
   const renderContent = () => {
-    if (isLoading && !transactionsData?.data) {
+    if (isLoading && !transactionsData) {
       return (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={COLORS.primary_400} />
@@ -146,106 +254,138 @@ const TransactionDetailsScreen = () => {
           contentContainerStyle={{ paddingBottom: 160 }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="px-6">
-            <View className="rounded-t-lg bg-purpleLight p-6">
-              <Text
-                weight="semibold"
-                className="text-center text-base text-textColor"
-              >
-                {title}
-              </Text>
-              <Text
-                weight="bold"
-                className="mt-4 text-center text-2xl"
-                style={{
-                  color: signedAmount >= 0 ? COLORS.secondary_500 : "#D14343",
-                }}
-              >
-                {formatAmountWithSign(signedAmount)}
-              </Text>
-              <View className="mt-4 items-center">
-                <View className="rounded-full bg-white px-4 py-1.5">
-                  <Text weight="semibold" className="text-xs text-primary_400">
-                    {chipLabel}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View className="bg-white p-6 shadow-sm">
-              <Text weight="semibold" className="text-base text-textColor">
-                Transaction Details
-              </Text>
-
-              <View className="mt-5 gap-5">
-                {detailRows.map((detail) => (
-                  <View
-                    key={detail.id}
-                    className="flex-row items-center justify-between"
-                  >
-                    <Text
-                      className="text-sm text-textColor/60"
-                      numberOfLines={1}
-                    >
-                      {detail.label}
-                    </Text>
+          <ViewShot ref={viewShotRef} options={{ format: "png", quality: 1 }}>
+            <View className="px-6">
+              <View className="rounded-t-lg bg-purpleLight p-6">
+                <Text
+                  weight="semibold"
+                  className="text-center text-base text-textColor"
+                >
+                  {title}
+                </Text>
+                <Text
+                  weight="bold"
+                  className="mt-4 text-center text-2xl"
+                  style={{
+                    color: signedAmount >= 0 ? COLORS.secondary_500 : "#D14343",
+                  }}
+                >
+                  {formatAmountWithSign(signedAmount)}
+                </Text>
+                <View className="mt-4 items-center">
+                  <View className="rounded-full bg-white px-4 py-1.5">
                     <Text
                       weight="semibold"
-                      className="text-sm text-textColor"
-                      numberOfLines={1}
+                      className="text-xs text-primary_400"
                     >
-                      {detail.value}
+                      {chipLabel}
                     </Text>
                   </View>
-                ))}
+                </View>
               </View>
 
-              <View className="mt-6">
-                <Text weight="semibold" className="text-sm text-textColor">
-                  Notes
+              <View className="bg-white p-6 shadow-sm">
+                <Text weight="semibold" className="text-base text-textColor">
+                  Transaction Details
                 </Text>
-                <View className="mt-2 rounded-lg  bg-lightMuted px-4 py-3">
-                  <Text className="text-sm text-textColor">
-                    {transaction.description ||
-                      "No notes added for this transaction."}
+
+                <View className="f mt-5 gap-5">
+                  {detailRows.map((detail) => (
+                    <View
+                      key={detail.id}
+                      className="flex-row flex-wrap items-center justify-between"
+                    >
+                      <Text
+                        className="text-sm text-textColor/60"
+                        numberOfLines={1}
+                      >
+                        {detail.label}
+                      </Text>
+                      <Text
+                        weight="semibold"
+                        selectable
+                        className={cn(
+                          "text-sm text-textColor",
+                          detail.label === "Transaction Reference" &&
+                            "py-2 text-primary_400",
+                        )}
+                        numberOfLines={1}
+                      >
+                        {detail.value}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View className="mt-6">
+                  <Text weight="semibold" className="text-sm text-textColor">
+                    Description
                   </Text>
+                  <View className="mt-2 rounded-lg  bg-lightMuted px-4 py-3">
+                    <Text className="text-sm text-textColor">
+                      {transaction.metadata?.description ||
+                        "No description added for this transaction."}
+                    </Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
+          </ViewShot>
         </ScrollView>
 
         <View className="px-6 pb-8">
           <View className="flex-row gap-3">
             <Pressable
-              className="flex-1 flex-row items-center justify-center rounded-lg border border-primary_400 py-4"
+              className={cn(
+                "flex-1 flex-row items-center justify-center rounded-lg border border-primary_400 py-4",
+                isDownloading && "opacity-50",
+              )}
               accessibilityRole="button"
+              onPress={handleDownload}
+              disabled={isDownloading || isSharing}
             >
-              <Image
-                source={require("@/assets/icons/download.svg")}
-                style={{
-                  width: 18,
-                  height: 18,
-                  tintColor: COLORS.primary_400,
-                }}
-                contentFit="contain"
-              />
-              <Text weight="semibold" className="ml-2 text-primary_400">
-                Download
-              </Text>
+              {isDownloading ? (
+                <ActivityIndicator size="small" color={COLORS.primary_400} />
+              ) : (
+                <>
+                  <Image
+                    source={require("@/assets/icons/download.svg")}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      tintColor: COLORS.primary_400,
+                    }}
+                    contentFit="contain"
+                  />
+                  <Text weight="semibold" className="ml-2 text-primary_400">
+                    Download
+                  </Text>
+                </>
+              )}
             </Pressable>
             <Pressable
-              className="flex-1 flex-row items-center justify-center rounded-lg bg-primary_400 py-4"
+              className={cn(
+                "flex-1 flex-row items-center justify-center rounded-lg bg-primary_400 py-4",
+                isSharing && "opacity-50",
+              )}
               accessibilityRole="button"
+              onPress={handleShare}
+              disabled={isDownloading || isSharing}
             >
-              <Image
-                source={require("@/assets/icons/share.svg")}
-                style={{ width: 18, height: 18, tintColor: "#FFFFFF" }}
-                contentFit="contain"
-              />
-              <Text weight="semibold" className="ml-2 text-white">
-                Share Receipt
-              </Text>
+              {isSharing ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Image
+                    source={require("@/assets/icons/share.svg")}
+                    style={{ width: 18, height: 18, tintColor: "#FFFFFF" }}
+                    contentFit="contain"
+                  />
+                  <Text weight="semibold" className="ml-2 text-white">
+                    Share Receipt
+                  </Text>
+                </>
+              )}
             </Pressable>
           </View>
         </View>
