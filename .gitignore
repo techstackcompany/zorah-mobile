@@ -47,4 +47,4 @@ app-example
 credentials.json
 
 # Editor/automation backups
-*.bak
+*.baktest.js
