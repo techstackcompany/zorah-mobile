@@ -1,6 +1,7 @@
 import { usePushNotificationsContext } from "@/contexts/push-notifications/PushNotificationsProvider";
+import { setAuthToken } from "@/src/api/client";
 import * as Notifications from "expo-notifications";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 
 export default function PushNotificationTestScreen() {
   const { fcmToken, notification, isRegistered } =
@@ -58,6 +59,25 @@ export default function PushNotificationTestScreen() {
       >
         <Text style={{ color: "white", fontWeight: "bold" }}>
           Send Local Notification
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={async () => {
+          await setAuthToken("fake-token-for-testing");
+          Alert.alert(
+            "Fake token set",
+            "A fake auth token has been set for testing purposes. You can now test authenticated API calls and push notifications that require authentication.",
+          );
+        }}
+        style={{
+          backgroundColor: "#1643F5",
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          set fake token (testing)
         </Text>
       </Pressable>
     </View>

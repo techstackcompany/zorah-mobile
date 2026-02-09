@@ -10,7 +10,7 @@ export default function RootIndex() {
   }
 
   
-  if (isAuthenticated && hasCompletedSetup) {
+  if (isAuthenticated) {
     return <Redirect href="/(app)/(home)" />;
   }
 

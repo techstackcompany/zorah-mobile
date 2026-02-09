@@ -1,5 +1,5 @@
 import type { SlideUpModalRef } from "@/components/ui/SlideUpModal";
-import { FX_CONVERTER_OPTIONS, FX_PAIRS } from "@/constants/fx";
+import { FX_CONVERTER_OPTIONS, FX_PAIRS, fxPairsToFetch } from "@/constants/fx";
 import {
   useGetFxRatePairsQuery,
   useGetFxRatesQuery,
@@ -34,17 +34,6 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
     refetch: refetchUsdRates,
   } = useGetFxRatesQuery("USD");
 
-  console.log("fx", usdRates, usdRatesError);
-
-  const fxPairsToFetch = useMemo(
-    () => [
-      { base: "USD", quote: "NGN" },
-      { base: "GBP", quote: "NGN" },
-      { base: "EUR", quote: "NGN" },
-      { base: "CAD", quote: "NGN" },
-    ],
-    [],
-  );
 
   const {
     data: fxRatePairs,
