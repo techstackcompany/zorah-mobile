@@ -112,7 +112,7 @@ const ForgotPasswordScreen = () => {
         <Text className="mb-2 text-sm text-tertiary">Email</Text>
         <View
           className={cn(
-            "flex-row items-center rounded-2xl border bg-white px-4 py-3",
+            "flex-row items-center rounded-2xl border bg-white px-4",
             isFocused ? "border-primary_400" : "border-gray-200",
             error && "border-red-500",
           )}

@@ -65,7 +65,7 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
 
       <View className="mt-5 flex-row gap-3">
         {summaryCards.map((item) => (
-          <View
+          <Pressable
             key={item.id}
             className={cn(
               "flex-1 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3",
@@ -73,25 +73,25 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
           >
             <View
               className={cn(
-                "h-10 w-10 items-center justify-center",
+                "h-9 w-9 items-center justify-center",
                 item.accent,
               )}
             >
               <Image
                 source={item.icon}
-                style={{ width: 30, height: 30 }}
+                style={{ width: 28, height: 28 }}
                 contentFit="contain"
               />
             </View>
             <View>
-              <Text weight="medium" className="text-base text-textColor/60">
+              <Text weight="medium" className="text-sm text-textColor/60">
                 {item.label}
               </Text>
-              <Text weight="semibold" className="mt-1 text-lg">
+              <Text weight="semibold" className="mt-1 text-base">
                 {item.amount}
               </Text>
             </View>
-          </View>
+          </Pressable>
         ))}
       </View>
     </View>

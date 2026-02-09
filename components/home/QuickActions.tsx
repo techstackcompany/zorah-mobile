@@ -45,7 +45,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               />
             </View>
             {action.label && (
-              <Text className="text-xs text-black" weight="semibold">
+              <Text className="text-[11.5px] text-black" weight="semibold">
                 {action.label}
               </Text>
             )}
