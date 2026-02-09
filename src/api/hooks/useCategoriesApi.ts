@@ -21,7 +21,7 @@ export const useGetCategoriesQuery = (
       >({
         ...endpoint,
       });
-      console.log('response.data', response.data)
+      console.log("response.data", response.data);
       return (
         response.data?.subcategories.map(
           ({ _id, image, name }: CategoryResponseItem) => ({
@@ -35,5 +35,28 @@ export const useGetCategoriesQuery = (
     ...options,
   });
 
+export const useGetAllCategoriesQuery = (
+  options?: UseQueryOptions<CategoryItem[], ApiError>,
+) => 
+  useQuery<CategoryItem[], ApiError>({
+    queryKey: ["categories", "subcategories"],
+    queryFn: async () => {
+      const endpoint = API_ENDPOINTS.categories.getAllCategories;
+      const response = await apiRequest<
+        { data: CategoryResponseItem[] }
+      >({
+        ...endpoint,
+      });
+      return (
+        response.data.map(
+          ({ _id, image, name }: CategoryResponseItem) => ({
+            key: _id,
+            icon: image,
+            label: name.toLowerCase(),
+          }),
+        ) || []
+      );
+    },
+    ...options,
+  });
 
- 

@@ -24,7 +24,7 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-export interface LoginUserResponse extends ApiEnvelope<AuthTokens> {
+export interface LoginUserResponse extends AuthTokens {
   user: {
     _id: string;
     name: string;
@@ -353,10 +353,79 @@ export interface WalletTransaction {
     description?: string;
     [key: string]: unknown;
   };
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
   user: string;
 }
+
+interface TransactionMetadata {
+  category: string;
+  description: string;
+}
+
+interface DepositMetadata {
+  status: boolean;
+  message: string;
+  data: {
+    amount: number;
+    reference: string;
+    customer_id: string;
+    metadata: {
+      purpose: string;
+    };
+    transaction_fee: number;
+    merchantId: string;
+    customer_wallet_id: string;
+  };
+}
+
+type TransactionType = "debit" | "credit";
+
+type TransactionPurpose =
+  | "deposit"
+  | "withdrawal"
+  | "savings"
+  | "transfer"
+  | "savings_contribution"
+  | "other";
+
+type TransactionStatus = "successful" | "pending" | string;
+
+interface BaseTransaction {
+  _id: string;
+  __v: number;
+  user: string;
+  type: TransactionType;
+  amount: number;
+  purpose: TransactionPurpose;
+  reference?: string;
+  status: TransactionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ExpenseIncomeTransaction extends BaseTransaction {
+  purpose: "other";
+  metadata: TransactionMetadata;
+}
+
+interface SavingsTransaction extends BaseTransaction {
+  purpose: "savings_contribution";
+  metadata?: never;
+}
+
+interface DepositTransaction extends BaseTransaction {
+  type: "credit";
+  purpose: "deposit";
+  metadata: DepositMetadata;
+}
+
+export type Transaction =
+  | ExpenseIncomeTransaction
+  | SavingsTransaction
+  | DepositTransaction;
+
+export type TransactionsResponse = Transaction[];
 
 export interface WalletDetails {
   id?: string;

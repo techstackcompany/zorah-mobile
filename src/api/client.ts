@@ -57,7 +57,7 @@ export async function setRefreshToken(token: string): Promise<void> {
   await writeToStorage(REFRESH_TOKEN_KEY, token);
 }
 
-async function setAuthToken(token: string): Promise<void> {
+export async function setAuthToken(token: string): Promise<void> {
   await writeToStorage(TOKEN_KEY, token);
 }
 
@@ -72,11 +72,11 @@ let isRefreshing = false;
 let failedQueue: {
   resolve: (value?: unknown) => void;
   reject: (error?: unknown) => void;
-}[];
+}[] = [];
 
 let onTokenRefreshFailure: (() => void) | null = null;
 
-export function setTokenRefreshFailureHandler(handler: () => void) {
+export function setTokenRefreshFailureHandler(handler: (() => void) | null) {
   onTokenRefreshFailure = handler;
 }
 
@@ -104,10 +104,9 @@ const registerEndpoint = API_ENDPOINTS.auth.register.url;
 baseClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAuthToken();
-    
-    
-    const isLoginEndpoint = config.url?.includes(loginEndpoint)
-    const isRegisterEndpoint = config.url?.includes(registerEndpoint)
+
+    const isLoginEndpoint = config.url?.includes(loginEndpoint);
+    const isRegisterEndpoint = config.url?.includes(registerEndpoint);
     if (token && !isLoginEndpoint && !isRegisterEndpoint) {
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
@@ -129,7 +128,9 @@ baseClient.interceptors.request.use(
 );
 
 baseClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
@@ -184,8 +185,6 @@ baseClient.interceptors.response.use(
           },
         );
 
-        console.log("response reached", response);
-
         const newAccessToken = response.data?.accessToken;
 
         if (!newAccessToken) {
@@ -204,10 +203,7 @@ baseClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as Error);
         await clearAuthTokens();
-        console.log("Error reached");
-        if (onTokenRefreshFailure) {
-          onTokenRefreshFailure();
-        }
+        onTokenRefreshFailure?.();
 
         return Promise.reject(refreshError);
       } finally {

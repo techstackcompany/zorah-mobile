@@ -138,6 +138,10 @@ export const API_ENDPOINTS = {
       method: HttpMethod.GET,
       url: `/categories?type=${type}`,
     }),
+    getAllCategories: {
+      method: HttpMethod.GET,
+      url: "/categories/subcategories",
+    },
   },
 
   financialTips: {
