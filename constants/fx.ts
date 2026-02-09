@@ -13,6 +13,12 @@ export type FxPair = {
 
 export type FxSeriesPoint = { label: string; value: number };
 
+export const fxPairsToFetch = [
+  { base: "USD", quote: "NGN" },
+  { base: "GBP", quote: "NGN" },
+  { base: "EUR", quote: "NGN" },
+  { base: "CAD", quote: "NGN" },
+];
 export const CURRENCY_FLAGS: Record<string, ImageSource> = {
   NGN: require("@/assets/icons/nigeria-flag-curved.svg"),
   USD: require("@/assets/icons/united-states-flag-curved.svg"),
@@ -23,35 +29,6 @@ export const CURRENCY_FLAGS: Record<string, ImageSource> = {
   AUD: require("@/assets/icons/australia-flag-curved.svg"),
 };
 
-export const FX_TRENDS: Record<string, FxSeriesPoint[]> = {
-  "USDNGN": [
-    { label: "Mon", value: 1410 },
-    { label: "Tue", value: 1445 },
-    { label: "Wed", value: 1432 },
-    { label: "Thu", value: 1460 },
-    { label: "Fri", value: 1422 },
-    { label: "Sat", value: 1456 },
-    { label: "Sun", value: 1440 },
-  ],
-  "GBPNGN": [
-    { label: "Mon", value: 1800 },
-    { label: "Tue", value: 1785 },
-    { label: "Wed", value: 1812 },
-    { label: "Thu", value: 1850 },
-    { label: "Fri", value: 1822 },
-    { label: "Sat", value: 1838 },
-    { label: "Sun", value: 1846 },
-  ],
-  "EURNGN": [
-    { label: "Mon", value: 1570 },
-    { label: "Tue", value: 1598 },
-    { label: "Wed", value: 1584 },
-    { label: "Thu", value: 1610 },
-    { label: "Fri", value: 1602 },
-    { label: "Sat", value: 1618 },
-    { label: "Sun", value: 1624 },
-  ],
-};
 
 export const FX_PAIRS: FxPair[] = [
   {
@@ -59,7 +36,7 @@ export const FX_PAIRS: FxPair[] = [
     base: "USD",
     quote: "NGN",
     label: "USD/NGN",
-    value: 0, // Will be populated from API
+    value: 0,
     change: 0,
   },
   {

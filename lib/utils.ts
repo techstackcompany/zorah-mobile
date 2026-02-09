@@ -1,8 +1,56 @@
 import COLORS from "@/constants/colors";
 import { AxiosError, isAxiosError } from "axios";
 import { ClassValue, clsx } from "clsx";
+import { formatDistance } from "date-fns";
 import { Platform } from "react-native";
 import { twMerge } from "tw-merge";
+import { WalletTransaction } from "../src/api/types";
+
+export type TransformedTransaction = {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  account: string;
+  amount: number;
+  timeAgo: string;
+  type: "income" | "expense";
+  createdAt: string;
+};
+
+export function transformTransaction(
+  txn: WalletTransaction,
+): TransformedTransaction {
+  const isCredit = txn.type === "credit";
+  const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
+
+  const title =
+    txn.metadata?.description ||
+    (txn.purpose
+      ? formatTransactionPurpose(txn.purpose)
+      : isCredit
+        ? "Credit"
+        : "Debit");
+
+  const category =
+    txn.purpose !== "other"
+      ? txn.purpose
+      : txn.metadata?.category || (isCredit ? "Income" : "Expense");
+
+  return {
+    id: txn._id,
+    title,
+    description: undefined,
+    category,
+    account: "Wallet",
+    amount,
+    timeAgo: formatDistance(new Date(txn.createdAt), new Date(), {
+      addSuffix: true,
+    }),
+    type: isCredit ? "income" : "expense",
+    createdAt: txn.createdAt,
+  };
+}
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(...inputs));
@@ -262,40 +310,6 @@ export function addKeyboardBehavior() {
 export function capitalizeWord(word: string) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
-
-
-
-
-export const formatTimeAgo = (dateString?: string): string => {
-  if (!dateString) return "Just now";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return "Just now";
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-};
-
-export const formatLongDate = (date: string, locale = "en-NG"): string => {
-  return new Date(date).toLocaleDateString(locale, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-
-export const formatSlashDate = (value: Date) => {
-  const day = `${value.getDate()}`.padStart(2, "0");
-  const month = `${value.getMonth() + 1}`.padStart(2, "0");
-  const year = `${value.getFullYear()}`.slice(-2);
-  return `${day}/${month}/${year}`;
-};
-
 
 export const formatNairaCurrency = (value: number) => {
   const currencyFormatter = new Intl.NumberFormat("en-NG", {

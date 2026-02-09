@@ -5,13 +5,12 @@ import RecentTransactions from "@/components/home/RecentTransactions";
 import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
-import { FX_PAIRS } from "@/constants/fx";
+import { FX_PAIRS, fxPairsToFetch } from "@/constants/fx";
 import { useUserDisplayData } from "@/hooks/useUserDisplayData";
 import {
   formatCurrencyWithSymbol,
   formatCurrentDate,
-  formatTimeAgo,
-  formatTransactionPurpose,
+  transformTransaction,
 } from "@/lib/utils";
 import {
   useGetExpenseSummaryQuery,
@@ -21,7 +20,7 @@ import {
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
-import { FxRatePair, WalletTransaction } from "@/src/api/types";
+import { FxRatePair } from "@/src/api/types";
 import { ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -48,15 +47,6 @@ type QuickAction = {
   icon: ImageSource;
   background: string;
   aspectRatio?: 1;
-};
-
-type RecentTransactionItem = {
-  id: string;
-  title: string;
-  category: string;
-  amount: number;
-  timeAgo: string;
-  type: "income" | "expense";
 };
 
 const NGN_CURRENCY: CurrencyOption = {
@@ -87,28 +77,6 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-const transformTransactionForHome = (
-  txn: WalletTransaction,
-): RecentTransactionItem => {
-  const isCredit = txn.type === "credit";
-  const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
-
-  return {
-    id: txn._id,
-    title:
-      txn.metadata?.description ||
-      (txn.purpose
-        ? formatTransactionPurpose(txn.purpose)
-        : isCredit
-          ? "Credit"
-          : "Debit"),
-    category: txn.metadata?.category || (isCredit ? "Income" : "Expense"),
-    amount,
-    timeAgo: formatTimeAgo(txn.createdAt),
-    type: isCredit ? "income" : "expense",
-  };
-};
-
 const HomeScreen = () => {
   const router = useRouter();
   const [currency] = useState<CurrencyOption>(NGN_CURRENCY);
@@ -137,16 +105,6 @@ const HomeScreen = () => {
   const { data: monthlyExpensesData, refetch: refetchMonthlyExpenses } =
     useGetMonthlyExpensesQuery();
 
-  const fxPairsToFetch = useMemo(
-    () => [
-      { base: "USD", quote: "NGN" },
-      { base: "GBP", quote: "NGN" },
-      { base: "EUR", quote: "NGN" },
-      { base: "CAD", quote: "NGN" },
-    ],
-    [],
-  );
-
   const {
     data: fxRatePairs,
     isLoading: isLoadingFxPairs,
@@ -154,7 +112,7 @@ const HomeScreen = () => {
     error: fxPairsError,
     refetch: refetchFxPairs,
   } = useGetFxRatePairsQuery(fxPairsToFetch);
-  console.log("fxRatePairs", fxRatePairs);
+
   const fxPairLookup = useMemo(() => {
     const lookup: { [key: string]: FxRatePair } = {};
 
@@ -208,11 +166,7 @@ const HomeScreen = () => {
     return formatCurrencyWithSymbol(walletBalance, currency.symbol);
   }, [balanceHidden, currency.symbol, walletBalance, isLoadingBalance]);
 
-  const totalExpenses = useMemo(() => {
-    if (!expenseSummaryData) return 0;
-    return expenseSummaryData.total || 0;
-  }, [expenseSummaryData]);
-
+  const totalExpenses = expenseSummaryData?.total || 0;
 
   const totalIncome = useMemo(() => {
     if (!incomesData?.data || !Array.isArray(incomesData.data)) return 0;
@@ -289,7 +243,7 @@ const HomeScreen = () => {
     const absPercent = Math.abs(percentChange).toFixed(0);
     const direction = percentChange >= 0 ? "more" : "less";
 
-    return `${absPercent}% ${direction} than last month`;
+    return `${absPercent}% ${direction} expenses than last month`;
   }, [monthlyExpensesData]);
 
   const currentDate = formatCurrentDate();
@@ -318,7 +272,7 @@ const HomeScreen = () => {
     const transactions = transactionsData.data;
     if (transactions.length === 0) return [];
 
-    return transactions.map(transformTransactionForHome).slice(0, 4);
+    return transactions.map(transformTransaction).slice(0, 4);
   }, [transactionsData]);
 
   const shouldShowEmpty = useMemo(() => {
