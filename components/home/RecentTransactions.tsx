@@ -1,8 +1,11 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { getMatchingCategoryIconSource } from "@/features/expense-income/utils";
+import {
+  getMatchingCategoryIconSource,
+  renderCategoryIcon,
+} from "@/features/expense-income/utils";
 import { cn } from "@/lib/utils";
-import { useGetCategoriesQuery } from "@/src/api/hooks";
+import { useGetAllCategoriesQuery } from "@/src/api/hooks";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
@@ -27,14 +30,8 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   showEmpty,
 }) => {
   const router = useRouter();
-
-  const { data: expenseCategoriesData } = useGetCategoriesQuery("expense");
-  const { data: incomeCategoriesData } = useGetCategoriesQuery("income");
-
-  const allCategories = useMemo(() => {
-    return [...(expenseCategoriesData || []), ...(incomeCategoriesData || [])];
-  }, [expenseCategoriesData, incomeCategoriesData]);
-
+  const { data } = useGetAllCategoriesQuery();
+  const allCategories = useMemo(() => data || [], [data]);
   return (
     <View className="mt-8">
       <View className="flex-row items-center justify-between">
@@ -76,14 +73,18 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               const amountColor =
                 transaction.type === "income"
                   ? COLORS.secondary_500
-                  : "#D14343";
+                  : COLORS.error;
 
               const categoryIconSource = getMatchingCategoryIconSource(
                 allCategories,
-                transaction.category,
+                [transaction.category, transaction.title],
               );
               const iconBgColor =
                 transaction.type === "income" ? "#E5F6F0" : "#FFF1DD";
+              const iconColor =
+                transaction.type === "income"
+                  ? COLORS.secondary_500
+                  : COLORS.error;
 
               return (
                 <View
@@ -98,20 +99,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                     className="mr-3 h-10 w-10 items-center justify-center rounded-full"
                     style={{ backgroundColor: iconBgColor }}
                   >
-                    <Image
-                      source={
-                        typeof categoryIconSource === "string"
-                          ? { uri: categoryIconSource }
-                          : categoryIconSource
-                      }
-                      style={{ width: 20, height: 20 }}
-                      contentFit="contain"
-                      tintColor={
-                        transaction.type === "income"
-                          ? COLORS.secondary_500
-                          : COLORS.error
-                      }
-                    />
+                    {renderCategoryIcon(categoryIconSource, 20, iconColor)}
                   </View>
 
                   <View className="flex-1">

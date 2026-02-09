@@ -2,13 +2,18 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { getMatchingCategoryIconSource } from "@/features/expense-income/utils";
-import { cn, formatCurrency, formatTransactionPurpose } from "@/lib/utils";
+import { getMatchingCategoryIconSource, renderCategoryIcon } from "@/features/expense-income/utils";
 import {
-  useGetCategoriesQuery,
+  cn,
+  formatCurrency,
+  TransformedTransaction,
+  transformTransaction,
+} from "@/lib/utils";
+import {
+  useGetAllCategoriesQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
-import { WalletTransaction } from "@/src/api/types";
+
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -23,18 +28,7 @@ import {
   ViewStyle,
 } from "react-native";
 
-type TransactionType = "income" | "expense";
-
-type TransactionItem = {
-  id: string;
-  title: string;
-  description?: string;
-  account: string;
-  timeAgo: string;
-  amount: number;
-  type: TransactionType;
-  category?: string;
-};
+type TransactionItem = TransformedTransaction;
 
 type TransactionSection = {
   id: string;
@@ -68,20 +62,6 @@ const formatAmountWithSign = (value: number) => {
   }
   const prefix = value > 0 ? "+" : "-";
   return `${prefix}${formatCurrency(Math.abs(value))}`;
-};
-
-const formatTimeAgo = (dateString?: string): string => {
-  if (!dateString) return "Just now";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return "Just now";
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
 const formatSectionDate = (dateString?: string): string => {
@@ -133,41 +113,10 @@ const formatSectionDate = (dateString?: string): string => {
   }
 };
 
-const transformTransactionForUI = (
-  txn: WalletTransaction,
-): TransactionItem & { createdAt?: string } => {
-  const isCredit = txn.type === "credit";
-  const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
-
-  const title =
-    txn.metadata?.description ||
-    (txn.purpose
-      ? formatTransactionPurpose(txn.purpose)
-      : isCredit
-        ? "Credit"
-        : "Debit");
-
-  return {
-    id: txn._id,
-    title,
-    description: undefined,
-    account: "Wallet",
-    timeAgo: formatTimeAgo(txn.createdAt),
-    amount,
-    type: isCredit ? "income" : "expense",
-    category:
-      txn.purpose !== "other" ? txn.purpose : txn.metadata?.category || "other",
-    createdAt: txn.createdAt,
-  };
-};
-
 const groupTransactionsByDate = (
-  transactions: (TransactionItem & { createdAt?: string })[],
+  transactions: TransactionItem[],
 ): TransactionSection[] => {
-  const grouped = new Map<
-    string,
-    (TransactionItem & { createdAt?: string })[]
-  >();
+  const grouped = new Map<string, TransactionItem[]>();
 
   transactions.forEach((txn) => {
     const dateKey = txn.createdAt
@@ -185,15 +134,13 @@ const groupTransactionsByDate = (
       return {
         id: dateKey,
         title: formatSectionDate(firstDate),
-        items: items
-          .map(({ createdAt, ...item }) => item)
-          .sort((a, b) => {
-            const aTime = a.timeAgo;
-            const bTime = b.timeAgo;
-            if (aTime.includes("ago") && !bTime.includes("ago")) return -1;
-            if (!aTime.includes("ago") && bTime.includes("ago")) return 1;
-            return 0;
-          }),
+        items: items.sort((a, b) => {
+          const aTime = a.timeAgo;
+          const bTime = b.timeAgo;
+          if (aTime.includes("ago") && !bTime.includes("ago")) return -1;
+          if (!aTime.includes("ago") && bTime.includes("ago")) return 1;
+          return 0;
+        }),
       };
     })
     .sort((a, b) => {
@@ -337,7 +284,7 @@ const buildSections = (
         summary: {
           total: Math.abs(total),
           label: netLabel,
-          color: isPositive ? COLORS.secondary_500 : "#D14343",
+          color: isPositive ? COLORS.secondary_500 : COLORS.error,
           transactionCount: items.length,
         },
       };
@@ -360,28 +307,14 @@ const TransactionHistoryScreen = () => {
   const [selectedCategories, setSelectedCategories] = useState(["all"]);
   const [selectedDateRange, setSelectedDateRange] =
     useState<FilterDateRangeId>("all");
-  const categoriesRef = useRef<(string | undefined)[]>([]);
-  const {
-    data: expenseCategoryData,
-    isLoading: isExpenseCategoryLoading,
-    error: expenseCategoryError,
-  } = useGetCategoriesQuery("expense");
-
-  const {
-    data: incomeCategoryData,
-    isLoading: isIncomeCategoryLoading,
-    error: incomeCategoryError,
-  } = useGetCategoriesQuery("income");
+  const { data: categoriesData } = useGetAllCategoriesQuery();
 
   const {
     data: transactionsData,
     isLoading: isLoadingTransactions,
     refetch: refetchTransactions,
   } = useGetWalletTransactionsQuery();
-  const categoriesData = useMemo(
-    () => [...(expenseCategoryData || []), ...(incomeCategoryData || [])],
-    [expenseCategoryData, incomeCategoryData],
-  );
+  const allCategories = useMemo(() => categoriesData || [], [categoriesData]);
   const transactionSections = useMemo(() => {
     if (!transactionsData?.data || !Array.isArray(transactionsData.data)) {
       return [];
@@ -390,7 +323,7 @@ const TransactionHistoryScreen = () => {
     const transactions = transactionsData.data;
     if (transactions.length === 0) return [];
 
-    const transformed = transactions.map(transformTransactionForUI);
+    const transformed = transactions.map(transformTransaction);
     return groupTransactionsByDate(transformed);
   }, [transactionsData]);
 
@@ -634,16 +567,15 @@ const TransactionHistoryScreen = () => {
                     <View className="gap-3">
                       {section.items.map((item) => {
                         const categoryIconSource =
-                          getMatchingCategoryIconSource(
-                            categoriesData,
-                            item?.category || "",
-                          );
+                          getMatchingCategoryIconSource(allCategories || [], [
+                            item.category,
+                          ]);
                         const iconBgColor =
                           item.type === "income" ? "#E5F6F0" : "#FFF1DD";
                         const iconColor =
                           item.type === "income"
                             ? COLORS.secondary_500
-                            : "#D14343";
+                            : COLORS.error;
 
                         return (
                           <Pressable
@@ -655,15 +587,11 @@ const TransactionHistoryScreen = () => {
                               className="mr-3 h-10 w-10 items-center justify-center rounded-full"
                               style={{ backgroundColor: iconBgColor }}
                             >
-                              <Image
-                                source={
-                                  typeof categoryIconSource === "string"
-                                    ? { uri: categoryIconSource }
-                                    : categoryIconSource
-                                }
-                                tintColor={iconColor}
-                                style={{ width: 20, height: 20 }}
-                              />
+                              {renderCategoryIcon(
+                                categoryIconSource,
+                                20,
+                                iconColor,
+                              )}
                             </View>
 
                             <View className="flex-1 pe-2">
@@ -693,7 +621,7 @@ const TransactionHistoryScreen = () => {
                                   "text-base",
                                   item.type === "income"
                                     ? "text-secondary_500"
-                                    : "text-[#D14343]",
+                                    : `text-[${COLORS.error}]`,
                                 )}
                               >
                                 {formatAmountWithSign(item.amount)}

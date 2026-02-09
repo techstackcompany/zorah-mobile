@@ -1,6 +1,7 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { ExpenseItem } from "@/features/expense-income/types";
+import { getMatchingCategoryIconSource } from "@/features/expense-income/utils";
 import { generateColorsFromString } from "@/lib/utils";
 import { CategoryItem } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,7 +29,6 @@ const ExpenseList = ({
   formatDate,
   type = "expense",
 }: ExpenseListProps) => {
-  
   const router = useRouter();
   if (isLoading) {
     return (
@@ -83,14 +83,13 @@ const ExpenseList = ({
         const categoryName = expense.category || "Other";
         const { accent: categoryColor, background: categoryBg } =
           generateColorsFromString(categoryName);
-        const categoryIconSource =
-          categoryIconsData
-            ?.find((cat) => cat.label === categoryName)
-            ?.icon.toLowerCase() || "@/assets/icons/categories.png";
+        const categoryIconSource = getMatchingCategoryIconSource(
+          categoryIconsData ?? [],
+          [categoryName],
+        );
 
         const formattedDate = expense.date ? formatDate(expense.date) : "";
         const expenseId = expense._id;
-        console.log(categoryColor, "\n\n", categoryBg);
         return (
           <Pressable
             key={expenseId || index}

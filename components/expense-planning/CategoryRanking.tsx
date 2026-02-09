@@ -1,9 +1,8 @@
 import Text from "@/components/ui/Text";
 import { ChartSegment } from "@/features/expense-income/types";
-import { Image } from "expo-image";
+import { renderCategoryIcon } from "@/features/expense-income/utils";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import {} from "./ExpenseChart";
 
 type CategoryRankingProps = {
   segments: ChartSegment[];
@@ -54,16 +53,7 @@ const CategoryRanking = ({
               { backgroundColor: segment.iconBackground },
             ]}
           >
-            <Image
-              source={
-                typeof segment.iconSource === "string"
-                  ? { uri: segment.iconSource }
-                  : segment.iconSource
-              }
-              style={{ width: 20, height: 20 }}
-              tintColor={segment.color}
-              contentFit="contain"
-            />
+            {renderCategoryIcon(segment.iconSource, 20, segment.color)}
           </View>
 
           <View className="flex-1">

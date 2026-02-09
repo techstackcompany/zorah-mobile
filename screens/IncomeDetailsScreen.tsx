@@ -6,6 +6,7 @@ import {
   formatCurrency,
   formatExpenseDate,
   getMatchingCategoryIconSource,
+  renderCategoryIcon,
 } from "@/features/expense-income/utils";
 import { capitalizeWord, generateColorsFromString } from "@/lib/utils";
 import {
@@ -15,7 +16,6 @@ import {
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -64,10 +64,9 @@ const IncomeDetailsScreen = () => {
   const categoryName = income?.category || "Other";
   const { background: categoryBg, accent: categoryColor } =
     generateColorsFromString(categoryName);
-  const categoryIcon = getMatchingCategoryIconSource(
-    categoriesData || [],
+  const categoryIcon = getMatchingCategoryIconSource(categoriesData || [], [
     categoryName,
-  );
+  ]);
 
   const formattedDate = useMemo(() => {
     if (!income?.date) return "";
@@ -179,15 +178,7 @@ const IncomeDetailsScreen = () => {
                 <View
                   style={[styles.incomeIcon, { backgroundColor: categoryBg }]}
                 >
-                  <Image
-                    source={
-                      typeof categoryIcon === "string"
-                        ? { uri: categoryIcon }
-                        : categoryIcon
-                    }
-                    tintColor={categoryColor}
-                    style={styles.incomeIcon}
-                  />
+                  {renderCategoryIcon(categoryIcon, 40, categoryColor)}
                 </View>
                 <Text
                   weight="semibold"

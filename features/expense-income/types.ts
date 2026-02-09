@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ImageSource } from "expo-image";
+import { CategoryIconSource } from "./utils";
 
 export type ChartSegment = {
   key: string;
@@ -7,7 +7,7 @@ export type ChartSegment = {
   percentage: number;
   color: string;
   trackColor: string;
-  iconSource: string | ImageSource;
+  iconSource: CategoryIconSource;
   iconBackground: string;
   labelPosition: Partial<Record<"top" | "bottom" | "left" | "right", number>>;
   amount: number;
