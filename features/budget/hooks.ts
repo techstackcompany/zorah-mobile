@@ -52,7 +52,7 @@ export const useBudgetActions = () => {
   );
 
   const archiveBudgetMutation = useArchiveBudgetMutation(
-    budgetIdToArchive || undefined,
+    budgetIdToArchive || null,
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["budgets"] });
@@ -153,7 +153,11 @@ export const useBudgetActions = () => {
 };
 
 export const useBudgets = (selectedPeriod?: BudgetPeriod) => {
-  const { data: budgetsData } = useGetBudgetsQuery();
+  const {
+    data: budgetsData,
+    isLoading: isLoadingBudgets,
+    error: budgetsError,
+  } = useGetBudgetsQuery();
   const subcategories = useSubcategories();
 
   const rawBudgets = useMemo<BudgetListItem[]>(() => {
@@ -193,7 +197,13 @@ export const useBudgets = (selectedPeriod?: BudgetPeriod) => {
     return transformBudgets(filteredRawBudgets, subcategories || []);
   }, [filteredRawBudgets, subcategories]);
 
-  return { rawBudgets, budgets, filteredRawBudgets };
+  return {
+    rawBudgets,
+    budgets,
+    filteredRawBudgets,
+    isLoadingBudgets,
+    budgetsError,
+  };
 };
 
 export const useBudgetSummary = (rawBudgets: BudgetListItem[]) => {

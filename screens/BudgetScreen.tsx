@@ -15,19 +15,17 @@ import {
   useBudgetSummary,
   useBudgets,
 } from "@/features/budget";
-import { useGetBudgetsQuery } from "@/src/api/hooks";
 import React, { useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
 const BudgetScreen = () => {
-  const { isLoading: isLoadingBudgets, error: budgetsError } =
-    useGetBudgetsQuery();
+ 
   const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriod>(() => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
   });
 
-  const { rawBudgets, budgets, filteredRawBudgets } =
+  const { rawBudgets, budgets, filteredRawBudgets, isLoadingBudgets, budgetsError } =
     useBudgets(selectedPeriod);
 
   const availablePeriods = useMemo(() => {
@@ -52,7 +50,6 @@ const BudgetScreen = () => {
 
   useEffect(() => {
     if (availablePeriods.length === 0) return;
-
     const selectionKey = `${selectedPeriod.year}-${selectedPeriod.month}`;
     const selectionExists = availablePeriods.some(
       (period) => `${period.year}-${period.month}` === selectionKey,
@@ -62,6 +59,7 @@ const BudgetScreen = () => {
       setSelectedPeriod(availablePeriods[availablePeriods.length - 1]);
     }
   }, [availablePeriods, selectedPeriod]);
+
   const budgetSummary = useBudgetSummary(filteredRawBudgets);
   const budgetPeriodLabel = useMemo(() => {
     return new Date(

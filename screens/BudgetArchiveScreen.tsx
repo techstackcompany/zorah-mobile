@@ -124,9 +124,6 @@ const transformArchivedBudgets = (
   });
 };
 
-const useSubcategories = () => {
-  const { data: subcategoriesData } = useGetCategoriesQuery("budget");
-};
 
 const BudgetArchiveScreen = () => {
   const [selectedBudget, setSelectedBudget] = useState<ArchivedBudget | null>(
@@ -143,10 +140,11 @@ const BudgetArchiveScreen = () => {
     isLoading: isLoadingArchived,
     refetch: refetchArchived,
   } = useGetArchivedBudgetsQuery();
-  const subcategories = useSubcategories();
+  const {data:subcategories} = useGetCategoriesQuery("budget");
 
   const archivedBudgets = useMemo(() => {
     if (!archivedBudgetsData) return [];
+    if(!subcategories) return [];
     const rawBudgets = Array.isArray(archivedBudgetsData)
       ? archivedBudgetsData
       : archivedBudgetsData.data || [];
@@ -155,7 +153,7 @@ const BudgetArchiveScreen = () => {
   }, [archivedBudgetsData, subcategories]);
 
   const restoreBudgetMutation = useRestoreBudgetMutation(
-    budgetIdToRestore || undefined,
+    budgetIdToRestore || "",
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["budgets"] });
