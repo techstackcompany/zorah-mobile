@@ -1,7 +1,6 @@
 import { Image } from "expo-image";
 import { Stack } from "expo-router";
 import React from "react";
-import { StyleSheet } from "react-native";
 
 const Layout = () => {
   return (
@@ -42,5 +41,3 @@ const Layout = () => {
 };
 
 export default Layout;
-
-const styles = StyleSheet.create({});

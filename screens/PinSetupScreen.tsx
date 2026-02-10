@@ -12,12 +12,11 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -49,10 +48,9 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [biometricsAvailable, setBiometricsAvailable] = useState(false);
-  const inputRef = useRef<TextInput>(null);
-  const confirmInputRef = useRef<TextInput>(null);
   const offset = useSharedValue(0);
   useSetUpStep(5, variant);
+
   useEffect(() => {
     const checkBiometrics = async () => {
       try {
@@ -104,7 +102,6 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
       if (biometricsAvailable) {
         toggleBiometricsMutation.mutate({ enabled: true });
       } else {
-        // If biometrics not available, just complete the setup
         if (variant === "setup") {
           setHasCompletedSetup(true);
           setSetupStep(null);
@@ -141,86 +138,91 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
     };
   });
 
-  const handleChangeText = (text: string) => {
-    const sanitized = text.replace(/\\D/g, "").slice(0, PIN_LENGTH);
-    if (step === "create") {
-      setPin(sanitized);
-    } else {
-      setConfirmPin(sanitized);
-    }
-  };
-
-  useEffect(() => {
-    if (step === "create") {
-      inputRef.current?.focus();
-    } else {
-      confirmInputRef.current?.focus();
-    }
-  }, [step]);
-
-  useEffect(() => {
-    if (pin.length === PIN_LENGTH && step === "create") {
-      setStep("confirm");
-    }
-  }, [pin, step]);
-
-  useEffect(() => {
-    if (confirmPin.length === PIN_LENGTH && step === "confirm") {
-      if (pin !== confirmPin) {
-        offset.value = withSequence(
-          withTiming(-OFFSET, { duration: TIME / 20 }),
-          withRepeat(withTiming(OFFSET, { duration: TIME / 2 }), 4, true),
-          withTiming(0, { duration: TIME / 2 }),
-        );
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Toast.show({
-          type: "error",
-          text1: "PIN Mismatch",
-          text2: "The PINs you entered do not match. Please try again.",
-        });
-        setConfirmPin("");
-        setStep("create");
-        setPin("");
-      } else {
-        setPinMutation.mutate({ pin });
-      }
-    }
-  }, [confirmPin, offset, pin, setPinMutation, step]);
-
   const currentPin = step === "create" ? pin : confirmPin;
-  const currentInputRef = step === "create" ? inputRef : confirmInputRef;
   const isLoading = useMemo(
     () => setPinMutation.isPending || toggleBiometricsMutation.isPending,
     [setPinMutation.isPending, toggleBiometricsMutation.isPending],
   );
 
+  const onNumberPress = (number: number) => {
+    if (currentPin.length < PIN_LENGTH && !isLoading) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const newPin = currentPin + number.toString();
+
+      if (step === "create") {
+        setPin(newPin);
+        if (newPin.length === PIN_LENGTH) {
+          setTimeout(() => setStep("confirm"), 200);
+        }
+      } else {
+        setConfirmPin(newPin);
+        if (newPin.length === PIN_LENGTH) {
+          // Verify PINs match
+          if (pin !== newPin) {
+            setTimeout(() => {
+              offset.value = withSequence(
+                withTiming(-OFFSET, { duration: TIME / 20 }),
+                withRepeat(withTiming(OFFSET, { duration: TIME / 2 }), 4, true),
+                withTiming(0, { duration: TIME / 2 }),
+              );
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Toast.show({
+                type: "error",
+                text1: "PIN Mismatch",
+                text2: "The PINs you entered do not match. Please try again.",
+              });
+              setConfirmPin("");
+              setStep("create");
+              setPin("");
+            }, 200);
+          } else {
+            setPinMutation.mutate({ pin });
+          }
+        }
+      }
+    }
+  };
+
+  const onBackSpacePress = () => {
+    if (currentPin.length > 0 && !isLoading) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (step === "create") {
+        setPin(pin.slice(0, -1));
+      } else {
+        setConfirmPin(confirmPin.slice(0, -1));
+      }
+    }
+  };
+
   return (
     <LinearGradient colors={["#F6FAFF", "#FFFFFF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        {variant === "settings" && (
+          <View style={styles.backButtonContainer}>
+            <TouchableOpacity
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(app)/(home)/profile");
+                }
+              }}
+              style={styles.backButton}
+            >
+              <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/(app)/(home)/profile");
-              }
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
-          </TouchableOpacity>
-          <View style={[styles.iconContainer, { marginLeft: -40 }]}>
+          {variant === "settings" && <View style={styles.iconContainer}>
             <Image
               source={require("@/assets/images/icon.png")}
               style={styles.appIcon}
               contentFit="contain"
             />
-          </View>
-        </View>
-
-        <View style={styles.content}>
-          <Text style={styles.title}>
+          </View>}
+          <Text style={styles.greeting}>
             {variant === "setup"
               ? "Secure Your Account"
               : step === "create"
@@ -230,106 +232,100 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
           <Text style={styles.subtitle}>
             {variant === "setup"
               ? biometricsAvailable
-                ? "Create a 4-digit PIN and enable biometric authentication to secure your account"
+                ? "Create a 4-digit PIN and enable biometric authentication"
                 : "Create a 4-digit PIN to secure your account"
               : step === "create"
                 ? "Enter a 4-digit PIN to secure your account"
                 : "Re-enter your PIN to confirm"}
           </Text>
+        </View>
 
-          <Animated.View style={[styles.codeView, style]}>
-            {Array(PIN_LENGTH)
-              .fill(null)
-              .map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.codeEmpty,
-                    {
-                      backgroundColor:
-                        index < currentPin.length
-                          ? COLORS.primary_400
-                          : "transparent",
-                      borderColor:
-                        index < currentPin.length
-                          ? COLORS.primary_400
-                          : COLORS.primary_200,
-                      borderWidth: index < currentPin.length ? 0 : 2,
-                    },
-                  ]}
-                />
-              ))}
-          </Animated.View>
-
-          {/* Hidden TextInput for keyboard input */}
-          <TextInput
-            ref={currentInputRef}
-            style={styles.hiddenInput}
-            value={currentPin}
-            onChangeText={handleChangeText}
-            keyboardType="numeric"
-            maxLength={PIN_LENGTH}
-            autoFocus={step === "create"}
-            secureTextEntry
-          />
-
-          <View style={styles.numbersView}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
-              <TouchableOpacity
-                key={number}
-                style={[styles.keypadBtn, styles.numberBtn]}
-                onPress={() => {
-                  const newPin = currentPin + number;
-                  if (newPin.length <= PIN_LENGTH) {
-                    handleChangeText(newPin);
-                  }
-                }}
-                disabled={isLoading || currentPin.length >= PIN_LENGTH}
-              >
-                <Text style={styles.number}>{number}</Text>
-              </TouchableOpacity>
+        <Animated.View style={[styles.codeView, style]}>
+          {Array(PIN_LENGTH)
+            .fill(null)
+            .map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.codeEmpty,
+                  {
+                    backgroundColor:
+                      index < currentPin.length
+                        ? COLORS.primary_400
+                        : "transparent",
+                    borderColor:
+                      index < currentPin.length
+                        ? COLORS.primary_400
+                        : COLORS.primary_200,
+                    borderWidth: index < currentPin.length ? 0 : 2,
+                    opacity: isLoading ? 0 : 1,
+                  },
+                ]}
+              />
             ))}
-
-            <View style={styles.lastRow}>
-              <View style={styles.keypadBtn} />
-              <TouchableOpacity
-                style={[styles.keypadBtn, styles.numberBtn]}
-                onPress={() => {
-                  const newPin = currentPin + "0";
-                  if (newPin.length <= PIN_LENGTH) {
-                    handleChangeText(newPin);
-                  }
-                }}
-                disabled={isLoading || currentPin.length >= PIN_LENGTH}
-              >
-                <Text style={styles.number}>0</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keypadBtn, styles.backspaceBtn]}
-                onPress={() => {
-                  handleChangeText(currentPin.slice(0, -1));
-                }}
-                disabled={isLoading || currentPin.length === 0}
-              >
-                <MaterialCommunityIcons
-                  name="backspace-outline"
-                  size={24}
-                  color={COLORS.textColor}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {isLoading && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color={COLORS.primary_400} />
-              <Text style={styles.loadingText}>
-                {setPinMutation.isPending
-                  ? "Setting up PIN..."
-                  : "Enabling biometrics..."}
-              </Text>
+            <View style={styles.verifyingOverlay}>
+              <ActivityIndicator size="small" color={COLORS.primary_400} />
             </View>
           )}
+        </Animated.View>
+
+        <View style={styles.numbersView}>
+          {[0, 1, 2].map((rowIndex) => {
+            const base = rowIndex * 3 + 1;
+            return (
+              <View
+                key={rowIndex}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                {[base, base + 1, base + 2].map((number) => (
+                  <TouchableOpacity
+                    key={number}
+                    style={[styles.keypadBtn, styles.numberBtn]}
+                    onPress={() => onNumberPress(number)}
+                    disabled={isLoading || currentPin.length >= PIN_LENGTH}
+                  >
+                    <Text style={styles.number}>{number}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            );
+          })}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <View style={styles.keypadBtn} />
+            <TouchableOpacity
+              onPress={() => onNumberPress(0)}
+              style={[styles.keypadBtn, styles.numberBtn]}
+              disabled={isLoading || currentPin.length >= PIN_LENGTH}
+            >
+              <Text style={styles.number}>0</Text>
+            </TouchableOpacity>
+            <View style={styles.keypadBtn}>
+              {currentPin.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.keypadBtn, styles.backspaceBtn]}
+                  onPress={onBackSpacePress}
+                  disabled={isLoading}
+                >
+                  <MaterialCommunityIcons
+                    name="backspace"
+                    size={22}
+                    color={COLORS.textColor}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -343,12 +339,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
+  backButtonContainer: {
     paddingHorizontal: 24,
     paddingVertical: 16,
-    justifyContent: "space-between",
   },
   backButton: {
     width: 40,
@@ -363,59 +356,81 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  iconContainer: {
+  header: {
     alignItems: "center",
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+    shadowColor: COLORS.primary_400,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   appIcon: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
+  greeting: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: COLORS.textColor,
+    marginBottom: 8,
+    letterSpacing: 0.5,
     textAlign: "center",
-    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
-    color: COLORS.textColor + "B3",
+    fontSize: 15,
+    color: "#6B7280",
+    fontWeight: "400",
     textAlign: "center",
-    marginBottom: 48,
-    lineHeight: 22,
+    paddingHorizontal: 40,
   },
   codeView: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 48,
     gap: 16,
+    marginVertical: 20,
+    paddingHorizontal: 20,
+    position: "relative",
+  },
+  verifyingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
   codeEmpty: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-  },
-  hiddenInput: {
-    position: "absolute",
-    opacity: 0,
-    height: 0,
-    width: 0,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
   },
   numbersView: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    width: 240,
+    marginHorizontal: 40,
     gap: 24,
     marginTop: 20,
+  },
+  number: {
+    fontSize: 28,
+    fontWeight: "600",
+    color: COLORS.textColor,
   },
   keypadBtn: {
     width: 70,
@@ -437,32 +452,6 @@ const styles = StyleSheet.create({
   },
   backspaceBtn: {
     backgroundColor: "transparent",
-  },
-  lastRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  number: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: COLORS.textColor,
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.textColor,
-    fontWeight: "500",
   },
 });
 

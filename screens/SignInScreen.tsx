@@ -3,10 +3,10 @@ import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
 import { setRefreshToken } from "@/src/api/client";
-import { useLoginUserMutation } from "@/src/api/hooks";
+import { useGetUserProfileQuery, useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
 import { Link, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,20 +19,24 @@ import {
 import Toast from "react-native-toast-message";
 
 const SignInScreen = () => {
+  const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const router = useRouter();
-  const { signIn, setUserData, hasCompletedSetup } = useSession();
+  const { signIn, setHasCompletedSetup, setUserData, isAuthenticated, signOut, userData } =
+    useSession();
   const loginMutation = useLoginUserMutation();
-
   const focusField = (field: string) => {
     setFocused(field);
   };
-
   const blurField = () => {
     setFocused(null);
   };
+
+  const { data: profileResponse, isLoading: isProfileLoading } =
+    useGetUserProfileQuery({
+      enabled: isAuthenticated,
+    });
 
   const processSignInResponse = useCallback(
     async (response: LoginUserResponse) => {
@@ -50,29 +54,43 @@ const SignInScreen = () => {
       }
       await signIn(accessToken);
 
-      const profileCandidate = response;
-      const profile = profileCandidate.user;
-
-      if (profile) {
-        setUserData(profile);
-      }
+      const userName = response.user?.name;
 
       Toast.show({
         type: "success",
         text1: "Welcome back",
         text2:
-          typeof profile?.name === "string"
-            ? `Hi ${(profile.name ?? "").split(" ")[0]}`
-            : "You’re now signed in.",
+          typeof userName === "string"
+            ? `Hi ${(userName ?? "").split(" ")[0]}`
+            : "You're now signed in.",
       });
-      if (hasCompletedSetup || true) {
-        console.log("hasCompletedSetup", hasCompletedSetup);
-      }
     },
 
-    [setUserData, signIn, , hasCompletedSetup],
+    [signIn],
   );
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (isProfileLoading || !profileResponse) return;
+
+    setUserData(profileResponse);
+
+    const isSetupComplete = profileResponse.biometricEnabled === true;
+    setHasCompletedSetup(isSetupComplete);
+
+    if (isSetupComplete) {
+      router.replace("/(app)/(home)");
+    } else {
+      router.replace("/(auth)/setup/kyc-details");
+    }
+  }, [
+    isAuthenticated,
+    isProfileLoading,
+    profileResponse,
+    router,
+    setUserData,
+    setHasCompletedSetup,
+  ]);
   const isSubmitting = loginMutation.isPending;
 
   const validate = useCallback(() => {
@@ -101,7 +119,6 @@ const SignInScreen = () => {
       await processSignInResponse(response);
     } catch (error) {
       const message = (error as { message: string })?.message;
-      console.log("message.", message);
       Toast.show({
         type: "error",
         text1: "Sign in failed",
@@ -214,5 +231,3 @@ const SignInScreen = () => {
 };
 
 export default SignInScreen;
-{
-}

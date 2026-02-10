@@ -41,8 +41,7 @@ const OriginalSignUpScreen = () => {
   const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
 
   const router = useRouter();
-  const { setUserData, signIn, setHasCompletedSetup, setSetupStep } =
-    useSession();
+  const { signIn, setHasCompletedSetup, setSetupStep } = useSession();
   const registerMutation = useRegisterUserMutation();
   const isSubmitting = registerMutation.isPending;
 
@@ -51,12 +50,10 @@ const OriginalSignUpScreen = () => {
     if (!form.name.trim()) newErrors.name = "Please enter your name";
     if (!/\S+@\S+\.\S+/.test(form.email))
       newErrors.email = "Please enter a valid email";
-    if (!/^\d{10,15}$/.test(form.phone))
-      newErrors.phone = "Please enter phone number";
     if (!form.password.trim()) newErrors.password = "Please enter password";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [form.email, form.name, form.password, form.phone]);
+  }, [form.email, form.name, form.password]);
 
   const handleSubmit = useCallback(async () => {
     if (!validate()) return;
@@ -70,10 +67,6 @@ const OriginalSignUpScreen = () => {
       };
       const response = await registerMutation.mutateAsync(payload);
 
-      setUserData({
-        ...response,
-        phone: form.phone.trim(),
-      });
       setHasCompletedSetup(false);
       setSetupStep(1);
       await signIn(response.token);
@@ -111,9 +104,7 @@ const OriginalSignUpScreen = () => {
     form.name,
     form.email,
     form.password,
-    form.phone,
     registerMutation,
-    setUserData,
     setHasCompletedSetup,
     setSetupStep,
     signIn,
@@ -127,7 +118,7 @@ const OriginalSignUpScreen = () => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -60}
     >
       <ScrollView
-        className="flex-1 px-6 bg-white"
+        className="flex-1 bg-white px-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -267,7 +258,7 @@ const OriginalSignUpScreen = () => {
             disabled={!agree || isSubmitting}
             onPress={handleSubmit}
             className={cn(
-              "mb-6 items-center justify-center rounded-xl py-4",
+              "mb-6 items-center justify-center rounded-xl py-4 active:opacity-80",
               agree ? "bg-primary_400" : "bg-primary_400/30",
               isSubmitting && "opacity-80",
             )}

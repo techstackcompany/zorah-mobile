@@ -1,8 +1,8 @@
 import { clearPersistedQueryCache } from "@/lib/reactQuery";
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
-import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { UserProfile } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import {
   createContext,
   PropsWithChildren,
@@ -11,7 +11,6 @@ import {
 } from "react";
 import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
-import { RelativePathString, router } from "expo-router";
 
 /* ---------------------------------------------
    Auth Context & Types
@@ -66,20 +65,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
     [isLoadingCompletedSetup, hasCompletedSetupRaw],
     setHasCompletedSetupRaw,
   ] = useStorageState("hasCompletedSetup");
-  const [[isLoadingSetupStep, setupStep], setSetupStepRaw] =
+  const [[isLoadingSetupStep, setupStepRaw], setSetupStepRaw] =
     useStorageState("setupStep");
   const [
     [isLoadingKycStatus, kycVerificationStatusRaw],
     setKycVerificationStatusRaw,
   ] = useStorageState("kycVerificationStatus");
-
-  const {
-    data: profileResponse,
-    isLoading: isProfileLoading,
-    isError: isProfileError,
-  } = useGetUserProfileQuery({
-    enabled: Boolean(session),
-  });
 
   const isLoading =
     isLoadingSession ||
@@ -89,8 +80,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isLoadingCompletedSetup ||
     isLoadingSetupStep ||
     isLoadingKycStatus ||
-    isLoadingUserData ||
-    (session ? isProfileLoading && !isProfileError : false);
+    isLoadingUserData;
+  // (session ? isProfileLoading && !isProfileError : false);
 
   /* ---------------------------------------------
      Authentication methods
@@ -111,7 +102,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setUserDataRaw(null);
     setHasCompletedSetupRaw(null);
     setSetupStepRaw(null);
-    router.replace('/(auth)/signIn');
+    router.replace("/(auth)/signIn");
   }, [
     queryClient,
     setSession,
@@ -152,12 +143,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     [setUserDataRaw],
   );
 
-  useEffect(() => {
-    if (profileResponse?.data) {
-      setUserData(profileResponse.data);
-    }
-  }, [profileResponse, setUserData]);
-
   let parsedUserData: UserProfile | null = null;
   if (typeof userData === "string") {
     try {
@@ -168,28 +153,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }
   }
 
-  const hasCompletedSetup = hasCompletedSetupRaw === "true";
-  let normalizedSetupStep: number | null = null;
-  if (typeof setupStep === "string") {
-    const parsed = Number.parseInt(setupStep, 10);
-    normalizedSetupStep = Number.isNaN(parsed) ? null : parsed;
-  }
-
-  const needsBiometricSetup = Boolean(
-    parsedUserData &&
-      (parsedUserData.hasPin !== true ||
-        parsedUserData.biometricEnabled !== true),
-  );
-
   const kycVerificationStatus: KycStatus =
     kycVerificationStatusRaw ?? "unverified";
-
-  // Sync kycVerificationStatus from profile response
-  useEffect(() => {
-    if (profileResponse?.data?.KycStatus) {
-      setKycVerificationStatusRaw(profileResponse.data.KycStatus);
-    }
-  }, [profileResponse, setKycVerificationStatusRaw]);
 
   /* ---------------------------------------------
      Context value
@@ -203,11 +168,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isVerified: isVerified === "true",
     kycVerificationStatus,
     hasSetAffirmations: hasSetAffirmations === "true",
-    hasCompletedSetup: hasCompletedSetup && !needsBiometricSetup,
-    setupStep: needsBiometricSetup ? 5 : normalizedSetupStep,
+    hasCompletedSetup: hasCompletedSetupRaw === "true",
     userData: parsedUserData,
     isAuthenticated: !!session,
-
+    setupStep: Number(setupStepRaw),
     setHasOnboarded: (v) => setHasOnboarded(String(v)),
     setIsVerified: (v) => setIsVerified(String(v)),
     setKycVerificationStatus: (v) => setKycVerificationStatusRaw(v),

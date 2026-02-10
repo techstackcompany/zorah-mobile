@@ -113,13 +113,7 @@ console.log('userData', userData)
               value={form.phone}
               onChangeText={handleChange("phone")}
             />
-            <FormField
-              label="Note (Optional)"
-              value={form.note}
-              onChangeText={handleChange("note")}
-              multiline
-              placeholder="Message..."
-            />
+         
           </View>
 
           <TouchableOpacity style={styles.footer} onPress={handleSubmit}>
