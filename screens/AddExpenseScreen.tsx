@@ -158,6 +158,12 @@ const usePaymentMethodActions = (
   };
 };
 
+const OTHER_CATEGORY = {
+  key: "Other",
+  label: "Other",
+  icon: require("@/assets/icons/more-ellipsis.svg"),
+};
+
 const useExpenseSubCategories = () => {
   const {
     data: categoriesData,
@@ -170,7 +176,7 @@ const useExpenseSubCategories = () => {
       return [];
     }
 
-    return categoriesData;
+    return [...categoriesData, OTHER_CATEGORY];
   }, [categoriesData]);
 
   return { expenseCategories, isCategoriesLoading, categoriesError };
@@ -181,6 +187,7 @@ const AddExpenseScreen = () => {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [customCategory, setCustomCategory] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -247,6 +254,7 @@ const AddExpenseScreen = () => {
       setPaymentMethod("");
       setDate("");
       setDescription("");
+      setCustomCategory("");
       setTimeout(() => {
         router.back();
       }, 1500);
@@ -351,6 +359,8 @@ const AddExpenseScreen = () => {
     }
   }, [transcriptionError]);
 
+  const isOtherCategory = selectedCategory.toLowerCase() === "other";
+
   const handleSubmit = useCallback(() => {
     if (isVoiceMode && editableTranscript.trim()) {
       logVoiceExpenseMutation.mutate({ message: editableTranscript });
@@ -358,8 +368,19 @@ const AddExpenseScreen = () => {
     }
 
     if (validateFields({ amount, date, paymentMethod, selectedCategory })) {
+      // If "Other" is selected, require and use the custom category
+      const isOther = selectedCategory.toLowerCase() === "other";
+      if (isOther && !customCategory.trim()) {
+        Toast.show({
+          type: "error",
+          text1: "Category Required",
+          text2: "Please enter a custom category name.",
+        });
+        return;
+      }
+
       const numericAmount = Number(amount);
-      const apiCategory = selectedCategory;
+      const apiCategory = isOther ? customCategory.trim() : selectedCategory;
 
       let formattedDate = date;
       const [day, month, yearStr] = date.split("/");
@@ -383,6 +404,7 @@ const AddExpenseScreen = () => {
     logVoiceExpenseMutation,
     amount,
     selectedCategory,
+    customCategory,
     paymentMethod,
     date,
     description,
@@ -595,11 +617,31 @@ const AddExpenseScreen = () => {
                         </Text>
                       </View>
                     ) : expenseCategories.length > 0 ? (
-                      <CategorySelector
-                        categories={expenseCategories}
-                        selectedKey={selectedCategory}
-                        onSelect={setSelectedCategory}
-                      />
+                      <>
+                        <CategorySelector
+                          categories={expenseCategories}
+                          selectedKey={selectedCategory}
+                          onSelect={(key) => {
+                            setSelectedCategory(key);
+                            if (key.toLowerCase() !== "other") {
+                              setCustomCategory("");
+                            }
+                          }}
+                        />
+                        {isOtherCategory && (
+                          <TextInputField
+                            label="Custom Category"
+                            placeholder="Enter your custom category"
+                            value={customCategory}
+                            onChangeText={setCustomCategory}
+                            autoCapitalize="words"
+                            onFocusChange={(focused) =>
+                              setFocusedField(focused ? "customCategory" : null)
+                            }
+                            inputClassName="mt-3"
+                          />
+                        )}
+                      </>
                     ) : (
                       <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
                         <Text className="text-textColor/50">

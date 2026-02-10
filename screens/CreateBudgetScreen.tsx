@@ -5,6 +5,7 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
+import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import {
@@ -154,6 +155,7 @@ const CreateBudgetScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>(
     firstCategory || "",
   );
+  const [customCategory, setCustomCategory] = useState("");
   const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>("this_month");
   const [selectedRange, setSelectedRange] = useState<DateRange>(() =>
     getPresetRange("this_month"),
@@ -279,11 +281,34 @@ const CreateBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
                 <CategorySelector
-                  categories={budgetCategories || []}
+                  categories={[
+                    ...(budgetCategories || []),
+                    {
+                      key: "other",
+                      label: "Other",
+                      icon: require("@/assets/icons/more-ellipsis.svg"),
+                    },
+                  ]}
                   selectedKey={selectedCategory}
-                  onSelect={(key) => setSelectedCategory(key)}
+                  onSelect={(key) => {
+                    setSelectedCategory(key);
+                    if (key.toLowerCase() !== "other") {
+                      setCustomCategory("");
+                    }
+                  }}
                   className="mt-3"
                 />
+                {selectedCategory.toLowerCase() === "other" && (
+                  <View className="mt-4">
+                    <TextInputField
+                      label="Custom Category"
+                      placeholder="Enter your custom category"
+                      value={customCategory}
+                      onChangeText={setCustomCategory}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                )}
               </View>
 
               <View>
@@ -317,13 +342,48 @@ const CreateBudgetScreen = () => {
               disabled={isSubmitDisabled || createBudgetMutation.isPending}
               className="w-full"
               onPress={() => {
+                if (!amount || Number(amount) <= 0) {
+                  Toast.show({
+                    type: "error",
+                    text1: "Invalid Amount",
+                    text2: "Please enter a valid budget amount.",
+                  });
+                  return;
+                }
+
+                if (!selectedCategory) {
+                  Toast.show({
+                    type: "error",
+                    text1: "Category Required",
+                    text2: "Please select a category.",
+                  });
+                  return;
+                }
+
+                if (
+                  selectedCategory.toLowerCase() === "other" &&
+                  !customCategory.trim()
+                ) {
+                  Toast.show({
+                    type: "error",
+                    text1: "Custom Category Required",
+                    text2: "Please enter a custom category name.",
+                  });
+                  return;
+                }
+
                 const apiPeriod =
                   periodKey === "custom"
                     ? determinePeriodFromRange(selectedRange)
                     : PERIOD_MAP[periodKey];
 
+                const finalCategory =
+                  selectedCategory.toLowerCase() === "other"
+                    ? customCategory.trim()
+                    : selectedCategory;
+
                 const payload = {
-                  category: selectedCategory,
+                  category: finalCategory,
                   amount: Number(amount),
                   period: apiPeriod,
                   startDate: formatDateForAPI(selectedRange.start),

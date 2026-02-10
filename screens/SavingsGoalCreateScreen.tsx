@@ -32,6 +32,7 @@ const SavingsGoalCreateScreen = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [note, setNote] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -42,8 +43,15 @@ const SavingsGoalCreateScreen = () => {
     useGetCategoriesQuery("savings");
 
   const categories = useMemo(() => {
-    if (!categoriesData) return [];
-    return categoriesData;
+    const apiCategories = !categoriesData ? [] : categoriesData;
+    return [
+      ...apiCategories,
+      {
+        key: "other",
+        label: "Other",
+        icon: require("@/assets/icons/more-ellipsis.svg"),
+      },
+    ];
   }, [categoriesData]);
 
   const createGoalMutation = useCreateSavingsGoalMutation({
@@ -59,6 +67,8 @@ const SavingsGoalCreateScreen = () => {
 
       setName("");
       setAmount("");
+      setCategory("");
+      setCustomCategory("");
       setTargetDate("");
       setNote("");
 
@@ -106,6 +116,24 @@ const SavingsGoalCreateScreen = () => {
       return;
     }
 
+    if (!category) {
+      Toast.show({
+        type: "error",
+        text1: "Category Required",
+        text2: "Please select a category.",
+      });
+      return;
+    }
+
+    if (category.toLowerCase() === "other" && !customCategory.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Custom Category Required",
+        text2: "Please enter a custom category name.",
+      });
+      return;
+    }
+
     const numericAmount = Number(amount);
 
     let formattedDate = targetDate;
@@ -116,10 +144,14 @@ const SavingsGoalCreateScreen = () => {
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
+    const finalCategory =
+      category.toLowerCase() === "other" ? customCategory.trim() : category;
+
     const payload = {
       title: name.trim(),
       targetAmount: numericAmount,
       deadline: formattedDate,
+      category: finalCategory,
       description: note.trim() || undefined,
     };
 
@@ -127,7 +159,11 @@ const SavingsGoalCreateScreen = () => {
   }, [name, amount, targetDate, note, createGoalMutation]);
 
   const isSubmitDisabled =
-    !name || !amount || !targetDate || createGoalMutation.isPending;
+    !name ||
+    !amount ||
+    !category ||
+    !targetDate ||
+    createGoalMutation.isPending;
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -188,8 +224,32 @@ const SavingsGoalCreateScreen = () => {
               <CategorySelector
                 categories={categories}
                 selectedKey={category}
-                onSelect={setCategory}
+                onSelect={(key) => {
+                  setCategory(key);
+                  if (key.toLowerCase() !== "other") {
+                    setCustomCategory("");
+                  }
+                }}
               />
+              {category.toLowerCase() === "other" && (
+                <View className="mt-4">
+                  <TextInput
+                    value={customCategory}
+                    onChangeText={setCustomCategory}
+                    placeholder="Enter your custom category"
+                    placeholderTextColor="#9AA5B1"
+                    autoCapitalize="words"
+                    onFocus={() => setFocusedField("customCategory")}
+                    onBlur={() => setFocusedField(null)}
+                    className={cn(
+                      "rounded-2xl border bg-white px-4 py-4 text-base text-textColor",
+                      focusedField === "customCategory"
+                        ? "border-primary_400"
+                        : "border-gray-200",
+                    )}
+                  />
+                </View>
+              )}
             </View>
 
             <View className="mt-6">

@@ -289,6 +289,7 @@ export interface CreateSavingsGoalRequest {
   title: string;
   targetAmount: number;
   deadline: string;
+  category?: string;
   description?: string;
 }
 
@@ -317,6 +318,7 @@ export interface UpdateSavingsGoalRequest {
   title: string;
   targetAmount: number;
   deadline: string;
+  category?: string;
   description?: string;
 }
 

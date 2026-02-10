@@ -91,6 +91,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
   const itemId = params.id;
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [customCategory, setCustomCategory] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
@@ -128,28 +129,49 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
   }, [expenseData, incomeData, isIncomeScreen]);
 
   const expenseCategories = useMemo<CategoryItem[]>(() => {
-    if (!categoriesData || categoriesData.length === 0) {
-      return [];
-    }
+    const apiCategories =
+      !categoriesData || categoriesData.length === 0
+        ? []
+        : categoriesData.map((category) => ({
+            key: category.key,
+            label: category.label,
+            icon: category.icon || "",
+          }));
 
-    return categoriesData.map((category) => ({
-      key: category.key,
-      label: category.label,
-      icon: category.icon || "",
-    }));
+    return [
+      ...apiCategories,
+      {
+        key: "other",
+        label: "Other",
+        icon: require("@/assets/icons/more-ellipsis.svg"),
+      },
+    ];
   }, [categoriesData]);
 
   useEffect(() => {
-    if (item) {
+    if (item && expenseCategories.length > 0) {
       setAmount(item.amount?.toString() || "");
-      setSelectedCategory(item.category.toLowerCase() || "");
+
+      const itemCategory = item.category.toLowerCase();
+      const categoryExists = expenseCategories.some(
+        (cat) => cat.key.toLowerCase() === itemCategory,
+      );
+
+      if (categoryExists) {
+        setSelectedCategory(itemCategory);
+        setCustomCategory("");
+      } else {
+        setSelectedCategory("other");
+        setCustomCategory(item.category);
+      }
+
       setPaymentMethod(
         normalizePaymentMethodValue(item?.paymentMethod ?? item.source),
       );
       setDate(formatDateForInput(item.date));
       setDescription(item.description || "");
     }
-  }, [item]);
+  }, [item, expenseCategories]);
 
   useEffect(() => {
     if (expenseCategories.length > 0 && !selectedCategory) {
@@ -271,6 +293,15 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
       return;
     }
 
+    if (selectedCategory.toLowerCase() === "other" && !customCategory.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Custom Category Required",
+        text2: "Please enter a custom category name.",
+      });
+      return;
+    }
+
     const numericAmount = Number(amount);
 
     let formattedDate = date;
@@ -281,10 +312,15 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
+    const finalCategory =
+      selectedCategory.toLowerCase() === "other"
+        ? customCategory.trim()
+        : selectedCategory;
+
     if (isIncomeScreen) {
       const payload = {
         amount: numericAmount,
-        category: selectedCategory,
+        category: finalCategory,
         description: description || undefined,
         source: paymentMethod || "Other",
         date: formattedDate,
@@ -293,7 +329,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
     } else {
       const payload = {
         amount: numericAmount,
-        category: selectedCategory,
+        category: finalCategory,
         description: description || undefined,
         paymentMethod,
         date: formattedDate,
@@ -306,6 +342,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
     paymentMethod,
     date,
     description,
+    customCategory,
     isIncomeScreen,
     updateExpenseMutation,
     updateIncomeMutation,
@@ -398,11 +435,24 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
                     </Text>
                   </View>
                 ) : expenseCategories.length > 0 ? (
-                  <CategorySelector
-                    categories={expenseCategories}
-                    selectedKey={selectedCategory}
-                    onSelect={setSelectedCategory}
-                  />
+                  <>
+                    <CategorySelector
+                      categories={expenseCategories}
+                      selectedKey={selectedCategory}
+                      onSelect={setSelectedCategory}
+                    />
+                    {selectedCategory.toLowerCase() === "other" && (
+                      <View className="mt-4">
+                        <TextInputField
+                          label="Custom Category"
+                          placeholder="Enter your custom category"
+                          value={customCategory}
+                          onChangeText={setCustomCategory}
+                          autoCapitalize="words"
+                        />
+                      </View>
+                    )}
+                  </>
                 ) : (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
                     <Text className="text-textColor/50">

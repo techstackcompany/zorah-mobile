@@ -4,6 +4,7 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
+import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
@@ -40,6 +41,7 @@ const AddIncomeScreen = () => {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [customCategory, setCustomCategory] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
@@ -54,11 +56,15 @@ const AddIncomeScreen = () => {
   } = useGetCategoriesQuery("income");
 
   const incomeCategories = useMemo<IncomeCategory[]>(() => {
-    if (!categoriesData) {
-      return [];
-    }
-
-    return categoriesData;
+    const apiCategories = !categoriesData ? [] : categoriesData;
+    return [
+      ...apiCategories,
+      {
+        key: "other",
+        label: "Other",
+        icon: require("@/assets/icons/more-ellipsis.svg"),
+      },
+    ];
   }, [categoriesData]);
 
   useEffect(() => {
@@ -78,6 +84,7 @@ const AddIncomeScreen = () => {
       });
 
       setAmount("");
+      setCustomCategory("");
       setPaymentMethod("");
       setDate("");
       setDescription("");
@@ -151,6 +158,15 @@ const AddIncomeScreen = () => {
       return;
     }
 
+    if (selectedCategory.toLowerCase() === "other" && !customCategory.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Custom Category Required",
+        text2: "Please enter a custom category name.",
+      });
+      return;
+    }
+
     const numericAmount = Number(amount);
 
     let formattedDate = date;
@@ -162,10 +178,15 @@ const AddIncomeScreen = () => {
       formattedDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
+    const finalCategory =
+      selectedCategory.toLowerCase() === "other"
+        ? customCategory.trim()
+        : selectedCategory.toLowerCase();
+
     const payload = {
       source: paymentMethod,
       amount: numericAmount,
-      category: selectedCategory.toLowerCase(),
+      category: finalCategory,
       description: description.trim() || undefined,
       date: formattedDate,
     };
@@ -232,11 +253,32 @@ const AddIncomeScreen = () => {
                     </Text>
                   </View>
                 ) : incomeCategories.length > 0 ? (
-                  <CategorySelector
-                    categories={incomeCategories}
-                    selectedKey={selectedCategory}
-                    onSelect={setSelectedCategory}
-                  />
+                  <>
+                    <CategorySelector
+                      categories={incomeCategories}
+                      selectedKey={selectedCategory}
+                      onSelect={(key) => {
+                        setSelectedCategory(key);
+                        if (key.toLowerCase() !== "other") {
+                          setCustomCategory("");
+                        }
+                      }}
+                    />
+                    {selectedCategory.toLowerCase() === "other" && (
+                      <View className="mt-4">
+                        <TextInputField
+                          label="Custom Category"
+                          placeholder="Enter your custom category"
+                          value={customCategory}
+                          onChangeText={setCustomCategory}
+                          autoCapitalize="words"
+                          onFocusChange={(focused) =>
+                            setFocusedField(focused ? "customCategory" : null)
+                          }
+                        />
+                      </View>
+                    )}
+                  </>
                 ) : (
                   <View className="mt-3 items-center justify-center rounded-2xl border border-gray-200 bg-white py-8">
                     <Text className="text-textColor/50">

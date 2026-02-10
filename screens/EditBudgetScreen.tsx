@@ -5,6 +5,7 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
+import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
 import {
@@ -242,6 +243,7 @@ const EditBudgetScreen = () => {
   });
   const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [periodKey, setPeriodKey] = useState<BudgetPeriodKey>(() => {
     if (budget?.period && REVERSE_PERIOD_MAP[budget.period]) {
       return REVERSE_PERIOD_MAP[budget.period];
@@ -263,13 +265,17 @@ const EditBudgetScreen = () => {
   });
 
   useEffect(() => {
-    if (budget) {
+    if (budget && budgetCategories && budgetCategories.length > 0) {
       if (budget.category) {
-        const matchingCategory = budgetCategories?.find(
+        const matchingCategory = budgetCategories.find(
           (cat) => cat.label.toLowerCase() === budget.category.toLowerCase(),
         );
         if (matchingCategory) {
           setSelectedCategory(matchingCategory.key);
+          setCustomCategory("");
+        } else {
+          setSelectedCategory("other");
+          setCustomCategory(budget.category);
         }
         setBudgetName(budget.category);
       }
@@ -356,18 +362,36 @@ const EditBudgetScreen = () => {
       return;
     }
 
+    if (!selectedCategory) {
+      Toast.show({
+        type: "error",
+        text1: "Category Required",
+        text2: "Please select a category.",
+      });
+      return;
+    }
+
+    if (selectedCategory.toLowerCase() === "other" && !customCategory.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Custom Category Required",
+        text2: "Please enter a custom category name.",
+      });
+      return;
+    }
+
     const apiPeriod =
       periodKey === "custom"
         ? determinePeriodFromRange(selectedRange)
         : PERIOD_MAP[periodKey];
 
-    const selectedCategoryData = budgetCategories?.find(
-      (cat) => cat.key === selectedCategory,
-    );
-    const categoryName = budgetName.trim() || selectedCategoryData?.label || "";
+    const finalCategory =
+      selectedCategory.toLowerCase() === "other"
+        ? customCategory.trim()
+        : budgetName.trim() || budgetCategories?.find((cat) => cat.key === selectedCategory)?.label || "";
 
     const payload = {
-      category: categoryName,
+      category: finalCategory,
       amount: Number(amount),
       period: apiPeriod,
       startDate: formatDateForAPI(selectedRange.start),
@@ -467,11 +491,34 @@ const EditBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
                 <CategorySelector
-                  categories={budgetCategories || []}
+                  categories={[
+                    ...(budgetCategories || []),
+                    {
+                      key: "other",
+                      label: "Other",
+                      icon: require("@/assets/icons/more-ellipsis.svg"),
+                    },
+                  ]}
                   selectedKey={selectedCategory}
-                  onSelect={setSelectedCategory}
+                  onSelect={(key) => {
+                    setSelectedCategory(key);
+                    if (key.toLowerCase() !== "other") {
+                      setCustomCategory("");
+                    }
+                  }}
                   className="mt-3"
                 />
+                {selectedCategory.toLowerCase() === "other" && (
+                  <View className="mt-4">
+                    <TextInputField
+                      label="Custom Category"
+                      placeholder="Enter your custom category"
+                      value={customCategory}
+                      onChangeText={setCustomCategory}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                )}
               </View>
 
               <View>
