@@ -139,7 +139,9 @@ const TransactionDetailsScreen = () => {
       const fileName = `receipt_${transaction?.reference || Date.now()}.png`;
       const fileUri = new File(Paths.cache, fileName);
       const receipt = new File(uri);
-      receipt.copy(fileUri);
+      if (!fileUri.exists) {
+        receipt.copy(fileUri);
+      }
 
       await MediaLibrary.saveToLibraryAsync(fileUri.uri);
 
@@ -184,7 +186,9 @@ const TransactionDetailsScreen = () => {
       const fileName = `receipt_${transaction?.reference || Date.now()}.png`;
       const fileUri = new File(Paths.cache, fileName);
       const receipt = new File(uri);
-      receipt.copy(fileUri);
+      if (!fileUri.exists) {
+        receipt.copy(fileUri);
+      }
       await Sharing.shareAsync(fileUri.uri, {
         mimeType: "image/png",
         dialogTitle: "Share Transaction Receipt",
