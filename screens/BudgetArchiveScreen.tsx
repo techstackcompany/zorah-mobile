@@ -2,15 +2,20 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import {
+  CategoryIconSource,
+  getMatchingCategoryIconSource,
+  renderCategoryIcon,
+} from "@/features/expense-income/utils";
 import { formatCurrency } from "@/lib/utils";
 import {
   useGetArchivedBudgetsQuery,
   useGetCategoriesQuery,
   useRestoreBudgetMutation,
 } from "@/src/api/hooks";
-import { BudgetListItem } from "@/src/api/types";
+import { BudgetListItem, CategoryItem } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -26,7 +31,7 @@ type ArchiveStatus = "on-track" | "approaching" | "exceeded";
 type ArchivedBudget = {
   id: string;
   name: string;
-  icon: string | ImageSource;
+  icon: CategoryIconSource;
   status: ArchiveStatus;
   archivedDate: string;
   allocated: number;
@@ -75,6 +80,12 @@ const transformArchivedBudgets = (
   budgetsData: BudgetListItem[],
   subcategories: { key: string; label: string; icon: string }[],
 ) => {
+  const categoryItems: CategoryItem[] = subcategories.map((sub) => ({
+    key: sub.key,
+    label: sub.label,
+    icon: sub.icon,
+  }));
+
   return budgetsData.map((budget: BudgetListItem) => {
     const spent = budget.totalSpent ?? budget.spent ?? 0;
     const allocated = budget.Limit ?? budget.amount ?? 0;
@@ -106,15 +117,17 @@ const transformArchivedBudgets = (
       status = getBudgetStatus(spent, allocated);
     }
 
+    const categoryName = budget.category || "Other";
+    const iconSource = getMatchingCategoryIconSource(categoryItems, [
+      categoryName,
+    ]);
+
     let archivedDate = "Archived";
 
     return {
       id: budget._id,
-      name: budget.category || "Unknown",
-      icon:
-        subcategories?.find(
-          (subcategory) => subcategory.key === budget.category,
-        )?.icon || "",
+      name: categoryName,
+      icon: iconSource,
       status,
       archivedDate,
       allocated,
@@ -123,7 +136,6 @@ const transformArchivedBudgets = (
     };
   });
 };
-
 
 const BudgetArchiveScreen = () => {
   const [selectedBudget, setSelectedBudget] = useState<ArchivedBudget | null>(
@@ -140,11 +152,11 @@ const BudgetArchiveScreen = () => {
     isLoading: isLoadingArchived,
     refetch: refetchArchived,
   } = useGetArchivedBudgetsQuery();
-  const {data:subcategories} = useGetCategoriesQuery("budget");
+  const { data: subcategories } = useGetCategoriesQuery("budget");
 
   const archivedBudgets = useMemo(() => {
     if (!archivedBudgetsData) return [];
-    if(!subcategories) return [];
+    if (!subcategories) return [];
     const rawBudgets = Array.isArray(archivedBudgetsData)
       ? archivedBudgetsData
       : archivedBudgetsData.data || [];
@@ -250,11 +262,6 @@ const BudgetArchiveScreen = () => {
                       ? 0
                       : Math.min((budget.spent / budget.allocated) * 100, 100);
 
-                  const iconSource =
-                    typeof budget.icon === "string"
-                      ? { uri: budget.icon }
-                      : budget.icon;
-
                   return (
                     <Pressable
                       key={budget.id}
@@ -265,11 +272,7 @@ const BudgetArchiveScreen = () => {
                         <View className="flex-1">
                           <View className="h-12 flex-row items-start gap-2">
                             <View className="aspect-square h-full items-center justify-center rounded-full bg-primary_100">
-                              <Image
-                                source={iconSource}
-                                style={{ width: 24, height: 24 }}
-                                contentFit="contain"
-                              />
+                              {renderCategoryIcon(budget.icon, 24, "#6366F1")}
                             </View>
                             <View className="h-full justify-between">
                               <Text

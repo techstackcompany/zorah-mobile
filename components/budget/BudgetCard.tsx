@@ -1,14 +1,18 @@
 import Text from "@/components/ui/Text";
 import { statusMeta } from "@/constants/budgets";
+import {
+  CategoryIconSource,
+  renderCategoryIcon,
+} from "@/features/expense-income/utils";
 import { formatCurrency } from "@/lib/utils";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
 
 export type BudgetCategory = {
   id: string;
   label: string;
-  icon: ImageSource;
+  icon: CategoryIconSource;
   allocated: number;
   spent: number;
   remaining?: number;
@@ -32,11 +36,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, onMorePress }) => {
       <View className="flex-row items-center justify-between">
         <View className="w-full flex-row items-start gap-4">
           <View className="h-14 w-14 items-center justify-center rounded-2xl bg-primary_100">
-            <Image
-              source={budget.icon}
-              style={{ width: 28, height: 28 }}
-              contentFit="contain"
-            />
+            {renderCategoryIcon(budget.icon, 28, "#6366F1")}
           </View>
           <View>
             <Text weight="semibold" className="text-base text-textColor">
@@ -52,10 +52,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, onMorePress }) => {
               {meta.label}
             </Text>
           </View>
-          <Pressable
-            className="ml-auto"
-            onPress={() => onMorePress(budget)}
-          >
+          <Pressable className="ml-auto" onPress={() => onMorePress(budget)}>
             <Image
               source={require("@/assets/icons/more.svg")}
               style={{ width: 24, height: 24 }}

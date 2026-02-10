@@ -1,8 +1,9 @@
-import { BudgetListItem } from "@/src/api/types";
-import { ImageSource } from "expo-image";
+import {
+  CategoryIconSource,
+  getMatchingCategoryIconSource,
+} from "@/features/expense-income/utils";
+import { BudgetListItem, CategoryItem } from "@/src/api/types";
 import { BudgetPeriod } from "./types";
-
-
 
 export const getBudgetStatus = (
   spent: number,
@@ -18,16 +19,22 @@ export const transformBudgets = (
   budgetsData: BudgetListItem[],
   subcategories: { key: string; label: string; icon: string }[],
 ) => {
+  const categoryItems: CategoryItem[] = subcategories.map((sub) => ({
+    key: sub.key,
+    label: sub.label,
+    icon: sub.icon,
+  }));
+
   return budgetsData.map((budget: BudgetListItem) => {
     const spent = budget.totalSpent ?? budget.spent ?? 0;
     const allocated = budget.Limit ?? budget.amount ?? 0;
     const remaining = budget.remaining ?? Math.max(allocated - spent, 0);
-    const subcategoryIcon = subcategories?.find(
-      (subcategory) => subcategory.key === budget.category,
-    )?.icon;
-    const iconSource: ImageSource = subcategoryIcon
-      ? { uri: subcategoryIcon }
-      : {};
+
+    const categoryName = budget.category || "Other";
+    const iconSource: CategoryIconSource = getMatchingCategoryIconSource(
+      categoryItems,
+      [categoryName],
+    );
 
     let status: "on-track" | "approaching" | "exceeded";
     const statusLabel =
@@ -57,7 +64,7 @@ export const transformBudgets = (
 
     return {
       id: budget?._id,
-      label: budget.category || "Unknown",
+      label: categoryName,
       icon: iconSource,
       allocated,
       spent,
@@ -67,7 +74,9 @@ export const transformBudgets = (
   });
 };
 
-export const getBudgetPeriod = (budget: BudgetListItem): BudgetPeriod | null => {
+export const getBudgetPeriod = (
+  budget: BudgetListItem,
+): BudgetPeriod | null => {
   if (budget.month && budget.year) {
     return { month: budget.month, year: budget.year };
   }
