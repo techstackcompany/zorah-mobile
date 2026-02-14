@@ -2,7 +2,7 @@
   "expo": {
     "name": "Zorah",
     "slug": "zorah",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "zorah",
@@ -74,13 +74,6 @@
       "expo-notifications",
       "expo-secure-store",
       "expo-audio",
-      [
-        "expo-media-library",
-        {
-          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
-          "android": { "granularPermissions": ["photo"] }
-        }
-      ],
       "./plugins/withCustomDatePickerColors"
     ],
     "experiments": {
