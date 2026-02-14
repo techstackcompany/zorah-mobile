@@ -7,7 +7,7 @@ import { AppState, AppStateStatus, StyleSheet, View } from "react-native";
 
 const LAST_BACKGROUND_KEY = "userInactivity:wasInBackground";
 const LAST_ACTIVE_KEY = "userInactivity:lastActive";
-const INACTIVITY_LOCK_TIMEOUT_MS = 60000; 
+const INACTIVITY_LOCK_TIMEOUT_MS = 60_000 * 5;
 const BACKGROUND_LOCK_TIMEOUT_MS = 5000;
 
 const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
@@ -106,9 +106,8 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
   useEffect(() => {
     const loadState = async () => {
       try {
-        const [storedBackground, storedLastActive] = await AsyncStorage.multiGet(
-          [LAST_BACKGROUND_KEY, LAST_ACTIVE_KEY],
-        );
+        const [storedBackground, storedLastActive] =
+          await AsyncStorage.multiGet([LAST_BACKGROUND_KEY, LAST_ACTIVE_KEY]);
         const wasBg = storedBackground?.[1] === "true";
         const lastActive = Number(storedLastActive?.[1] ?? "");
         lastActiveAt.current = Number.isFinite(lastActive)
@@ -133,11 +132,7 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
       handleAppStateChange,
     );
     return () => subscription.remove();
-  }, [
-    handleAppStateChange,
-    settings.enableBiometrics,
-    triggerLock,
-  ]);
+  }, [handleAppStateChange, settings.enableBiometrics, triggerLock]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -150,8 +145,7 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
         return;
       }
 
-      const shouldLock =
-        Date.now() - lastActiveAt.current >= inactivityTimeout;
+      const shouldLock = Date.now() - lastActiveAt.current >= inactivityTimeout;
 
       if (shouldLock) {
         wasInBackground.current = true;
@@ -160,7 +154,12 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isLockVisible, inactivityTimeout, settings.enableBiometrics, triggerLock]);
+  }, [
+    isLockVisible,
+    inactivityTimeout,
+    settings.enableBiometrics,
+    triggerLock,
+  ]);
 
   useEffect(() => {
     if (!settings.enableBiometrics && isLockVisible) {
@@ -186,11 +185,7 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
         </View>
       ) : null}
 
-      <LockScreen
-        visible={isLockVisible}
-        onUnlock={hideLock}
-        variant="modal"
-      />
+      <LockScreen visible={isLockVisible} onUnlock={hideLock} variant="modal" />
     </View>
   );
 };
