@@ -1,5 +1,4 @@
 import { ImageStyle } from "expo-image";
-import COLORS from "./colors";
 
 type Slide = {
   id: number;
@@ -9,10 +8,8 @@ type Slide = {
   description: string;
   image: any;
   imagePosition?: string;
-  bgColor?: string;
   imageStyle?: ImageStyle;
 };
-
 
 export const slides: Slide[] = [
   {
@@ -20,30 +17,26 @@ export const slides: Slide[] = [
     title: "Money management made",
     highlight: "simple",
     subtitle: "Money Management",
-    bgColor: COLORS.primary_100,
     description:
       "Zorah helps you track budgets, set savings goals, and stay in control of your money.",
     image: require("../assets/images/onboarding/image1.png"),
   },
   {
     id: 2,
-    title: "Shop smarter, save",
-    highlight: "bigger",
+    title: "Account",
+    highlight: "Integration",
     subtitle: "MarketPlace",
-    bgColor: COLORS.secondary_100,
     description:
-      "Shop local, save more. Zorah MarketPlace brings you the best deals while supporting local vendors.",
+      "Accounts Integration securely connects all your bank accounts in one place giving you a complete, real-time of your finance.",
     image: require("../assets/images/onboarding/image2.png"),
   },
   {
     id: 3,
-    title: "Shop smarter, save",
-    highlight: "bigger",
+    title: " Loan",
+    highlight: "Tracker",
     subtitle: "MarketPlace",
-    bgColor: COLORS.primary_100,
-    imagePosition: "right bottom",
     description:
-      "Shop local, save more. Zorah MarketPlace brings you the best deals while supporting local vendors.",
+      "Never lose track of repayments or outstanding balances again.",
     image: require("../assets/images/onboarding/image3.png"),
   },
   {
@@ -51,7 +44,7 @@ export const slides: Slide[] = [
     title: "Budget smart for every",
     highlight: "celebration",
     subtitle: "MarketPlace",
-    imageStyle: { transform: "translateX(10%)" },
+    // imageStyle: { transform: "scale(0.8)" },
     description:
       "From aso ebi to transport and gifts, keep your event expenses simple, organized and debt-free.",
     image: require("../assets/images/onboarding/image4.png"),

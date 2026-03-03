@@ -1,16 +1,16 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
-import { View } from "react-native";
+import { Dimensions, Image, View } from "react-native";
 
+const screenHeight = Dimensions.get("window").height;
 const WelcomeScreen = () => {
-  const router = useRouter()
+  const router = useRouter();
   return (
     <MainContainer className="justify-center px-6">
-      <View className="flex-[2] justify-end mb-4">
+      <View className="mb-2  justify-end">
         <Text
           family="degular"
           weight="semibold"
@@ -32,23 +32,38 @@ const WelcomeScreen = () => {
           loans, and build lasting savings with ease.
         </Text>
       </View>
-      <View className="flex-[3]">
+      <View className="">
         <Image
-          style={{ width: "100%", height: "100%", marginTop: 30 }}
+          style={{
+            width: "100%",
+          }}
           source={require("@/assets/images/onboarding/welcome.png")}
-          contentFit="contain"
+          resizeMode="contain"
         />
       </View>
       <Text
         weight="semibold"
         family="degular"
-        className="mt-12 text-center text-4xl"
+        className=" text-center text-4xl"
       >
         Welcome Onboard, let’s help you get started
       </Text>
-      <View className="flex-[2] gap-5">
-        <Button title="Sign Up" onPress={()=>router.navigate('/signUp')} className="mt-auto" />
-        <Button title="Sign In" onPress={()=>router.navigate('/signIn')}  variant="outline" />
+      <View className="mb-5 mt-3 opacity-80">
+        <Text className=" text-center">⁠Track your Investments</Text>
+        <Text className=" text-center">⁠ ⁠⁠Manage Ajo (Group Savings) </Text>
+        <Text className=" text-center">⁠⁠Get Financial Advice</Text>
+      </View>
+      <View className=" gap-5">
+        <Button
+          title="Sign Up"
+          onPress={() => router.navigate("/signUp")}
+          className="mt-auto"
+        />
+        <Button
+          title="Sign In"
+          onPress={() => router.navigate("/signIn")}
+          variant="outline"
+        />
       </View>
     </MainContainer>
   );

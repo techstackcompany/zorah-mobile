@@ -18,6 +18,7 @@ import {
 const { width } = Dimensions.get("window");
 
 const lastIndex = slides.length - 1;
+
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -51,10 +52,10 @@ export default function OnboardingScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <View className="flex-1 items-center " style={{ width }}>
+          <View className="items-center " style={{ width }}>
             <View
               style={{
-                paddingTop: 24,
+                // paddingTop: 24,
                 backgroundColor: item.bgColor,
                 flex: 1,
                 width: "100%",
@@ -63,8 +64,7 @@ export default function OnboardingScreen() {
               <Image
                 source={item.image}
                 style={{ width: "100%", height: "100%", ...item?.imageStyle }}
-                contentFit="contain"
-                contentPosition={item?.imagePosition ?? "center"}
+                contentPosition={"top center"}
               />
             </View>
 
