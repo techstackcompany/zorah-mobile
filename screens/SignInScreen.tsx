@@ -23,8 +23,14 @@ const SignInScreen = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const { signIn, setHasCompletedSetup, setUserData, isAuthenticated, signOut, userData } =
-    useSession();
+  const {
+    signIn,
+    setHasCompletedSetup,
+    setUserData,
+    isAuthenticated,
+    signOut,
+    userData,
+  } = useSession();
   const loginMutation = useLoginUserMutation();
   const focusField = (field: string) => {
     setFocused(field);
@@ -106,6 +112,7 @@ const SignInScreen = () => {
   }, [form.email, form.password]);
 
   const handleSubmit = useCallback(async () => {
+  
     if (!validate()) return;
 
     const normalizedEmail = form.email.trim().toLowerCase();
@@ -181,6 +188,7 @@ const SignInScreen = () => {
           <View className="mb-2">
             <PasswordTextInput
               value={form.password}
+              error={errors.password || null}
               blurField={blurField}
               focusField={() => focusField("password")}
               onChangeText={(password) => {

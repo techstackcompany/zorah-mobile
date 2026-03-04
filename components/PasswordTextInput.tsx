@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { TextInput, TouchableOpacity, View } from "react-native";
+import Text from "./ui/Text";
 
 interface Props {
   isFocused?: boolean;
