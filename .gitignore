@@ -48,3 +48,9 @@ credentials.json
 
 # Editor/automation backups
 *.baktest.js
+
+
+test.js
+test.tsx
+test.ts
+text.json
