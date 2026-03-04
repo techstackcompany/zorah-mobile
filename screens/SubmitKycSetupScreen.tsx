@@ -27,7 +27,7 @@ import {
 import Toast from "react-native-toast-message";
 
 const KYC_TIERS = [{ value: 1, label: "Tier 1" }];
-
+const DEFAULT_TIER = 1;
 const getMaxDate = () => {
   const today = new Date();
   today.setFullYear(today.getFullYear() - 16);
@@ -36,7 +36,6 @@ const getMaxDate = () => {
 const SubmitKycSetupScreen = () => {
   const router = useRouter();
   const { setSetupStep } = useSession();
-  const [tier, setTier] = useState<number>(1);
   const [fullName, setFullName] = useState("");
   const [dateOfBirthRaw, setDateOfBirthRaw] = useState<Date | null>(null);
 
@@ -45,7 +44,6 @@ const SubmitKycSetupScreen = () => {
   const [address, setAddress] = useState("");
   const [bvn, setBvn] = useState("");
   const [nin, setNin] = useState("");
-  const [showTierList, setShowTierList] = useState(false);
   const [showStateList, setShowStateList] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { data: nigerianStates = [], isLoading: isLoadingStates } =
@@ -127,7 +125,7 @@ const SubmitKycSetupScreen = () => {
   const handleNext = () => {
     if (!isValid || submitKycMutation.isPending) return;
     const payload = {
-      tier,
+      tier: DEFAULT_TIER,
       fullName: fullName.trim(),
       dateOfBirth: dateOfBirth.trim(),
       phoneNumber: phoneNumber.trim(),
@@ -170,36 +168,6 @@ const SubmitKycSetupScreen = () => {
           keyboardShouldPersistTaps="handled"
           className="flex-1 px-6"
         >
-          <View style={styles.field} onLayout={handleFieldLayout("tier")}>
-            <Text className="text-sm text-textColor">KYC Tier</Text>
-            <Pressable
-              style={[styles.input, styles.selectInput]}
-              accessibilityRole="button"
-              onPress={() => setShowTierList((s) => !s)}
-            >
-              <Text className="text-textColor">
-                {KYC_TIERS.find((t) => t.value === tier)?.label}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color="#9AA5B1" />
-            </Pressable>
-            {showTierList ? (
-              <View style={styles.selectList}>
-                {KYC_TIERS.map((item) => (
-                  <Pressable
-                    key={item.value}
-                    style={styles.selectItem}
-                    onPress={() => {
-                      setTier(item.value);
-                      setShowTierList(false);
-                    }}
-                  >
-                    <Text className="text-sm text-textColor">{item.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-          </View>
-
           <View style={styles.field} onLayout={handleFieldLayout("fullName")}>
             <Text className="text-sm text-textColor">Full Name</Text>
             <TextInput
@@ -301,7 +269,6 @@ const SubmitKycSetupScreen = () => {
               accessibilityRole="button"
               onPress={() => {
                 setShowStateList((s) => !s);
-                setShowTierList(false);
                 handleBlur("address");
               }}
             >
