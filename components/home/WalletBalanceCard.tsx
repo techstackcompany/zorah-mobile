@@ -1,18 +1,11 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
+import { SummaryCard } from "@/screens/HomeScreen";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
-
-type SummaryCard = {
-  id: string;
-  label: string;
-  amount: string;
-  icon: ImageSource;
-  accent: string;
-};
 
 type WalletBalanceCardProps = {
   formattedBalance: string;
@@ -67,15 +60,13 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
         {summaryCards.map((item) => (
           <Pressable
             key={item.id}
+            onPress={item.onPress}
             className={cn(
               "flex-1 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3",
             )}
           >
             <View
-              className={cn(
-                "h-9 w-9 items-center justify-center",
-                item.accent,
-              )}
+              className={cn("h-9 w-9 items-center justify-center", item.accent)}
             >
               <Image
                 source={item.icon}

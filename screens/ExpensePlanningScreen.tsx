@@ -35,7 +35,7 @@ import {
 } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Pressable,
@@ -56,8 +56,11 @@ type MonthOption = {
 
 const ExpensePlanningScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { bottom } = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<TabKey>("expense");
+
+  const activeTab = (params.tab as TabKey) || "expense";
+
   const [dailyViewMode, setDailyViewMode] = useState<"chart" | "list">("list");
   const [monthlyViewMode, setMonthlyViewMode] = useState<"chart" | "list">(
     "list",
@@ -119,8 +122,9 @@ const ExpensePlanningScreen = () => {
   };
   const selectedOption =
     PERIOD_OPTIONS.find((opt) => opt.value === periodType) || PERIOD_OPTIONS[0];
+  console.log("activeTab", activeTab);
   const tabConfig = useMemo(
-    () => TAB_ITEMS.find((item) => item.key === activeTab)!,
+    () => TAB_ITEMS.find((item) => item.key === activeTab) || {},
     [activeTab],
   );
 
@@ -398,16 +402,16 @@ const ExpensePlanningScreen = () => {
             <TabSwitcher
               tabs={TAB_ITEMS}
               activeTab={activeTab}
-              onTabChange={setActiveTab}
+              onTabChange={(tab) => router.setParams({ tab })}
             />
             <CollapsibleCard
               headerBottomBorder
-              title={tabConfig.categoryTitle}
+              title={tabConfig?.categoryTitle}
               style={styles.card}
             >
               <View className="flex-row items-center justify-between p-5">
                 <Text weight="medium" className="text-sm text-textColor/70">
-                  {tabConfig.breakdownTitle}
+                  {tabConfig?.breakdownTitle}
                 </Text>
                 <Pressable
                   style={styles.periodPill}

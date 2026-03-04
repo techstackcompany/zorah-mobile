@@ -33,12 +33,13 @@ type CurrencyOption = {
   flag: ImageSource;
 };
 
-type SummaryCard = {
+export type SummaryCard = {
   id: string;
   label: string;
   amount: string;
   icon: ImageSource;
   accent: string;
+  onPress: () => void;
 };
 
 type QuickAction = {
@@ -191,6 +192,7 @@ const HomeScreen = () => {
         amount: expenseAmount,
         icon: require("@/assets/icons/arrow-down.svg"),
         accent: "bg-peachTint",
+        onPress: () => router.navigate("/expense-planning?tab=expense"),
       },
       {
         id: "income",
@@ -198,6 +200,7 @@ const HomeScreen = () => {
         amount: incomeAmount,
         icon: require("@/assets/icons/arrow-up.svg"),
         accent: "bg-secondary_100",
+        onPress: () => router.navigate("/expense-planning?tab=income"),
       },
     ];
   }, [
@@ -206,6 +209,7 @@ const HomeScreen = () => {
     currency.symbol,
     isLoadingExpenseSummary,
     isLoadingIncomes,
+    router,
   ]);
 
   const balanceSubtitle = useMemo(() => {
@@ -312,6 +316,7 @@ const HomeScreen = () => {
                 initials={initials}
                 welcomeName={welcomeName}
                 currentDate={currentDate}
+                onNotificationPress={() => router.navigate("/notifications")}
               />
 
               <WalletBalanceCard
