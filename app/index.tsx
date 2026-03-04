@@ -9,11 +9,9 @@ export default function RootIndex() {
     return null;
   }
 
-  
   if (isAuthenticated) {
     return <Redirect href="/(app)/(home)" />;
   }
 
-  
-  return <Redirect href="/(auth)/welcome" />;
+  return <Redirect href="/(auth)" />;
 }
