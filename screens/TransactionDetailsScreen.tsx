@@ -6,7 +6,6 @@ import { useGetWalletTransactionsQuery } from "@/src/api/hooks";
 import { WalletTransaction } from "@/src/api/types";
 import { File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
-import * as MediaLibrary from "expo-media-library";
 import { useLocalSearchParams } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -120,17 +119,6 @@ const TransactionDetailsScreen = () => {
     setIsDownloading(true);
 
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Toast.show({
-          type: "error",
-          text1: "Permission Required",
-          text2: "Please allow access to save to your gallery",
-        });
-        setIsDownloading(false);
-        return;
-      }
-
       const uri = await captureReceipt();
       if (!uri) {
         throw new Error("Failed to capture receipt");
@@ -143,19 +131,24 @@ const TransactionDetailsScreen = () => {
         receipt.copy(fileUri);
       }
 
-      await MediaLibrary.saveToLibraryAsync(fileUri.uri);
+      // Use system share sheet to save the receipt
+      await Sharing.shareAsync(fileUri.uri, {
+        mimeType: "image/png",
+        dialogTitle: "Save Receipt",
+        UTI: "public.png",
+      });
 
       Toast.show({
         type: "success",
-        text1: "Receipt Saved",
-        text2: "The receipt has been saved to your gallery",
+        text1: "Receipt Ready",
+        text2: "Use the share menu to save to your gallery",
       });
     } catch (error) {
       console.error("Download error:", error);
       Toast.show({
         type: "error",
         text1: "Download Failed",
-        text2: "Could not save receipt. Please try again.",
+        text2: "Could not prepare receipt. Please try again.",
       });
     } finally {
       setIsDownloading(false);
