@@ -16,10 +16,7 @@ const Layout = () => {
         ),
       }}
     >
-      <Stack.Screen
-        name="kyc-details"
-        options={{ headerLeft: () => null, headerBackVisible: false }}
-      />
+    
       <Stack.Screen
         name="monthly-income"
         options={{ headerLeft: () => null, headerBackVisible: false }}
