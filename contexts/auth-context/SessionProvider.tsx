@@ -1,8 +1,15 @@
+import {
+  asyncStorageGetItem,
+  asyncStorageSetItem,
+  clearAuthTokens,
+} from "@/lib/persistedStorageConfig";
 import { clearPersistedQueryCache } from "@/lib/reactQuery";
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { UserProfile } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
+import * as Application from "expo-application";
 import { router } from "expo-router";
+
 import {
   createContext,
   PropsWithChildren,
@@ -10,7 +17,7 @@ import {
   useEffect,
 } from "react";
 import { Alert } from "react-native";
-import { useStorageState } from "./useStorageState";
+import { useAsyncStorageState, useStorageState } from "./useStorageState";
 
 /* ---------------------------------------------
    Auth Context & Types
@@ -27,7 +34,6 @@ export type AuthContextType = {
   hasOnboarded: boolean;
   isVerified: boolean;
   kycVerificationStatus: KycStatus;
-  hasSetAffirmations: boolean;
   hasCompletedSetup: boolean;
   setupStep: number | null;
   userData: UserProfile | null;
@@ -37,7 +43,6 @@ export type AuthContextType = {
   setHasOnboarded: (value: boolean) => void;
   setIsVerified: (value: boolean) => void;
   setKycVerificationStatus: (value: KycStatus) => void;
-  setHasSetAffirmations: (value: boolean) => void;
   setHasCompletedSetup: (value: boolean) => void;
   setSetupStep: (value: number | null) => void;
   setUserData: (value: unknown | null) => void;
@@ -54,34 +59,45 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const [[isLoadingSession, session], setSession] = useStorageState("session");
   const [[isLoadingOnboarded, hasOnboarded], setHasOnboarded] =
-    useStorageState("hasOnboarded");
+    useAsyncStorageState("hasOnboarded");
   const [[isLoadingVerified, isVerified], setIsVerified] =
-    useStorageState("isVerified");
-  const [[isLoadingAffirmations, hasSetAffirmations], setHasSetAffirmations] =
-    useStorageState("hasSetAffirmations");
+    useAsyncStorageState("isVerified");
   const [[isLoadingUserData, userData], setUserDataRaw] =
-    useStorageState("userData");
+    useAsyncStorageState("userData");
   const [
     [isLoadingCompletedSetup, hasCompletedSetupRaw],
     setHasCompletedSetupRaw,
-  ] = useStorageState("hasCompletedSetup");
+  ] = useAsyncStorageState("hasCompletedSetup");
   const [[isLoadingSetupStep, setupStepRaw], setSetupStepRaw] =
-    useStorageState("setupStep");
+    useAsyncStorageState("setupStep");
   const [
     [isLoadingKycStatus, kycVerificationStatusRaw],
     setKycVerificationStatusRaw,
-  ] = useStorageState("kycVerificationStatus");
+  ] = useAsyncStorageState("kycVerificationStatus");
 
   const isLoading =
     isLoadingSession ||
     isLoadingOnboarded ||
     isLoadingVerified ||
-    isLoadingAffirmations ||
     isLoadingCompletedSetup ||
     isLoadingSetupStep ||
     isLoadingKycStatus ||
     isLoadingUserData;
-  // (session ? isProfileLoading && !isProfileError : false);
+
+  useEffect(() => {
+    (async () => {
+      const installId = await asyncStorageGetItem("version_number");
+
+      if (!installId) {
+        await clearAuthTokens();
+
+        await asyncStorageSetItem(
+          "version_number",
+          Application.nativeApplicationVersion ?? "unknown",
+        );
+      }
+    })();
+  }, []);
 
   /* ---------------------------------------------
      Authentication methods
@@ -98,7 +114,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSession(null);
     setIsVerified(null);
     setKycVerificationStatusRaw(null);
-    setHasSetAffirmations(null);
     setUserDataRaw(null);
     setHasCompletedSetupRaw(null);
     setSetupStepRaw(null);
@@ -108,7 +123,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSession,
     setIsVerified,
     setKycVerificationStatusRaw,
-    setHasSetAffirmations,
     setUserDataRaw,
     setHasCompletedSetupRaw,
     setSetupStepRaw,
@@ -167,7 +181,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     hasOnboarded: hasOnboarded === "true",
     isVerified: isVerified === "true",
     kycVerificationStatus,
-    hasSetAffirmations: hasSetAffirmations === "true",
     hasCompletedSetup: hasCompletedSetupRaw === "true",
     userData: parsedUserData,
     isAuthenticated: !!session,
@@ -175,7 +188,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setHasOnboarded: (v) => setHasOnboarded(String(v)),
     setIsVerified: (v) => setIsVerified(String(v)),
     setKycVerificationStatus: (v) => setKycVerificationStatusRaw(v),
-    setHasSetAffirmations: (v) => setHasSetAffirmations(String(v)),
     setHasCompletedSetup: (v) => setHasCompletedSetupRaw(String(v)),
     setSetupStep: (v) =>
       setSetupStepRaw(v == null || !Number.isFinite(v) ? null : String(v)),

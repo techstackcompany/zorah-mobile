@@ -7,7 +7,12 @@ import axios, {
   isAxiosError,
 } from "axios";
 
-import * as SecureStore from "expo-secure-store";
+import {
+  clearAuthTokens,
+  getAuthToken,
+  getRefreshToken,
+  setAuthToken,
+} from "@/lib/persistedStorageConfig";
 import {
   API_CONFIG,
   COUNTRIES_CONFIG,
@@ -20,52 +25,6 @@ export interface ApiError {
   message: string;
   data?: unknown;
   raw?: AxiosError;
-}
-
-const TOKEN_KEY = "session";
-const REFRESH_TOKEN_KEY = "refreshToken";
-
-async function readFromStorage(key: string): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(key);
-  } catch {
-    return null;
-  }
-}
-
-async function writeToStorage(key: string, value: string): Promise<void> {
-  try {
-    await SecureStore.setItemAsync(key, value);
-  } catch {}
-}
-
-async function removeFromStorage(key: string): Promise<void> {
-  try {
-    await SecureStore.deleteItemAsync(key);
-  } catch {}
-}
-
-async function getAuthToken(): Promise<string | null> {
-  return readFromStorage(TOKEN_KEY);
-}
-
-async function getRefreshToken(): Promise<string | null> {
-  return readFromStorage(REFRESH_TOKEN_KEY);
-}
-
-export async function setRefreshToken(token: string): Promise<void> {
-  await writeToStorage(REFRESH_TOKEN_KEY, token);
-}
-
-export async function setAuthToken(token: string): Promise<void> {
-  await writeToStorage(TOKEN_KEY, token);
-}
-
-async function clearAuthTokens(): Promise<void> {
-  await Promise.all([
-    removeFromStorage(TOKEN_KEY),
-    removeFromStorage(REFRESH_TOKEN_KEY),
-  ]);
 }
 
 let isRefreshing = false;

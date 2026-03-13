@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { useCallback, useEffect, useReducer } from "react";
 
@@ -55,3 +56,28 @@ export function useStorageState(key: string): UseAsyncStateReturn<string> {
 
   return [state, setValue];
 }
+
+/* ---------------------------------------------
+   useStorageState hook (persistent state)
+----------------------------------------------*/
+export function useAsyncStorageState(key: string): UseAsyncStateReturn<string> {
+  const [state, setState] = useAsyncState<string>();
+
+  useEffect(() => {
+    AsyncStorage.getItem(key).then((value) => {
+      setState(value);
+    });
+  }, [key, setState]);
+
+  const setValue = useCallback(
+    async (value: string | null): Promise<void> => {
+      setState(value);
+      await setStorageItemAsync(key, value);
+    },
+    [key, setState],
+  );
+
+  return [state, setValue];
+}
+
+
