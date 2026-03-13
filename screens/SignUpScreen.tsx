@@ -29,14 +29,16 @@ export default SignUpScreen;
 
 const OriginalSignUpScreen = () => {
   const [form, setForm] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
-    phone: "",
     password: "",
+    phoneNumber: "",
   });
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
+
   const [agree, setAgree] = useState(false);
   const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
 
@@ -47,13 +49,24 @@ const OriginalSignUpScreen = () => {
 
   const validate = useCallback(() => {
     const newErrors: { [key: string]: string } = {};
-    if (!form.name.trim()) newErrors.name = "Please enter your name";
+    if (!form.firstName.trim())
+      newErrors.firstName = "Please enter your first name";
+    if (!form.lastName.trim())
+      newErrors.lastName = "Please enter your last name";
     if (!/\S+@\S+\.\S+/.test(form.email))
       newErrors.email = "Please enter a valid email";
     if (!form.password.trim()) newErrors.password = "Please enter password";
+    if (!form.phoneNumber.trim())
+      newErrors.phoneNumber = "Please enter your phone number";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [form.email, form.name, form.password]);
+  }, [
+    form.email,
+    form.firstName,
+    form.lastName,
+    form.password,
+    form.phoneNumber,
+  ]);
 
   const handleSubmit = useCallback(async () => {
     if (!validate()) return;
@@ -61,9 +74,11 @@ const OriginalSignUpScreen = () => {
     try {
       setApiErrorMessage(null);
       const payload = {
-        name: form.name.trim(),
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
+        phoneNumber: form.phoneNumber.trim(),
       };
       const response = await registerMutation.mutateAsync(payload);
 
@@ -72,14 +87,16 @@ const OriginalSignUpScreen = () => {
       await signIn(response.token);
       Toast.show({
         type: "success",
+        visibilityTime: 2000,
+        onHide: () => router.replace("/(auth)/setup/monthly-income"),
+
         text1: "Account created",
         text2: response?.name
           ? `Welcome, ${response.name}!`
           : "Welcome to Zorah!",
       });
-
-      router.replace("/(auth)/setup/kyc-details");
     } catch (error) {
+      console.log("error", error);
       const apiError = error as ApiError;
       const serverMessage =
         typeof apiError?.data === "object" &&
@@ -101,9 +118,11 @@ const OriginalSignUpScreen = () => {
     }
   }, [
     validate,
-    form.name,
+    form.firstName,
+    form.lastName,
     form.email,
     form.password,
+    form.phoneNumber,
     registerMutation,
     setHasCompletedSetup,
     setSetupStep,
@@ -134,26 +153,86 @@ const OriginalSignUpScreen = () => {
           >
             Create Your Account
           </Text>
+          <View className="mb-4 flex-row items-center justify-between gap-2">
+            <View className="flex-1">
+              <Text className="mb-2 text-sm text-tertiary">First Name</Text>
+              <TextInput
+                value={form.firstName}
+                onChangeText={(t) => {
+                  setApiErrorMessage(null);
+                  setForm({ ...form, firstName: t });
+                }}
+                onFocus={() => setFocused("firstName")}
+                onBlur={() => setFocused(null)}
+                placeholderTextColor={COLORS.grey}
+                placeholder="John"
+                className={cn(
+                  "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
+                  focused === "firstName" && "focus",
+                  errors.firstName
+                    ? "border-red-500"
+                    : "focus:border-primary_400",
+                )}
+              />
+              {errors.firstName && (
+                <Text className="mt-1 text-sm text-red-500">
+                  {errors.firstName}
+                </Text>
+              )}
+            </View>
+            <View className="flex-1">
+              <Text className="mb-2 text-sm text-tertiary">Last Name</Text>
+              <TextInput
+                value={form.lastName}
+                placeholderTextColor={COLORS.grey}
+                onChangeText={(t) => {
+                  setApiErrorMessage(null);
+                  setForm({ ...form, lastName: t });
+                }}
+                onFocus={() => setFocused("lastName")}
+                onBlur={() => setFocused(null)}
+                placeholder="Babatunde"
+                className={cn(
+                  "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
+                  focused === "lastName" && "focus",
+                  errors.lastName
+                    ? "border-red-500"
+                    : "focus:border-primary_400",
+                )}
+              />
+              {errors.lastName && (
+                <Text className="mt-1 text-sm text-red-500">
+                  {errors.lastName}
+                </Text>
+              )}
+            </View>
+          </View>
 
           <View className="mb-4">
-            <Text className="mb-2 text-sm text-tertiary">Name</Text>
+            <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
             <TextInput
-              value={form.name}
+              value={form.phoneNumber}
+              placeholderTextColor={COLORS.grey}
               onChangeText={(t) => {
                 setApiErrorMessage(null);
-                setForm({ ...form, name: t });
+                setForm({ ...form, phoneNumber: t });
               }}
-              onFocus={() => setFocused("name")}
+              onFocus={() => setFocused("phoneNumber")}
               onBlur={() => setFocused(null)}
-              placeholder="Enter your full name"
+              placeholder="08012000000"
+              keyboardType="phone-pad"
               className={cn(
                 "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
-                focused === "name" && "focus",
-                errors.name ? "border-red-500" : "focus:border-primary_400",
+                focused === "phoneNumber" && "focus",
+                errors.phoneNumber
+                  ? "border-red-500"
+                  : "focus:border-primary_400",
               )}
             />
-            {errors.name && (
-              <Text className="mt-1 text-sm text-red-500">{errors.name}</Text>
+            {errors.phoneNumber && (
+              <Text className="mt-1 text-sm text-red-500">
+                {errors.phoneNumber}
+              </Text>
             )}
           </View>
 
@@ -161,6 +240,7 @@ const OriginalSignUpScreen = () => {
             <Text className="mb-2 text-sm text-tertiary">Email</Text>
             <TextInput
               value={form.email}
+              placeholderTextColor={COLORS.grey}
               onChangeText={(t) => {
                 setApiErrorMessage(null);
                 setForm({ ...form, email: t });
@@ -200,6 +280,7 @@ const OriginalSignUpScreen = () => {
                 }}
                 onFocus={() => setFocused("password")}
                 onBlur={() => setFocused(null)}
+                placeholderTextColor={COLORS.grey}
                 placeholder="Create a Password"
                 secureTextEntry={!showPassword}
                 className="flex-1 py-3 font-poppins text-base "

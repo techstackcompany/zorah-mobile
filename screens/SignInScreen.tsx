@@ -1,8 +1,8 @@
 import PasswordTextInput from "@/components/PasswordTextInput";
 import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
+import { setRefreshToken } from "@/lib/persistedStorageConfig";
 import { cn } from "@/lib/utils";
-import { setRefreshToken } from "@/src/api/client";
 import { useGetUserProfileQuery, useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
 import { Link, useRouter } from "expo-router";
@@ -23,14 +23,8 @@ const SignInScreen = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const {
-    signIn,
-    setHasCompletedSetup,
-    setUserData,
-    isAuthenticated,
-    signOut,
-    userData,
-  } = useSession();
+  const { signIn, setHasCompletedSetup, setUserData, isAuthenticated } =
+    useSession();
   const loginMutation = useLoginUserMutation();
   const focusField = (field: string) => {
     setFocused(field);
@@ -87,7 +81,7 @@ const SignInScreen = () => {
     if (isSetupComplete) {
       router.replace("/(app)/(home)");
     } else {
-      router.replace("/(auth)/setup/kyc-details");
+      router.replace("/(auth)/setup/monthly-income");
     }
   }, [
     isAuthenticated,
@@ -112,7 +106,6 @@ const SignInScreen = () => {
   }, [form.email, form.password]);
 
   const handleSubmit = useCallback(async () => {
-  
     if (!validate()) return;
 
     const normalizedEmail = form.email.trim().toLowerCase();
