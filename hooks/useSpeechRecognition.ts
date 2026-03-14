@@ -22,7 +22,7 @@ export const useSpeechRecognition = (
   const [state, setState] = useState<RecognitionState>("idle");
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [transcript, setTranscript] = useState("");
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   const requestPermission = useCallback(async () => {
     try {
@@ -80,6 +80,19 @@ export const useSpeechRecognition = (
       timeoutRef.current = null;
     }
   });
+  const stopRecording = useCallback(() => {
+    try {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      ExpoSpeechRecognitionModule.stop();
+      setState("processing");
+    } catch (err) {
+      console.error("Stop recording error:", err);
+      setState("idle");
+    }
+  }, []);
 
   
   const startRecording = useCallback(async () => {
@@ -147,19 +160,6 @@ export const useSpeechRecognition = (
   ]);
 
   
-  const stopRecording = useCallback(() => {
-    try {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      ExpoSpeechRecognitionModule.stop();
-      setState("processing");
-    } catch (err) {
-      console.error("Stop recording error:", err);
-      setState("idle");
-    }
-  }, []);
 
   
   const cancelRecording = useCallback(() => {
