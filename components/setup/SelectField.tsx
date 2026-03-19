@@ -19,10 +19,11 @@ type SelectOption = {
 type SelectFieldProps = {
   label: string;
   placeholder?: string;
-  value?: string;
+  value?: string | string[];
   options: SelectOption[];
-  onSelect: (value: string) => void;
+  onSelect: any;
   className?: string;
+  multiple?: boolean;
 };
 
 const SelectField = ({
@@ -32,6 +33,7 @@ const SelectField = ({
   options,
   onSelect,
   className,
+  multiple = false,
 }: SelectFieldProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const selectButtonRef = React.useRef<View>(null);
@@ -41,7 +43,26 @@ const SelectField = ({
     width: number;
     height: number;
   } | null>(null);
-  const selectedOption = options.find((option) => option.value === value);
+
+  let displayLabel = placeholder;
+  let isAnySelected = false;
+
+  if (multiple && Array.isArray(value)) {
+    isAnySelected = value.length > 0;
+    if (isAnySelected) {
+      displayLabel = value
+        .map((v) => options.find((o) => o.value === v)?.label)
+        .filter(Boolean)
+        .join(", ");
+    }
+  } else {
+    const selectedOption = options.find((option) => option.value === value);
+    isAnySelected = !!selectedOption;
+    if (selectedOption) {
+      displayLabel = selectedOption.label;
+    }
+  }
+
   const handleOpen = React.useCallback(() => {
     if (selectButtonRef.current) {
       selectButtonRef.current.measureInWindow((x, y, width, height) => {
@@ -70,10 +91,11 @@ const SelectField = ({
         <Text
           className={cn(
             "text-base",
-            selectedOption ? "text-textColor" : "text-textColor/40",
+            isAnySelected ? "text-textColor" : "text-textColor/40",
           )}
+          numberOfLines={1}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {displayLabel}
         </Text>
         <Ionicons
           name={isOpen ? "chevron-up" : "chevron-down"}
@@ -112,7 +134,9 @@ const SelectField = ({
               </Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {options.map((option) => {
-                  const isSelected = option.value === value;
+                  const isSelected = multiple
+                    ? Array.isArray(value) && value.includes(option.value)
+                    : option.value === value;
                   return (
                     <Pressable
                       key={option.value}
@@ -121,8 +145,17 @@ const SelectField = ({
                         isSelected ? "bg-primaryFaint" : "bg-transparent",
                       )}
                       onPress={() => {
-                        onSelect(option.value);
-                        handleClose();
+                        if (multiple) {
+                          const currentValues = Array.isArray(value) ? value : [];
+                          if (currentValues.includes(option.value)) {
+                            onSelect(currentValues.filter((v: string) => v !== option.value));
+                          } else {
+                            onSelect([...currentValues, option.value]);
+                          }
+                        } else {
+                          onSelect(option.value);
+                          handleClose();
+                        }
                       }}
                     >
                       <Text className="text-base text-textColor">
