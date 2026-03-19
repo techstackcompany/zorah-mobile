@@ -2,12 +2,11 @@
   "expo": {
     "name": "Zorah",
     "slug": "zorah",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "zorah",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.onerendzina.zorah",
@@ -15,6 +14,7 @@
         "UIBackgroundModes": ["remote-notification", "remote-notification"],
         "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone.",
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to save receipts to your photo library.", // Added this line
         "ITSAppUsesNonExemptEncryption": false
       },
       "googleServicesFile": "./GoogleService-Info.plist"
