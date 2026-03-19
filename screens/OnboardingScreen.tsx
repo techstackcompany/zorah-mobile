@@ -2,6 +2,7 @@ import MainContainer from "@/components/layouts/MainContainer";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { slides } from "@/constants/onboarding";
+import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -23,6 +24,7 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
+  const { setHasOnboarded } = useSession();
   const isLastSlide = currentIndex === slides.length - 1;
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -34,6 +36,7 @@ export default function OnboardingScreen() {
     if (!isLastSlide) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
+      setHasOnboarded(true);
       router.replace("/welcome");
     }
   };
@@ -68,7 +71,7 @@ export default function OnboardingScreen() {
               />
             </View>
 
-            <View className="flex-1 px-6">
+            <View className="flex-1 px-5">
               <View className="mb-5 mt-10 flex-row justify-between">
                 <View className="flex-1  flex-row items-center justify-start space-x-3 ">
                   {slides.map((_, index) => (
@@ -99,7 +102,7 @@ export default function OnboardingScreen() {
                 <Text
                   family="degular"
                   weight="semibold"
-                  className="mb-3 text-center text-[38px] leading-tight"
+                  className="mb-3 text-center text-3xl leading-tight"
                 >
                   {item.title}{" "}
                   <Text

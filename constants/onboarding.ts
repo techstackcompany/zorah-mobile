@@ -27,26 +27,26 @@ export const slides: Slide[] = [
     highlight: "Integration",
     subtitle: "MarketPlace",
     description:
-      "Accounts Integration securely connects all your bank accounts in one place giving you a complete, real-time of your finance.",
+      "Accounts Integration securely connects all your bank accounts in one place giving you a complete, real-time view of your finances.",
     image: require("../assets/images/onboarding/image2.png"),
   },
+
   {
     id: 3,
-    title: " Loan",
-    highlight: "Tracker",
-    subtitle: "MarketPlace",
+    title: "Expense",
+    highlight: "tracking",
+    subtitle: "",
     description:
-      "Never lose track of repayments or outstanding balances again.",
+      "Zorah helps you track every transaction effortlessly. Stay aware, stay ahead and take control or your financial journey today.",
     image: require("../assets/images/onboarding/image3.png"),
   },
   {
     id: 4,
     title: "Budget smart for every",
-    highlight: "celebration",
+    highlight: "event or project",
     subtitle: "MarketPlace",
-    // imageStyle: { transform: "scale(0.8)" },
     description:
-      "From aso ebi to transport and gifts, keep your event expenses simple, organized and debt-free.",
+      "From aso-ebi to vendors and gifts, keep your event or project expenses simple, organized and debt-free.",
     image: require("../assets/images/onboarding/image4.png"),
   },
 ];
