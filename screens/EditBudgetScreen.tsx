@@ -388,7 +388,10 @@ const EditBudgetScreen = () => {
     const finalCategory =
       selectedCategory.toLowerCase() === "other"
         ? customCategory.trim()
-        : budgetName.trim() || budgetCategories?.find((cat) => cat.key === selectedCategory)?.label || "";
+        : budgetName.trim() ||
+          budgetCategories?.find((cat) => cat.key === selectedCategory)
+            ?.label ||
+          "";
 
     const payload = {
       category: finalCategory,

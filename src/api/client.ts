@@ -63,7 +63,6 @@ const registerEndpoint = API_ENDPOINTS.auth.register.url;
 baseClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAuthToken();
-
     const isLoginEndpoint = config.url?.includes(loginEndpoint);
     const isRegisterEndpoint = config.url?.includes(registerEndpoint);
     if (token && !isLoginEndpoint && !isRegisterEndpoint) {

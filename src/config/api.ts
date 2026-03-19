@@ -12,7 +12,7 @@ export const API_CONFIG = {
 
 export const FX_FINANCIAL_TIPS_CONFIG = {
   baseURL: "https://seal-app-jjgmw.ondigitalocean.app",
-  ...GENERAL_CONFIG
+  ...GENERAL_CONFIG,
 };
 export const COUNTRIES_CONFIG = {
   baseURL: "https://countriesnow.space/api/v0.1",
