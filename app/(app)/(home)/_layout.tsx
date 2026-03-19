@@ -131,13 +131,13 @@ const HomeLayout = () => {
           title: "Budget Manager",
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="investment"
         options={{
           title: "Briefcase",
           href: null,
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="fxRates"
         options={{
