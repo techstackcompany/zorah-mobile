@@ -42,17 +42,41 @@ export interface RegisterUserResponse {
   [key: string]: unknown;
 }
 
+export interface UserOnboarding {
+  currentStep?: string;
+  financialGoals: string[];
+  hasCompletedOnboarding: boolean;
+  incomeSource: string[];
+  stepsCompleted: string[];
+}
+
+export interface UserUsageMetrics {
+  aiSessionsCount: number;
+  expensesLoggedCount: number;
+  isFeatureLocked: boolean;
+  lastInteractionDate: string;
+}
+
 export interface UserProfile {
   _id: string;
+  __v?: number;
+  authProvider?: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
   name?: string;
-  email?: string;
   phoneNumber?: string;
+  fcmTokens?: string[];
   hasPin?: boolean;
   pin?: string;
-  biometricEnabled?: boolean;
+  biometricEnabled: boolean;
   KycStatus?: "unverified" | "pending" | "verified" | (string & {});
-  createdAt?: string;
-  updatedAt?: string;
+  onboarding?: UserOnboarding;
+  preferredReminderHour?: number;
+  refreshToken?: string;
+  usageMetrics?: UserUsageMetrics;
+  createdAt: string;
+  updatedAt: string;
   [key: string]: unknown;
 }
 
@@ -64,6 +88,12 @@ export type VerifyPinRequest = SetPinRequest;
 
 export interface ToggleBiometricsRequest {
   enabled: boolean;
+}
+
+export interface UpdateOnboardingRequest {
+  incomeSource?: string | string[];
+  incomeRange?: string;
+  financialGoals?: string[];
 }
 
 export interface RequestPasswordResetRequest {

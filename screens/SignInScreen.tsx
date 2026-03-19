@@ -3,10 +3,10 @@ import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { setRefreshToken } from "@/lib/persistedStorageConfig";
 import { cn } from "@/lib/utils";
-import { useGetUserProfileQuery, useLoginUserMutation } from "@/src/api/hooks";
+import { useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
-import { Link, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,12 +19,10 @@ import {
 import Toast from "react-native-toast-message";
 
 const SignInScreen = () => {
-  const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const { signIn, setHasCompletedSetup, setUserData, isAuthenticated } =
-    useSession();
+  const { signIn } = useSession();
   const loginMutation = useLoginUserMutation();
   const focusField = (field: string) => {
     setFocused(field);
@@ -32,11 +30,6 @@ const SignInScreen = () => {
   const blurField = () => {
     setFocused(null);
   };
-
-  const { data: profileResponse, isLoading: isProfileLoading } =
-    useGetUserProfileQuery({
-      enabled: isAuthenticated,
-    });
 
   const processSignInResponse = useCallback(
     async (response: LoginUserResponse) => {
@@ -65,32 +58,8 @@ const SignInScreen = () => {
             : "You're now signed in.",
       });
     },
-
     [signIn],
   );
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (isProfileLoading || !profileResponse) return;
-
-    setUserData(profileResponse);
-
-    const isSetupComplete = profileResponse.biometricEnabled === true;
-    setHasCompletedSetup(isSetupComplete);
-
-    if (isSetupComplete) {
-      router.replace("/(app)/(home)");
-    } else {
-      router.replace("/(auth)/setup/monthly-income");
-    }
-  }, [
-    isAuthenticated,
-    isProfileLoading,
-    profileResponse,
-    router,
-    setUserData,
-    setHasCompletedSetup,
-  ]);
   const isSubmitting = loginMutation.isPending;
 
   const validate = useCallback(() => {
@@ -198,12 +167,12 @@ const SignInScreen = () => {
             disabled={isSubmitting}
             onPress={handleSubmit}
             className={cn(
-              "mb-6 items-center justify-center rounded-xl bg-primary_400 py-4",
+              "mb-6 h-14 items-center justify-center rounded-xl bg-primary_400 active:opacity-90",
               isSubmitting && "opacity-80",
             )}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" className="h-6" />
             ) : (
               <Text className="text-base font-semibold text-white">
                 Sign in

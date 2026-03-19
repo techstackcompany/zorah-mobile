@@ -18,6 +18,11 @@ import {
 } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Toast from "react-native-toast-message";
+import FeatureGateModal from "@/components/ui/FeatureGateModal";
+import { useSession } from "@/contexts/auth-context/useSession";
+import { useSetupProgress } from "@/hooks/useSetupProgress";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 
 type AssistantCategory = {
   id: string;
@@ -130,11 +135,29 @@ const getInitialMessages = (): Message[] => [
 ];
 
 const AiAssistantScreen = () => {
+  const router = useRouter();
+  const { userData } = useSession();
+  const { isSetupComplete, steps, currentStepIndex } = useSetupProgress();
+  const queryClient = useQueryClient();
+
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [draftMessage, setDraftMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
   const [, forceUpdate] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (userData?.usageMetrics?.lastInteractionDate) {
+      const lastInteraction = new Date(userData.usageMetrics.lastInteractionDate).getTime();
+      const now = Date.now();
+      const twelveHours = 12 * 60 * 60 * 1000;
+      if (now - lastInteraction > twelveHours) {
+        queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      }
+    }
+  }, [userData?.usageMetrics?.lastInteractionDate, queryClient]);
+
+  const isLimitReached = !isSetupComplete && (userData?.usageMetrics?.aiSessionsCount || 0) >= 2;
 
   const { startRecording, stopRecording, isRecording, isProcessing } =
     useSpeechRecognition({
@@ -258,6 +281,16 @@ const AiAssistantScreen = () => {
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted">
+      <FeatureGateModal
+        visible={isLimitReached}
+        featureName="AI Assistant"
+        onCompleteSetup={() => {
+          if (steps[currentStepIndex]?.route) {
+            router.replace(steps[currentStepIndex].route as any);
+          }
+        }}
+        onGoBack={() => router.back()}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={addKeyboardBehavior()}

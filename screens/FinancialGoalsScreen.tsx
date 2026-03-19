@@ -5,10 +5,12 @@ import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
+import { useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 type Goal = {
   id: string;
@@ -19,64 +21,87 @@ type Goal = {
 
 const goals: Goal[] = [
   {
-    id: "emergency",
-    title: "Build Emergency Fund",
-    description: "Save for unexpected expenses",
-    iconSource: require("@/assets/images/setup/emergency.svg"),
-  },
-  {
     id: "rent",
-    title: "Save for Rent/House",
-    description: "Plan for housing expenses",
+    title: "Save for Rent",
+    description: "Be ready before rent is due",
     iconSource: require("@/assets/images/setup/rent.svg"),
   },
   {
     id: "gadgets",
-    title: "Buy New Phone/Gadget",
-    description: "Save for unexpected expenses",
+    title: "Buy a New Gadget",
+    description: "Save up for your next phone/Laptop",
     iconSource: require("@/assets/images/setup/gadget.svg"),
   },
   {
     id: "transport",
-    title: "Transportation Goals",
-    description: "Car, bike, or transport budget",
+    title: "Mobility Goals",
+    description: "Plan and save for a car",
     iconSource: require("@/assets/images/setup/transport.svg"),
   },
   {
     id: "education",
-    title: "Education/Skills",
-    description: "Invest in learning and growth",
+    title: "Education / Skill Acquisition",
+    description: "Save for learning and career growth",
     iconSource: require("@/assets/images/setup/education.svg"),
   },
   {
     id: "business",
     title: "Start a Business",
-    description: "Build capital for your hustle",
+    description: "Build capital for your business",
     iconSource: require("@/assets/images/setup/business.svg"),
+  },
+  {
+    id: "emergency",
+    title: "Build Emergency Fund",
+    description: "Save for unexpected expenses",
+    iconSource: require("@/assets/images/setup/emergency.svg"),
   },
 ];
 
 const FinancialGoalsScreen = () => {
   const router = useRouter();
-  const {setSetupStep } = useSession();
+  const { setSetupStep } = useSession();
   const [selectedGoals, setSelectedGoals] = React.useState<string[]>([]);
-  useSetUpStep(4);
+  const updateOnboardingMutation = useUpdateOnboardingMutation();
+  useSetUpStep(1);
 
   const handlePrevious = () => {
-    setSetupStep(3);
-    router.back();
+    setSetupStep(null);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(app)/(home)");
+    }
   };
 
-  const handleFinish = () => {
-    setSetupStep(5);
-    router.replace("/(auth)/setup/biometric-setup");
+  const handleFinish = async () => {
+    const selectedGoalTitles = goals
+      .filter((goal) => selectedGoals.includes(goal.id))
+      .map((goal) => goal.title);
+
+    try {
+      await updateOnboardingMutation.mutateAsync({
+        financialGoals: selectedGoalTitles,
+      });
+
+      setSetupStep(2);
+      router.push("/(app)/setup/monthly-income");
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Could not save setup",
+        text2:
+          (error as { message?: string })?.message ??
+          "Please try again in a moment.",
+      });
+    }
   };
 
   return (
     <SetupContainer className="bg-light">
       <View className="flex-1">
         <SetupHeader
-          currentStep={4}
+          currentStep={1}
           totalSteps={5}
           title="Financial Goals"
           description="What would you like to achieve with Zorah?"
@@ -136,15 +161,19 @@ const FinancialGoalsScreen = () => {
 
           <View className="mt-auto flex-row gap-4 pt-10">
             <Button
-              title="Previous"
+              title="Cancel"
               variant="outline"
               className="flex-1"
               onPress={handlePrevious}
             />
             <Button
-              title="Get Started"
+              title="Next"
               className="flex-1"
               onPress={handleFinish}
+              disabled={
+                selectedGoals.length === 0 || updateOnboardingMutation.isPending
+              }
+              loading={updateOnboardingMutation.isPending}
             />
           </View>
         </View>

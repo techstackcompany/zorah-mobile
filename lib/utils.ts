@@ -127,7 +127,8 @@ type ExtractUserDataOptions = {
 };
 
 type ExtractedUserData = {
-  displayName: string;
+  fullName: string;
+  firstName: string;
   displayEmail: string;
   displayPhone?: string;
   initials: string;
@@ -154,35 +155,12 @@ export function extractUserData(
   } = options;
 
   const safeUser = (userData ?? {}) as Record<string, unknown>;
-  const nestedUser =
-    safeUser.user && typeof safeUser.user === "object"
-      ? (safeUser.user as Record<string, unknown>)
-      : null;
 
-  const resolvedName =
-    pickString(
-      safeUser.name,
-      safeUser.fullName,
-      nestedUser?.name,
-      nestedUser?.fullName,
-    ) ?? fallbackName;
-
-  const resolvedEmail =
-    pickString(
-      safeUser.email,
-      nestedUser?.email,
-      safeUser.userEmail,
-      safeUser.contactEmail,
-    ) ?? "";
+  const resolvedName = pickString(safeUser?.firstName) ?? fallbackName;
+  const resolvedEmail = pickString(safeUser.email) ?? "";
 
   const resolvedPhone = includePhone
-    ? (pickString(
-        safeUser.phone,
-        safeUser.phoneNumber,
-        nestedUser?.phone,
-        nestedUser?.phoneNumber,
-        safeUser.contactPhone,
-      ) ?? "")
+    ? (pickString(safeUser.phoneNumber) ?? "")
     : undefined;
 
   const nameParts = resolvedName
@@ -199,7 +177,8 @@ export function extractUserData(
       : (nameParts[0]?.[0]?.toUpperCase() ?? fallbackInitials);
 
   return {
-    displayName: resolvedName,
+    fullName: resolvedName,
+    firstName: nameParts[0] || fallbackName.split(" ")[0],
     displayEmail: resolvedEmail,
     ...(includePhone && { displayPhone: resolvedPhone }),
     initials: computedInitials,

@@ -3,7 +3,7 @@ import { Redirect } from "expo-router";
 import React from "react";
 
 export default function RootIndex() {
-  const { isAuthenticated, hasCompletedSetup, isLoading } = useSession();
+  const { isAuthenticated, isLoading } = useSession();
 
   if (isLoading) {
     return null;

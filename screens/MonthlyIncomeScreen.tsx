@@ -1,20 +1,23 @@
 import SetupContainer from "@/components/layouts/SetupContainer";
-import SelectField from "@/components/setup/SelectField";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { useSession } from "@/contexts/auth-context/useSession";
+import { setLocalSetupFlag } from "@/hooks/useSetupProgress";
 import useSetUpStep from "@/hooks/useSetUpStep";
+import { cn } from "@/lib/utils";
+import { useUpdateOnboardingMutation } from "@/src/api/hooks";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 const incomeSources = [
   { label: "Salary/Employment", value: "salary" },
   { label: "Business/Self-employed", value: "business" },
   { label: "Freelancing", value: "freelancing" },
   { label: "Multiple Sources", value: "multiple" },
-  { label: "Student/No Income", value: "student" },
+  { label: "Student/No Income", value: "student", standAlone: true },
 ];
 
 const incomeRanges = [
@@ -28,8 +31,10 @@ const incomeRanges = [
 const MonthlyIncomeScreen = () => {
   const router = useRouter();
   const { setSetupStep } = useSession();
-  const [primarySource, setPrimarySource] = useState<string | undefined>();
+  const [primarySource, setPrimarySource] = useState<string[]>([]);
+  const [isStandAloneSelected, setIsStandAloneSelected] = useState(false);
   const [monthlyRange, setMonthlyRange] = useState<string | undefined>();
+  const updateOnboardingMutation = useUpdateOnboardingMutation();
 
   useSetUpStep(2);
 
@@ -37,12 +42,33 @@ const MonthlyIncomeScreen = () => {
     setSetupStep(1);
     router.back();
   };
-  const handleNext = () => {
-    if (!primarySource || !monthlyRange) {
+  const handleNext = async () => {
+    if (primarySource.length === 0 || !monthlyRange) {
       return;
     }
-    setSetupStep(3);
-    router.navigate("/(auth)/setup/your-banks");
+
+    const selectedSources = primarySource.map(
+      (val) =>
+        incomeSources.find((source) => source.value === val)?.label ?? val,
+    );
+    const selectedRange =
+      incomeRanges.find((range) => range.value === monthlyRange)?.label ??
+      monthlyRange;
+
+    try {
+      await updateOnboardingMutation.mutateAsync({
+        incomeSource: selectedSources,
+        incomeRange: selectedRange,
+      });
+
+      await setLocalSetupFlag("income", true);
+
+      setSetupStep(3);
+      router.push("/(app)/setup/kyc");
+    } catch (error) {
+      // Handle error if needed
+      console.error("Failed to update income:", error);
+    }
   };
 
   return (
@@ -56,26 +82,106 @@ const MonthlyIncomeScreen = () => {
         />
 
         <View className="flex-1 px-6 pb-6">
-          <View className="mt-6">
-            <SelectField
-              label="Primary Income Source"
-              value={primarySource}
-              onSelect={setPrimarySource}
-              options={incomeSources}
-              className="mt-0"
-            />
-            <SelectField
-              label="Monthly Income Range"
-              value={monthlyRange}
-              onSelect={setMonthlyRange}
-              options={incomeRanges}
-            />
+          <ScrollView
+            className="mt-6 flex-1"
+            contentContainerStyle={{ paddingBottom: 24 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text
+              family="degular"
+              weight="semibold"
+              className="mb-4 text-base text-textColor"
+            >
+              Income Sources
+            </Text>
+            <Text>You can select more than one income source</Text>
+            <View className="flex-row flex-wrap gap-3">
+              {incomeSources.map((source) => {
+                const isSelected = primarySource.includes(source.value);
+                return (
+                  <Pressable
+                    key={source.value}
+                    disabled={isStandAloneSelected && !isSelected}
+                    onPress={() => {
+                      setPrimarySource((prev) =>
+                        prev.includes(source.value)
+                          ? prev.filter((v) => v !== source.value)
+                          : [...prev, source.value],
+                      );
+                      if (source.standAlone) {
+                        setIsStandAloneSelected(true);
+                        return;
+                      }
+                      setIsStandAloneSelected(false);
+                    }}
+                    className={cn(
+                      "rounded-xl border px-4 py-3",
+                      isSelected
+                        ? "border-primary_400 bg-primary_100"
+                        : "border-[#E2E8F0] bg-white",
+                    )}
+                  >
+                    <Text
+                      className={cn(
+                        "text-base",
+                        isSelected
+                          ? "text-primary_500 font-nunitoBold"
+                          : "text-textColor",
+                      )}
+                    >
+                      {source.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-            <Text className="mt-6 text-xs leading-5 text-textColor/70">
+            <Text
+              family="degular"
+              weight="semibold"
+              className="mb-4 mt-8 text-base text-textColor"
+            >
+              Monthly Income Range
+            </Text>
+            <View className="gap-3">
+              {incomeRanges.map((range) => {
+                const isSelected = monthlyRange === range.value;
+                return (
+                  <Pressable
+                    key={range.value}
+                    onPress={() => setMonthlyRange(range.value)}
+                    className={cn(
+                      "flex-row items-center justify-between rounded-2xl border px-5 py-4",
+                      isSelected
+                        ? "border-primary_400 bg-primary_100"
+                        : "border-[#E2E8F0] bg-white",
+                    )}
+                  >
+                    <Text
+                      className={cn(
+                        "text-base",
+                        isSelected
+                          ? "text-primary_500 font-nunitoBold"
+                          : "text-textColor",
+                      )}
+                    >
+                      {range.label}
+                    </Text>
+                    {isSelected && (
+                      <View className="bg-primary_500 h-5 w-5 items-center justify-center rounded-full">
+                        <Ionicons name="checkmark" size={14} color="#FFF" />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text className="mt-8 text-xs leading-5 text-textColor/70">
               This information helps us suggest appropriate budgets and savings
               goals. Your data is private and secure.
             </Text>
-          </View>
+          </ScrollView>
 
           <View className="mt-auto flex-row gap-4 pt-10">
             <Button
@@ -88,7 +194,12 @@ const MonthlyIncomeScreen = () => {
               title="Next"
               className="flex-1"
               onPress={handleNext}
-              disabled={!primarySource || !monthlyRange}
+              disabled={
+                primarySource.length === 0 ||
+                !monthlyRange ||
+                updateOnboardingMutation.isPending
+              }
+              loading={updateOnboardingMutation.isPending}
             />
           </View>
         </View>

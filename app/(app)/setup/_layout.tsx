@@ -16,22 +16,19 @@ const Layout = () => {
         ),
       }}
     >
-    
+      <Stack.Screen
+        name="financial-goals"
+        options={{ headerBackVisible: false }}
+      />
       <Stack.Screen
         name="monthly-income"
-        options={{ headerLeft: () => null, headerBackVisible: false }}
+        options={{ headerBackVisible: false }}
       />
-      <Stack.Screen
-        name="your-banks"
-        options={{ headerLeft: () => null, headerBackVisible: false }}
-      />
-      <Stack.Screen
-        name="summary"
-        options={{ headerLeft: () => null, headerBackVisible: false }}
-      />
+      <Stack.Screen name="kyc" options={{ headerBackVisible: false }} />
+      <Stack.Screen name="your-banks" options={{ headerBackVisible: false }} />
       <Stack.Screen
         name="biometric-setup"
-        options={{ headerLeft: () => null, headerBackVisible: false }}
+        options={{ headerBackVisible: false }}
       />
     </Stack>
   );

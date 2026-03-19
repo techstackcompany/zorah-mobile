@@ -55,7 +55,8 @@ const YourBanksScreen = ({
   const [selectedBanks, setSelectedBanks] =
     useState<string[]>(sanitizedInitial);
   const { setSetupStep } = useSession();
-  useSetUpStep(3);
+
+  useSetUpStep(4);
 
   useEffect(() => {
     setSelectedBanks((prev) =>
@@ -77,21 +78,21 @@ const YourBanksScreen = ({
   };
 
   const handlePrevious = () => {
-    setSetupStep(2);
+    setSetupStep(3);
     router.back();
   };
 
   const handleNext = () => {
     onSelectionChange?.(selectedBanks);
-    setSetupStep(4);
-    router.push("/(auth)/setup/summary");
+    setSetupStep(5);
+    router.push("/(app)/setup/biometric-setup");
   };
 
   return (
     <SetupContainer className="bg-light">
       <View className="flex-1">
         <SetupHeader
-          currentStep={3}
+          currentStep={4}
           totalSteps={5}
           title="Your Banks"
           description="Select your banks to enable automatic expense tracking"

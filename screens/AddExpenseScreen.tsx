@@ -17,6 +17,9 @@ import {
   useVoiceExpenseLoggingMutation,
 } from "@/src/api/hooks";
 
+import FeatureGateModal from "@/components/ui/FeatureGateModal";
+import { useSession } from "@/contexts/auth-context/useSession";
+import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import useVoiceTranscriber from "../hooks/useVoiceTranscriber";
@@ -185,6 +188,8 @@ const useExpenseSubCategories = () => {
 const AddExpenseScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { userData } = useSession();
+  const { isSetupComplete, steps, currentStepIndex } = useSetupProgress();
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [customCategory, setCustomCategory] = useState("");
@@ -245,6 +250,7 @@ const AddExpenseScreen = () => {
   const addExpenseMutation = useAddExpenseMutation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
       Toast.show({
         type: "success",
         text1: "Expense Added",
@@ -276,6 +282,7 @@ const AddExpenseScreen = () => {
   const logVoiceExpenseMutation = useVoiceExpenseLoggingMutation({
     onSuccess: (data) => {
       console.log("Voice expense response:", data);
+      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
 
       let formattedDate = "";
       if (data.transaction.createdAt) {
@@ -415,8 +422,21 @@ const AddExpenseScreen = () => {
   const isSubmitDisabled =
     isVoiceMode && (!editableTranscript.trim() || voiceStatus === "recording");
 
+  const isLimitReached =
+    !isSetupComplete && (userData?.usageMetrics?.expensesLoggedCount || 0) >= 2;
+
   return (
     <MainContainer className="bg-light" edges={[]}>
+      <FeatureGateModal
+        visible={isLimitReached}
+        featureName="Expense Logging"
+        onCompleteSetup={() => {
+          if (steps[currentStepIndex]?.route) {
+            router.replace(steps[currentStepIndex].route as any);
+          }
+        }}
+        onGoBack={() => router.back()}
+      />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={addKeyboardBehavior()}

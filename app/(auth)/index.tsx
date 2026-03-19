@@ -5,10 +5,10 @@ import React from "react";
 const Index = () => {
   const { hasOnboarded } = useSession();
 
-  if (hasOnboarded) {
-    return <Redirect href="/welcome" />;
+  if (!hasOnboarded) {
+    return <Redirect href="/(auth)/onboarding" />;
   }
-  return <Redirect href="/(auth)/onboarding" />;
+  return <Redirect href="/(auth)/welcome" />;
 };
 
 export default Index;

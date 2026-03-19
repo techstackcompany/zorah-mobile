@@ -1,3 +1,4 @@
+import CompleteSetupCard from "@/components/home/CompleteSetupCard";
 import FinancialTipCard from "@/components/home/FinancialTipCard";
 import FxRatesCard from "@/components/home/FxRatesCard";
 import QuickActions from "@/components/home/QuickActions";
@@ -6,6 +7,7 @@ import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
 import { FX_PAIRS, fxPairsToFetch } from "@/constants/fx";
+import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { useUserDisplayData } from "@/hooks/useUserDisplayData";
 import {
   formatCurrencyWithSymbol,
@@ -83,7 +85,8 @@ const HomeScreen = () => {
   const [currency] = useState<CurrencyOption>(NGN_CURRENCY);
   const [balanceHidden, setBalanceHidden] = useState(false);
   const { initials, welcomeName } = useUserDisplayData();
-  const {
+  const { isSetupComplete, currentStepRoute } = useSetupProgress();
+  const { 
     data: balanceData,
     isLoading: isLoadingBalance,
     refetch: refetchBalance,
@@ -219,6 +222,7 @@ const HomeScreen = () => {
     ) {
       return null;
     }
+    console.log("month", monthlyExpensesData?.data);
 
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
@@ -330,6 +334,13 @@ const HomeScreen = () => {
               />
             </View>
             <View className="bg-lightMuted px-6">
+              {!isSetupComplete && (
+                <CompleteSetupCard
+                  onCompleteSetup={() => {
+                    router.push(currentStepRoute as any);
+                  }}
+                />
+              )}
               <QuickActions
                 actions={quickActions}
                 onActionPress={handleQuickActionPress}

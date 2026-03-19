@@ -1,8 +1,35 @@
+import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
 import UserInactivityProvider from "@/contexts/user-inactivity/UserInactivityProvider";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 const AppLayout = () => {
+  const { setUserData, signOut } = useSession();
+
+  const { data: profileData, isLoading: isProfileLoading, error } =
+    useGetUserProfileQuery();
+
+  useEffect(() => {
+    if (profileData) {
+      console.log("profileData", profileData);
+      setUserData(profileData);
+    }
+    if(error){
+      signOut()
+    }
+  }, [profileData, setUserData, signOut, error]);
+
+  if (isProfileLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={COLORS.primary_400} />
+      </View>
+    );
+  }
+
   return (
     <UserInactivityProvider>
       <Stack
@@ -84,6 +111,7 @@ const AppLayout = () => {
           options={{ title: "Biometric Login", headerShown: false }}
         />
         <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
+        <Stack.Screen name="setup" options={{ headerShown: false }} />
       </Stack>
     </UserInactivityProvider>
   );

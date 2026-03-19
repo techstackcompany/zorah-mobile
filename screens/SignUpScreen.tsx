@@ -7,7 +7,7 @@ import { ApiError } from "@/src/api/client";
 import { useRegisterUserMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -42,8 +42,7 @@ const OriginalSignUpScreen = () => {
   const [agree, setAgree] = useState(false);
   const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
 
-  const router = useRouter();
-  const { signIn, setHasCompletedSetup, setSetupStep } = useSession();
+  const { signIn } = useSession();
   const registerMutation = useRegisterUserMutation();
   const isSubmitting = registerMutation.isPending;
 
@@ -82,14 +81,9 @@ const OriginalSignUpScreen = () => {
       };
       const response = await registerMutation.mutateAsync(payload);
 
-      setHasCompletedSetup(false);
-      setSetupStep(1);
       await signIn(response.token);
       Toast.show({
         type: "success",
-        visibilityTime: 2000,
-        onHide: () => router.replace("/(auth)/setup/monthly-income"),
-
         text1: "Account created",
         text2: response?.name
           ? `Welcome, ${response.name}!`
@@ -124,10 +118,7 @@ const OriginalSignUpScreen = () => {
     form.password,
     form.phoneNumber,
     registerMutation,
-    setHasCompletedSetup,
-    setSetupStep,
     signIn,
-    router,
   ]);
 
   return (

@@ -1,4 +1,5 @@
 import { useSession } from "@/contexts/auth-context/useSession";
+import { setLocalSetupFlag } from "@/hooks/useSetupProgress";
 import YourBanksScreen from "@/screens/YourBanksScreen";
 import React, { useCallback, useMemo } from "react";
 
@@ -45,6 +46,8 @@ const YourBanks = () => {
       if (arraysEqual(sanitized, storedSelectedBanks)) {
         return;
       }
+
+      setLocalSetupFlag("banks", true);
 
       setUserData({
         ...(userData ?? {}),

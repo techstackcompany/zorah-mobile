@@ -10,6 +10,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { useQueryClient } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -42,6 +43,7 @@ type PinSetupScreenProps = {
 
 const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { updateSetting } = useAppSettings();
   const { setHasCompletedSetup, setSetupStep } = useSession();
   const [step, setStep] = useState<PinSetupStep>("create");
@@ -69,11 +71,12 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
       updateSetting("enableBiometrics", true);
       Toast.show({
         type: "success",
-        text1: "PIN Set Successfully",
-        text2: "Your PIN has been set up and biometrics enabled.",
+        text1: variant === "setup" ? "Setup Complete" : "PIN Set Successfully",
+        text2: variant === "setup" ? "Your account setup is now complete." : "Your PIN has been set up and biometrics enabled.",
       });
 
       if (variant === "setup") {
+        queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
         setHasCompletedSetup(true);
         setSetupStep(null);
         router.replace("/(app)/(home)");
@@ -103,6 +106,7 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
         toggleBiometricsMutation.mutate({ enabled: true });
       } else {
         if (variant === "setup") {
+          queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
           setHasCompletedSetup(true);
           setSetupStep(null);
           router.replace("/(app)/(home)");
@@ -115,8 +119,8 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
         }
         Toast.show({
           type: "success",
-          text1: "PIN Set Successfully",
-          text2: "Your account is now secured with PIN.",
+          text1: variant === "setup" ? "Setup Complete" : "PIN Set Successfully",
+          text2: variant === "setup" ? "Your account setup is now complete." : "Your account is now secured with PIN.",
         });
       }
     },

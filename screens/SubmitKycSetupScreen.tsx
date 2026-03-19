@@ -26,7 +26,6 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-const KYC_TIERS = [{ value: 1, label: "Tier 1" }];
 const DEFAULT_TIER = 1;
 const getMaxDate = () => {
   const today = new Date();
@@ -51,19 +50,24 @@ const SubmitKycSetupScreen = () => {
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});
 
-  useSetUpStep(1);
+  useSetUpStep(3);
 
   const submitKycMutation = useSubmitKycMutation({
     onSuccess: () => {
       Toast.show({
         type: "success",
-        text1: "KYC submitted",
+        text1: "Wallet creation initiated",
         text2: "We are reviewing your details.",
       });
-      setSetupStep(2);
-      router.push("/(auth)/setup/monthly-income");
+      setSetupStep(4);
+      router.push("/(app)/setup/your-banks");
     },
     onError: (error) => {
+      if (error.message === "Wallet already created for this user") {
+        setSetupStep(4);
+        router.push("/(app)/setup/your-banks");
+        return;
+      }
       Toast.show({
         type: "error",
         text1: "Submission failed",
@@ -152,10 +156,10 @@ const SubmitKycSetupScreen = () => {
     <SetupContainer>
       <View className="flex-1">
         <SetupHeader
-          currentStep={1}
+          currentStep={3}
           totalSteps={5}
-          title="Personal Details"
-          description="Please provide your KYC information"
+          title="Wallet Creation"
+          description="Please provide your KYC information to create your wallet"
         />
 
         <ScrollView
