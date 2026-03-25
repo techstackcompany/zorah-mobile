@@ -1,3 +1,4 @@
+import { stackOptions } from "@/constants/navigation";
 import { Stack } from "expo-router";
 import React from "react";
 
@@ -6,15 +7,10 @@ const ProfileLayout = () => {
     <Stack
       screenOptions={{
         statusBarStyle: "dark",
-        headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: "NunitoSemibold" },
-        headerBackTitleStyle: { fontFamily: "NunitoSemibold" },
+        ...stackOptions,
       }}
     >
-      <Stack.Screen
-        name="edit-profile"
-        options={{ title: "Edit Profile" }}
-      />
+      <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
       <Stack.Screen name="banks" options={{ title: "Linked Banks" }} />
       <Stack.Screen name="add-bank" options={{ title: "Add Bank" }} />
       <Stack.Screen
@@ -26,4 +22,3 @@ const ProfileLayout = () => {
 };
 
 export default ProfileLayout;
-

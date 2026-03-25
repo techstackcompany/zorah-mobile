@@ -1,9 +1,8 @@
+import { stackOptions } from "@/constants/navigation";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { Pressable, View } from "react-native";
-
-
 
 const BudgetLayout = () => {
   const router = useRouter();
@@ -17,14 +16,7 @@ const BudgetLayout = () => {
   }, [router]);
 
   return (
-    <Stack
-      screenOptions={{
-        statusBarStyle: "dark",
-        headerBackTitleStyle: { fontFamily: "NunitoMedium" },
-        headerTitleStyle: { fontFamily: "NunitoSemibold" },
-        headerShadowVisible: false,
-      }}
-    >
+    <Stack screenOptions={stackOptions}>
       <Stack.Screen
         name="index"
         options={{

@@ -1,4 +1,5 @@
 import COLORS from "@/constants/colors";
+import { stackOptions } from "@/constants/navigation";
 import { useSession } from "@/contexts/auth-context/useSession";
 import UserInactivityProvider from "@/contexts/user-inactivity/UserInactivityProvider";
 import { useGetUserProfileQuery } from "@/src/api/hooks";
@@ -9,16 +10,18 @@ import { ActivityIndicator, View } from "react-native";
 const AppLayout = () => {
   const { setUserData, signOut } = useSession();
 
-  const { data: profileData, isLoading: isProfileLoading, error } =
-    useGetUserProfileQuery();
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    error,
+  } = useGetUserProfileQuery();
 
   useEffect(() => {
     if (profileData) {
-      console.log("profileData", profileData);
       setUserData(profileData);
     }
-    if(error){
-      signOut()
+    if (error) {
+      signOut();
     }
   }, [profileData, setUserData, signOut, error]);
 
@@ -32,19 +35,12 @@ const AppLayout = () => {
 
   return (
     <UserInactivityProvider>
-      <Stack
-        screenOptions={{
-          headerBackButtonDisplayMode: "minimal",
-          headerBackTitleStyle: { fontFamily: "NunitoSemibold" },
-          headerTitleStyle: { fontFamily: "NunitoSemibold" },
-          headerShadowVisible: false,
-        }}
-      >
+      <Stack screenOptions={stackOptions}>
         <Stack.Screen name="(home)" options={{ headerShown: false }} />
 
         <Stack.Screen
           name="expense-planning"
-          options={{ title: "Expense Planning" }}
+          options={{ title: "Expense Report" }}
         />
         <Stack.Screen name="add-expense" options={{ title: "Add Expense" }} />
         <Stack.Screen

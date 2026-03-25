@@ -1,3 +1,4 @@
+import { stackOptions } from "@/constants/navigation";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
@@ -9,14 +10,7 @@ const SavingsGoalsLayout = () => {
     router.navigate("/savings-goals/create");
   };
   return (
-    <Stack
-      screenOptions={{
-        statusBarStyle: "dark",
-        headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: "NunitoSemibold" },
-      
-      }}
-    >
+    <Stack screenOptions={stackOptions}>
       <Stack.Screen
         name="index"
         options={{

@@ -8,8 +8,6 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
-
 const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
@@ -36,7 +34,9 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   );
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: bottom + 20 }]}>
+    <View
+      style={[styles.wrapper, { paddingBottom: bottom + 10, paddingTop: 0 }]}
+    >
       <View style={styles.container}>
         {visibleRoutes.map((route, index) => {
           const isFocused = index === focusedIndex;
@@ -106,15 +106,13 @@ const HomeLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        headerTitleStyle: { fontFamily: "NunitoSemibold" },
-        headerShadowVisible: false,
+
         tabBarStyle: shouldHideTabBar
           ? { display: "none" }
           : {
               justifyContent: "center",
               borderWidth: 2,
               borderColor: "white",
-              backgroundColor: "red",
             },
       }}
       tabBar={(props) => (shouldHideTabBar ? null : <HomeTabBar {...props} />)}
@@ -131,13 +129,7 @@ const HomeLayout = () => {
           title: "Budget Manager",
         }}
       />
-      {/* <Tabs.Screen
-        name="investment"
-        options={{
-          title: "Briefcase",
-          href: null,
-        }}
-      /> */}
+
       <Tabs.Screen
         name="fxRates"
         options={{
@@ -161,8 +153,7 @@ export default HomeLayout;
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: "white",
+    backgroundColor: "transparent",
   },
   container: {
     flexDirection: "row",
