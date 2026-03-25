@@ -1,11 +1,11 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { ChartSegment } from "@/features/expense-income/types";
+import { getTextColor, hexToRgb } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Text as SvgText, TSpan } from "react-native-svg";
-
-
 
 type ExpenseChartProps = {
   segments: ChartSegment[];
@@ -44,7 +44,8 @@ const ExpenseChart = ({
       const labelX = CHART_SIZE / 2 + labelRadius * Math.cos(midpointAngle);
       const labelY = CHART_SIZE / 2 + labelRadius * Math.sin(midpointAngle);
       const percentageLabel = `${Math.round(segment.percentage)}%`;
-
+      const { r, g, b } = hexToRgb(segment.color);
+      const textColor = getTextColor(r, g, b);
       const element = (
         <React.Fragment key={segment.key}>
           <Circle
@@ -61,7 +62,7 @@ const ExpenseChart = ({
           <SvgText
             x={labelX}
             y={labelY}
-            fill={COLORS.textColor}
+            fill={textColor}
             fontSize={10}
             fontWeight="600"
             textAnchor="middle"
