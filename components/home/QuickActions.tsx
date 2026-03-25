@@ -2,7 +2,7 @@ import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 import { Image, ImageSource } from "expo-image";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 type QuickAction = {
   id: string;
@@ -26,7 +26,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({
       <Text weight="semibold" className="text-lg">
         Quick Actions
       </Text>
-      <View className="mt-4 flex-row gap-3">
+      <ScrollView
+        horizontal
+        scrollEnabled
+        contentContainerClassName="gap-3"
+        showsHorizontalScrollIndicator={false}
+        className="mt-4 flex-row gap-3"
+      >
         {actions.map((action) => (
           <Pressable
             key={action.id}
@@ -51,10 +57,9 @@ const QuickActions: React.FC<QuickActionsProps> = ({
             )}
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 };
 
 export default QuickActions;
-
