@@ -1,1 +1,1 @@
-export { setupRoutes } from "./setup";
+export { setupInfo } from "./setup";

@@ -72,6 +72,7 @@ export interface UserProfile {
   biometricEnabled: boolean;
   KycStatus?: "unverified" | "pending" | "verified" | (string & {});
   onboarding?: UserOnboarding;
+  stepsCompleted?: string[];
   preferredReminderHour?: number;
   refreshToken?: string;
   usageMetrics?: UserUsageMetrics;
@@ -91,9 +92,12 @@ export interface ToggleBiometricsRequest {
 }
 
 export interface UpdateOnboardingRequest {
-  incomeSource?: string | string[];
-  incomeRange?: string;
-  financialGoals?: string[];
+  step: string;
+  data: {
+    incomeSource?: string | string[];
+    incomeRange?: string;
+    financialGoals?: string[];
+  };
 }
 
 export interface RequestPasswordResetRequest {

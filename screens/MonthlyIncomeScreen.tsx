@@ -2,46 +2,35 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
-import { useSession } from "@/contexts/auth-context/useSession";
-import { setLocalSetupFlag } from "@/hooks/useSetupProgress";
+import { incomeRanges, incomeSources, setupInfo } from "@/constants/setup";
+import useUserData from "@/contexts/auth-context/useUserData";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
+import type { ApiError } from "@/src/api/client";
 import { useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-
-const incomeSources = [
-  { label: "Salary/Employment", value: "salary" },
-  { label: "Business/Self-employed", value: "business" },
-  { label: "Freelancing", value: "freelancing" },
-  { label: "Multiple Sources", value: "multiple" },
-  { label: "Student/No Income", value: "student", standAlone: true },
-];
-
-const incomeRanges = [
-  { label: "Below NGN 50,000", value: "below-50000" },
-  { label: "NGN 50,000 - NGN 150,000", value: "50000-150000" },
-  { label: "NGN 150,000 - NGN 300,000", value: "150000-300000" },
-  { label: "NGN 300,000 - NGN 500,000", value: "300000-500000" },
-  { label: "Above NGN 500,000", value: "above-500000" },
-];
+import Toast from "react-native-toast-message";
 
 const MonthlyIncomeScreen = () => {
-  const router = useRouter();
-  const { setSetupStep } = useSession();
+  const userData = useUserData();
   const [primarySource, setPrimarySource] = useState<string[]>([]);
   const [isStandAloneSelected, setIsStandAloneSelected] = useState(false);
   const [monthlyRange, setMonthlyRange] = useState<string | undefined>();
   const updateOnboardingMutation = useUpdateOnboardingMutation();
 
-  useSetUpStep(2);
+  const { goToNextStep, goToPreviousStep } = useSetUpStep(2);
+
+  useEffect(() => {
+    // console.log("userData.onboarding", userData?.onboarding);
+    // if(userData?.onboarding && userData.onboarding.)
+  }, []);
 
   const handlePrevious = () => {
-    setSetupStep(1);
-    router.back();
+    goToPreviousStep();
   };
+
   const handleNext = async () => {
     if (primarySource.length === 0 || !monthlyRange) {
       return;
@@ -57,17 +46,18 @@ const MonthlyIncomeScreen = () => {
 
     try {
       await updateOnboardingMutation.mutateAsync({
-        incomeSource: selectedSources,
-        incomeRange: selectedRange,
+        step: setupInfo[2].key,
+        data: { incomeSource: selectedSources, incomeRange: selectedRange },
       });
 
-      await setLocalSetupFlag("income", true);
-
-      setSetupStep(3);
-      router.push("/(app)/setup/kyc");
+      goToNextStep();
     } catch (error) {
-      // Handle error if needed
-      console.error("Failed to update income:", error);
+      const apiError = error as ApiError;
+      Toast.show({
+        type: "error",
+        text1: apiError.message || "Something went wrong",
+        text2: "Please try again.",
+      });
     }
   };
 
@@ -76,7 +66,7 @@ const MonthlyIncomeScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={2}
-          totalSteps={5}
+          totalSteps={4}
           title="Monthly Income"
           description="Help us personalize your budgeting experience"
         />
@@ -94,7 +84,9 @@ const MonthlyIncomeScreen = () => {
             >
               Income Sources
             </Text>
-            <Text>You can select more than one income source</Text>
+            <Text className="mb-3">
+              You can select more than one income source
+            </Text>
             <View className="flex-row flex-wrap gap-3">
               {incomeSources.map((source) => {
                 const isSelected = primarySource.includes(source.value);
@@ -179,7 +171,7 @@ const MonthlyIncomeScreen = () => {
 
             <Text className="mt-8 text-xs leading-5 text-textColor/70">
               This information helps us suggest appropriate budgets and savings
-              goals. Your data is private and secure.
+              goals.
             </Text>
           </ScrollView>
 

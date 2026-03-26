@@ -2,18 +2,21 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import { setupInfo } from "@/constants";
 import COLORS from "@/constants/colors";
-import { useSession } from "@/contexts/auth-context/useSession";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import useSetUpStep from "@/hooks/useSetUpStep";
-import { useSubmitKycMutation } from "@/src/api/hooks";
+import type { ApiError } from "@/src/api/client";
+import {
+  useSubmitKycMutation,
+  useUpdateOnboardingMutation,
+} from "@/src/api/hooks";
 import { useNigerianStatesApi } from "@/src/api/hooks/useCountriesApi";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
-import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -33,8 +36,7 @@ const getMaxDate = () => {
   return today;
 };
 const SubmitKycSetupScreen = () => {
-  const router = useRouter();
-  const { setSetupStep } = useSession();
+  const { goToNextStep, goToPreviousStep } = useSetUpStep(3);
   const [fullName, setFullName] = useState("");
   const [dateOfBirthRaw, setDateOfBirthRaw] = useState<Date | null>(null);
 
@@ -49,32 +51,11 @@ const SubmitKycSetupScreen = () => {
     useNigerianStatesApi();
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});
-
-  useSetUpStep(3);
-
-  const submitKycMutation = useSubmitKycMutation({
-    onSuccess: () => {
-      Toast.show({
-        type: "success",
-        text1: "Wallet creation initiated",
-        text2: "We are reviewing your details.",
-      });
-      setSetupStep(4);
-      router.push("/(app)/setup/your-banks");
-    },
-    onError: (error) => {
-      if (error.message === "Wallet already created for this user") {
-        setSetupStep(4);
-        router.push("/(app)/setup/your-banks");
-        return;
-      }
-      Toast.show({
-        type: "error",
-        text1: "Submission failed",
-        text2: error.message || "Unable to submit KYC. Please try again.",
-      });
-    },
+  const updateOnboardingMutation = useUpdateOnboardingMutation({
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
+  const submitKycMutation = useSubmitKycMutation();
 
   const { keyboardHeight } = useKeyboardHeight();
 
@@ -96,6 +77,32 @@ const SubmitKycSetupScreen = () => {
 
   const handleBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const persistOnboardingStep = async () => {
+    await updateOnboardingMutation.mutateAsync({
+      data: {},
+      step: setupInfo[3].key,
+    });
+  };
+
+  const showSuccessAndAdvance = () => {
+    Toast.show({
+      type: "success",
+      text1: "Wallet creation initiated",
+      text2: "We are reviewing your details.",
+    });
+
+    goToNextStep();
+  };
+
+  const isApiError = (error: unknown): error is ApiError => {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      "message" in error &&
+      typeof (error as { message: unknown }).message === "string"
+    );
   };
 
   const dateOfBirth =
@@ -126,8 +133,15 @@ const SubmitKycSetupScreen = () => {
 
   const isValid = Object.keys(errors).length === 0;
 
-  const handleNext = () => {
-    if (!isValid || submitKycMutation.isPending) return;
+  const handleNext = async () => {
+    if (
+      !isValid ||
+      submitKycMutation.isPending ||
+      updateOnboardingMutation.isPending
+    ) {
+      return;
+    }
+
     const payload = {
       tier: DEFAULT_TIER,
       fullName: fullName.trim(),
@@ -137,7 +151,45 @@ const SubmitKycSetupScreen = () => {
       bvn: bvn.trim(),
       nin: nin.trim(),
     };
-    submitKycMutation.mutate(payload);
+    try {
+      await submitKycMutation.mutateAsync(payload);
+      await persistOnboardingStep();
+      showSuccessAndAdvance();
+    } catch (err) {
+      const message = isApiError(err)
+        ? err.message
+        : "Unable to submit KYC. Please try again.";
+
+      if (message === "Wallet already created for this user") {
+        try {
+          await persistOnboardingStep();
+          showSuccessAndAdvance();
+        } catch (updateErr) {
+          const updateMessage =
+            updateErr instanceof Error
+              ? updateErr.message
+              : "Wallet exists, but onboarding step update failed.";
+
+          Toast.show({
+            type: "error",
+            text1: "Could not complete setup",
+            text2: updateMessage,
+          });
+        }
+
+        return;
+      }
+
+      Toast.show({
+        type: "error",
+        text1: "Submission failed",
+        text2: message,
+      });
+    }
+  };
+
+  const handlePrevious = () => {
+    goToPreviousStep();
   };
 
   const handleDateChange = (
@@ -157,7 +209,7 @@ const SubmitKycSetupScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={3}
-          totalSteps={5}
+          totalSteps={4}
           title="Wallet Creation"
           description="Please provide your KYC information to create your wallet"
         />
@@ -364,11 +416,23 @@ const SubmitKycSetupScreen = () => {
           </View>
         </ScrollView>
 
-        <View className="px-6 pb-6">
+        <View className="flex-row gap-2 px-6 pt-4">
+          <Button
+            title="Previous"
+            variant="outline"
+            className="flex-1"
+            onPress={handlePrevious}
+            disabled={submitKycMutation.isPending}
+          />
           <Button
             title={submitKycMutation.isPending ? "Submitting..." : "Next"}
             onPress={handleNext}
-            disabled={!isValid || submitKycMutation.isPending}
+            className="flex-1"
+            disabled={
+              !isValid ||
+              submitKycMutation.isPending ||
+              updateOnboardingMutation.isPending
+            }
           />
         </View>
       </View>

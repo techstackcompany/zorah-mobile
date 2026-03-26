@@ -2,13 +2,15 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import { setupInfo } from "@/constants";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/src/api/client";
 import { useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -60,10 +62,22 @@ const goals: Goal[] = [
 
 const FinancialGoalsScreen = () => {
   const router = useRouter();
-  const { setSetupStep } = useSession();
   const [selectedGoals, setSelectedGoals] = React.useState<string[]>([]);
   const updateOnboardingMutation = useUpdateOnboardingMutation();
-  useSetUpStep(1);
+  const { setSetupStep, goToNextStep } = useSetUpStep(1);
+  const { userData } = useSession();
+  const financialGoals =
+    userData?.onboarding && userData.onboarding.financialGoals;
+  useEffect(() => {
+    if (financialGoals) {
+      const _selectedGoals = goals
+        .filter((goal) =>
+          userData.onboarding?.financialGoals?.includes(goal.title),
+        )
+        .map((goal) => goal.id);
+      setSelectedGoals(_selectedGoals);
+    }
+  }, [setSetupStep, userData?.onboarding]);
 
   const handlePrevious = () => {
     setSetupStep(null);
@@ -78,21 +92,28 @@ const FinancialGoalsScreen = () => {
     const selectedGoalTitles = goals
       .filter((goal) => selectedGoals.includes(goal.id))
       .map((goal) => goal.title);
-
+    if (
+      financialGoals &&
+      selectedGoalTitles.every((title) => financialGoals.includes(title))
+    ) {
+      console.log("skipped");
+      goToNextStep();
+      return;
+    }
     try {
       await updateOnboardingMutation.mutateAsync({
-        financialGoals: selectedGoalTitles,
+        step: setupInfo[1].key,
+        data: { financialGoals: selectedGoalTitles },
       });
 
-      setSetupStep(2);
-      router.push("/(app)/setup/monthly-income");
+      goToNextStep();
     } catch (error) {
+      const apiError = error as ApiError;
+
       Toast.show({
         type: "error",
         text1: "Could not save setup",
-        text2:
-          (error as { message?: string })?.message ??
-          "Please try again in a moment.",
+        text2: apiError?.message ?? "Please try again in a moment.",
       });
     }
   };
@@ -102,7 +123,7 @@ const FinancialGoalsScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={1}
-          totalSteps={5}
+          totalSteps={4}
           title="Financial Goals"
           description="What would you like to achieve with Zorah?"
         />

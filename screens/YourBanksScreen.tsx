@@ -2,13 +2,18 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import { setupInfo } from "@/constants";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/src/api/client";
+import { useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Modal, Pressable, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 type Bank = {
   id: string;
@@ -54,9 +59,12 @@ const YourBanksScreen = ({
   );
   const [selectedBanks, setSelectedBanks] =
     useState<string[]>(sanitizedInitial);
-  const { setSetupStep } = useSession();
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const queryClient = useQueryClient();
+  const { setHasCompletedSetup, setSetupStep } = useSession();
+  const updateOnboardingMutation = useUpdateOnboardingMutation();
 
-  useSetUpStep(4);
+  const { goToPreviousStep } = useSetUpStep(4);
 
   useEffect(() => {
     setSelectedBanks((prev) =>
@@ -78,14 +86,44 @@ const YourBanksScreen = ({
   };
 
   const handlePrevious = () => {
-    setSetupStep(3);
-    router.back();
+    goToPreviousStep();
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (selectedBanks.length === 0 || updateOnboardingMutation.isPending) {
+      return;
+    }
+
     onSelectionChange?.(selectedBanks);
-    setSetupStep(5);
-    router.push("/(app)/setup/biometric-setup");
+
+    try {
+      await updateOnboardingMutation.mutateAsync({
+        data: {},
+        step: setupInfo[4].key,
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["auth", "profile"],
+        exact: true,
+      });
+
+      setHasCompletedSetup(true);
+      setSetupStep(null);
+      setShowCompletionModal(true);
+    } catch (error) {
+      const _error = error as ApiError;
+      console.log("_error.message", _error.message);
+      Toast.show({
+        type: "error",
+        text1: "Could not complete setup",
+        text2: _error.message,
+      });
+    }
+  };
+
+  const handleCloseCompletionModal = () => {
+    setShowCompletionModal(false);
+    router.replace("/(app)/(home)");
   };
 
   return (
@@ -93,7 +131,7 @@ const YourBanksScreen = ({
       <View className="flex-1">
         <SetupHeader
           currentStep={4}
-          totalSteps={5}
+          totalSteps={4}
           title="Your Banks"
           description="Select your banks to enable automatic expense tracking"
         />
@@ -132,19 +170,47 @@ const YourBanksScreen = ({
           <View className="mt-auto flex-row gap-4 pt-10">
             <Button
               title="Previous"
+              disabled
               variant="outline"
               className="flex-1"
               onPress={handlePrevious}
             />
             <Button
-              title="Next"
+              title="Finish"
               className="flex-1"
               onPress={handleNext}
-              disabled={selectedBanks.length === 0}
+              disabled={
+                selectedBanks.length === 0 || updateOnboardingMutation.isPending
+              }
             />
           </View>
         </View>
       </View>
+
+      <Modal
+        visible={showCompletionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseCompletionModal}
+      >
+        <View className="flex-1 items-center justify-center bg-black/35 px-6">
+          <View className="w-full max-w-[360px] rounded-2xl bg-white p-6">
+            <Text weight="bold" className="text-xl text-textColor">
+              Setup complete
+            </Text>
+            <Text className="mt-2 text-sm text-textColor/70">
+              Your onboarding is complete. You can now start using all app
+              features.
+            </Text>
+
+            <Button
+              title="Continue"
+              className="mt-5"
+              onPress={handleCloseCompletionModal}
+            />
+          </View>
+        </View>
+      </Modal>
     </SetupContainer>
   );
 };

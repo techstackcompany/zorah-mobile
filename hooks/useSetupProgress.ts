@@ -1,13 +1,9 @@
+import { setupInfo } from "@/constants/setup";
 import { useSession } from "@/contexts/auth-context/useSession";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
-export type SetupStepKey =
-  | "financial-goals"
-  | "income"
-  | "kyc"
-  | "banks"
-  | "biometrics";
+export type SetupStepKey = "financial-goals" | "income" | "kyc" | "banks";
 
 export interface SetupStepInfo {
   key: SetupStepKey;
@@ -16,21 +12,20 @@ export interface SetupStepInfo {
   route: string;
 }
 
-const INCOME_COMPLETED_KEY = "@setup_income_completed";
 const BANKS_COMPLETED_KEY = "@setup_banks_completed";
 
-export const setLocalSetupFlag = async (
-  key: "income" | "banks",
-  value: boolean,
-) => {
+export const setLocalSetupFlag = async (key: "banks", value: boolean) => {
   try {
-    const storageKey =
-      key === "income" ? INCOME_COMPLETED_KEY : BANKS_COMPLETED_KEY;
+    const storageKey = BANKS_COMPLETED_KEY;
     await AsyncStorage.setItem(storageKey, JSON.stringify(value));
   } catch (error) {
     console.error(`Failed to set local setup flag for ${key}:`, error);
   }
 };
+
+function checkIfSetupStepCompleted(userData: any, stepKey: string): boolean {
+  return userData?.onboarding?.stepsCompleted?.includes(stepKey) ?? false;
+}
 
 export const useSetupProgress = () => {
   const { userData } = useSession();
@@ -49,19 +44,24 @@ export const useSetupProgress = () => {
 
     fetchLocalFlags();
   }, []);
+
   const financialGoalsCompleted =
     Array.isArray(userData?.onboarding?.financialGoals) &&
-    userData.onboarding.financialGoals.length > 0;
+    userData.onboarding.financialGoals.length > 0 &&
+    checkIfSetupStepCompleted(userData, setupInfo[1].key);
 
   const incomeCompleted =
     Array.isArray(userData?.onboarding?.incomeSource) &&
-    userData.onboarding.incomeSource.length > 0;
+    userData.onboarding.incomeSource.length > 0 &&
+    checkIfSetupStepCompleted(userData, setupInfo[2].key);
   const kycCompleted =
-    userData?.KycStatus !== undefined && userData?.KycStatus !== "unverified";
+    // userData?.KycStatus !== undefined &&
+    // userData?.KycStatus !== "unverified" &&
+    checkIfSetupStepCompleted(userData, setupInfo[3].key);
 
-  const banksCompleted = localBanksCompleted;
-
-  const biometricsCompleted = userData?.hasPin === true;
+  const banksCompleted =
+    localBanksCompleted &&
+    checkIfSetupStepCompleted(userData, setupInfo[4].key);
 
   const steps: SetupStepInfo[] = [
     {
@@ -85,25 +85,20 @@ export const useSetupProgress = () => {
     {
       key: "banks",
       title: "Bank Integration",
-      completed: true,
+      completed: banksCompleted,
       route: "/(app)/setup/your-banks",
     },
-    {
-      key: "biometrics",
-      title: "Security & Biometrics",
-      completed: biometricsCompleted,
-      route: "/(app)/setup/biometric-setup",
-    },
   ];
-
+  console.log("kycCompleted", kycCompleted);
   const completedCount = steps.filter((step) => step.completed).length;
   const isSetupComplete =
     banksCompleted &&
-    biometricsCompleted &&
     kycCompleted &&
     incomeCompleted &&
     financialGoalsCompleted;
+
   const currentStepIndex = steps.findIndex((step) => !step.completed);
+  console.log("currentStepIndex", steps, currentStepIndex);
   return {
     steps,
     currentStepIndex: currentStepIndex === -1 ? 0 : currentStepIndex,

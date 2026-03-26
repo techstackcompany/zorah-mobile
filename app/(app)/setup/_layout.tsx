@@ -26,10 +26,6 @@ const Layout = () => {
       />
       <Stack.Screen name="kyc" options={{ headerBackVisible: false }} />
       <Stack.Screen name="your-banks" options={{ headerBackVisible: false }} />
-      <Stack.Screen
-        name="biometric-setup"
-        options={{ headerBackVisible: false }}
-      />
     </Stack>
   );
 };

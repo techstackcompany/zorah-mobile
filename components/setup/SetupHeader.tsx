@@ -24,7 +24,7 @@ const SetupHeader = ({
   );
 
   return (
-    <View className={cn("px-6 pt-8", className)}>
+    <View className={cn("px-6 pb-2 pt-8", className)}>
       <Text weight="semibold" className="text-sm text-textColor">
         Step {currentStep} of {totalSteps}
       </Text>
@@ -33,15 +33,17 @@ const SetupHeader = ({
           className="h-full rounded-full bg-secondary_500"
           style={{ width: `${progress}%` }}
         />
-      </View> 
+      </View>
       <Text
         family="degular"
         weight="semibold"
-        className="mt-6 text-2xl text-textColor text-center"
+        className="mt-6 text-center text-2xl text-textColor"
       >
         {title}
       </Text>
-      <Text className="mt-2 text-sm text-textColor/70 text-center">{description}</Text>
+      <Text className="mt-2 text-center text-sm text-textColor/70">
+        {description}
+      </Text>
     </View>
   );
 };
