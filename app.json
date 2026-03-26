@@ -14,8 +14,9 @@
         "UIBackgroundModes": ["remote-notification", "remote-notification"],
         "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone.",
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to save receipts to your photo library.", // Added this line
-        "ITSAppUsesNonExemptEncryption": false
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to save receipts to your photo library.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIViewControllerBasedStatusBarAppearance": true
       },
       "googleServicesFile": "./GoogleService-Info.plist"
     },
