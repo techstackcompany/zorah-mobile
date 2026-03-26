@@ -4,15 +4,12 @@ import React from "react";
 
 const ProfileLayout = () => {
   return (
-    <Stack
-      screenOptions={{
-        statusBarStyle: "dark",
-        ...stackOptions,
-      }}
-    >
+    <Stack screenOptions={stackOptions}>
+      <Stack.Screen name="index" options={{ title: "Account" }} />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
       <Stack.Screen name="banks" options={{ title: "Linked Banks" }} />
       <Stack.Screen name="add-bank" options={{ title: "Add Bank" }} />
+      <Stack.Screen name="pin-setup" options={{ headerShown: false }} />
       <Stack.Screen
         name="kyc-verification"
         options={{ title: "KYC Verification" }}

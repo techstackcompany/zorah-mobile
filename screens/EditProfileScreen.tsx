@@ -19,8 +19,8 @@ import {
 const EditProfileScreen = () => {
   const router = useRouter();
   const { userData } = useSession();
-console.log('userData', userData)
-  const { displayName, displayEmail, displayPhone, initials } = useMemo(() => {
+  console.log("userData", userData);
+  const { fullName, displayEmail, displayPhone, initials } = useMemo(() => {
     return extractUserData(userData, {
       fallbackName: "",
       fallbackInitials: "U",
@@ -28,37 +28,34 @@ console.log('userData', userData)
     });
   }, [userData]);
 
-  
   const initialNote = useMemo(() => {
     const safeUser = (userData ?? {}) as Record<string, unknown>;
     return (typeof safeUser.note === "string" ? safeUser.note : "") || "";
   }, [userData]);
 
   const [form, setForm] = useState({
-    name: displayName || "",
+    name: fullName || "",
     email: displayEmail || "",
     phone: displayPhone || "",
     note: initialNote,
   });
 
-  
   useEffect(() => {
     setForm({
-      name: displayName || "",
+      name: fullName || "",
       email: displayEmail || "",
       phone: displayPhone || "",
       note: initialNote,
     });
-  }, [displayName, displayEmail, displayPhone, initialNote]);
+  }, [fullName, displayEmail, displayPhone, initialNote]);
 
   const handleChange = (key: keyof typeof form) => (value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
-    
     const hasChanges =
-      (form.name.trim() && form.name !== displayName) ||
+      (form.name.trim() && form.name !== fullName) ||
       (form.email.trim() && form.email !== displayEmail) ||
       (form.phone.trim() && form.phone !== displayPhone) ||
       form.note !== initialNote;
@@ -70,7 +67,6 @@ console.log('userData', userData)
         [{ text: "OK" }],
       );
     } else {
-      
       router.back();
     }
   };
@@ -113,7 +109,6 @@ console.log('userData', userData)
               value={form.phone}
               onChangeText={handleChange("phone")}
             />
-         
           </View>
 
           <TouchableOpacity style={styles.footer} onPress={handleSubmit}>

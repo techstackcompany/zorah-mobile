@@ -4,12 +4,17 @@ import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useAppSettings from "@/contexts/settings-context/useAppSettings";
 import { cn, extractUserData } from "@/lib/utils";
+import type { ApiError } from "@/src/api/client";
+import { useToggleBiometricsMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useQueryClient } from "@tanstack/react-query";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactNode, useCallback, useMemo, useState } from "react";
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,16 +22,53 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-const LANGUAGE_OPTIONS = [
-  { id: "english", label: "English", subLabel: "British English" },
-  { id: "french", label: "French", subLabel: "French" },
-] as const;
+import Toast from "react-native-toast-message";
 
 const AccountScreen = () => {
   const router = useRouter();
-  const { signOut, userData, kycVerificationStatus } = useSession();
+  const queryClient = useQueryClient();
+  const { signOut, userData, kycVerificationStatus, setUserData } =
+    useSession();
   const { settings, updateSetting } = useAppSettings();
+  const [showDisableConfirmModal, setShowDisableConfirmModal] = useState(false);
+  const [pendingEnableFromAccount, setPendingEnableFromAccount] =
+    useState(false);
+
+  const toggleBiometricsMutation = useToggleBiometricsMutation({
+    onSuccess: async (_response, variables) => {
+      await queryClient.refetchQueries({
+        queryKey: ["auth", "profile"],
+        exact: true,
+      });
+
+      const freshProfile = queryClient.getQueryData(["auth", "profile"]);
+      if (freshProfile) {
+        setUserData(freshProfile);
+      }
+
+      updateSetting("enableBiometrics", variables.enabled);
+      setShowDisableConfirmModal(false);
+
+      Toast.show({
+        type: "success",
+        text1: variables.enabled
+          ? "Biometric login enabled"
+          : "Biometric login disabled",
+        text2: variables.enabled
+          ? "Your account can now be unlocked with biometrics."
+          : "PIN login remains available as backup.",
+      });
+    },
+    onError: (error) => {
+      const apiError = error as ApiError;
+      Toast.show({
+        type: "error",
+        text1: "Unable to update biometric setting",
+        text2: apiError.message || "Please try again.",
+      });
+      setShowDisableConfirmModal(false);
+    },
+  });
 
   const {
     displayName,
@@ -36,6 +78,7 @@ const AccountScreen = () => {
     statusLabel,
     linkedBanksText,
     isKycVerified,
+    biometricsEnabled,
   } = useMemo(() => {
     const userDataExtracted = extractUserData(userData, {
       fallbackName: "PocketMonie User",
@@ -44,51 +87,11 @@ const AccountScreen = () => {
     });
 
     const safeUser = (userData ?? {}) as Record<string, any>;
-    const nestedUser =
-      safeUser.user && typeof safeUser.user === "object"
-        ? (safeUser.user as Record<string, any>)
-        : null;
-
-    const linkedBanksSource =
-      safeUser.selectedBanks ??
-      nestedUser?.selectedBanks ??
-      safeUser.linkedBanks ??
-      nestedUser?.linkedBanks;
 
     let linkedBanksCount = 0;
-    if (Array.isArray(linkedBanksSource)) {
-      linkedBanksCount = linkedBanksSource.filter(
-        (entry): entry is string =>
-          typeof entry === "string" && entry.trim().length > 0,
-      ).length;
-    } else if (typeof linkedBanksSource === "string") {
-      const trimmed = linkedBanksSource.trim();
-      if (trimmed) {
-        try {
-          const parsed = JSON.parse(trimmed);
-          if (Array.isArray(parsed)) {
-            linkedBanksCount = parsed.filter(
-              (entry: unknown): entry is string =>
-                typeof entry === "string" && entry.trim().length > 0,
-            ).length;
-          } else {
-            linkedBanksCount = trimmed.split(",").filter(Boolean).length;
-          }
-        } catch {
-          linkedBanksCount = trimmed.split(",").filter(Boolean).length;
-        }
-      }
-    } else if (
-      typeof linkedBanksSource === "number" &&
-      Number.isFinite(linkedBanksSource)
-    ) {
-      linkedBanksCount = Math.max(0, Math.trunc(linkedBanksSource));
-    }
 
     const kycStatusRaw =
-      (safeUser.KycStatus as string | undefined) ??
-      (nestedUser?.KycStatus as string | undefined) ??
-      kycVerificationStatus;
+      (safeUser.KycStatus as string | undefined) ?? kycVerificationStatus;
     const rawKycStatus =
       typeof kycStatusRaw === "string" && kycStatusRaw.trim()
         ? kycStatusRaw.trim()
@@ -97,20 +100,94 @@ const AccountScreen = () => {
     const statusLabel = rawKycStatus;
 
     return {
-      displayName: userDataExtracted.displayName,
+      displayName: userDataExtracted.fullName,
       displayEmail: userDataExtracted.displayEmail,
       displayPhone: userDataExtracted.displayPhone ?? "",
       initials: userDataExtracted.initials,
       statusLabel,
       isKycVerified: normalizedKycStatus === "verified",
+      biometricsEnabled:
+        typeof safeUser.biometricEnabled === "boolean"
+          ? safeUser.biometricEnabled
+          : settings.enableBiometrics,
       linkedBanksText:
         linkedBanksCount === 1 ? "1 Linked" : `${linkedBanksCount} Linked`,
     };
-  }, [kycVerificationStatus, userData]);
+  }, [kycVerificationStatus, settings.enableBiometrics, userData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!pendingEnableFromAccount) {
+        return;
+      }
+
+      let active = true;
+
+      const refreshProfile = async () => {
+        await queryClient.refetchQueries({
+          queryKey: ["auth", "profile"],
+          exact: true,
+        });
+
+        if (!active) {
+          return;
+        }
+
+        const profile = queryClient.getQueryData<Record<string, unknown>>([
+          "auth",
+          "profile",
+        ]);
+
+        const enabled =
+          profile && typeof profile.biometricEnabled === "boolean"
+            ? profile.biometricEnabled
+            : false;
+        console.log("enabled", enabled);
+        if (enabled) {
+          if (profile) {
+            setUserData(profile);
+          }
+          updateSetting("enableBiometrics", true);
+          Toast.show({
+            type: "success",
+            text1: "Backup PIN set",
+            text2: "Biometric login is now active.",
+          });
+        }
+
+        setPendingEnableFromAccount(false);
+      };
+
+      refreshProfile();
+
+      return () => {
+        active = false;
+      };
+    }, [pendingEnableFromAccount, queryClient, setUserData, updateSetting]),
+  );
 
   const handleNavigate = (path: string) => {
     router.push(path as RelativePathString);
   };
+
+  const handleBiometricToggle = (nextValue: boolean) => {
+    if (toggleBiometricsMutation.isPending) {
+      return;
+    }
+
+    if (nextValue) {
+      setPendingEnableFromAccount(true);
+      router.push("/(app)/(home)/profile/pin-setup");
+      return;
+    }
+
+    setShowDisableConfirmModal(true);
+  };
+
+  const confirmDisableBiometric = () => {
+    toggleBiometricsMutation.mutate({ enabled: false });
+  };
+  console.log("biometricEnabled", biometricsEnabled);
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">
@@ -195,22 +272,13 @@ const AccountScreen = () => {
             <SectionHeader title="Security" />
             <SectionSubHeader subtitle="Authentication & Login Settings" />
 
-            <View className="flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
-              <View className="flex-1">
-                <Text weight="semibold" className="text-base text-textColor">
-                  Biometric Login
-                </Text>
-                <Text className="mt-1 text-sm text-textColor/70">
-                  Your account is secured with biometric authentication
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-2">
-                <View className="h-2 w-2 rounded-full bg-green-500" />
-                <Text className="text-sm font-medium text-green-600">
-                  Enabled
-                </Text>
-              </View>
-            </View>
+            <ToggleRow
+              label="Biometric Login"
+              description="Use Face ID or fingerprint. A backup PIN is required."
+              value={biometricsEnabled}
+              onChange={handleBiometricToggle}
+              disabled={toggleBiometricsMutation.isPending}
+            />
           </View>
           <View style={styles.sectionCard}>
             <SectionHeader title="Logout" />
@@ -233,6 +301,51 @@ const AccountScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showDisableConfirmModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDisableConfirmModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="shield-outline" size={28} color="#92400E" />
+              </View>
+              <Text weight="bold" className="mt-3 text-lg text-textColor">
+                Turn off biometric login?
+              </Text>
+              <Text className="mt-2 text-center text-sm text-textColor/70">
+                You will still be able to unlock your account using your backup
+                PIN.
+              </Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowDisableConfirmModal(false)}
+                disabled={toggleBiometricsMutation.isPending}
+              >
+                <Text weight="semibold" className="text-primary_500">
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={confirmDisableBiometric}
+                disabled={toggleBiometricsMutation.isPending}
+              >
+                <Text weight="semibold" className="text-white">
+                  Turn Off
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </MainContainer>
   );
 };
@@ -314,9 +427,16 @@ type ToggleRowProps = {
   description?: string;
   value: boolean;
   onChange: (value: boolean) => void;
+  disabled?: boolean;
 };
 
-const ToggleRow = ({ label, description, value, onChange }: ToggleRowProps) => {
+const ToggleRow = ({
+  label,
+  description,
+  value,
+  onChange,
+  disabled = false,
+}: ToggleRowProps) => {
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1 }}>
@@ -333,6 +453,7 @@ const ToggleRow = ({ label, description, value, onChange }: ToggleRowProps) => {
         ios_backgroundColor={COLORS.secondary_400}
         value={value}
         onValueChange={onChange}
+        disabled={disabled}
       />
     </View>
   );

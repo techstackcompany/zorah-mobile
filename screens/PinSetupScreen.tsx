@@ -1,16 +1,15 @@
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useAppSettings from "@/contexts/settings-context/useAppSettings";
-import useSetUpStep from "@/hooks/useSetUpStep";
 import {
   useSetUserPinMutation,
   useToggleBiometricsMutation,
 } from "@/src/api/hooks";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useQueryClient } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -37,21 +36,17 @@ const TIME = 80;
 
 type PinSetupStep = "create" | "confirm";
 
-type PinSetupScreenProps = {
-  variant?: "settings" | "setup";
-};
 
-const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
+const PinSetupScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { updateSetting } = useAppSettings();
-  const { setHasCompletedSetup, setSetupStep } = useSession();
+  const { setUserData } = useSession();
   const [step, setStep] = useState<PinSetupStep>("create");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [biometricsAvailable, setBiometricsAvailable] = useState(false);
   const offset = useSharedValue(0);
-  useSetUpStep(5, variant);
 
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -67,25 +62,25 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
   }, []);
 
   const toggleBiometricsMutation = useToggleBiometricsMutation({
-    onSuccess: () => {
-      updateSetting("enableBiometrics", true);
+    onSuccess: async () => {
+      console.log("toggle was a success");
       Toast.show({
         type: "success",
-        text1: variant === "setup" ? "Setup Complete" : "PIN Set Successfully",
-        text2: variant === "setup" ? "Your account setup is now complete." : "Your PIN has been set up and biometrics enabled.",
+        text1: "PIN Set Successfully",
+        text2: "Your PIN has been set up and biometrics enabled.",
       });
 
-      if (variant === "setup") {
-        queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-        setHasCompletedSetup(true);
-        setSetupStep(null);
-        router.replace("/(app)/(home)");
+      await queryClient.refetchQueries({ queryKey: ["auth", "profile"] });
+      const freshProfile = queryClient.getQueryData(["auth", "profile"]);
+      if (freshProfile) {
+        setUserData(freshProfile);
+      }
+      updateSetting("enableBiometrics", true);
+
+      if (router.canGoBack()) {
+        router.back();
       } else {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.push("/(app)/(home)");
-        }
+        router.push("/(app)/(home)");
       }
     },
     onError: (error) => {
@@ -102,26 +97,20 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
 
   const setPinMutation = useSetUserPinMutation({
     onSuccess: () => {
+      console.log("pin set successfull");
       if (biometricsAvailable) {
         toggleBiometricsMutation.mutate({ enabled: true });
       } else {
-        if (variant === "setup") {
-          queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
-          setHasCompletedSetup(true);
-          setSetupStep(null);
-          router.replace("/(app)/(home)");
-        } else {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.push("/(app)/(home)");
-          }
-        }
         Toast.show({
           type: "success",
-          text1: variant === "setup" ? "Setup Complete" : "PIN Set Successfully",
-          text2: variant === "setup" ? "Your account setup is now complete." : "Your account is now secured with PIN.",
+          text1: "PIN Set Successfully",
+          text2: "Your account is now secured with PIN.",
         });
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.push("/(app)/(home)");
+        }
       }
     },
     onError: (error) => {
@@ -161,7 +150,6 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
       } else {
         setConfirmPin(newPin);
         if (newPin.length === PIN_LENGTH) {
-          // Verify PINs match
           if (pin !== newPin) {
             setTimeout(() => {
               offset.value = withSequence(
@@ -201,8 +189,7 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
   return (
     <LinearGradient colors={["#F6FAFF", "#FFFFFF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {variant === "settings" && (
-          <View style={styles.backButtonContainer}>
+        <View style={styles.backButtonContainer}>
             <TouchableOpacity
               onPress={() => {
                 if (router.canGoBack()) {
@@ -216,31 +203,24 @@ const PinSetupScreen = ({ variant = "settings" }: PinSetupScreenProps) => {
               <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
             </TouchableOpacity>
           </View>
-        )}
 
         <View style={styles.header}>
-          {variant === "settings" && <View style={styles.iconContainer}>
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={styles.appIcon}
-              contentFit="contain"
-            />
-          </View>}
+          <View style={styles.iconContainer}>
+              <Image
+                source={require("@/assets/images/icon.png")}
+                style={styles.appIcon}
+                contentFit="contain"
+              />
+            </View>
           <Text style={styles.greeting}>
-            {variant === "setup"
-              ? "Secure Your Account"
-              : step === "create"
-                ? "Create PIN"
-                : "Confirm PIN"}
+            {step === "create" ? "Create PIN" : "Confirm PIN"}
           </Text>
           <Text style={styles.subtitle}>
-            {variant === "setup"
+            {step === "create"
               ? biometricsAvailable
                 ? "Create a 4-digit PIN and enable biometric authentication"
-                : "Create a 4-digit PIN to secure your account"
-              : step === "create"
-                ? "Enter a 4-digit PIN to secure your account"
-                : "Re-enter your PIN to confirm"}
+                : "Enter a 4-digit PIN to secure your account"
+              : "Re-enter your PIN to confirm"}
           </Text>
         </View>
 

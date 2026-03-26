@@ -11,10 +11,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   index: { label: "Home", iconSource: require("@/assets/icons/home.svg") },
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
-
-  fxRates: {
-    label: "Fx Rates",
-    iconSource: require("@/assets/icons/fxRates.svg"),
+  "expense-planning": {
+    label: "Expenses",
+    iconSource: require("@/assets/icons/add-circle.svg"),
   },
   profile: {
     label: "Account",
@@ -26,7 +25,7 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const { bottom } = useSafeAreaInsets();
 
   const visibleRoutes = state.routes.filter(
-    (route) => route.name !== "investment",
+    (route) => route.name !== "investment" && route.name !== "fxRates",
   );
   const focusedRoute = state.routes[state.index];
   const focusedIndex = visibleRoutes.findIndex(
@@ -100,8 +99,11 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
 const HomeLayout = () => {
   const path = usePathname();
+  const isProfileSubRoute = path.startsWith("/profile/");
   const shouldHideTabBar =
-    path.startsWith("/budget/") || path.startsWith("/investment/");
+    path.startsWith("/budget/") ||
+    path.startsWith("/investment/") ||
+    isProfileSubRoute;
   return (
     <Tabs
       screenOptions={{
@@ -129,19 +131,26 @@ const HomeLayout = () => {
           title: "Budget Manager",
         }}
       />
-
+      <Tabs.Screen
+        name="expense-planning"
+        options={{
+          title: "Expenses",
+          headerShown: false,
+        }}
+      />
       <Tabs.Screen
         name="fxRates"
         options={{
           title: "FX Rates",
           headerShown: true,
+          href: null,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Account",
-          headerShown: true,
+          headerShown: false,
         }}
       />
     </Tabs>

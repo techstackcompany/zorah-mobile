@@ -61,9 +61,9 @@ const NGN_CURRENCY: CurrencyOption = {
 
 const quickActions: QuickAction[] = [
   {
-    id: "expense-income",
-    label: "Expense & Income",
-    icon: require("@/assets/icons/add-circle.svg"),
+    id: "fx-rates",
+    label: "FX Rates",
+    icon: require("@/assets/icons/fxRates.svg"),
     background: "bg-white",
   },
   {
@@ -86,7 +86,7 @@ const HomeScreen = () => {
   const [balanceHidden, setBalanceHidden] = useState(false);
   const { initials, welcomeName } = useUserDisplayData();
   const { isSetupComplete, currentStepRoute } = useSetupProgress();
-  const { 
+  const {
     data: balanceData,
     isLoading: isLoadingBalance,
     refetch: refetchBalance,
@@ -193,7 +193,7 @@ const HomeScreen = () => {
         id: "expense",
         label: "Expense",
         amount: expenseAmount,
-        icon: require("@/assets/icons/arrow-down.svg"),
+        icon: require("@/assets/icons/arrow-up.svg"),
         accent: "bg-peachTint",
         onPress: () => router.navigate("/expense-planning?tab=expense"),
       },
@@ -201,7 +201,7 @@ const HomeScreen = () => {
         id: "income",
         label: "Income",
         amount: incomeAmount,
-        icon: require("@/assets/icons/arrow-up.svg"),
+        icon: require("@/assets/icons/arrow-down.svg"),
         accent: "bg-secondary_100",
         onPress: () => router.navigate("/expense-planning?tab=income"),
       },
@@ -258,8 +258,8 @@ const HomeScreen = () => {
 
   const handleQuickActionPress = (action: QuickAction) => {
     switch (action.id) {
-      case "expense-income":
-        router.navigate("/expense-planning");
+      case "fx-rates":
+        router.navigate("/(app)/(home)/fxRates");
         break;
       case "goals":
         router.navigate("/savings-goals");
@@ -289,7 +289,7 @@ const HomeScreen = () => {
 
   return (
     <>
-      <MainContainer edges={["top"]} className="bg-light pb-0">
+      <MainContainer className="bg-light pb-0">
         <View className="flex-1">
           <ScrollView
             refreshControl={
@@ -341,6 +341,7 @@ const HomeScreen = () => {
                   }}
                 />
               )}
+
               <QuickActions
                 actions={quickActions}
                 onActionPress={handleQuickActionPress}
