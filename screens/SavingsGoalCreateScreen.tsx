@@ -36,7 +36,6 @@ const SavingsGoalCreateScreen = () => {
   const [targetDate, setTargetDate] = useState("");
   const [note, setNote] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const timeOutId = useRef<number | null>(null);
 
   const { data: categoriesData, isLoading: isCategoriesLoading } =
@@ -58,11 +57,13 @@ const SavingsGoalCreateScreen = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["savings"] });
 
-      setShowSuccess(true);
       Toast.show({
         type: "success",
         text1: "Goal Created",
         text2: "Your savings goal has been created successfully.",
+        onHide: () => {
+          router.back();
+        },
       });
 
       setName("");
@@ -72,10 +73,7 @@ const SavingsGoalCreateScreen = () => {
       setTargetDate("");
       setNote("");
 
-      setTimeout(() => {
-        setShowSuccess(false);
-        router.back();
-      }, 1500);
+      setTimeout(() => {}, 1500);
     },
     onError: (error) => {
       Toast.show({
@@ -156,7 +154,15 @@ const SavingsGoalCreateScreen = () => {
     };
 
     createGoalMutation.mutate(payload);
-  }, [name, amount, targetDate, note, createGoalMutation]);
+  }, [
+    name,
+    amount,
+    targetDate,
+    note,
+    createGoalMutation,
+    category,
+    customCategory,
+  ]);
 
   const isSubmitDisabled =
     !name ||
@@ -173,14 +179,6 @@ const SavingsGoalCreateScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
       >
         <View className="flex-1">
-          {showSuccess ? (
-            <View className="bg-[#DFF5E5] px-6 py-4">
-              <Text weight="semibold" className="text-sm text-textColor">
-                Goal created successfully
-              </Text>
-            </View>
-          ) : null}
-
           <ScrollView
             ref={scrollViewRef}
             contentContainerClassName="px-6"

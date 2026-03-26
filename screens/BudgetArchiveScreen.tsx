@@ -7,7 +7,7 @@ import {
   getMatchingCategoryIconSource,
   renderCategoryIcon,
 } from "@/features/expense-income/utils";
-import { formatCurrency } from "@/lib/utils";
+import { capitalizeWord, formatCurrency } from "@/lib/utils";
 import {
   useGetArchivedBudgetsQuery,
   useGetCategoriesQuery,
@@ -95,10 +95,10 @@ const transformArchivedBudgets = (
     const statusLabel =
       budget.status ||
       (remaining <= 0
-        ? "over budget 🚨"
+        ? "over budget"
         : remaining < allocated * 0.1
-          ? "Almost reached ⛔️"
-          : "On track ✅");
+          ? "Almost reached"
+          : "On track");
 
     const statusLower = statusLabel.toLowerCase();
     if (
@@ -274,12 +274,14 @@ const BudgetArchiveScreen = () => {
                             <View className="aspect-square h-full items-center justify-center rounded-full bg-primary_100">
                               {renderCategoryIcon(budget.icon, 24, "#6366F1")}
                             </View>
-                            <View className="h-full justify-between">
+                            <View className="h-full items-start justify-between">
                               <Text
                                 weight="semibold"
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
                                 className="text-base text-textColor"
                               >
-                                {budget.name}
+                                {capitalizeWord(budget.name)}
                               </Text>
                               <Text className=" text-xs text-textColor/50">
                                 {budget.archivedDate}

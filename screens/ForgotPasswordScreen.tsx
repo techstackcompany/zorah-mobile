@@ -1,17 +1,12 @@
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
-import { useRequestPasswordResetMutation } from "@/src/api/hooks";
 import { ApiError } from "@/src/api/client";
+import { useRequestPasswordResetMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, TextInput, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const ForgotPasswordScreen = () => {
@@ -56,24 +51,13 @@ const ForgotPasswordScreen = () => {
         params: { email: trimmed },
       });
     } catch (error) {
-      console.log('error', error)
       const apiError = error as ApiError;
-      const serverMessage =
-        typeof apiError?.data === "object" &&
-        apiError.data !== null &&
-        "message" in apiError.data &&
-        typeof (apiError.data as { message?: string }).message === "string"
-          ? (apiError.data as { message?: string }).message
-          : undefined;
-      const message =
-        serverMessage ??
-        apiError?.message ??
-        "We could not send the reset code. Please try again.";
-      setError(message);
+      const errorMsg = apiError.message;
+      setError(errorMsg);
       Toast.show({
         type: "error",
         text1: "Request failed",
-        text2: message,
+        text2: errorMsg,
       });
     }
   }, [email, requestResetMutation, router, validate]);
@@ -99,7 +83,11 @@ const ForgotPasswordScreen = () => {
       </View>
 
       <View className="mb-10">
-        <Text family="nunito" weight="bold" className="mb-3 text-center text-3xl">
+        <Text
+          family="nunito"
+          weight="bold"
+          className="mb-3 text-center text-3xl"
+        >
           Forgotten Password
         </Text>
         <Text className="text-center text-sm text-tertiary opacity-70">
@@ -144,7 +132,9 @@ const ForgotPasswordScreen = () => {
       />
 
       <View className="mt-8 flex-row justify-center">
-        <Text weight="bold" className=" text-tertiary opacity-60">Continue by </Text>
+        <Text weight="bold" className=" text-tertiary opacity-60">
+          Continue by{" "}
+        </Text>
         <Link asChild href="/signIn">
           <Pressable>
             <Text weight="bold" className=" text-primary_400">

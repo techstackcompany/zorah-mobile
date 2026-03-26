@@ -9,6 +9,7 @@ import {
   getStatusTone,
   mapApiGoalToUiGoal,
 } from "@/constants/savings";
+import { extractArrayResData } from "@/lib/utils";
 import { useGetSavingsGoalsQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
@@ -37,12 +38,7 @@ const SavingsGoalsScreen = () => {
     isRefetching,
   } = useGetSavingsGoalsQuery();
 
-  const uiGoals = useMemo(() => {
-    if (!goalsData) {
-      return [];
-    }
-    return goalsData.map(mapApiGoalToUiGoal);
-  }, [goalsData]);
+  const uiGoals = extractArrayResData(goalsData).map(mapApiGoalToUiGoal);
 
   const totalSavings = useMemo(
     () => uiGoals.reduce((sum, goal) => sum + goal.currentAmount, 0),

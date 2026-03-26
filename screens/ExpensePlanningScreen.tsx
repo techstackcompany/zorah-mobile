@@ -20,12 +20,17 @@ import {
   PERIOD_OPTIONS,
   TAB_ITEMS,
 } from "@/features/expense-income/constants";
-import { PeriodType, TabKey } from "@/features/expense-income/types";
+import {
+  PeriodType,
+  TabContent,
+  TabKey,
+} from "@/features/expense-income/types";
 import {
   buildExpenseSummaryFromList,
   formatCurrency,
   formatExpenseDate,
 } from "@/features/expense-income/utils";
+import { extractArrayResData } from "@/lib/utils";
 
 import {
   useGetCategoriesQuery,
@@ -122,9 +127,9 @@ const ExpensePlanningScreen = () => {
   };
   const selectedOption =
     PERIOD_OPTIONS.find((opt) => opt.value === periodType) || PERIOD_OPTIONS[0];
-  console.log("activeTab", activeTab);
   const tabConfig = useMemo(
-    () => TAB_ITEMS.find((item) => item.key === activeTab) || {},
+    () =>
+      TAB_ITEMS.find((item) => item.key === activeTab) || ({} as TabContent),
     [activeTab],
   );
 
@@ -132,8 +137,7 @@ const ExpensePlanningScreen = () => {
 
   const expensesArray = useMemo(() => {
     if (activeTab !== "expense") return [];
-    if (!expensesData) return [];
-    return Array.isArray(expensesData?.data) ? expensesData.data : [];
+    return extractArrayResData(expensesData);
   }, [expensesData, activeTab]);
 
   const monthOptions = useMemo<MonthOption[]>(() => {

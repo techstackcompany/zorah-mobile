@@ -57,6 +57,7 @@ const AddIncomeScreen = () => {
 
   const incomeCategories = useMemo<IncomeCategory[]>(() => {
     const apiCategories = !categoriesData ? [] : categoriesData;
+
     return [
       ...apiCategories,
       {
@@ -81,6 +82,9 @@ const AddIncomeScreen = () => {
         type: "success",
         text1: "Income Added",
         text2: "Your income has been recorded successfully.",
+        onHide: () => {
+          router.back();
+        },
       });
 
       setAmount("");
@@ -88,10 +92,6 @@ const AddIncomeScreen = () => {
       setPaymentMethod("");
       setDate("");
       setDescription("");
-
-      setTimeout(() => {
-        router.back();
-      }, 1500);
     },
     onError: (error) => {
       Toast.show({
@@ -162,7 +162,7 @@ const AddIncomeScreen = () => {
       Toast.show({
         type: "error",
         text1: "Custom Category Required",
-        text2: "Please enter a custom category name.",
+        text2: "Please enter your category name.",
       });
       return;
     }
@@ -190,19 +190,6 @@ const AddIncomeScreen = () => {
       description: description.trim() || undefined,
       date: formattedDate,
     };
-
-    console.log("=== ADD INCOME REQUEST ===");
-    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
-    console.log("Original form values:", {
-      amount,
-      selectedCategory,
-      paymentMethod,
-      date,
-      description,
-    });
-    console.log("Formatted date:", formattedDate);
-    console.log("========================\n");
-
     addIncomeMutation.mutate(payload);
   }, [
     amount,
@@ -211,6 +198,7 @@ const AddIncomeScreen = () => {
     date,
     description,
     addIncomeMutation,
+    customCategory,
   ]);
 
   return (
@@ -267,8 +255,8 @@ const AddIncomeScreen = () => {
                     {selectedCategory.toLowerCase() === "other" && (
                       <View className="mt-4">
                         <TextInputField
-                          label="Custom Category"
-                          placeholder="Enter your custom category"
+                          label="Your Category"
+                          placeholder="Enter your category"
                           value={customCategory}
                           onChangeText={setCustomCategory}
                           autoCapitalize="words"

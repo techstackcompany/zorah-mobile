@@ -2,7 +2,7 @@ import COLORS from "@/constants/colors";
 import { AxiosError, isAxiosError } from "axios";
 import { ClassValue, clsx } from "clsx";
 import { formatDistance } from "date-fns";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import { twMerge } from "tw-merge";
 import { WalletTransaction } from "../src/api/types";
 
@@ -156,7 +156,10 @@ export function extractUserData(
 
   const safeUser = (userData ?? {}) as Record<string, unknown>;
 
-  const resolvedName = pickString(safeUser?.firstName) ?? fallbackName;
+  const resolvedName =
+    (pickString(safeUser?.firstName) ?? fallbackName) +
+    " " +
+    (pickString(safeUser?.lastName) ?? "");
   const resolvedEmail = pickString(safeUser.email) ?? "";
 
   const resolvedPhone = includePhone
@@ -222,6 +225,8 @@ export function formatTransactionPurpose(purpose: string): string {
     .join(" ");
 }
 
+// === Color utilities ==== //
+
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -282,6 +287,23 @@ export function getAccentColorForGroup(groupName: string): {
   return { accentColor, backgroundColor };
 }
 
+export function getBrightness(r: number, g: number, b: number): number {
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+export function getTextColor(
+  r: number,
+  g: number,
+  b: number,
+  lightColor: string = "#FFFFFF",
+  darkColor: string = "#000000",
+): string {
+  const brightness = getBrightness(r, g, b);
+  return brightness > 128 ? darkColor : lightColor;
+}
+
+// === End of color utilities === //
+
 export function addKeyboardBehavior() {
   return Platform.OS === "ios" ? "padding" : "height";
 }
@@ -313,4 +335,23 @@ export const generateColorsFromString = (name: string) => {
     accent: `hsl(${hue}, 70%, 50%)`,
     dark: `hsl(${hue}, 70%, 28%)`,
   };
+};
+
+export const extractArrayResData = (response: unknown, fallback = []) => {
+  if (!response) {
+    return fallback;
+  }
+  if (Array.isArray(response)) {
+    return response;
+  }
+  if (response && typeof response === "object" && "data" in response) {
+    const data = (response as any).data;
+    return Array.isArray(data) ? data : [];
+  }
+  return [];
+};
+export const alertError = (message: string) => {
+  Alert.alert("Something went wrong ", message, [{ text: "OK" }], {
+    cancelable: true,
+  });
 };

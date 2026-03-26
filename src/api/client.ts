@@ -173,13 +173,28 @@ baseClient.interceptors.response.use(
   },
 );
 
-export function handleApiError(error: unknown): ApiError {
+export function handleApiError(
+  error: unknown,
+  fallbackMessage: string = "Something went wrong",
+): ApiError {
+  if (
+    !isAxiosError(error) &&
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string" &&
+    ("status" in error || "data" in error || "raw" in error)
+  ) {
+    return error as ApiError;
+  }
+
   if (isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string }>;
+
     const message =
       axiosError.response?.data?.message ??
       axiosError.message ??
-      "Something went wrong";
+      fallbackMessage;
 
     return {
       status: axiosError.response?.status,

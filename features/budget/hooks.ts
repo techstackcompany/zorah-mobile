@@ -1,6 +1,6 @@
 import { BudgetCategory } from "@/components/budget/BudgetCard";
 import type { SlideUpModalRef } from "@/components/ui/SlideUpModal";
-import { formatCurrency } from "@/lib/utils";
+import { extractArrayResData, formatCurrency } from "@/lib/utils";
 import {
   useArchiveBudgetMutation,
   useDeleteBudgetMutation,
@@ -15,14 +15,7 @@ import Toast from "react-native-toast-message";
 import { BudgetPeriod } from "./types";
 import { getBudgetPeriod, transformBudgets } from "./utils";
 
-export const useSubcategories = () => {
-  const { data: subcategoriesData } = useGetCategoriesQuery("budget");
-  return subcategoriesData?.data?.subcategories.map((subcategory) => ({
-    key: subcategory.name,
-    label: subcategory.name,
-    icon: subcategory.image || "",
-  }));
-};
+export const useSubcategories = () => {};
 
 export const useBudgetActions = () => {
   const [activeCategory, setActiveCategory] = useState<BudgetCategory | null>(
@@ -51,24 +44,21 @@ export const useBudgetActions = () => {
     },
   );
 
-  const archiveBudgetMutation = useArchiveBudgetMutation(
-    budgetIdToArchive || null,
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["budgets"] });
-        queryClient.invalidateQueries({ queryKey: ["budgets", "archived"] });
-        Toast.show({ type: "success", text1: "Budget archived successfully" });
-        setBudgetIdToArchive(null);
-        setActiveCategory(null);
-        actionSheetRef.current?.dismiss();
-      },
-      onError: (error) => {
-        console.log("error", error.message);
-        Toast.show({ type: "error", text1: "Failed to archive budget" });
-        setBudgetIdToArchive(null);
-      },
+  const archiveBudgetMutation = useArchiveBudgetMutation(budgetIdToArchive!, {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["budgets", "archived"] });
+      Toast.show({ type: "success", text1: "Budget archived successfully" });
+      setBudgetIdToArchive(null);
+      setActiveCategory(null);
+      actionSheetRef.current?.dismiss();
     },
-  );
+    onError: (error) => {
+      console.log("error", error.message);
+      Toast.show({ type: "error", text1: "Failed to archive budget" });
+      setBudgetIdToArchive(null);
+    },
+  });
 
   useEffect(() => {
     if (budgetIdToArchive && !archiveBudgetMutation.isPending) {
@@ -158,23 +148,9 @@ export const useBudgets = (selectedPeriod?: BudgetPeriod) => {
     isLoading: isLoadingBudgets,
     error: budgetsError,
   } = useGetBudgetsQuery();
-  const subcategories = useSubcategories();
+  const { data: subcategoriesData } = useGetCategoriesQuery("budget");
 
-  const rawBudgets = useMemo<BudgetListItem[]>(() => {
-    if (!budgetsData) return [];
-    if (Array.isArray(budgetsData)) {
-      return budgetsData;
-    }
-    if (
-      budgetsData &&
-      typeof budgetsData === "object" &&
-      "data" in budgetsData
-    ) {
-      const data = (budgetsData as any).data;
-      return Array.isArray(data) ? data : [];
-    }
-    return [];
-  }, [budgetsData]);
+  const rawBudgets = extractArrayResData(budgetsData);
 
   const filteredRawBudgets = useMemo(() => {
     if (!selectedPeriod) return rawBudgets;
@@ -194,8 +170,8 @@ export const useBudgets = (selectedPeriod?: BudgetPeriod) => {
       return [];
     }
 
-    return transformBudgets(filteredRawBudgets, subcategories || []);
-  }, [filteredRawBudgets, subcategories]);
+    return transformBudgets(filteredRawBudgets, subcategoriesData || []);
+  }, [filteredRawBudgets, subcategoriesData]);
 
   return {
     rawBudgets,

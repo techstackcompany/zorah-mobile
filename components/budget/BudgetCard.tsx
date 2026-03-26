@@ -4,7 +4,7 @@ import {
   CategoryIconSource,
   renderCategoryIcon,
 } from "@/features/expense-income/utils";
-import { formatCurrency } from "@/lib/utils";
+import { capitalizeWord, formatCurrency } from "@/lib/utils";
 import { Image } from "expo-image";
 import React from "react";
 import { Pressable, View } from "react-native";
@@ -40,7 +40,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, onMorePress }) => {
           </View>
           <View>
             <Text weight="semibold" className="text-base text-textColor">
-              {budget.label}
+              {capitalizeWord(budget.label)}
             </Text>
           </View>
 
