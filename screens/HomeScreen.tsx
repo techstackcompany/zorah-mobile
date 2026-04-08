@@ -68,7 +68,7 @@ const quickActions: QuickAction[] = [
   },
   {
     id: "goals",
-    label: "Saving Goals",
+    label: "Savings Goals",
     icon: require("@/assets/icons/piggy.svg"),
     background: "bg-white",
   },
