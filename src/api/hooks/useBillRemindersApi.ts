@@ -8,6 +8,7 @@ import { ApiError, apiRequest } from "../client";
 import { API_ENDPOINTS } from "../endpoints";
 import {
   AddBillReminderRequest,
+  ApiEnvelope,
   GetBillRemindersResponse,
   PayBillReminderResponse,
   UpdateBillReminderRequest,
@@ -15,14 +16,43 @@ import {
 } from "../types";
 
 export const useGetBillsQuery = (
-  options?: UseQueryOptions<GetBillRemindersResponse>,
+  options?: UseQueryOptions<GetBillRemindersResponse, ApiError>,
 ) =>
-  useQuery({
+  useQuery<GetBillRemindersResponse, ApiError>({
     queryKey: ["billReminders"],
     queryFn: async () => {
-      return apiRequest<GetBillRemindersResponse>({
+      const response = await apiRequest<
+        GetBillRemindersResponse | ApiEnvelope<GetBillRemindersResponse>
+      >({
         ...API_ENDPOINTS.billReminders.getBills,
       });
+
+      if (
+        response &&
+        typeof response === "object" &&
+        "data" in response &&
+        response.data
+      ) {
+        const data = response.data as GetBillRemindersResponse;
+        return {
+          summary: {
+            totalMonthly: data.summary?.totalMonthly ?? 0,
+            totalPaid: data.summary?.totalPaid ?? 0,
+            totalDue: data.summary?.totalDue ?? 0,
+          },
+          bills: Array.isArray(data.bills) ? data.bills : [],
+        };
+      }
+
+      const data = response as GetBillRemindersResponse;
+      return {
+        summary: {
+          totalMonthly: data?.summary?.totalMonthly ?? 0,
+          totalPaid: data?.summary?.totalPaid ?? 0,
+          totalDue: data?.summary?.totalDue ?? 0,
+        },
+        bills: Array.isArray(data?.bills) ? data.bills : [],
+      };
     },
     ...options,
   });

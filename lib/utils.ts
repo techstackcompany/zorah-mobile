@@ -196,6 +196,20 @@ export function formatCurrentDate(): string {
   return `${day} ${month}, ${year}`;
 }
 
+export function formatLongDate(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function formatCurrencyWithSymbol(
   value: number,
   symbol: string,

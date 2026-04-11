@@ -38,6 +38,24 @@ const BILL_FILTERS: { key: FilterKey; label: string }[] = [
   { key: "paid", label: "Paid" },
 ];
 
+const DEFAULT_BILL_ICON = require("@/assets/icons/bill-reminder.svg");
+
+const normalizeCategoryLabel = (value: unknown) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
+
+const buildImageSource = (source: unknown): ImageSource => {
+  if (typeof source === "string") {
+    const trimmed = source.trim();
+    return trimmed ? { uri: trimmed } : DEFAULT_BILL_ICON;
+  }
+
+  if (source) {
+    return source as ImageSource;
+  }
+
+  return DEFAULT_BILL_ICON;
+};
+
 const BillReminderScreen = () => {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
@@ -53,7 +71,7 @@ const BillReminderScreen = () => {
     isPending: isCategoryPending,
     refetch: refetchCategories,
   } = useGetCategoriesQuery("budget");
-  console.log("categoryData", categoryData);
+
   const formattedSummary = useMemo(() => {
     const summary = billsResponseData?.summary;
     return {
@@ -64,14 +82,17 @@ const BillReminderScreen = () => {
   }, [billsResponseData]);
 
   const bills = useMemo(() => {
-    if (!billsResponseData?.bills) return [];
+    if (!Array.isArray(billsResponseData?.bills)) return [];
+
     return billsResponseData.bills.map((bill) => ({
       ...bill,
+      category: typeof bill.category === "string" ? bill.category : "",
       categoryImage:
         categoryData?.find(
           (category) =>
-            category.label.toLowerCase() === bill.category.toLowerCase(),
-        )?.icon ?? "",
+            normalizeCategoryLabel(category.label) ===
+            normalizeCategoryLabel(bill.category),
+        )?.icon ?? null,
     }));
   }, [billsResponseData, categoryData]);
 
@@ -191,7 +212,7 @@ const BillReminderScreen = () => {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text weight="bold" className="text-darkRed text-sm">
+                <Text weight="bold" className="text-sm text-darkRed">
                   Overdue Bill
                 </Text>
                 <Text className="mt-1 text-xs text-error">
@@ -281,7 +302,7 @@ const BillReminderScreen = () => {
 };
 
 interface BillCardProps {
-  bill: BillReminder & { categoryImage: string | ImageSource };
+  bill: BillReminder & { categoryImage: unknown };
 }
 
 const BillReminderCard = ({ bill }: BillCardProps) => {
@@ -312,8 +333,9 @@ const BillReminderCard = ({ bill }: BillCardProps) => {
           ]}
         >
           <Image
-            source={{ uri: bill.categoryImage as string }}
+            source={buildImageSource(bill.categoryImage)}
             style={{ width: 20, height: 20 }}
+            contentFit="contain"
           />
         </View>
         <View style={{ flex: 1 }}>
@@ -495,8 +517,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    justifyContent:"center",
-    alignItems:'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: COLORS.primary_400,
   },
