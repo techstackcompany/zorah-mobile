@@ -40,10 +40,42 @@ const banks: Bank[] = [
   { id: "fcmb", label: "FCMB" },
 ];
 
-const allowedBankIds = new Set(banks.map((bank) => bank.id));
+const normalizeText = (value: string) => value.trim().toLowerCase();
+
+const bankIdLookup = new Map<string, string>(
+  banks.flatMap((bank) => [
+    [normalizeText(bank.id), bank.id],
+    [normalizeText(bank.label), bank.id],
+  ]),
+);
+
+const resolveBankId = (value: string): string | null => {
+  const normalized = normalizeText(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const direct = bankIdLookup.get(normalized);
+  if (direct) {
+    return direct;
+  }
+
+  const compact = normalized.replace(/\s*bank$/, "");
+  const looseMatch = banks.find(
+    (bank) => normalizeText(bank.label).replace(/\s*bank$/, "") === compact,
+  );
+
+  return looseMatch?.id ?? null;
+};
 
 const sanitizeSelection = (selection: readonly string[] = []) =>
-  Array.from(new Set(selection.filter((bankId) => allowedBankIds.has(bankId))));
+  Array.from(
+    new Set(
+      selection
+        .map((bankValue) => resolveBankId(bankValue))
+        .filter((bankId): bankId is string => Boolean(bankId)),
+    ),
+  );
 
 const arraysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((value, index) => value === b[index]);

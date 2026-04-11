@@ -32,12 +32,37 @@ const normalizeStringList = (value: unknown) => {
 const arraysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((value, index) => value === b[index]);
 
+const getRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+};
+
 const YourBanks = () => {
   const { userData, setUserData } = useSession();
 
-  const storedSelectedBanks = useMemo(
-    () => normalizeStringList(userData?.selectedBanks),
+  const safeUserData = useMemo(
+    () => (userData ?? {}) as Record<string, unknown>,
     [userData],
+  );
+
+  const onboarding = useMemo(
+    () => getRecord(safeUserData.onboarding),
+    [safeUserData],
+  );
+
+  const storedSelectedBanks = useMemo(
+    () =>
+      normalizeStringList(
+        safeUserData.selectedBanks ??
+          safeUserData.linkedBanks ??
+          onboarding?.selectedBanks ??
+          onboarding?.linkedBanks ??
+          onboarding?.banks,
+      ),
+    [onboarding, safeUserData],
   );
 
   const handleSelectionChange = useCallback(
@@ -50,11 +75,11 @@ const YourBanks = () => {
       setLocalSetupFlag("banks", true);
 
       setUserData({
-        ...(userData ?? {}),
+        ...safeUserData,
         selectedBanks: sanitized,
       });
     },
-    [setUserData, storedSelectedBanks, userData],
+    [safeUserData, setUserData, storedSelectedBanks],
   );
 
   return (

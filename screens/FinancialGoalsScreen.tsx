@@ -60,24 +60,80 @@ const goals: Goal[] = [
   },
 ];
 
+const normalizeStringList = (value: unknown): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const goalsByNormalizedKey = new Map<string, Goal>(
+  goals.flatMap((goal) => [
+    [goal.id.toLowerCase(), goal],
+    [goal.title.toLowerCase(), goal],
+  ]),
+);
+
+const mapGoalEntriesToIds = (entries: string[]) => {
+  const mapped = entries
+    .map((entry) => goalsByNormalizedKey.get(entry.toLowerCase())?.id)
+    .filter((entry): entry is string => Boolean(entry));
+
+  return Array.from(new Set(mapped));
+};
+
 const FinancialGoalsScreen = () => {
   const router = useRouter();
   const [selectedGoals, setSelectedGoals] = React.useState<string[]>([]);
   const updateOnboardingMutation = useUpdateOnboardingMutation();
   const { setSetupStep, goToNextStep } = useSetUpStep(1);
   const { userData } = useSession();
-  const financialGoals =
-    userData?.onboarding && userData.onboarding.financialGoals;
+
+  const prefilledGoalIds = React.useMemo(() => {
+    const safeUserData = (userData ?? {}) as Record<string, unknown>;
+    const onboarding =
+      safeUserData.onboarding && typeof safeUserData.onboarding === "object"
+        ? (safeUserData.onboarding as Record<string, unknown>)
+        : null;
+
+    const rawGoals =
+      onboarding?.financialGoals ??
+      safeUserData.financialGoals ??
+      safeUserData.goals;
+
+    return mapGoalEntriesToIds(normalizeStringList(rawGoals));
+  }, [userData]);
+
+  const prefilledGoalTitles = React.useMemo(
+    () =>
+      goals
+        .filter((goal) => prefilledGoalIds.includes(goal.id))
+        .map((goal) => goal.title),
+    [prefilledGoalIds],
+  );
+
   useEffect(() => {
-    if (financialGoals) {
-      const _selectedGoals = goals
-        .filter((goal) =>
-          userData.onboarding?.financialGoals?.includes(goal.title),
-        )
-        .map((goal) => goal.id);
-      setSelectedGoals(_selectedGoals);
+    if (prefilledGoalIds.length === 0) {
+      return;
     }
-  }, [setSetupStep, userData?.onboarding]);
+
+    setSelectedGoals((prev) => (prev.length > 0 ? prev : prefilledGoalIds));
+  }, [prefilledGoalIds]);
 
   const handlePrevious = () => {
     setSetupStep(null);
@@ -93,8 +149,9 @@ const FinancialGoalsScreen = () => {
       .filter((goal) => selectedGoals.includes(goal.id))
       .map((goal) => goal.title);
     if (
-      financialGoals &&
-      selectedGoalTitles.every((title) => financialGoals.includes(title))
+      prefilledGoalTitles.length > 0 &&
+      selectedGoalTitles.length === prefilledGoalTitles.length &&
+      selectedGoalTitles.every((title) => prefilledGoalTitles.includes(title))
     ) {
       console.log("skipped");
       goToNextStep();

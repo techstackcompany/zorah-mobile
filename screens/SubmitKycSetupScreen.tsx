@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { setupInfo } from "@/constants";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import type { ApiError } from "@/src/api/client";
@@ -17,7 +18,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   LayoutChangeEvent,
@@ -35,7 +36,86 @@ const getMaxDate = () => {
   today.setFullYear(today.getFullYear() - 16);
   return today;
 };
+
+const readString = (value: unknown): string =>
+  typeof value === "string" ? value.trim() : "";
+
+const digitsOnly = (value: string): string => value.replace(/\D/g, "");
+
+const normalizeDateToIso = (value: string): string => {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return format(parsed, "yyyy-MM-dd");
+};
+
+const getRecord = (
+  source: Record<string, unknown>,
+  key: string,
+): Record<string, unknown> | null => {
+  const value = source[key];
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+};
+
+const getKycPrefillFromUserData = (userData: unknown) => {
+  const root = (userData ?? {}) as Record<string, unknown>;
+  const nested = [
+    getRecord(root, "kyc"),
+    getRecord(root, "kycData"),
+    getRecord(root, "kycInfo"),
+    getRecord(root, "kycDetails"),
+    getRecord(root, "walletKyc"),
+    getRecord(root, "wallet"),
+  ].filter((item): item is Record<string, unknown> => Boolean(item));
+
+  const sources = [root, ...nested];
+
+  const pick = (keys: string[]): string => {
+    for (const source of sources) {
+      for (const key of keys) {
+        const value = readString(source[key]);
+        if (value) {
+          return value;
+        }
+      }
+    }
+    return "";
+  };
+
+  const fallbackFullName = [
+    readString(root.firstName),
+    readString(root.lastName),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    fullName: pick(["fullName", "name"]) || fallbackFullName,
+    dateOfBirth: normalizeDateToIso(
+      pick(["dateOfBirth", "dob", "birthDate", "birthday"]),
+    ),
+    phoneNumber: digitsOnly(
+      pick(["phoneNumber", "phone", "mobile", "mobileNumber"]),
+    ),
+    address: pick(["address", "state", "residentialAddress"]),
+    bvn: digitsOnly(pick(["bvn", "BVN"])),
+    nin: digitsOnly(pick(["nin", "NIN"])),
+  };
+};
+
 const SubmitKycSetupScreen = () => {
+  const { userData } = useSession();
   const { goToNextStep, goToPreviousStep } = useSetUpStep(3);
   const [fullName, setFullName] = useState("");
   const [dateOfBirthRaw, setDateOfBirthRaw] = useState<Date | null>(null);
@@ -56,6 +136,26 @@ const SubmitKycSetupScreen = () => {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
   const submitKycMutation = useSubmitKycMutation();
+
+  const kycPrefill = useMemo(
+    () => getKycPrefillFromUserData(userData),
+    [userData],
+  );
+
+  useEffect(() => {
+    setFullName((prev) => prev || kycPrefill.fullName);
+    setPhoneNumber((prev) => prev || kycPrefill.phoneNumber);
+    setAddress((prev) => prev || kycPrefill.address);
+    setBvn((prev) => prev || kycPrefill.bvn);
+    setNin((prev) => prev || kycPrefill.nin);
+
+    if (!dateOfBirthRaw && kycPrefill.dateOfBirth) {
+      const parsed = new Date(kycPrefill.dateOfBirth);
+      if (!Number.isNaN(parsed.getTime())) {
+        setDateOfBirthRaw(parsed);
+      }
+    }
+  }, [dateOfBirthRaw, kycPrefill]);
 
   const { keyboardHeight } = useKeyboardHeight();
 

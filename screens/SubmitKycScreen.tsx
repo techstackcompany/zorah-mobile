@@ -1,12 +1,13 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { useSession } from "@/contexts/auth-context/useSession";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useSubmitKycMutation } from "@/src/api/hooks";
 import { useNigerianStatesApi } from "@/src/api/hooks/useCountriesApi";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   LayoutChangeEvent,
@@ -24,7 +25,92 @@ const KYC_TIERS = [
   // { value: 3, label: "Tier 3" },
 ];
 
+const readString = (value: unknown): string =>
+  typeof value === "string" ? value.trim() : "";
+
+const digitsOnly = (value: string): string => value.replace(/\D/g, "");
+
+const formatDateToIso = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const normalizeDateToIso = (value: string): string => {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return formatDateToIso(parsed);
+};
+
+const getRecord = (
+  source: Record<string, unknown>,
+  key: string,
+): Record<string, unknown> | null => {
+  const value = source[key];
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+};
+
+const getKycPrefillFromUserData = (userData: unknown) => {
+  const root = (userData ?? {}) as Record<string, unknown>;
+  const nested = [
+    getRecord(root, "kyc"),
+    getRecord(root, "kycData"),
+    getRecord(root, "kycInfo"),
+    getRecord(root, "kycDetails"),
+    getRecord(root, "walletKyc"),
+    getRecord(root, "wallet"),
+  ].filter((item): item is Record<string, unknown> => Boolean(item));
+
+  const sources = [root, ...nested];
+
+  const pick = (keys: string[]): string => {
+    for (const source of sources) {
+      for (const key of keys) {
+        const value = readString(source[key]);
+        if (value) {
+          return value;
+        }
+      }
+    }
+    return "";
+  };
+
+  const fallbackFullName = [
+    readString(root.firstName),
+    readString(root.lastName),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    fullName: pick(["fullName", "name"]) || fallbackFullName,
+    dateOfBirth: normalizeDateToIso(
+      pick(["dateOfBirth", "dob", "birthDate", "birthday"]),
+    ),
+    phoneNumber: digitsOnly(
+      pick(["phoneNumber", "phone", "mobile", "mobileNumber"]),
+    ),
+    address: pick(["address", "state", "residentialAddress"]),
+    bvn: digitsOnly(pick(["bvn", "BVN"])),
+    nin: digitsOnly(pick(["nin", "NIN"])),
+  };
+};
+
 const SubmitKycScreen = () => {
+  const { userData } = useSession();
   const [tier, setTier] = useState<number>(1);
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -34,11 +120,28 @@ const SubmitKycScreen = () => {
   const [nin, setNin] = useState("");
   const [showTierList, setShowTierList] = useState(false);
   const [showStateList, setShowStateList] = useState(false);
-  const { data: nigerianStates = [], isLoading: isLoadingStates, error: statesError } =
-    useNigerianStatesApi();
+  const {
+    data: nigerianStates = [],
+    isLoading: isLoadingStates,
+    error: statesError,
+  } = useNigerianStatesApi();
 
-    console.log('statesError', statesError)
-    console.log('statesError', nigerianStates)
+  const kycPrefill = useMemo(
+    () => getKycPrefillFromUserData(userData),
+    [userData],
+  );
+
+  useEffect(() => {
+    setFullName((prev) => prev || kycPrefill.fullName);
+    setDateOfBirth((prev) => prev || kycPrefill.dateOfBirth);
+    setPhoneNumber((prev) => prev || kycPrefill.phoneNumber);
+    setAddress((prev) => prev || kycPrefill.address);
+    setBvn((prev) => prev || kycPrefill.bvn);
+    setNin((prev) => prev || kycPrefill.nin);
+  }, [kycPrefill]);
+
+  console.log("statesError", statesError);
+  console.log("statesError", nigerianStates);
 
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});

@@ -13,6 +13,69 @@ import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
 
+const normalizeStringList = (value: unknown): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const normalizeIncomeSourceValue = (value: string): string | null => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  const byValue = incomeSources.find(
+    (source) => source.value.toLowerCase() === normalized,
+  );
+  if (byValue) {
+    return byValue.value;
+  }
+
+  const byLabel = incomeSources.find(
+    (source) => source.label.toLowerCase() === normalized,
+  );
+  return byLabel?.value ?? null;
+};
+
+const normalizeIncomeRangeValue = (value: string): string | undefined => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const byValue = incomeRanges.find(
+    (range) => range.value.toLowerCase() === normalized,
+  );
+  if (byValue) {
+    return byValue.value;
+  }
+
+  const byLabel = incomeRanges.find(
+    (range) => range.label.toLowerCase() === normalized,
+  );
+  return byLabel?.value;
+};
+
+const isStandAloneSource = (value: string) =>
+  incomeSources.some((source) => source.value === value && source.standAlone);
+
 const MonthlyIncomeScreen = () => {
   const userData = useUserData();
   const [primarySource, setPrimarySource] = useState<string[]>([]);
@@ -23,9 +86,45 @@ const MonthlyIncomeScreen = () => {
   const { goToNextStep, goToPreviousStep } = useSetUpStep(2);
 
   useEffect(() => {
-    // console.log("userData.onboarding", userData?.onboarding);
-    // if(userData?.onboarding && userData.onboarding.)
-  }, []);
+    const safeUserData = (userData ?? {}) as Record<string, unknown>;
+    const onboarding =
+      safeUserData.onboarding && typeof safeUserData.onboarding === "object"
+        ? (safeUserData.onboarding as Record<string, unknown>)
+        : null;
+
+    const rawIncomeSource =
+      onboarding?.incomeSource ??
+      safeUserData.incomeSource ??
+      safeUserData.incomeSources;
+    const rawIncomeRange =
+      onboarding?.incomeRange ??
+      safeUserData.incomeRange ??
+      onboarding?.monthlyIncomeRange ??
+      safeUserData.monthlyIncomeRange;
+
+    const prefilledSources = Array.from(
+      new Set(
+        normalizeStringList(rawIncomeSource)
+          .map(normalizeIncomeSourceValue)
+          .filter((entry): entry is string => Boolean(entry)),
+      ),
+    );
+
+    const resolvedSources = prefilledSources.some(isStandAloneSource)
+      ? prefilledSources.filter(isStandAloneSource).slice(0, 1)
+      : prefilledSources;
+
+    const prefilledRange =
+      typeof rawIncomeRange === "string"
+        ? normalizeIncomeRangeValue(rawIncomeRange)
+        : undefined;
+
+    setPrimarySource((prev) => (prev.length > 0 ? prev : resolvedSources));
+    setIsStandAloneSelected(
+      (prev) => prev || resolvedSources.some(isStandAloneSource),
+    );
+    setMonthlyRange((prev) => prev ?? prefilledRange);
+  }, [userData]);
 
   const handlePrevious = () => {
     goToPreviousStep();
@@ -95,16 +194,28 @@ const MonthlyIncomeScreen = () => {
                     key={source.value}
                     disabled={isStandAloneSelected && !isSelected}
                     onPress={() => {
-                      setPrimarySource((prev) =>
-                        prev.includes(source.value)
-                          ? prev.filter((v) => v !== source.value)
-                          : [...prev, source.value],
-                      );
-                      if (source.standAlone) {
-                        setIsStandAloneSelected(true);
-                        return;
-                      }
-                      setIsStandAloneSelected(false);
+                      setPrimarySource((prev) => {
+                        const currentlySelected = prev.includes(source.value);
+                        let next: string[];
+
+                        if (source.standAlone) {
+                          next = currentlySelected ? [] : [source.value];
+                        } else {
+                          const withoutStandAlone = prev.filter(
+                            (value) => !isStandAloneSource(value),
+                          );
+                          next = currentlySelected
+                            ? withoutStandAlone.filter(
+                                (value) => value !== source.value,
+                              )
+                            : [...withoutStandAlone, source.value];
+                        }
+
+                        setIsStandAloneSelected(
+                          next.some((value) => isStandAloneSource(value)),
+                        );
+                        return next;
+                      });
                     }}
                     className={cn(
                       "rounded-xl border px-4 py-3",
