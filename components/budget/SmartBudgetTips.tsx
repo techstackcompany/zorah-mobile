@@ -1,10 +1,44 @@
 import COLORS from "@/constants/colors";
+import { useGetFinancialTipQuery } from "@/src/api/hooks/useTipsApi";
 import { Image, ImageBackground } from "expo-image";
 import React, { memo } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import Markdown from "react-native-markdown-display";
 import Text from "../ui/Text";
 
+const FALLBACK_MARKDOWN = `Here are 2 quick budget tips:
+
+1. **Reduce food expenses by ₦5,000.** You're spending ₦20,000 more than similar users. Try cooking at home 2 more days weekly.
+2. **Set up a Down Owambe budget.** December is party season, so create a separate budget for events and overspending.`;
+
+const markdownStyles = {
+  body: {
+    color: "rgba(42, 58, 80, 0.8)",
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: "NunitoMedium",
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 10,
+  },
+  ordered_list_icon: {
+    color: COLORS.secondary_500,
+    fontFamily: "NunitoBold",
+  },
+  list_item: {
+    marginBottom: 8,
+  },
+  strong: {
+    fontFamily: "NunitoBold",
+    color: COLORS.textColor,
+  },
+};
+
 const SmartBudgetTips = memo(() => {
+  const { data, isLoading, error } = useGetFinancialTipQuery();
+  const markdownContent = data?.reply?.trim() || FALLBACK_MARKDOWN;
+
   return (
     <View className="mt-6 px-6">
       <ImageBackground
@@ -24,34 +58,21 @@ const SmartBudgetTips = memo(() => {
             Smart Budget Tips
           </Text>
         </View>
-        <View className="mt-3 space-y-3">
-          <View className="flex-row items-start gap-2">
-            <View
-              className="mt-1.5 h-1.5 w-1.5 rounded-full"
-              style={{ backgroundColor: COLORS.secondary_500 }}
-            />
-            <Text className="mb-3 flex-1 text-sm text-textColor/80">
-              <Text className="mb-1 text-base">
-                Reduce food expenses by ₦5,000
+        {isLoading ? (
+          <View className="mt-4 items-start">
+            <ActivityIndicator color={COLORS.secondary_500} />
+          </View>
+        ) : (
+          <View className="mt-3">
+            {error ? (
+              <Text className="mb-2 text-sm text-textColor/80">
+                Could not load smart tips right now. Showing default tips
+                instead.
               </Text>
-              {"\n"}
-              You&apos;re spending ₦20,000 more than similar users. Try cooking
-              at home 2 more days weekly.
-            </Text>
+            ) : null}
+            <Markdown style={markdownStyles}>{markdownContent}</Markdown>
           </View>
-          <View className="flex-row items-start gap-3">
-            <View
-              className="mt-1.5 h-1.5 w-1.5 rounded-full"
-              style={{ backgroundColor: COLORS.secondary_500 }}
-            />
-            <Text className="flex-1 text-sm text-textColor/80">
-              <Text className="mb-1 text-base">Set up Down Owambe budget</Text>
-              {"\n"}
-              December is party season! Create a separate budget for events and
-              overspending.
-            </Text>
-          </View>
-        </View>
+        )}
       </ImageBackground>
     </View>
   );
