@@ -1,7 +1,9 @@
+import { HeaderBack } from "@/components/ui/HeaderBack";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import * as Haptics from "expo-haptics";
 import { Image, ImageSource } from "expo-image";
 import { Tabs, usePathname } from "expo-router";
 import React from "react";
@@ -13,7 +15,7 @@ const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
   "expense-planning": {
     label: "Expenses",
-    iconSource: require("@/assets/icons/add-circle.svg"),
+    iconSource: require("@/assets/icons/expenses.png"),
   },
   profile: {
     label: "Account",
@@ -45,6 +47,8 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
           };
 
           const onPress = () => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
@@ -97,6 +101,14 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   );
 };
 
+const headerWithBack = {
+  headerLeft() {
+    return (
+      <HeaderBack tintColor={COLORS.textColor} style={{ marginLeft: 16 }} />
+    );
+  },
+};
+
 const HomeLayout = () => {
   const path = usePathname();
   const isProfileSubRoute = path.startsWith("/profile/");
@@ -108,7 +120,6 @@ const HomeLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-
         tabBarStyle: shouldHideTabBar
           ? { display: "none" }
           : {
@@ -116,6 +127,8 @@ const HomeLayout = () => {
               borderWidth: 2,
               borderColor: "white",
             },
+        headerShadowVisible: false,
+        headerTitleStyle: { fontFamily: "NunitoSemibold" },
       }}
       tabBar={(props) => (shouldHideTabBar ? null : <HomeTabBar {...props} />)}
     >
@@ -125,17 +138,13 @@ const HomeLayout = () => {
           title: "Home",
         }}
       />
-      <Tabs.Screen
-        name="budget"
-        options={{
-          title: "Budget Manager",
-        }}
-      />
+      <Tabs.Screen name="budget" />
       <Tabs.Screen
         name="expense-planning"
         options={{
-          title: "Expenses",
-          headerShown: false,
+          title: "Expense Planning",
+          headerShown: true,
+          ...headerWithBack,
         }}
       />
       <Tabs.Screen
