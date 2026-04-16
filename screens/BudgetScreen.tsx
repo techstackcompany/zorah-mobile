@@ -7,6 +7,7 @@ import DeleteBudgetModal from "@/components/budget/DeleteBudgetModal";
 import SmartBudgetTips from "@/components/budget/SmartBudgetTips";
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
+import { useSession } from "@/contexts/auth-context/useSession";
 import {
   BudgetPeriod,
   getBudgetPeriod,
@@ -19,14 +20,18 @@ import React, { useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
 const BudgetScreen = () => {
- 
   const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriod>(() => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
   });
 
-  const { rawBudgets, budgets, filteredRawBudgets, isLoadingBudgets, budgetsError } =
-    useBudgets(selectedPeriod);
+  const {
+    rawBudgets,
+    budgets,
+    filteredRawBudgets,
+    isLoadingBudgets,
+    budgetsError,
+  } = useBudgets(selectedPeriod);
 
   const availablePeriods = useMemo(() => {
     const periods = rawBudgets
