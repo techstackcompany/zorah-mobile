@@ -1,3 +1,4 @@
+import { LAST_LOGIN_EMAIL_KEY } from "@/constants/auth";
 import {
   asyncStorageGetItem,
   asyncStorageSetItem,
@@ -106,6 +107,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = async (session: string) => setSession(session);
 
   const signOut = useCallback(async () => {
+    if (typeof userData === "string") {
+      try {
+        const parsed = JSON.parse(userData) as { email?: unknown };
+        if (typeof parsed.email === "string" && parsed.email.trim()) {
+          await asyncStorageSetItem(
+            LAST_LOGIN_EMAIL_KEY,
+            parsed.email.trim().toLowerCase(),
+          );
+        }
+      } catch {}
+    }
+
     await clearPersistedQueryCache();
 
     queryClient.removeQueries();
@@ -126,6 +139,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setUserDataRaw,
     setHasCompletedSetupRaw,
     setSetupStepRaw,
+    userData,
   ]);
 
   useEffect(() => {
