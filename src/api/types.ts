@@ -75,7 +75,7 @@ export interface UserProfile {
   stepsCompleted?: string[];
   preferredReminderHour?: number;
   refreshToken?: string;
-  usageMetrics?: UserUsageMetrics;
+  usageMetrics: UserUsageMetrics;
   createdAt: string;
   updatedAt: string;
   [key: string]: unknown;
