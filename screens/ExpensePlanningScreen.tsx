@@ -80,7 +80,6 @@ const ExpensePlanningScreen = () => {
     isLoading: isSummaryLoading,
     refetch: refetchSummary,
   } = useGetExpenseSummaryQuery("monthly");
-
   const {
     data: categoriesData,
     isLoading: isCategoriesLoading,
@@ -359,7 +358,7 @@ const ExpensePlanningScreen = () => {
 
   return (
     <>
-      <MainContainer className="bg-lightMuted pb-0" edges={[]}>
+      <MainContainer className="bg-lightMuted pb-0" edges={["top"]}>
         {(expenseError || incomeError || categoryError) && (
           <View
             style={{
@@ -758,7 +757,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 24,
     shadowColor: "#0F2A72",
-    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 4,
