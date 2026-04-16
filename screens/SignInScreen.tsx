@@ -1,12 +1,17 @@
 import PasswordTextInput from "@/components/PasswordTextInput";
 import Text from "@/components/ui/Text";
+import { LAST_LOGIN_EMAIL_KEY } from "@/constants/auth";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { setRefreshToken } from "@/lib/persistedStorageConfig";
+import {
+  asyncStorageGetItem,
+  asyncStorageSetItem,
+  setRefreshToken,
+} from "@/lib/persistedStorageConfig";
 import { cn } from "@/lib/utils";
 import { useLoginUserMutation } from "@/src/api/hooks";
 import type { LoginUserResponse } from "@/src/api/types";
 import { Link } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,6 +29,23 @@ const SignInScreen = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { signIn } = useSession();
   const loginMutation = useLoginUserMutation();
+
+  useEffect(() => {
+    const hydrateLastEmail = async () => {
+      const lastEmail = await asyncStorageGetItem(LAST_LOGIN_EMAIL_KEY);
+      if (!lastEmail?.trim()) {
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        email: prev.email.trim() ? prev.email : lastEmail,
+      }));
+    };
+
+    void hydrateLastEmail();
+  }, []);
+
   const focusField = (field: string) => {
     setFocused(field);
   };
@@ -86,6 +108,7 @@ const SignInScreen = () => {
       };
       const response = await loginMutation.mutateAsync(payload);
       await processSignInResponse(response);
+      await asyncStorageSetItem(LAST_LOGIN_EMAIL_KEY, normalizedEmail);
     } catch (error) {
       const message = (error as { message: string })?.message;
       Toast.show({
