@@ -213,7 +213,6 @@ const AddExpenseScreen = () => {
 
   const { expenseCategories, isCategoriesLoading, categoriesError } =
     useExpenseSubCategories();
-  console.log("expenseCategories", expenseCategories);
   const {
     recognizing,
     transcript,
@@ -281,7 +280,6 @@ const AddExpenseScreen = () => {
 
   const logVoiceExpenseMutation = useVoiceExpenseLoggingMutation({
     onSuccess: (data) => {
-      console.log("Voice expense response:", data);
       queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
 
       let formattedDate = "";
@@ -375,7 +373,6 @@ const AddExpenseScreen = () => {
     }
 
     if (validateFields({ amount, date, paymentMethod, selectedCategory })) {
-      // If "Other" is selected, require and use the custom category
       const isOther = selectedCategory.toLowerCase() === "other";
       if (isOther && !customCategory.trim()) {
         Toast.show({
@@ -423,7 +420,10 @@ const AddExpenseScreen = () => {
     isVoiceMode && (!editableTranscript.trim() || voiceStatus === "recording");
 
   const isLimitReached =
-    !isSetupComplete && (userData?.usageMetrics?.expensesLoggedCount || 0) >= 2;
+    !isSetupComplete &&
+    !!userData &&
+    userData.usageMetrics?.isFeatureLocked &&
+    (userData.usageMetrics?.expensesLoggedCount || 0) >= 2;
 
   return (
     <MainContainer className="bg-light" edges={[]}>
