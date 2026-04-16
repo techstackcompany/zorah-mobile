@@ -1,12 +1,16 @@
 import CompleteSetupCard from "@/components/home/CompleteSetupCard";
+import ExpenseSummaryCard from "@/components/home/ExpenseSummaryCard";
 import FinancialTipCard from "@/components/home/FinancialTipCard";
-import FxRatesCard from "@/components/home/FxRatesCard";
 import QuickActions from "@/components/home/QuickActions";
 import RecentTransactions from "@/components/home/RecentTransactions";
 import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
-import { FX_PAIRS, fxPairsToFetch } from "@/constants/fx";
+import COLORS from "@/constants/colors";
+import {
+  buildExpenseSummaryFromList,
+  formatCurrency as formatExpenseCurrency,
+} from "@/features/expense-income/utils";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { useUserDisplayData } from "@/hooks/useUserDisplayData";
 import {
@@ -15,25 +19,18 @@ import {
   transformTransaction,
 } from "@/lib/utils";
 import {
+  useGetCategoriesQuery,
   useGetExpenseSummaryQuery,
-  useGetFxRatePairsQuery,
   useGetIncomesQuery,
   useGetMonthlyExpensesQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
-import { FxRatePair } from "@/src/api/types";
-import { ImageSource } from "expo-image";
+import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
-
-type CurrencyOption = {
-  code: string;
-  label: string;
-  symbol: string;
-  flag: ImageSource;
-};
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type SummaryCard = {
   id: string;
@@ -52,12 +49,7 @@ type QuickAction = {
   aspectRatio?: 1;
 };
 
-const NGN_CURRENCY: CurrencyOption = {
-  code: "NGN",
-  label: "NGN - Nigerian (Naira)",
-  symbol: "₦",
-  flag: require("@/assets/icons/nigeria-flag-curved.svg"),
-};
+const CURRENCY_SYMBOL = "₦";
 
 const quickActions: QuickAction[] = [
   {
@@ -82,7 +74,8 @@ const quickActions: QuickAction[] = [
 
 const HomeScreen = () => {
   const router = useRouter();
-  const [currency] = useState<CurrencyOption>(NGN_CURRENCY);
+  const { bottom } = useSafeAreaInsets();
+  const currencySymbol = CURRENCY_SYMBOL;
   const [balanceHidden, setBalanceHidden] = useState(false);
   const { initials, welcomeName } = useUserDisplayData();
   const { isSetupComplete, currentStepRoute } = useSetupProgress();
@@ -110,50 +103,30 @@ const HomeScreen = () => {
     useGetMonthlyExpensesQuery();
 
   const {
-    data: fxRatePairs,
-    isLoading: isLoadingFxPairs,
-    isFetching: isFetchingFxPairs,
-    error: fxPairsError,
-    refetch: refetchFxPairs,
-  } = useGetFxRatePairsQuery(fxPairsToFetch);
+    data: categoriesData,
+    isLoading: isLoadingCategories,
+    refetch: refetchCategories,
+  } = useGetCategoriesQuery("expense");
 
-  const fxPairLookup = useMemo(() => {
-    const lookup: { [key: string]: FxRatePair } = {};
-
-    if (fxRatePairs) {
-      fxRatePairs.forEach((pair) => {
-        const key = `${pair.base_code}${pair.target_code}`;
-        lookup[key] = pair;
-      });
-    }
-
-    return lookup;
-  }, [fxRatePairs]);
-
-  const resolvedFxPairs = useMemo(() => {
-    return FX_PAIRS.map((pair) => {
-      const key = `${pair.base}${pair.quote}`;
-      const apiPair = fxPairLookup[key];
-
-      if (
-        apiPair &&
-        typeof apiPair.conversion_rate === "number" &&
-        apiPair.conversion_rate > 0
-      ) {
-        return {
-          ...pair,
-          value: apiPair.conversion_rate,
-          change: apiPair.change_percent ?? 0,
-        };
-      }
-
-      return {
-        ...pair,
-        value: 0,
-        change: 0,
-      };
-    }).filter((pair) => pair.value > 0);
-  }, [fxPairLookup]);
+  const expenseSummary = useMemo(() => {
+    if (!expenseSummaryData?.byCategory) return { total: 0, segments: [] };
+    const categoryIcons = categoriesData ?? [];
+    const summary = buildExpenseSummaryFromList(
+      expenseSummaryData.byCategory,
+      categoryIcons,
+    );
+    // Compute amounts from percentages
+    let remaining = summary.total;
+    const segments = summary.segments.map((segment, index, array) => {
+      const amount =
+        index === array.length - 1
+          ? remaining
+          : Math.round((summary.total * segment.percentage) / 100);
+      remaining -= amount;
+      return { ...segment, amount };
+    });
+    return { total: summary.total, segments };
+  }, [expenseSummaryData, categoriesData]);
 
   const walletBalance = useMemo(() => {
     const balance = balanceData?.balance ?? 0;
@@ -167,8 +140,8 @@ const HomeScreen = () => {
     if (isLoadingBalance) {
       return "Loading...";
     }
-    return formatCurrencyWithSymbol(walletBalance, currency.symbol);
-  }, [balanceHidden, currency.symbol, walletBalance, isLoadingBalance]);
+    return formatCurrencyWithSymbol(walletBalance, currencySymbol);
+  }, [balanceHidden, currencySymbol, walletBalance, isLoadingBalance]);
 
   const totalExpenses = expenseSummaryData?.total || 0;
 
@@ -183,10 +156,10 @@ const HomeScreen = () => {
   const summaryCards = useMemo<SummaryCard[]>(() => {
     const expenseAmount = isLoadingExpenseSummary
       ? "Loading..."
-      : formatCurrencyWithSymbol(totalExpenses, currency.symbol);
+      : formatCurrencyWithSymbol(totalExpenses, currencySymbol);
     const incomeAmount = isLoadingIncomes
       ? "Loading..."
-      : formatCurrencyWithSymbol(totalIncome, currency.symbol);
+      : formatCurrencyWithSymbol(totalIncome, currencySymbol);
 
     return [
       {
@@ -209,7 +182,7 @@ const HomeScreen = () => {
   }, [
     totalExpenses,
     totalIncome,
-    currency.symbol,
+    currencySymbol,
     isLoadingExpenseSummary,
     isLoadingIncomes,
     router,
@@ -282,7 +255,7 @@ const HomeScreen = () => {
 
     return transactions.map(transformTransaction).slice(0, 4);
   }, [transactionsData]);
-
+  console.log("transactionsData", transactionsData);
   const shouldShowEmpty = useMemo(() => {
     return recentTransactions.length === 0;
   }, [recentTransactions.length]);
@@ -299,15 +272,14 @@ const HomeScreen = () => {
                   isLoadingTransactions ||
                   isLoadingExpenseSummary ||
                   isLoadingIncomes ||
-                  isLoadingFxPairs ||
-                  isFetchingFxPairs
+                  isLoadingCategories
                 }
                 onRefresh={() => {
                   refetchBalance();
                   refetchTransactions();
                   refetchExpenseSummary();
                   refetchIncomes();
-                  refetchFxPairs();
+                  refetchCategories();
                   refetchMonthlyExpenses();
                 }}
               />
@@ -349,10 +321,12 @@ const HomeScreen = () => {
 
               <FinancialTipCard />
 
-              <FxRatesCard
-                rates={resolvedFxPairs}
-                isLoading={isLoadingFxPairs && resolvedFxPairs.length === 0}
-                error={fxPairsError}
+              <ExpenseSummaryCard
+                segments={expenseSummary.segments}
+                total={expenseSummary.total}
+                isLoading={isLoadingExpenseSummary || isLoadingCategories}
+                formatCurrency={formatExpenseCurrency}
+                onPress={() => router.navigate("/expense-planning?tab=expense")}
               />
 
               <RecentTransactions
@@ -361,6 +335,28 @@ const HomeScreen = () => {
               />
             </View>
           </ScrollView>
+
+          <Pressable
+            onPress={() => router.push("/(app)/ai-assistant")}
+            accessibilityRole="button"
+            accessibilityLabel="Open AI Assistant"
+            className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-primary_400"
+            style={{
+              bottom: bottom + 20,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.2,
+              shadowRadius: 10,
+              elevation: 8,
+            }}
+          >
+            <Image
+              source={require("@/assets/icons/ai_bot.svg")}
+              style={{ width: 28, height: 28 }}
+              contentFit="contain"
+              tintColor={COLORS.white}
+            />
+          </Pressable>
         </View>
       </MainContainer>
     </>
