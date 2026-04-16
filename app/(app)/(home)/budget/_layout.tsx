@@ -1,3 +1,4 @@
+import { headerWithBack } from "@/components/ui/HeaderBack";
 import { stackOptions } from "@/constants/navigation";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
@@ -21,6 +22,7 @@ const BudgetLayout = () => {
         name="index"
         options={{
           title: "Budget Manager",
+          ...headerWithBack,
           headerRight: () => (
             <View className="flex-row items-center gap-2">
               <Pressable
