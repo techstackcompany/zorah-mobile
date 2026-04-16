@@ -1,4 +1,6 @@
+import COLORS from "@/constants/colors";
 import { stackOptions } from "@/constants/navigation";
+import { HeaderBackButton } from "@react-navigation/elements";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
@@ -15,6 +17,19 @@ const SavingsGoalsLayout = () => {
         name="index"
         options={{
           title: "Savings Goals",
+
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() =>
+                props.canGoBack
+                  ? router.back()
+                  : router.replace("/(app)/(home)")
+              }
+              displayMode="minimal"
+              tintColor={COLORS.textColor}
+            />
+          ),
           headerRight: () => (
             <Pressable
               onPress={handleCreateGoal}
