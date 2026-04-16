@@ -86,7 +86,6 @@ export const useGetWalletTransactionsQuery = (
       >({
         ...API_ENDPOINTS.wallet.transactions,
       });
-
       if (
         response &&
         typeof response === "object" &&
