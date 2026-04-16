@@ -148,7 +148,7 @@ export const useBudgets = (selectedPeriod?: BudgetPeriod) => {
     isLoading: isLoadingBudgets,
     error: budgetsError,
   } = useGetBudgetsQuery();
-  const { data: subcategoriesData } = useGetCategoriesQuery("budget");
+  const { data: subcategoriesData } = useGetCategoriesQuery("expense");
 
   const rawBudgets = extractArrayResData(budgetsData);
 
