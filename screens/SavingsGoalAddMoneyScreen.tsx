@@ -63,12 +63,6 @@ const SavingsGoalAddMoneyScreen = () => {
 
   const contributeMutation = useContributeToSavingsMutation({
     onSuccess: (response) => {
-      console.log("=== CONTRIBUTE TO SAVINGS GOAL SUCCESS ===");
-      console.log("Full response:", JSON.stringify(response, null, 2));
-      console.log("Response data:", response?.data);
-      console.log("========================\n");
-
-      
       queryClient.invalidateQueries({ queryKey: ["savings"] });
 
       setShowSuccess(true);

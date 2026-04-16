@@ -12,7 +12,6 @@ export function useUserDisplayData(fallback?: {
   welcomeName?: string;
 }): UserDisplayData {
   const { userData } = useSession();
-  console.log("userData", userData);
   return useMemo(() => {
     const defaultFallback = {
       initials: fallback?.initials || "U",

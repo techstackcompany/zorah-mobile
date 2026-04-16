@@ -19,7 +19,6 @@ import {
 const EditProfileScreen = () => {
   const router = useRouter();
   const { userData } = useSession();
-  console.log("userData", userData);
   const { fullName, displayEmail, displayPhone, initials } = useMemo(() => {
     return extractUserData(userData, {
       fallbackName: "",

@@ -36,7 +36,6 @@ const TIME = 80;
 
 type PinSetupStep = "create" | "confirm";
 
-
 const PinSetupScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -63,7 +62,6 @@ const PinSetupScreen = () => {
 
   const toggleBiometricsMutation = useToggleBiometricsMutation({
     onSuccess: async () => {
-      console.log("toggle was a success");
       Toast.show({
         type: "success",
         text1: "PIN Set Successfully",
@@ -97,7 +95,6 @@ const PinSetupScreen = () => {
 
   const setPinMutation = useSetUserPinMutation({
     onSuccess: () => {
-      console.log("pin set successfull");
       if (biometricsAvailable) {
         toggleBiometricsMutation.mutate({ enabled: true });
       } else {
@@ -190,28 +187,28 @@ const PinSetupScreen = () => {
     <LinearGradient colors={["#F6FAFF", "#FFFFFF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.backButtonContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace("/(app)/(home)/profile");
-                }
-              }}
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(app)/(home)/profile");
+              }
+            }}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-              <Image
-                source={require("@/assets/images/icon.png")}
-                style={styles.appIcon}
-                contentFit="contain"
-              />
-            </View>
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={styles.appIcon}
+              contentFit="contain"
+            />
+          </View>
           <Text style={styles.greeting}>
             {step === "create" ? "Create PIN" : "Confirm PIN"}
           </Text>
