@@ -159,6 +159,7 @@ export const API_ENDPOINTS = {
   },
   ai: {
     ask: { method: HttpMethod.POST, url: "/ai/ask" },
+    tips: { method: HttpMethod.GET, url: "/ai/tips" },
   },
 
   billReminders: {
