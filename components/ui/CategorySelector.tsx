@@ -1,8 +1,8 @@
 import { capitalizeWord, cn } from "@/lib/utils";
 import { CategoryItem } from "@/src/api/types";
 import { Image } from "expo-image";
-import React from "react";
-import { FlatList, Pressable, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, FlatList, Pressable, View } from "react-native";
 import Text from "./Text";
 
 type CategorySelectorProps<K extends string> = {
@@ -10,6 +10,41 @@ type CategorySelectorProps<K extends string> = {
   selectedKey: K;
   onSelect: (key: K) => void;
   className?: string;
+  isLoading?: boolean;
+};
+
+const SkeletonItem = ({ delay }: { delay: number }) => {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 600,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [delay, opacity]);
+
+  return (
+    <Animated.View
+      style={{ opacity }}
+      className="aspect-square w-[96px] items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-100 px-2 py-2"
+    >
+      <View className="h-6 w-6 rounded-full bg-gray-200" />
+      <View className="h-3 w-14 rounded bg-gray-200" />
+    </Animated.View>
+  );
 };
 
 const CategorySelector = <K extends string>({
@@ -17,6 +52,7 @@ const CategorySelector = <K extends string>({
   selectedKey,
   onSelect,
   className,
+  isLoading,
 }: CategorySelectorProps<K>) => {
   const renderItem = ({ item: category }: { item: CategoryItem<K> }) => {
     const isActive = category.key === selectedKey;
@@ -51,6 +87,18 @@ const CategorySelector = <K extends string>({
       </Pressable>
     );
   };
+
+  if (isLoading) {
+    return (
+      <View className={cn("mt-3", className)}>
+        <View className="flex-row gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonItem key={i} delay={i * 150} />
+          ))}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className={cn("mt-3", className)}>

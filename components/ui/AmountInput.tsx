@@ -1,11 +1,5 @@
 import React, { useMemo, useState } from "react";
-import {
-  NativeSyntheticEvent,
-  TextInput,
-  TextInputFocusEventData,
-  TextInputProps,
-  View,
-} from "react-native";
+import { TextInput, TextInputProps, View } from "react-native";
 
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
@@ -106,7 +100,7 @@ type AmountInputProps = Omit<TextInputProps, "value" | "onChangeText"> & {
   isFocused?: boolean;
   currencySymbol?: string;
   forceFixedDecimalsOnBlur?: boolean;
-  labelCLassName?:string
+  labelCLassName?: string;
 };
 
 const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
@@ -167,8 +161,10 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
           containerClassName,
         )}
       >
-        <Text className={cn("text-sm text-textColor/70", labelCLassName)}>{label}</Text>
-        <View className={cn("mt-2", inputWrapperClassName)}>
+        <Text className={cn("mb-3 text-sm text-textColor/70 ", labelCLassName)}>
+          {label}
+        </Text>
+        <View className={cn("", inputWrapperClassName)}>
           <TextInput
             ref={ref}
             keyboardType={keyboardType ?? "decimal-pad"}
@@ -178,7 +174,7 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
             onChangeText={handleChangeText}
             placeholder={placeholder}
             className={cn(
-              "py-0 font-nunitoSemibold text-4xl text-textColor",
+              "py-0 text-4xl font-semibold text-textColor",
               className,
             )}
             {...inputProps}
