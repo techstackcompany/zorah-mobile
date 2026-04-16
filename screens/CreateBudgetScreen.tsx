@@ -21,7 +21,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  TextInput,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
@@ -147,11 +146,9 @@ const CreateBudgetScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: budgetCategories, isLoading: isCategoriesLoading } =
-    useGetCategoriesQuery("budget");
+    useGetCategoriesQuery("expense");
   const firstCategory = budgetCategories?.[0]?.key;
-  const [budgetName, setBudgetName] = useState("");
   const [amount, setAmount] = useState("");
-  const [isBudgetNameFocused, setIsBudgetNameFocused] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>(
     firstCategory || "",
   );
@@ -175,11 +172,10 @@ const CreateBudgetScreen = () => {
         type: "success",
         text1: "Budget Created",
         text2: response.message || "Your budget has been created successfully.",
+        onHide: () => router.back(),
       });
 
-      setTimeout(() => {
-        router.back();
-      }, 1500);
+      router.back();
     },
     onError: (error) => {
       Toast.show({
@@ -226,7 +222,6 @@ const CreateBudgetScreen = () => {
   };
 
   const isSubmitDisabled =
-    !budgetName.trim() ||
     !amount ||
     Number.isNaN(Number(amount)) ||
     Number(amount) <= 0 ||
@@ -254,24 +249,6 @@ const CreateBudgetScreen = () => {
             contentContainerStyle={{ paddingBottom: 40 }}
           >
             <View className="mt-4 gap-6">
-              <View>
-                <Text className="text-sm text-textColor/70">Budget name</Text>
-                <TextInput
-                  value={budgetName}
-                  onChangeText={setBudgetName}
-                  onFocus={() => setIsBudgetNameFocused(true)}
-                  onBlur={() => setIsBudgetNameFocused(false)}
-                  placeholder="e.g., Food & Dining"
-                  className={`mt-2 rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base text-textColor ${
-                    isBudgetNameFocused
-                      ? "border-primary_400"
-                      : "border-gray-200"
-                  }`}
-                  placeholderTextColor="rgba(42, 58, 80, 0.4)"
-                  returnKeyType="next"
-                />
-              </View>
-
               <AmountInput
                 value={amount}
                 onChangeValue={setAmount}
