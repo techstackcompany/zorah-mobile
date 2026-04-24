@@ -497,7 +497,7 @@ const TransactionHistoryScreen = () => {
 
           <ScrollView
             className="mt-6 flex-1"
-            contentContainerStyle={{ paddingBottom: 120 }}
+            contentContainerStyle={{ paddingBottom: 80 }}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl

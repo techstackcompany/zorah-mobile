@@ -285,7 +285,7 @@ const HomeScreen = () => {
               />
             }
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 140 }}
+            contentContainerStyle={{ paddingBottom: 80 }}
           >
             <View className="bg-primary_200 pt-4">
               <WelcomeHeader

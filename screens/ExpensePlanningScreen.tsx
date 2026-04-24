@@ -399,7 +399,7 @@ const ExpensePlanningScreen = () => {
               onRefresh={handleRefresh}
             />
           }
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           <View className="px-6">
             <TabSwitcher

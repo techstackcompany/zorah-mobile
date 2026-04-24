@@ -182,7 +182,7 @@ const ExpenseDetailsScreen = () => {
       <View className="flex-1">
         <ScrollView
           className="mt-2 flex-1"
-          contentContainerStyle={{ paddingBottom: 160 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
           <View className="px-6">

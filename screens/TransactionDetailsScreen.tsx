@@ -248,7 +248,7 @@ const TransactionDetailsScreen = () => {
       <>
         <ScrollView
           className="mt-2 flex-1"
-          contentContainerStyle={{ paddingBottom: 160 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
           <ViewShot ref={viewShotRef} options={{ format: "png", quality: 1 }}>
