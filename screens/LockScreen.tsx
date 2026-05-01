@@ -216,7 +216,7 @@ const LockScreen = ({
       verifyPinMutation.mutate({ pin });
     }
     
-  }, [code.length]); 
+  }, [code, isVerifying, verifyPinMutation]);
 
   if (!visible) return null;
 

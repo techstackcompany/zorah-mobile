@@ -10,7 +10,7 @@ import { formatCurrency } from "@/constants/investments";
 import { useGetSavingsGoalQuery } from "@/src/api/hooks/useSavingsApi";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
 const SavingsGoalDetailsScreen = () => {
