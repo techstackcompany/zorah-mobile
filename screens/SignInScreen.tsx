@@ -63,7 +63,7 @@ const SignInScreen = () => {
       if (refreshToken) {
         await setRefreshToken(refreshToken);
       } else {
-        console.warn(
+        console.error(
           "No refresh token in login response - token refresh will not work",
         );
       }

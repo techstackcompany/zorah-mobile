@@ -38,7 +38,7 @@ export const useBudgetActions = () => {
         setActiveCategory(null);
       },
       onError: (error) => {
-        console.log("error", error.message);
+        console.error("error", error.message);
         Toast.show({ type: "error", text1: "Failed to delete budget" });
       },
     },
@@ -54,7 +54,7 @@ export const useBudgetActions = () => {
       actionSheetRef.current?.dismiss();
     },
     onError: (error) => {
-      console.log("error", error.message);
+      console.error("error", error.message);
       Toast.show({ type: "error", text1: "Failed to archive budget" });
       setBudgetIdToArchive(null);
     },

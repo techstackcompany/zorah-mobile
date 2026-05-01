@@ -45,7 +45,7 @@ const IncomeDetailsScreen = () => {
       router.back();
     },
     onError: (error) => {
-      console.log("error", error.message);
+      console.error("error", error.message);
       Toast.show({ type: "error", text1: "Failed to delete income" });
     },
   });

@@ -144,7 +144,7 @@ const YourBanksScreen = ({
       setShowCompletionModal(true);
     } catch (error) {
       const _error = error as ApiError;
-      console.log("_error.message", _error.message);
+      console.error("_error.message", _error.message);
       Toast.show({
         type: "error",
         text1: "Could not complete setup",

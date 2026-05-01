@@ -276,7 +276,7 @@ const AddExpenseScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.log("error", error);
+      console.error("error", error);
 
       Toast.show({
         type: "error",

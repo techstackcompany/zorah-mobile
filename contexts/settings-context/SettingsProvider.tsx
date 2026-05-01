@@ -78,7 +78,7 @@ export function SettingsProvider({ children }: PropsWithChildren) {
           setSettings(JSON.parse(settings));
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
       } finally {
         setIsLoaded(true);
       }

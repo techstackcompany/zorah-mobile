@@ -90,7 +90,7 @@ const OriginalSignUpScreen = () => {
           : "Welcome to Zorah!",
       });
     } catch (error) {
-      console.log("error", error);
+      console.error("error", error);
       const apiError = error as ApiError;
       const serverMessage =
         typeof apiError?.data === "object" &&

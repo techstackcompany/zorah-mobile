@@ -231,7 +231,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
       });
     },
     onError: (error) => {
-      console.log("error", error);
+      console.error("error", error);
       Toast.show({
         type: "error",
         text1: "Error",

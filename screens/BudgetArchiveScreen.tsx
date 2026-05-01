@@ -176,7 +176,7 @@ const BudgetArchiveScreen = () => {
         actionSheetRef.current?.dismiss();
       },
       onError: (error) => {
-        console.log("error", error.message);
+        console.error("error", error.message);
         Toast.show({ type: "error", text1: "Failed to restore budget" });
         setBudgetIdToRestore(null);
       },
