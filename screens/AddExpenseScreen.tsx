@@ -19,6 +19,7 @@ import {
 
 import FeatureGateModal from "@/components/ui/FeatureGateModal";
 import { useSession } from "@/contexts/auth-context/useSession";
+import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -179,7 +180,14 @@ const useExpenseSubCategories = () => {
       return [];
     }
 
-    return [...categoriesData, OTHER_CATEGORY];
+    const seen = new Set<string>();
+    const unique = categoriesData.filter((c) => {
+      if (seen.has(c.key)) return false;
+      seen.add(c.key);
+      return true;
+    });
+
+    return [...unique, OTHER_CATEGORY];
   }, [categoriesData]);
 
   return { expenseCategories, isCategoriesLoading, categoriesError };
@@ -201,6 +209,9 @@ const AddExpenseScreen = () => {
   const [detectedExpense, setDetectedExpense] =
     useState<DetectedExpenseDetails | null>(null);
   const [editableTranscript, setEditableTranscript] = useState("");
+  const scrollViewRef = useRef<ScrollView>(null);
+  const timeOutId = useRef<number | null>(null);
+  const { keyboardHeight } = useKeyboardHeight();
   const {
     paymentModalRef,
     isPaymentModalVisible,
@@ -440,16 +451,16 @@ const AddExpenseScreen = () => {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={addKeyboardBehavior()}
-        keyboardVerticalOffset={200}
+        keyboardVerticalOffset={50}
       >
         <View className="flex-1">
           <ScrollView
+            ref={scrollViewRef}
             className="flex-1 px-6 pt-4"
-            contentContainerClassName="pb-10"
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
-              paddingBottom: isVoiceMode ? 240 : 400,
+              paddingBottom: keyboardHeight > 0 ? 24 : 100,
             }}
           >
             <View className="mt-4 gap-6">
@@ -709,6 +720,12 @@ const AddExpenseScreen = () => {
                     onFocusChange={(focused) =>
                       setFocusedField(focused ? "description" : null)
                     }
+                    onFocus={() => {
+                      if (timeOutId.current) clearTimeout(timeOutId.current);
+                      timeOutId.current = setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 100);
+                    }}
                     inputClassName="min-h-[120px]"
                   />
                 </View>
