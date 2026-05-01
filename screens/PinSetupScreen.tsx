@@ -16,10 +16,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Text from "@/components/ui/Text";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -209,10 +209,14 @@ const PinSetupScreen = () => {
               contentFit="contain"
             />
           </View>
-          <Text style={styles.greeting}>
+          <Text
+            family="degular"
+            weight="bold"
+            className="text-[28px] text-textColor tracking-[0.5px] mb-2 text-center"
+          >
             {step === "create" ? "Create PIN" : "Confirm PIN"}
           </Text>
-          <Text style={styles.subtitle}>
+          <Text weight="regular" className="text-[15px] text-[#6B7280] text-center px-10">
             {step === "create"
               ? biometricsAvailable
                 ? "Create a 4-digit PIN and enable biometric authentication"
@@ -269,7 +273,9 @@ const PinSetupScreen = () => {
                     onPress={() => onNumberPress(number)}
                     disabled={isLoading || currentPin.length >= PIN_LENGTH}
                   >
-                    <Text style={styles.number}>{number}</Text>
+                    <Text weight="semibold" className="text-[28px] text-textColor">
+                      {number}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -289,7 +295,9 @@ const PinSetupScreen = () => {
               style={[styles.keypadBtn, styles.numberBtn]}
               disabled={isLoading || currentPin.length >= PIN_LENGTH}
             >
-              <Text style={styles.number}>0</Text>
+              <Text weight="semibold" className="text-[28px] text-textColor">
+                0
+              </Text>
             </TouchableOpacity>
             <View style={styles.keypadBtn}>
               {currentPin.length > 0 && (
@@ -363,21 +371,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
   },
-  greeting: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: COLORS.textColor,
-    marginBottom: 8,
-    letterSpacing: 0.5,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "400",
-    textAlign: "center",
-    paddingHorizontal: 40,
-  },
   codeView: {
     flexDirection: "row",
     justifyContent: "center",
@@ -407,11 +400,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 40,
     gap: 24,
     marginTop: 20,
-  },
-  number: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: COLORS.textColor,
   },
   keypadBtn: {
     width: 70,

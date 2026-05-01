@@ -8,12 +8,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
+import Text from "@/components/ui/Text";
 import {
   ActivityIndicator,
   Modal,
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -231,8 +231,16 @@ const LockScreen = ({
               contentFit="contain"
             />
           </View>
-          <Text style={styles.greeting}>Welcome back</Text>
-          <Text style={styles.subtitle}>Enter your PIN to continue</Text>
+          <Text
+            family="degular"
+            weight="bold"
+            className="text-[28px] text-textColor tracking-[0.5px] mb-2"
+          >
+            Welcome back
+          </Text>
+          <Text weight="regular" className="text-[15px] text-[#6B7280]">
+            Enter your PIN to continue
+          </Text>
         </View>
 
         <Animated.View style={[styles.codeView, style]}>
@@ -278,7 +286,9 @@ const LockScreen = ({
                     style={[styles.keypadBtn, styles.numberBtn]}
                     onPress={() => onNumberPress(number)}
                   >
-                    <Text style={styles.number}>{number}</Text>
+                    <Text weight="semibold" className="text-[28px] text-textColor">
+                      {number}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -311,7 +321,9 @@ const LockScreen = ({
               onPress={() => onNumberPress(0)}
               style={[styles.keypadBtn, styles.numberBtn]}
             >
-              <Text style={styles.number}>0</Text>
+              <Text weight="semibold" className="text-[28px] text-textColor">
+                0
+              </Text>
             </TouchableOpacity>
             <View style={styles.keypadBtn}>
               {code.length > 0 && (
@@ -381,18 +393,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
   },
-  greeting: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: COLORS.textColor,
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "400",
-  },
   codeView: {
     flexDirection: "row",
     justifyContent: "center",
@@ -422,11 +422,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 40,
     gap: 24,
     marginTop: 20,
-  },
-  number: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: COLORS.textColor,
   },
   keypadBtn: {
     width: 70,
