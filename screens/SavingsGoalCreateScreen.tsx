@@ -5,10 +5,11 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import DatePickerField from "@/components/ui/DatePickerField";
 import Text from "@/components/ui/Text";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
-import { cn } from "@/lib/utils";
+import { cn, extractArrayResData } from "@/lib/utils";
 import {
   useCreateSavingsGoalMutation,
   useGetCategoriesQuery,
+  useGetSavingsGoalsQuery,
 } from "@/src/api/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -17,7 +18,9 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   TextInput,
   View,
@@ -38,8 +41,13 @@ const SavingsGoalCreateScreen = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const timeOutId = useRef<number | null>(null);
 
+  const [duplicateModalVisible, setDuplicateModalVisible] = useState(false);
+
   const { data: categoriesData, isLoading: isCategoriesLoading } =
     useGetCategoriesQuery("savings");
+
+  const { data: goalsData } = useGetSavingsGoalsQuery();
+  const existingGoals = extractArrayResData(goalsData);
 
   const categories = useMemo(() => {
     const apiCategories = !categoriesData ? [] : categoriesData;
@@ -93,6 +101,14 @@ const SavingsGoalCreateScreen = () => {
         text1: "Goal Name Required",
         text2: "Please enter a name for your savings goal.",
       });
+      return;
+    }
+
+    const isDuplicate = existingGoals.some(
+      (g) => g.title.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+    if (isDuplicate) {
+      setDuplicateModalVisible(true);
       return;
     }
 
@@ -162,6 +178,7 @@ const SavingsGoalCreateScreen = () => {
     createGoalMutation,
     category,
     customCategory,
+    existingGoals,
   ]);
 
   const isSubmitDisabled =
@@ -189,6 +206,43 @@ const SavingsGoalCreateScreen = () => {
             keyboardShouldPersistTaps="handled"
           >
             <View className="mt-6">
+              <Text className="text-sm text-textColor">Goal Category</Text>
+              <CategorySelector
+                categories={categories}
+                selectedKey={category}
+                isLoading={isCategoriesLoading}
+                onSelect={(key) => {
+                  setCategory(key);
+                  if (key.toLowerCase() === "other") {
+                    setCustomCategory("");
+                  } else {
+                    const found = categories.find((c) => c.key === key);
+                    if (found) setName(found.label);
+                  }
+                }}
+              />
+              {category.toLowerCase() === "other" && (
+                <View className="mt-4">
+                  <TextInput
+                    value={customCategory}
+                    onChangeText={setCustomCategory}
+                    placeholder="Enter your custom category"
+                    placeholderTextColor="#9AA5B1"
+                    autoCapitalize="words"
+                    onFocus={() => setFocusedField("customCategory")}
+                    onBlur={() => setFocusedField(null)}
+                    className={cn(
+                      "rounded-2xl border bg-white px-4 py-4 text-base text-textColor",
+                      focusedField === "customCategory"
+                        ? "border-primary_400"
+                        : "border-gray-200",
+                    )}
+                  />
+                </View>
+              )}
+            </View>
+
+            <View className="mt-6">
               <Text className="text-sm text-textColor">Goal name</Text>
               <TextInput
                 value={name}
@@ -215,39 +269,6 @@ const SavingsGoalCreateScreen = () => {
                 onFocus={() => setFocusedField("amount")}
                 onBlur={() => setFocusedField(null)}
               />
-            </View>
-
-            <View className="mt-6">
-              <Text className="text-sm text-textColor">Goal Category</Text>
-              <CategorySelector
-                categories={categories}
-                selectedKey={category}
-                onSelect={(key) => {
-                  setCategory(key);
-                  if (key.toLowerCase() !== "other") {
-                    setCustomCategory("");
-                  }
-                }}
-              />
-              {category.toLowerCase() === "other" && (
-                <View className="mt-4">
-                  <TextInput
-                    value={customCategory}
-                    onChangeText={setCustomCategory}
-                    placeholder="Enter your custom category"
-                    placeholderTextColor="#9AA5B1"
-                    autoCapitalize="words"
-                    onFocus={() => setFocusedField("customCategory")}
-                    onBlur={() => setFocusedField(null)}
-                    className={cn(
-                      "rounded-2xl border bg-white px-4 py-4 text-base text-textColor",
-                      focusedField === "customCategory"
-                        ? "border-primary_400"
-                        : "border-gray-200",
-                    )}
-                  />
-                </View>
-              )}
             </View>
 
             <View className="mt-6">
@@ -308,6 +329,33 @@ const SavingsGoalCreateScreen = () => {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={duplicateModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDuplicateModalVisible(false)}
+      >
+        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+          <View className="w-full rounded-3xl bg-white px-6 py-8">
+            <Text weight="bold" className="text-center text-lg text-textColor">
+              Goal Already Exists
+            </Text>
+            <Text className="mt-3 text-center text-sm text-gray-500">
+              A savings goal named{" "}
+              <Text weight="bold" className="text-textColor">
+                &ldquo;{name}&rdquo;
+              </Text>{" "}
+              has already been created. Please update the goal name to continue.
+            </Text>
+            <Button
+              title="Update Name"
+              className="mt-6"
+              onPress={() => setDuplicateModalVisible(false)}
+            />
+          </View>
+        </View>
+      </Modal>
     </MainContainer>
   );
 };

@@ -7,6 +7,7 @@ import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
+import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -47,6 +48,9 @@ const AddIncomeScreen = () => {
   const [description, setDescription] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const paymentModalRef = useRef<SlideUpModalRef>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const timeOutId = useRef<number | null>(null);
+  const { keyboardHeight } = useKeyboardHeight();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const {
@@ -210,11 +214,13 @@ const AddIncomeScreen = () => {
       >
         <View className="flex-1">
           <ScrollView
+            ref={scrollViewRef}
             className="flex-1 px-6 pt-4"
-            contentContainerClassName="pb-10"
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={{
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight + 24 : 100,
+            }}
           >
             <View className="mt-4 gap-6">
               <AmountInput
@@ -331,7 +337,13 @@ const AddIncomeScreen = () => {
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
-                  onFocus={() => setFocusedField("description")}
+                  onFocus={() => {
+                    setFocusedField("description");
+                    if (timeOutId.current) clearTimeout(timeOutId.current);
+                    timeOutId.current = setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                  }}
                   onBlur={() => setFocusedField(null)}
                   className={cn(
                     "mt-2 min-h-[120px] rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",

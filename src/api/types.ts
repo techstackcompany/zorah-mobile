@@ -14,6 +14,8 @@ export interface RegisterUserRequest {
   phoneNumber: string;
   email: string;
   password: string;
+  pin: string;
+  preferredReminderHour?: number;
 }
 
 export interface LoginUserRequest {
@@ -81,6 +83,13 @@ export interface UserProfile {
   [key: string]: unknown;
 }
 
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  preferredReminderHour?: number;
+}
+
 export interface SetPinRequest {
   pin: string;
 }
@@ -105,7 +114,8 @@ export interface RequestPasswordResetRequest {
 }
 
 export interface ResetPasswordRequest {
-  token: string;
+  email: string;
+  otp: string;
   newPassword: string;
 }
 
@@ -202,7 +212,7 @@ export interface SpendingOverviewResponse {
 export interface AddIncomeRequest {
   source: string;
   amount: number;
-  category: string;
+  category: "Allowance" | "Bonus" | "Salary" | "Business Profit" | "Freelance/Contract" | "Gifts" | "Refunds" | "Rental Income" | "Sale of item" | (string & {});
   description?: string;
   date: string;
 }

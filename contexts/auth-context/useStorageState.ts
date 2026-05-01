@@ -33,6 +33,16 @@ export async function setStorageItemAsync(key: string, value: string | null) {
     await SecureStore.setItemAsync(key, value);
   }
 }
+export async function setAsyncStorageItemAsync(
+  key: string,
+  value: string | null,
+) {
+  if (value == null) {
+    await AsyncStorage.removeItem(key);
+  } else {
+    await AsyncStorage.setItem(key, value);
+  }
+}
 
 /* ---------------------------------------------
    useStorageState hook (persistent state)
@@ -72,12 +82,10 @@ export function useAsyncStorageState(key: string): UseAsyncStateReturn<string> {
   const setValue = useCallback(
     async (value: string | null): Promise<void> => {
       setState(value);
-      await setStorageItemAsync(key, value);
+      await setAsyncStorageItemAsync(key, value);
     },
     [key, setState],
   );
 
   return [state, setValue];
 }
-
-

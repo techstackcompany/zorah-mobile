@@ -19,6 +19,7 @@ import {
   SetPinRequest,
   ToggleBiometricsRequest,
   UpdateOnboardingRequest,
+  UpdateProfileRequest,
   UserProfile,
   VerifyPinRequest,
 } from "../types";
@@ -61,6 +62,23 @@ export const useGetUserProfileQuery = (
     queryFn: () =>
       apiRequest<UserProfile>({
         ...API_ENDPOINTS.auth.profile,
+      }),
+    ...options,
+  });
+
+export const useUpdateProfileMutation = (
+  options?: UseMutationOptions<
+    ApiEnvelope<unknown>,
+    ApiError,
+    UpdateProfileRequest
+  >,
+) =>
+  useMutation<ApiEnvelope<unknown>, ApiError, UpdateProfileRequest>({
+    mutationKey: ["auth", "updateProfile"],
+    mutationFn: (payload) =>
+      apiRequest<ApiEnvelope<unknown>>({
+        ...API_ENDPOINTS.auth.updateProfile,
+        data: payload,
       }),
     ...options,
   });

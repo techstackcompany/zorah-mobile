@@ -36,12 +36,12 @@ export default function OnboardingScreen() {
     if (!isLastSlide) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      setHasOnboarded(true);
-      router.replace("/welcome");
+      handleSkip();
     }
   };
   const handleSkip = () => {
-    flatListRef.current?.scrollToIndex({ index: lastIndex, animated: false });
+    setHasOnboarded(true);
+    router.replace("/welcome");
   };
   return (
     <MainContainer>

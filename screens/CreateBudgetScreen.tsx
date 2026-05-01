@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -147,6 +147,20 @@ const CreateBudgetScreen = () => {
   const queryClient = useQueryClient();
   const { data: budgetCategories, isLoading: isCategoriesLoading } =
     useGetCategoriesQuery("expense");
+
+  const categories = useMemo(() => {
+    const seen = new Set<string>();
+    const unique = (budgetCategories || []).filter((c) => {
+      if (seen.has(c.key)) return false;
+      seen.add(c.key);
+      return true;
+    });
+    return [
+      ...unique,
+      { key: "other", label: "Other", icon: require("@/assets/icons/more-ellipsis.svg") },
+    ];
+  }, [budgetCategories]);
+
   const firstCategory = budgetCategories?.[0]?.key;
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -258,14 +272,7 @@ const CreateBudgetScreen = () => {
               <View>
                 <Text className="text-sm text-textColor/70">Budget Type</Text>
                 <CategorySelector
-                  categories={[
-                    ...(budgetCategories || []),
-                    {
-                      key: "other",
-                      label: "Other",
-                      icon: require("@/assets/icons/more-ellipsis.svg"),
-                    },
-                  ]}
+                  categories={categories}
                   selectedKey={selectedCategory}
                   onSelect={(key) => {
                     setSelectedCategory(key);

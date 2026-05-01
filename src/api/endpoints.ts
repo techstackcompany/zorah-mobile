@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     register: { method: HttpMethod.POST, url: "/auth/register" },
     login: { method: HttpMethod.POST, url: "/auth/login" },
     profile: { method: HttpMethod.GET, url: "/auth/profile" },
+    updateProfile: { method: HttpMethod.PATCH, url: "/auth/update-profile" },
     onboarding: { method: HttpMethod.PATCH, url: "/auth/onboarding" },
     setPin: { method: HttpMethod.POST, url: "/auth/set-pin" },
     verifyPin: { method: HttpMethod.POST, url: "/auth/verify-pin" },
@@ -40,7 +41,7 @@ export const API_ENDPOINTS = {
       url: `/expenses/${expenseId}`,
     }),
     updateExpense: (expenseId: string) => ({
-      method: HttpMethod.PATCH,
+      method: HttpMethod.PUT,
       url: `/expenses/${expenseId}`,
     }),
     deleteExpense: (expenseId: string) => ({
@@ -143,6 +144,10 @@ export const API_ENDPOINTS = {
       method: HttpMethod.GET,
       url: "/categories/subcategories",
     },
+    getCategoriesByType: (type: string) => ({
+      method: HttpMethod.GET,
+      url: `/categories/by-type?type=${type}`,
+    }),
   },
 
   financialTips: {
@@ -173,8 +178,8 @@ export const API_ENDPOINTS = {
       url: `/bills/${id}/pay`,
     }),
     updateBill: (id: string) => ({
-      method: HttpMethod.PUT,
-      url: `/bills/${id}`,
+      method: HttpMethod.PATCH,
+      url: `/bills/bills/${id}`,
     }),
   },
   countries: {

@@ -78,6 +78,8 @@ const OriginalSignUpScreen = () => {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         phoneNumber: form.phoneNumber.trim(),
+        pin: "1234",
+        preferredReminderHour: 9,
       };
       const response = await registerMutation.mutateAsync(payload);
 
