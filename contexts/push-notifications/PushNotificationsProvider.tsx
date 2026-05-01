@@ -58,15 +58,13 @@ export default function PushNotificationsProvider({
   const registrationAttempted = useRef(false);
 
   const registerTokenMutation = useRegisterNotificationTokenMutation({
-    onSuccess: async (response) => {
+    onSuccess: async () => {
       if (fcmToken) {
         await AsyncStorage.setItem(REGISTERED_TOKEN_KEY, fcmToken);
         setIsRegistered(true);
-        console.log("FCM token registered successfully:", response);
       }
     },
-    onError: (error) => {
-      console.log("Failed to register FCM token:", error.message);
+    onError: () => {
       registrationAttempted.current = false;
     },
   });
@@ -77,8 +75,7 @@ export default function PushNotificationsProvider({
         const registeredToken =
           await AsyncStorage.getItem(REGISTERED_TOKEN_KEY);
         return registeredToken === token;
-      } catch (error) {
-        console.log("Error checking registered token:", error);
+      } catch {
         return false;
       }
     },
@@ -88,24 +85,20 @@ export default function PushNotificationsProvider({
   const registerToken = useCallback(
     async (token: string) => {
       if (!isAuthenticated) {
-        console.log("Skipping token registration: User not authenticated");
         return;
       }
 
       if (registrationAttempted.current) {
-        console.log("Token registration already attempted");
         return;
       }
 
       const alreadyRegistered = await checkIfTokenAlreadyRegistered(token);
       if (alreadyRegistered) {
-        console.log("Token already registered, skipping");
         setIsRegistered(true);
         return;
       }
 
       registrationAttempted.current = true;
-      console.log("Registering FCM token with backend:", token);
       registerTokenMutation.mutate({ fcmToken: token });
     },
     [isAuthenticated, checkIfTokenAlreadyRegistered, registerTokenMutation],
@@ -120,20 +113,14 @@ export default function PushNotificationsProvider({
           authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
         if (!enabled) {
-          console.log("Push notification permissions not granted");
           return;
         }
-
-        console.log("Push notification permissions granted");
 
         await messaging().registerDeviceForRemoteMessages();
         const token = await messaging().getToken();
 
         if (token) {
-          console.log("FCM Token obtained:", token);
           setFcmToken(token);
-        } else {
-          console.warn("FCM token not available");
         }
       } catch (error) {
         console.error("Error getting FCM token:", error);
@@ -151,7 +138,6 @@ export default function PushNotificationsProvider({
 
   useEffect(() => {
     const unsubscribe = messaging().onTokenRefresh(async (newToken) => {
-      console.log("FCM Token refreshed:", newToken);
       setFcmToken(newToken);
       registrationAttempted.current = false;
       setIsRegistered(false);
@@ -167,7 +153,6 @@ export default function PushNotificationsProvider({
 
   useEffect(() => {
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
-      console.log("Foreground notification received:", remoteMessage);
       setNotification(remoteMessage);
 
       if (remoteMessage.notification) {
@@ -187,14 +172,7 @@ export default function PushNotificationsProvider({
   }, []);
 
   useEffect(() => {
-    const unsubscribe = messaging().onNotificationOpenedApp((remoteMessage) => {
-      console.log(
-        "Notification opened app from background:",
-        remoteMessage.notification,
-      );
-      if (remoteMessage.data) {
-        console.log("Notification data:", remoteMessage.data);
-      }
+    const unsubscribe = messaging().onNotificationOpenedApp((_remoteMessage) => {
     });
 
     return unsubscribe;
@@ -203,16 +181,8 @@ export default function PushNotificationsProvider({
   useEffect(() => {
     messaging()
       .getInitialNotification()
-      .then((remoteMessage) => {
-        if (remoteMessage) {
-          console.log(
-            "Notification opened app from quit state:",
-            remoteMessage.notification,
-          );
-          if (remoteMessage.data) {
-            console.log("Notification data:", remoteMessage.data);
-          }
-        }
+      .then(() => {
+        // no-op
       });
   }, []);
 

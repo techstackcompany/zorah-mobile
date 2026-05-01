@@ -140,9 +140,6 @@ const SubmitKycScreen = () => {
     setNin((prev) => prev || kycPrefill.nin);
   }, [kycPrefill]);
 
-  console.log("statesError", statesError);
-  console.log("statesError", nigerianStates);
-
   const scrollRef = useRef<ScrollView | null>(null);
   const fieldPositions = useRef<Record<string, number>>({});
 

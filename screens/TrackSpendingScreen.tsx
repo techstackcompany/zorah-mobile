@@ -173,9 +173,6 @@ const TrackSpendingScreen = () => {
     return [];
   }, [budgetsData]);
 
-  console.log("expenseSummary", expenseSummary);
-  console.log("spendingOverviewData", spendingOverviewData);
-
   const chartData = useMemo((): ChartBar[] => {
     if (!spendingOverviewData?.chartData?.length) {
       return [];
@@ -239,7 +236,6 @@ const TrackSpendingScreen = () => {
       color: getBarColor(item.value, average),
     }));
   }, [spendingOverviewData]);
-  console.log("chartData", chartData);
 
   const trendInfo = useMemo(() => {
     if (!spendingOverviewData?.comparison) {
@@ -291,7 +287,6 @@ const TrackSpendingScreen = () => {
     if (!budgets.length) {
       return [];
     }
-    console.log("budgets", budgets);
     return budgets
       .filter((budget: BudgetListItem) => budget.Limit || budget.amount)
       .map((budget: BudgetListItem) => {

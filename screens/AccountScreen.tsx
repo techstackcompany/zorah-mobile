@@ -142,7 +142,6 @@ const AccountScreen = () => {
           profile && typeof profile.biometricEnabled === "boolean"
             ? profile.biometricEnabled
             : false;
-        console.log("enabled", enabled);
         if (enabled) {
           if (profile) {
             setUserData(profile);
@@ -187,7 +186,6 @@ const AccountScreen = () => {
   const confirmDisableBiometric = () => {
     toggleBiometricsMutation.mutate({ enabled: false });
   };
-  console.log("biometricEnabled", biometricsEnabled);
 
   return (
     <MainContainer edges={[]} className="bg-lightMuted pb-0">

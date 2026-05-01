@@ -195,7 +195,6 @@ const HomeScreen = () => {
     ) {
       return null;
     }
-    console.log("month", monthlyExpensesData?.data);
 
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
@@ -255,7 +254,6 @@ const HomeScreen = () => {
 
     return transactions.map(transformTransaction).slice(0, 4);
   }, [transactionsData]);
-  console.log("transactionsData", transactionsData);
   const shouldShowEmpty = useMemo(() => {
     return recentTransactions.length === 0;
   }, [recentTransactions.length]);

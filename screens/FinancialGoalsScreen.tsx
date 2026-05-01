@@ -153,7 +153,6 @@ const FinancialGoalsScreen = () => {
       selectedGoalTitles.length === prefilledGoalTitles.length &&
       selectedGoalTitles.every((title) => prefilledGoalTitles.includes(title))
     ) {
-      console.log("skipped");
       goToNextStep();
       return;
     }

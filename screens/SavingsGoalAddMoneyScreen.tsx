@@ -82,13 +82,6 @@ const SavingsGoalAddMoneyScreen = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.log("=== CONTRIBUTE TO SAVINGS GOAL ERROR ===");
-      console.log("Error object:", error);
-      console.log("Error message:", error.message);
-      console.log("Error status:", error.status);
-      console.log("Error data:", error.data);
-      console.log("========================\n");
-
       Toast.show({
         type: "error",
         text1: "Error",
@@ -125,11 +118,6 @@ const SavingsGoalAddMoneyScreen = () => {
       goalId: id,
       amount: numericAmount,
     };
-
-    console.log("=== CONTRIBUTE TO SAVINGS GOAL REQUEST ===");
-    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
-    console.log("Payment source:", selectedSource);
-    console.log("========================\n");
 
     contributeMutation.mutate(payload);
   }, [id, amount, selectedSource, contributeMutation]);

@@ -19,19 +19,6 @@ const SavingsGoalDetailsScreen = () => {
 
   const { data: response, isLoading, isError, error } = useGetSavingsGoalQuery(id);
 
-  // ── Log the full API response so we can inspect its shape ──
-  useEffect(() => {
-    if (response) {
-      console.log("====== SAVINGS GOAL DETAIL RESPONSE ======");
-      console.log(JSON.stringify(response, null, 2));
-      console.log("==========================================");
-    }
-    if (error) {
-      console.log("====== SAVINGS GOAL DETAIL ERROR ======");
-      console.log(JSON.stringify(error, null, 2));
-      console.log("=======================================");
-    }
-  }, [response, error]);
 
   const goal = response?.data;
 

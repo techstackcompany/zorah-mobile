@@ -89,7 +89,6 @@ export const useSetupProgress = () => {
       route: "/(app)/setup/your-banks",
     },
   ];
-  console.log("kycCompleted", kycCompleted);
   const completedCount = steps.filter((step) => step.completed).length;
   const isSetupComplete =
     banksCompleted &&
@@ -98,7 +97,6 @@ export const useSetupProgress = () => {
     financialGoalsCompleted;
 
   const currentStepIndex = steps.findIndex((step) => !step.completed);
-  console.log("currentStepIndex", steps, currentStepIndex);
   return {
     steps,
     currentStepIndex: currentStepIndex === -1 ? 0 : currentStepIndex,

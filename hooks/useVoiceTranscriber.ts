@@ -76,7 +76,6 @@ const useVoiceTranscriber = (enableSounds = true) => {
         finalText += result.transcript + "";
       } else {
         interimText += result.transcript + "";
-        console.log('interimText', interimText)
       }
     
 
