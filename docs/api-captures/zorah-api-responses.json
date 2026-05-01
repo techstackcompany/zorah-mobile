@@ -1,0 +1,2320 @@
+{
+  "capturedAt": "2026-05-01T08:06:57.768Z",
+  "baseURL": "https://getzorah.com/api",
+  "testAccountEmail": "zorah-probe-1777622793932@test.com",
+  "endpoints": [
+    {
+      "domain": "auth",
+      "name": "register",
+      "method": "POST",
+      "path": "/auth/register",
+      "requestBody": {
+        "firstName": "Zorah",
+        "lastName": "Probe",
+        "email": "zorah-probe-1777622793932@test.com",
+        "phoneNumber": "+2348000000001",
+        "password": "[REDACTED]",
+        "pin": "[REDACTED]",
+        "preferredReminderHour": 9
+      },
+      "statusCode": 201,
+      "responseBody": {
+        "_id": "69f45f0aec4b993e8f6463e5",
+        "firstName": "Zorah",
+        "lastName": "Probe",
+        "fullName": "Zorah Probe",
+        "email": "zorah-probe-1777622793932@test.com",
+        "phoneNumber": "+2348000000001",
+        "preferredReminderHour": 9,
+        "biometricEnabled": false,
+        "token": "[REDACTED]"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "login-test-account",
+      "method": "POST",
+      "path": "/auth/login",
+      "requestBody": {
+        "email": "zorah-probe-1777622793932@test.com",
+        "password": "[REDACTED]"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Login successful",
+        "user": {
+          "id": "69f45f0aec4b993e8f6463e5",
+          "email": "zorah-probe-1777622793932@test.com"
+        },
+        "accessToken": "[REDACTED]",
+        "refreshToken": "[REDACTED]"
+      },
+      "error": null,
+      "notes": "Fresh test account — used for onboarding endpoints"
+    },
+    {
+      "domain": "auth",
+      "name": "login",
+      "method": "POST",
+      "path": "/auth/login",
+      "requestBody": {
+        "email": "akeemmudash@gmail.com",
+        "password": "[REDACTED]"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Login successful",
+        "user": {
+          "id": "69b03e362578d624e8fba363",
+          "email": "akeemmudash@gmail.com"
+        },
+        "accessToken": "[REDACTED]",
+        "refreshToken": "[REDACTED]"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "profile",
+      "method": "GET",
+      "path": "/auth/profile",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "onboarding": {
+          "financialGoals": [
+            "Save for Rent",
+            "Buy a New Gadget",
+            "Mobility Goals"
+          ],
+          "hasCompletedOnboarding": true,
+          "currentStep": "completed",
+          "incomeSource": [
+            "Freelancing"
+          ],
+          "stepsCompleted": [
+            "goals",
+            "income",
+            "kyc",
+            "integration"
+          ]
+        },
+        "usageMetrics": {
+          "aiSessionsCount": 0,
+          "expensesLoggedCount": 3,
+          "isFeatureLocked": false,
+          "lastInteractionDate": "2026-03-13T15:44:02.442Z"
+        },
+        "_id": "69b03e362578d624e8fba363",
+        "firstName": "Akeem",
+        "lastName": "Oluwaseyi",
+        "email": "akeemmudash@gmail.com",
+        "phoneNumber": "08032814813",
+        "biometricEnabled": true,
+        "KycStatus": "verified",
+        "preferredReminderHour": 8,
+        "authProvider": "local",
+        "fcmTokens": [],
+        "createdAt": "2026-03-10T15:52:22.516Z",
+        "updatedAt": "2026-05-01T08:06:35.926Z",
+        "__v": 2,
+        "refreshToken": "[REDACTED]",
+        "pin": "[REDACTED]"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "set-pin",
+      "method": "POST",
+      "path": "/auth/set-pin",
+      "requestBody": {
+        "pin": "[REDACTED]"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "PIN set successfully"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "verify-pin",
+      "method": "POST",
+      "path": "/auth/verify-pin",
+      "requestBody": {
+        "pin": "[REDACTED]"
+      },
+      "statusCode": 401,
+      "responseBody": {
+        "message": "Incorrect PIN"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "toggle-biometrics",
+      "method": "POST",
+      "path": "/auth/toggle-biometrics",
+      "requestBody": {
+        "enabled": true
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Biometric authentication enabled successfully",
+        "biometricEnabled": true
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "onboarding",
+      "method": "PATCH",
+      "path": "/auth/onboarding",
+      "requestBody": {
+        "incomeSource": "Freelancing",
+        "incomeRange": "₦200,000 - ₦500,000",
+        "financialGoals": [
+          "Build Emergency Fund"
+        ]
+      },
+      "statusCode": 400,
+      "responseBody": {
+        "status": "failed",
+        "message": "Step identifier is required."
+      },
+      "error": null,
+      "notes": "Used test account (has not completed onboarding). Postman body is flat — no step/data wrapper."
+    },
+    {
+      "domain": "auth",
+      "name": "reset-usage",
+      "method": "POST",
+      "path": "/auth/reset-usage",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "status": "success",
+        "message": "Usage limits reset for demo."
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "update-profile",
+      "method": "GET",
+      "path": "/auth/update-profile",
+      "requestBody": null,
+      "statusCode": 404,
+      "responseBody": null,
+      "error": "Body is unusable: Body has already been read",
+      "notes": "Postman shows GET with no body — suspected wrong method. Documenting actual response to determine correct method."
+    },
+    {
+      "domain": "auth",
+      "name": "request-reset",
+      "method": "POST",
+      "path": "/auth/request-reset",
+      "requestBody": {
+        "email": "zorah-probe-1777622793932@test.com"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "OTP sent successfully to your email"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "auth",
+      "name": "refresh-token",
+      "method": "POST",
+      "path": "/auth/refresh-token",
+      "requestBody": {
+        "refreshToken": "[REDACTED]"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "New access token generated successfully",
+        "accessToken": "[REDACTED]"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "add-expense",
+      "method": "POST",
+      "path": "/expenses/add-expense",
+      "requestBody": {
+        "amount": 5000,
+        "category": "Food",
+        "description": "API probe test",
+        "paymentMethod": "Cash",
+        "date": "2026-05-01"
+      },
+      "statusCode": 201,
+      "responseBody": {
+        "user": "69f45f0aec4b993e8f6463e5",
+        "amount": 5000,
+        "category": "Food",
+        "description": "API probe test",
+        "paymentMethod": "Cash",
+        "date": "2026-05-01T00:00:00.000Z",
+        "status": "active",
+        "archivedAt": null,
+        "_id": "69f45f10ec4b993e8f6463fd",
+        "createdAt": "2026-05-01T08:06:40.853Z",
+        "updatedAt": "2026-05-01T08:06:40.853Z",
+        "__v": 0
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "income",
+      "name": "add-income",
+      "method": "POST",
+      "path": "/income/add-income",
+      "requestBody": {
+        "source": "Salary",
+        "amount": 100000,
+        "category": "salary",
+        "description": "API probe test",
+        "date": "2026-05-01"
+      },
+      "statusCode": 500,
+      "responseBody": {
+        "message": "Error adding income",
+        "error": "Income validation failed: category: `salary` is not a valid enum value for path `category`."
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "create-budget",
+      "method": "POST",
+      "path": "/budgets",
+      "requestBody": {
+        "category": "Food",
+        "amount": 50000,
+        "period": "monthly",
+        "startDate": "2026-05-01",
+        "endDate": "2026-05-31",
+        "month": 5,
+        "year": 2026
+      },
+      "statusCode": 201,
+      "responseBody": {
+        "message": "Budget created successfully",
+        "budget": {
+          "user": "69f45f0aec4b993e8f6463e5",
+          "category": "Food",
+          "amount": 50000,
+          "period": "monthly",
+          "month": 5,
+          "year": 2026,
+          "startDate": "2026-05-01T00:00:00.000Z",
+          "endDate": "2026-05-31T00:00:00.000Z",
+          "categories": [],
+          "spent": 0,
+          "remaining": 0,
+          "status": "active",
+          "_id": "69f45f11ec4b993e8f646405",
+          "createdAt": "2026-05-01T08:06:41.344Z",
+          "updatedAt": "2026-05-01T08:06:41.344Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "bills",
+      "name": "add-bill",
+      "method": "POST",
+      "path": "/bills/add-bill",
+      "requestBody": {
+        "name": "Probe Bill",
+        "amount": 2000,
+        "dueDate": "2026-05-31",
+        "category": "Daily Living & Utilities",
+        "paymentMethod": "Bank Transfer",
+        "reminderEnabled": false
+      },
+      "statusCode": 201,
+      "responseBody": {
+        "status": "success",
+        "data": {
+          "user": {
+            "_id": "69f45f0aec4b993e8f6463e5",
+            "email": "zorah-probe-1777622793932@test.com"
+          },
+          "name": "Probe Bill",
+          "amount": 2000,
+          "dueDate": "2026-05-31T00:00:00.000Z",
+          "category": "Daily Living & Utilities",
+          "frequency": "Monthly",
+          "status": "unpaid",
+          "reminderEnabled": false,
+          "_id": "69f45f11ec4b993e8f646408",
+          "createdAt": "2026-05-01T08:06:41.559Z",
+          "updatedAt": "2026-05-01T08:06:41.559Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "savings",
+      "name": "create-goal",
+      "method": "POST",
+      "path": "/savings/create",
+      "requestBody": {
+        "title": "Probe Goal",
+        "targetAmount": 50000,
+        "deadline": "2026-05-31",
+        "description": "API probe test"
+      },
+      "statusCode": 201,
+      "responseBody": {
+        "user": "69f45f0aec4b993e8f6463e5",
+        "title": "Probe Goal",
+        "targetAmount": 50000,
+        "currentAmount": 0,
+        "deadline": "2026-05-31T00:00:00.000Z",
+        "description": "API probe test",
+        "status": "active",
+        "_id": "69f45f11ec4b993e8f64640c",
+        "createdAt": "2026-05-01T08:06:41.835Z",
+        "fundingHistory": [],
+        "__v": 0
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "get-expenses",
+      "method": "GET",
+      "path": "/expenses/get-expense",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "data": [
+          {
+            "_id": "69d9d9f11e64c1d4de0b9611",
+            "amount": 40000,
+            "description": "SOME EXPENSE",
+            "paymentMethod": "Transfer",
+            "date": "2026-04-14T00:00:00.000Z",
+            "status": "active",
+            "category": "call",
+            "month": 4,
+            "year": 2026
+          }
+        ],
+        "month": null,
+        "year": null
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "expenses-summary",
+      "method": "GET",
+      "path": "/expenses/summary?type=monthly",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": [
+        {
+          "total": 40000,
+          "count": 1,
+          "category": "call"
+        }
+      ],
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "expenses-daily",
+      "method": "GET",
+      "path": "/expenses/daily",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": [
+        {
+          "_id": {
+            "day": 14,
+            "month": 4,
+            "year": 2026
+          },
+          "total": 40000
+        }
+      ],
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "expenses-monthly",
+      "method": "GET",
+      "path": "/expenses/monthly",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": [
+        {
+          "_id": {
+            "month": 4,
+            "year": 2026
+          },
+          "total": 40000
+        }
+      ],
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "spending-overview",
+      "method": "GET",
+      "path": "/expenses/spending-overview?timeframe=monthly",
+      "requestBody": null,
+      "statusCode": 500,
+      "responseBody": {
+        "message": "chartData is not defined"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "income",
+      "name": "get-income",
+      "method": "GET",
+      "path": "/income/get-income",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "count": 1,
+        "data": [
+          {
+            "_id": "69c39e95330ed3ff6df5b8ca",
+            "user": "69b03e362578d624e8fba363",
+            "source": "Card",
+            "amount": 223300,
+            "date": "2026-03-09T00:00:00.000Z",
+            "description": "Testing",
+            "category": "bonus",
+            "createdAt": "2026-03-25T08:36:37.863Z",
+            "updatedAt": "2026-03-25T08:36:37.863Z",
+            "__v": 0
+          }
+        ]
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "get-budgets",
+      "method": "GET",
+      "path": "/budgets/get-budgets",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "data": [
+          {
+            "_id": "69c43950ccbeb3b69015e788",
+            "user": "69b03e362578d624e8fba363",
+            "category": "shopping",
+            "amount": 400000,
+            "period": "weekly",
+            "month": 3,
+            "year": 2026,
+            "startDate": "2026-03-23T00:00:00.000Z",
+            "endDate": "2026-03-29T00:00:00.000Z",
+            "categories": [],
+            "spent": 0,
+            "remaining": 400000,
+            "createdAt": "2026-03-25T19:36:48.973Z",
+            "updatedAt": "2026-03-26T07:35:00.788Z",
+            "__v": 0,
+            "Limit": 400000,
+            "archiveStatus": "active",
+            "totalSpent": 0,
+            "percentageused": "0.00%",
+            "spendingStatus": "On track ✅"
+          },
+          {
+            "_id": "69d9f56d1e64c1d4de0b9948",
+            "user": "69b03e362578d624e8fba363",
+            "category": "health",
+            "amount": 50000,
+            "period": "monthly",
+            "month": 4,
+            "year": 2026,
+            "startDate": "2026-04-01T00:00:00.000Z",
+            "endDate": "2026-04-30T00:00:00.000Z",
+            "categories": [],
+            "spent": 0,
+            "remaining": 50000,
+            "createdAt": "2026-04-11T07:17:01.351Z",
+            "updatedAt": "2026-04-11T08:16:50.343Z",
+            "__v": 0,
+            "Limit": 50000,
+            "archiveStatus": "active",
+            "totalSpent": 0,
+            "percentageused": "0.00%",
+            "spendingStatus": "On track ✅"
+          },
+          {
+            "_id": "69da04ba1e64c1d4de0b9b83",
+            "user": "69b03e362578d624e8fba363",
+            "category": "skincare",
+            "amount": 22222,
+            "period": "weekly",
+            "month": 4,
+            "year": 2026,
+            "startDate": "2026-04-06T00:00:00.000Z",
+            "endDate": "2026-04-12T00:00:00.000Z",
+            "categories": [],
+            "spent": 0,
+            "remaining": 22222,
+            "createdAt": "2026-04-11T08:22:18.479Z",
+            "updatedAt": "2026-04-11T08:22:18.479Z",
+            "__v": 0,
+            "Limit": 22222,
+            "archiveStatus": "active",
+            "totalSpent": 0,
+            "percentageused": "0.00%",
+            "spendingStatus": "On track ✅"
+          }
+        ],
+        "month": null,
+        "year": null
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "get-archived-budgets",
+      "method": "GET",
+      "path": "/budgets/archived",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "No archived budgets found.",
+        "budgets": []
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "bills",
+      "name": "get-bills",
+      "method": "GET",
+      "path": "/bills",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "summary": {
+          "totalMonthly": 222222,
+          "totalPaid": 0,
+          "totalDue": 222222
+        },
+        "bills": [
+          {
+            "_id": "69da14401e64c1d4de0b9cc4",
+            "user": "69b03e362578d624e8fba363",
+            "name": "Trfrr",
+            "amount": 222222,
+            "dueDate": "2026-02-11T09:26:00.000Z",
+            "category": "food",
+            "frequency": "Monthly",
+            "status": "overdue",
+            "reminderEnabled": true,
+            "createdAt": "2026-04-11T09:28:32.831Z",
+            "updatedAt": "2026-04-28T08:00:00.278Z",
+            "__v": 0
+          }
+        ]
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "notifications",
+      "name": "get-notifications",
+      "method": "GET",
+      "path": "/notifications/get-not",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": [
+        {
+          "_id": "69f45d80ec4b993e8f6463e2",
+          "user": "69b03e362578d624e8fba363",
+          "type": "bill_alert",
+          "title": "Bill Overdue! 🚨",
+          "message": "Your Trfrr was due on Wed Feb 11 2026.",
+          "read": false,
+          "createdAt": "2026-05-01T08:00:00.156Z",
+          "updatedAt": "2026-05-01T08:00:00.156Z",
+          "__v": 0
+        },
+        {
+          "_id": "69f30c00ec4b993e8f646201",
+          "user": "69b03e362578d624e8fba363",
+          "type": "bill_alert",
+          "title": "Bill Overdue! 🚨",
+          "message": "Your Trfrr was due on Wed Feb 11 2026.",
+          "read": false,
+          "createdAt": "2026-04-30T08:00:00.126Z",
+          "updatedAt": "2026-04-30T08:00:00.126Z",
+          "__v": 0
+        },
+        {
+          "_id": "69f1ba80ec4b993e8f6461a8",
+          "user": "69b03e362578d624e8fba363",
+          "type": "bill_alert",
+          "title": "Bill Overdue! 🚨",
+          "message": "Your Trfrr was due on Wed Feb 11 2026.",
+          "read": false,
+          "createdAt": "2026-04-29T08:00:00.148Z",
+          "updatedAt": "2026-04-29T08:00:00.148Z",
+          "__v": 0
+        },
+        {
+          "_id": "69f06900ec4b993e8f6460bb",
+          "user": "69b03e362578d624e8fba363",
+          "type": "bill_alert",
+          "title": "Bill Overdue! 🚨",
+          "message": "Your Trfrr was due on Wed Feb 11 2026.",
+          "read": false,
+          "createdAt": "2026-04-28T08:00:00.345Z",
+          "updatedAt": "2026-04-28T08:00:00.345Z",
+          "__v": 0
+        }
+      ],
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "notifications",
+      "name": "register-token",
+      "method": "POST",
+      "path": "/notifications/register-token",
+      "requestBody": {
+        "expoPushToken": "ExponentPushToken[probe-test-token]"
+      },
+      "statusCode": 400,
+      "responseBody": {
+        "message": "FCM token required"
+      },
+      "error": null,
+      "notes": "Postman shows expoPushToken — types.ts currently uses fcmToken (mismatch)"
+    },
+    {
+      "domain": "savings",
+      "name": "get-goals",
+      "method": "GET",
+      "path": "/savings/get-goals",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "status": "success",
+        "isActionLocked": true,
+        "data": [
+          {
+            "_id": "69c43b11ccbeb3b69015e7f2",
+            "user": "69b03e362578d624e8fba363",
+            "title": "My goals",
+            "targetAmount": 800000,
+            "currentAmount": 0,
+            "deadline": "2026-03-18T00:00:00.000Z",
+            "description": "My goals",
+            "status": "active",
+            "createdAt": "2026-03-25T19:44:17.631Z",
+            "fundingHistory": [],
+            "__v": 0
+          },
+          {
+            "_id": "69e8a3b0ec4b993e8f645639",
+            "user": "69b03e362578d624e8fba363",
+            "title": "furniture",
+            "targetAmount": 50000,
+            "currentAmount": 0,
+            "deadline": "2026-04-15T00:00:00.000Z",
+            "status": "active",
+            "createdAt": "2026-04-22T10:32:16.164Z",
+            "fundingHistory": [],
+            "__v": 0
+          },
+          {
+            "_id": "69e8a3fbec4b993e8f645691",
+            "user": "69b03e362578d624e8fba363",
+            "title": "Second room furniture",
+            "targetAmount": 10000,
+            "currentAmount": 0,
+            "deadline": "2026-04-16T00:00:00.000Z",
+            "status": "active",
+            "createdAt": "2026-04-22T10:33:31.803Z",
+            "fundingHistory": [],
+            "__v": 0
+          }
+        ]
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "wallet",
+      "name": "get-transactions",
+      "method": "GET",
+      "path": "/wallet/transactions",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "transactions": []
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "wallet",
+      "name": "get-overview",
+      "method": "GET",
+      "path": "/wallet/overview",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "account": {
+          "balance": 0,
+          "currency": "NGN",
+          "accountNumber": "1153930846",
+          "accountName": "Akeem Oluwaseyi",
+          "tier": 1,
+          "xpressCustomerId": "efae9d45-43cb-4a7c-96dc-f771343be064",
+          "xpressWalletId": "839a7738-b615-4484-b6bc-cdd5e08e9496"
+        },
+        "kyc": {
+          "status": "pending",
+          "currentTier": 1
+        },
+        "recentTransactions": [],
+        "userSettings": {
+          "biometricEnabled": true
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "categories",
+      "name": "categories-expense",
+      "method": "GET",
+      "path": "/categories?type=expense",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "data": {
+          "_id": "69dfce7f5b430f8ee0a7b5eb",
+          "name": "Expense",
+          "type": "expense",
+          "image": "",
+          "subcategories": [
+            {
+              "name": "Airtime & Data",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Airtime%3ACalls.png",
+              "group": "Communications & Tech",
+              "_id": "69dfce7f5b430f8ee0a7b5ec"
+            },
+            {
+              "name": "Health",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Health.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5ed"
+            },
+            {
+              "name": "Skincare",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Skincare.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5ee"
+            },
+            {
+              "name": "Giveaway",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Giveaway.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5ef"
+            },
+            {
+              "name": "POS Charges",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/POS.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5f0"
+            },
+            {
+              "name": "Hangout",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Restaurant.png",
+              "group": "Daily Living & Utilities",
+              "_id": "69dfce7f5b430f8ee0a7b5f1"
+            },
+            {
+              "name": "Rent/Mortgage",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Rent%3AMortgage.png",
+              "group": "Daily Living & Utilities",
+              "_id": "69dfce7f5b430f8ee0a7b5f2"
+            },
+            {
+              "name": "Electricity",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Electricity.png",
+              "group": "Daily Living & Utilities",
+              "_id": "69dfce7f5b430f8ee0a7b5f3"
+            },
+            {
+              "name": "Water",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/water.png",
+              "group": "Daily Living & Utilities",
+              "_id": "69dfce7f5b430f8ee0a7b5f4"
+            },
+            {
+              "name": "Gas",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Gas.png",
+              "group": "Daily Living & Utilities",
+              "_id": "69dfce7f5b430f8ee0a7b5f5"
+            },
+            {
+              "name": "Home Repairs",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Repairs.png",
+              "group": "Daily Living & Utilities",
+              "_id": "69dfce7f5b430f8ee0a7b5f6"
+            },
+            {
+              "name": "Airtime & Data",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Airtime%3ACalls.png",
+              "group": "Communications & Tech",
+              "_id": "69dfce7f5b430f8ee0a7b5f7"
+            },
+            {
+              "name": "Cable TV (DSTV, GOTV, etc",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Cable+TV.png",
+              "group": "Communications & Tech",
+              "_id": "69dfce7f5b430f8ee0a7b5f8"
+            },
+            {
+              "name": "Transport",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Transport.png",
+              "group": "Transportation",
+              "_id": "69dfce7f5b430f8ee0a7b5f9"
+            },
+            {
+              "name": "Fuel",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Fuel.png",
+              "group": "Transportation",
+              "_id": "69dfce7f5b430f8ee0a7b5fa"
+            },
+            {
+              "name": "Car Maintenance",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Car+Maintenance.png",
+              "group": "Transportation",
+              "_id": "69dfce7f5b430f8ee0a7b5fb"
+            },
+            {
+              "name": "Parking Fees",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Parking+Fees.png",
+              "group": "Transportation",
+              "_id": "69dfce7f5b430f8ee0a7b5fc"
+            }
+          ],
+          "__v": 0,
+          "createdAt": "2026-04-15T17:44:31.487Z",
+          "updatedAt": "2026-04-15T17:44:31.487Z"
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "categories",
+      "name": "categories-income",
+      "method": "GET",
+      "path": "/categories?type=income",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "data": {
+          "_id": "69dfce7f5b430f8ee0a7b5dc",
+          "name": "Income",
+          "type": "income",
+          "image": "",
+          "subcategories": [
+            {
+              "name": "Allowance",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Allowance.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5dd"
+            },
+            {
+              "name": "Bonus",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Bonus%3ATips.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5de"
+            },
+            {
+              "name": "Salary",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Salary.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5df"
+            },
+            {
+              "name": "Business Profit",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Business+Profit.png",
+              "group": "Income",
+              "_id": "69dfce7f5b430f8ee0a7b5e0"
+            },
+            {
+              "name": "Freelance/Contract",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Freelance%3AContract.png",
+              "group": "Income",
+              "_id": "69dfce7f5b430f8ee0a7b5e1"
+            },
+            {
+              "name": "Gifts",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Gifts.png",
+              "group": "Income",
+              "_id": "69dfce7f5b430f8ee0a7b5e2"
+            },
+            {
+              "name": "Refunds",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Refunds.png",
+              "group": "Income",
+              "_id": "69dfce7f5b430f8ee0a7b5e3"
+            },
+            {
+              "name": "Rental Income",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Rental+Income.png",
+              "group": "Income",
+              "_id": "69dfce7f5b430f8ee0a7b5e4"
+            },
+            {
+              "name": "Sale of item",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Sale+of+item.png",
+              "group": "Income",
+              "_id": "69dfce7f5b430f8ee0a7b5e5"
+            }
+          ],
+          "__v": 0,
+          "createdAt": "2026-04-15T17:44:31.485Z",
+          "updatedAt": "2026-04-15T17:44:31.485Z"
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "categories",
+      "name": "categories-budget",
+      "method": "GET",
+      "path": "/categories?type=budget",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "data": {
+          "_id": "69dfce7f5b430f8ee0a7b5e6",
+          "name": "Budget",
+          "type": "budget",
+          "image": "",
+          "subcategories": [
+            {
+              "name": "Entertainment",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Entertainment.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5e7"
+            },
+            {
+              "name": "Food",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Food.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5e8"
+            },
+            {
+              "name": "Shopping",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Shopping.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5e9"
+            },
+            {
+              "name": "Transport",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Car%3AVehicle.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5ea"
+            }
+          ],
+          "__v": 0,
+          "createdAt": "2026-04-15T17:44:31.487Z",
+          "updatedAt": "2026-04-15T17:44:31.487Z"
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "categories",
+      "name": "categories-savings",
+      "method": "GET",
+      "path": "/categories?type=savings",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "data": {
+          "_id": "69dfce7f5b430f8ee0a7b5fd",
+          "name": "Savings",
+          "type": "savings",
+          "image": "",
+          "subcategories": [
+            {
+              "name": "Car",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Car%3AVehicle.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5fe"
+            },
+            {
+              "name": "Education",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Education.pngg",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b5ff"
+            },
+            {
+              "name": "Home / Rent",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Home%3AReal+Estate.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b600"
+            },
+            {
+              "name": "Wedding",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Wedding%3AMarriage.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b601"
+            },
+            {
+              "name": "Debt",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Debt+Payoff+Goal.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b602"
+            },
+            {
+              "name": "Gadget",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Gadget.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b603"
+            },
+            {
+              "name": "Retirement",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Retirement.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b604"
+            },
+            {
+              "name": "Travel",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Travel%3AVacation.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b605"
+            },
+            {
+              "name": "Investment",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Investment+Capital.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b606"
+            },
+            {
+              "name": "Emergency Fund",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Emergency+Fund.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b607"
+            },
+            {
+              "name": "Furniture",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Furniture.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b608"
+            },
+            {
+              "name": "Baby Funds",
+              "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Baby%3AChildren.png",
+              "group": "General",
+              "_id": "69dfce7f5b430f8ee0a7b609"
+            }
+          ],
+          "__v": 0,
+          "createdAt": "2026-04-15T17:44:31.487Z",
+          "updatedAt": "2026-04-15T17:44:31.487Z"
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "categories",
+      "name": "categories-subcategories",
+      "method": "GET",
+      "path": "/categories/subcategories",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "count": 42,
+        "data": [
+          {
+            "name": "Airtime & Data",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Airtime%3ACalls.png",
+            "group": "Communications & Tech",
+            "_id": "69dfce7f5b430f8ee0a7b5ec",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Health",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Health.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5ed",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Skincare",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Skincare.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5ee",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Giveaway",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Giveaway.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5ef",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "POS Charges",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/POS.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5f0",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Hangout",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Restaurant.png",
+            "group": "Daily Living & Utilities",
+            "_id": "69dfce7f5b430f8ee0a7b5f1",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Rent/Mortgage",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Rent%3AMortgage.png",
+            "group": "Daily Living & Utilities",
+            "_id": "69dfce7f5b430f8ee0a7b5f2",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Electricity",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Electricity.png",
+            "group": "Daily Living & Utilities",
+            "_id": "69dfce7f5b430f8ee0a7b5f3",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Water",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/water.png",
+            "group": "Daily Living & Utilities",
+            "_id": "69dfce7f5b430f8ee0a7b5f4",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Gas",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Gas.png",
+            "group": "Daily Living & Utilities",
+            "_id": "69dfce7f5b430f8ee0a7b5f5",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Home Repairs",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Repairs.png",
+            "group": "Daily Living & Utilities",
+            "_id": "69dfce7f5b430f8ee0a7b5f6",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Airtime & Data",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Airtime%3ACalls.png",
+            "group": "Communications & Tech",
+            "_id": "69dfce7f5b430f8ee0a7b5f7",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Cable TV (DSTV, GOTV, etc",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Cable+TV.png",
+            "group": "Communications & Tech",
+            "_id": "69dfce7f5b430f8ee0a7b5f8",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Transport",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Transport.png",
+            "group": "Transportation",
+            "_id": "69dfce7f5b430f8ee0a7b5f9",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Fuel",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Fuel.png",
+            "group": "Transportation",
+            "_id": "69dfce7f5b430f8ee0a7b5fa",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Car Maintenance",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Car+Maintenance.png",
+            "group": "Transportation",
+            "_id": "69dfce7f5b430f8ee0a7b5fb",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Parking Fees",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Parking+Fees.png",
+            "group": "Transportation",
+            "_id": "69dfce7f5b430f8ee0a7b5fc",
+            "parentType": "expense",
+            "parentName": "Expense"
+          },
+          {
+            "name": "Entertainment",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Entertainment.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5e7",
+            "parentType": "budget",
+            "parentName": "Budget"
+          },
+          {
+            "name": "Food",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Food.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5e8",
+            "parentType": "budget",
+            "parentName": "Budget"
+          },
+          {
+            "name": "Shopping",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Shopping.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5e9",
+            "parentType": "budget",
+            "parentName": "Budget"
+          },
+          {
+            "name": "Transport",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Car%3AVehicle.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5ea",
+            "parentType": "budget",
+            "parentName": "Budget"
+          },
+          {
+            "name": "Allowance",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Allowance.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5dd",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Bonus",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Bonus%3ATips.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5de",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Salary",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Salary.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5df",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Business Profit",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Business+Profit.png",
+            "group": "Income",
+            "_id": "69dfce7f5b430f8ee0a7b5e0",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Freelance/Contract",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Freelance%3AContract.png",
+            "group": "Income",
+            "_id": "69dfce7f5b430f8ee0a7b5e1",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Gifts",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Gifts.png",
+            "group": "Income",
+            "_id": "69dfce7f5b430f8ee0a7b5e2",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Refunds",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Refunds.png",
+            "group": "Income",
+            "_id": "69dfce7f5b430f8ee0a7b5e3",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Rental Income",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Rental+Income.png",
+            "group": "Income",
+            "_id": "69dfce7f5b430f8ee0a7b5e4",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Sale of item",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Sale+of+item.png",
+            "group": "Income",
+            "_id": "69dfce7f5b430f8ee0a7b5e5",
+            "parentType": "income",
+            "parentName": "Income"
+          },
+          {
+            "name": "Car",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Car%3AVehicle.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5fe",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Education",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Education.pngg",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b5ff",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Home / Rent",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Home%3AReal+Estate.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b600",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Wedding",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Wedding%3AMarriage.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b601",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Debt",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Debt+Payoff+Goal.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b602",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Gadget",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Gadget.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b603",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Retirement",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Retirement.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b604",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Travel",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Travel%3AVacation.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b605",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Investment",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Investment+Capital.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b606",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Emergency Fund",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Emergency+Fund.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b607",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Furniture",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Furniture.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b608",
+            "parentType": "savings",
+            "parentName": "Savings"
+          },
+          {
+            "name": "Baby Funds",
+            "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Baby%3AChildren.png",
+            "group": "General",
+            "_id": "69dfce7f5b430f8ee0a7b609",
+            "parentType": "savings",
+            "parentName": "Savings"
+          }
+        ]
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "categories",
+      "name": "categories-by-type",
+      "method": "GET",
+      "path": "/categories/by-type?type=income",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "success": true,
+        "data": [
+          {
+            "_id": "69dfce7f5b430f8ee0a7b5eb",
+            "name": "Expense",
+            "type": "expense",
+            "image": "",
+            "subcategories": [
+              {
+                "name": "Airtime & Data",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Airtime%3ACalls.png",
+                "group": "Communications & Tech",
+                "_id": "69dfce7f5b430f8ee0a7b5ec"
+              },
+              {
+                "name": "Health",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Health.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5ed"
+              },
+              {
+                "name": "Skincare",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Skincare.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5ee"
+              },
+              {
+                "name": "Giveaway",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Giveaway.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5ef"
+              },
+              {
+                "name": "POS Charges",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/POS.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5f0"
+              },
+              {
+                "name": "Hangout",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Restaurant.png",
+                "group": "Daily Living & Utilities",
+                "_id": "69dfce7f5b430f8ee0a7b5f1"
+              },
+              {
+                "name": "Rent/Mortgage",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Rent%3AMortgage.png",
+                "group": "Daily Living & Utilities",
+                "_id": "69dfce7f5b430f8ee0a7b5f2"
+              },
+              {
+                "name": "Electricity",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Electricity.png",
+                "group": "Daily Living & Utilities",
+                "_id": "69dfce7f5b430f8ee0a7b5f3"
+              },
+              {
+                "name": "Water",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/water.png",
+                "group": "Daily Living & Utilities",
+                "_id": "69dfce7f5b430f8ee0a7b5f4"
+              },
+              {
+                "name": "Gas",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Gas.png",
+                "group": "Daily Living & Utilities",
+                "_id": "69dfce7f5b430f8ee0a7b5f5"
+              },
+              {
+                "name": "Home Repairs",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Repairs.png",
+                "group": "Daily Living & Utilities",
+                "_id": "69dfce7f5b430f8ee0a7b5f6"
+              },
+              {
+                "name": "Airtime & Data",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Airtime%3ACalls.png",
+                "group": "Communications & Tech",
+                "_id": "69dfce7f5b430f8ee0a7b5f7"
+              },
+              {
+                "name": "Cable TV (DSTV, GOTV, etc",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Cable+TV.png",
+                "group": "Communications & Tech",
+                "_id": "69dfce7f5b430f8ee0a7b5f8"
+              },
+              {
+                "name": "Transport",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Transport.png",
+                "group": "Transportation",
+                "_id": "69dfce7f5b430f8ee0a7b5f9"
+              },
+              {
+                "name": "Fuel",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Fuel.png",
+                "group": "Transportation",
+                "_id": "69dfce7f5b430f8ee0a7b5fa"
+              },
+              {
+                "name": "Car Maintenance",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Car+Maintenance.png",
+                "group": "Transportation",
+                "_id": "69dfce7f5b430f8ee0a7b5fb"
+              },
+              {
+                "name": "Parking Fees",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Parking+Fees.png",
+                "group": "Transportation",
+                "_id": "69dfce7f5b430f8ee0a7b5fc"
+              }
+            ],
+            "__v": 0,
+            "createdAt": "2026-04-15T17:44:31.487Z",
+            "updatedAt": "2026-04-15T17:44:31.487Z"
+          },
+          {
+            "_id": "69dfce7f5b430f8ee0a7b5e6",
+            "name": "Budget",
+            "type": "budget",
+            "image": "",
+            "subcategories": [
+              {
+                "name": "Entertainment",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Entertainment.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5e7"
+              },
+              {
+                "name": "Food",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Food.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5e8"
+              },
+              {
+                "name": "Shopping",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/budget/Shopping.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5e9"
+              },
+              {
+                "name": "Transport",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Car%3AVehicle.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5ea"
+              }
+            ],
+            "__v": 0,
+            "createdAt": "2026-04-15T17:44:31.487Z",
+            "updatedAt": "2026-04-15T17:44:31.487Z"
+          },
+          {
+            "_id": "69dfce7f5b430f8ee0a7b5dc",
+            "name": "Income",
+            "type": "income",
+            "image": "",
+            "subcategories": [
+              {
+                "name": "Allowance",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Allowance.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5dd"
+              },
+              {
+                "name": "Bonus",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Bonus%3ATips.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5de"
+              },
+              {
+                "name": "Salary",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/expense/Salary.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5df"
+              },
+              {
+                "name": "Business Profit",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Business+Profit.png",
+                "group": "Income",
+                "_id": "69dfce7f5b430f8ee0a7b5e0"
+              },
+              {
+                "name": "Freelance/Contract",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Freelance%3AContract.png",
+                "group": "Income",
+                "_id": "69dfce7f5b430f8ee0a7b5e1"
+              },
+              {
+                "name": "Gifts",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Gifts.png",
+                "group": "Income",
+                "_id": "69dfce7f5b430f8ee0a7b5e2"
+              },
+              {
+                "name": "Refunds",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Refunds.png",
+                "group": "Income",
+                "_id": "69dfce7f5b430f8ee0a7b5e3"
+              },
+              {
+                "name": "Rental Income",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Rental+Income.png",
+                "group": "Income",
+                "_id": "69dfce7f5b430f8ee0a7b5e4"
+              },
+              {
+                "name": "Sale of item",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/income/Sale+of+item.png",
+                "group": "Income",
+                "_id": "69dfce7f5b430f8ee0a7b5e5"
+              }
+            ],
+            "__v": 0,
+            "createdAt": "2026-04-15T17:44:31.485Z",
+            "updatedAt": "2026-04-15T17:44:31.485Z"
+          },
+          {
+            "_id": "69dfce7f5b430f8ee0a7b5fd",
+            "name": "Savings",
+            "type": "savings",
+            "image": "",
+            "subcategories": [
+              {
+                "name": "Car",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Car%3AVehicle.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5fe"
+              },
+              {
+                "name": "Education",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Education.pngg",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b5ff"
+              },
+              {
+                "name": "Home / Rent",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Home%3AReal+Estate.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b600"
+              },
+              {
+                "name": "Wedding",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Wedding%3AMarriage.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b601"
+              },
+              {
+                "name": "Debt",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Debt+Payoff+Goal.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b602"
+              },
+              {
+                "name": "Gadget",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Gadget.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b603"
+              },
+              {
+                "name": "Retirement",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Retirement.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b604"
+              },
+              {
+                "name": "Travel",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Travel%3AVacation.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b605"
+              },
+              {
+                "name": "Investment",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Investment+Capital.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b606"
+              },
+              {
+                "name": "Emergency Fund",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Emergency+Fund.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b607"
+              },
+              {
+                "name": "Furniture",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Furniture.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b608"
+              },
+              {
+                "name": "Baby Funds",
+                "image": "https://zorah-category-images.s3.eu-north-1.amazonaws.com/savings/Baby%3AChildren.png",
+                "group": "General",
+                "_id": "69dfce7f5b430f8ee0a7b609"
+              }
+            ],
+            "__v": 0,
+            "createdAt": "2026-04-15T17:44:31.487Z",
+            "updatedAt": "2026-04-15T17:44:31.487Z"
+          }
+        ]
+      },
+      "error": null,
+      "notes": "Postman alternative path — checking if this differs from /categories?type=income"
+    },
+    {
+      "domain": "ai",
+      "name": "ai-ask",
+      "method": "POST",
+      "path": "/ai/ask",
+      "requestBody": {
+        "message": "How much did I spend this month?"
+      },
+      "statusCode": 429,
+      "responseBody": {
+        "status": "failed",
+        "reply": "Eyaa, I'm a bit overwhelmed with requests right now. 😅 Please give me about a minute to rest and try asking again!",
+        "intent": "rate-limit-hit"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "ai",
+      "name": "ai-tips",
+      "method": "GET",
+      "path": "/ai/tips",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "status": "success",
+        "reply": "Oga, here's a quick look at your finances:\n\nYour Net Worth is currently ₦0. Your income this month is ₦223,300.\n\nHere are a few tips to consider:\n\n1.  **Budget Check**: You have 3 active budgets. Make sure you're tracking your spending against them to stay on course.\n2.  **Savings Goals**: You have some savings goals. Start small, even small contributions add up over time.\n3.  **Track expenses**: Make sure you track all expenses to get a better understanding of where your money goes.\n\nDo you have any questions for me?\n"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "voice",
+      "name": "voice-log-expense",
+      "method": "POST",
+      "path": "/voice/log-expense",
+      "requestBody": {
+        "message": "I spent 2000 naira on lunch"
+      },
+      "statusCode": 500,
+      "responseBody": {
+        "status": "error",
+        "message": "amount is not defined"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "get-single-expense",
+      "method": "GET",
+      "path": "/expenses/69f45f10ec4b993e8f6463fd",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "_id": "69f45f10ec4b993e8f6463fd",
+        "user": "69f45f0aec4b993e8f6463e5",
+        "amount": 5000,
+        "category": "Food",
+        "description": "API probe test",
+        "paymentMethod": "Cash",
+        "date": "2026-05-01T00:00:00.000Z",
+        "status": "active",
+        "archivedAt": null,
+        "createdAt": "2026-05-01T08:06:40.853Z",
+        "updatedAt": "2026-05-01T08:06:40.853Z",
+        "__v": 0
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "get-single-budget",
+      "method": "GET",
+      "path": "/budgets/69f45f11ec4b993e8f646405",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "budget": {
+          "_id": "69f45f11ec4b993e8f646405",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "category": "Food",
+          "amount": 50000,
+          "period": "monthly",
+          "month": 5,
+          "year": 2026,
+          "startDate": "2026-05-01T00:00:00.000Z",
+          "endDate": "2026-05-31T00:00:00.000Z",
+          "categories": [],
+          "spent": 0,
+          "remaining": 0,
+          "status": "active",
+          "createdAt": "2026-05-01T08:06:41.344Z",
+          "updatedAt": "2026-05-01T08:06:41.344Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "savings",
+      "name": "get-single-goal",
+      "method": "GET",
+      "path": "/savings/69f45f11ec4b993e8f64640c",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "_id": "69f45f11ec4b993e8f64640c",
+        "user": "69f45f0aec4b993e8f6463e5",
+        "title": "Probe Goal",
+        "targetAmount": 50000,
+        "currentAmount": 0,
+        "deadline": "2026-05-31T00:00:00.000Z",
+        "description": "API probe test",
+        "status": "active",
+        "createdAt": "2026-05-01T08:06:41.835Z",
+        "fundingHistory": [],
+        "__v": 0
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "savings",
+      "name": "contribute",
+      "method": "POST",
+      "path": "/savings/contribute",
+      "requestBody": {
+        "goalId": "69f45f11ec4b993e8f64640c",
+        "amount": 5000
+      },
+      "statusCode": 403,
+      "responseBody": {
+        "status": "failed",
+        "isActionLocked": true,
+        "message": "Funding goals is a premium feature. Create a Zorah Wallet to start saving!"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "notifications",
+      "name": "read-notification",
+      "method": "PATCH",
+      "path": "/notifications/69f45d80ec4b993e8f6463e2/read",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "_id": "69f45d80ec4b993e8f6463e2",
+        "user": "69b03e362578d624e8fba363",
+        "type": "bill_alert",
+        "title": "Bill Overdue! 🚨",
+        "message": "Your Trfrr was due on Wed Feb 11 2026.",
+        "read": true,
+        "createdAt": "2026-05-01T08:00:00.156Z",
+        "updatedAt": "2026-05-01T08:06:55.246Z",
+        "__v": 0
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "update-expense",
+      "method": "PUT",
+      "path": "/expenses/69f45f10ec4b993e8f6463fd",
+      "requestBody": {
+        "category": "Transport",
+        "amount": 3000,
+        "description": "Updated by probe",
+        "date": "2026-05-01"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Expense updated successfully",
+        "expense": {
+          "_id": "69f45f10ec4b993e8f6463fd",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "amount": 3000,
+          "category": "Transport",
+          "description": "Updated by probe",
+          "paymentMethod": "Cash",
+          "date": "2026-05-01T00:00:00.000Z",
+          "status": "active",
+          "archivedAt": null,
+          "createdAt": "2026-05-01T08:06:40.853Z",
+          "updatedAt": "2026-05-01T08:06:55.474Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": "Postman shows PUT; endpoints.ts uses PATCH — verifying correct method"
+    },
+    {
+      "domain": "budgets",
+      "name": "update-budget",
+      "method": "PATCH",
+      "path": "/budgets/69f45f11ec4b993e8f646405",
+      "requestBody": {
+        "category": "Food",
+        "amount": 60000,
+        "period": "monthly",
+        "startDate": "2026-05-01",
+        "endDate": "2026-05-31"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Budget updated successfully",
+        "budget": {
+          "_id": "69f45f11ec4b993e8f646405",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "category": "Food",
+          "amount": 60000,
+          "period": "monthly",
+          "month": 5,
+          "year": 2026,
+          "startDate": "2026-05-01T00:00:00.000Z",
+          "endDate": "2026-05-31T00:00:00.000Z",
+          "categories": [],
+          "spent": 0,
+          "remaining": 60000,
+          "status": "active",
+          "createdAt": "2026-05-01T08:06:41.344Z",
+          "updatedAt": "2026-05-01T08:06:55.700Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "bills",
+      "name": "update-bill-single-path",
+      "method": "PATCH",
+      "path": "/bills/69f45f11ec4b993e8f646408",
+      "requestBody": {
+        "name": "Updated Bill",
+        "amount": 3000,
+        "dueDate": "2026-05-31",
+        "category": "Daily Living & Utilities",
+        "reminderEnabled": false
+      },
+      "statusCode": 404,
+      "responseBody": null,
+      "error": "Body is unusable: Body has already been read",
+      "notes": "Testing /bills/:id (endpoints.ts version)"
+    },
+    {
+      "domain": "bills",
+      "name": "update-bill-double-path",
+      "method": "PATCH",
+      "path": "/bills/bills/69f45f11ec4b993e8f646408",
+      "requestBody": {
+        "name": "Updated Bill",
+        "amount": 3000,
+        "dueDate": "2026-05-31",
+        "category": "Daily Living & Utilities",
+        "reminderEnabled": false
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "status": "success",
+        "data": {
+          "_id": "69f45f11ec4b993e8f646408",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "name": "Updated Bill",
+          "amount": 3000,
+          "dueDate": "2026-05-31T00:00:00.000Z",
+          "category": "Daily Living & Utilities",
+          "frequency": "Monthly",
+          "status": "unpaid",
+          "reminderEnabled": false,
+          "createdAt": "2026-05-01T08:06:41.559Z",
+          "updatedAt": "2026-05-01T08:06:56.037Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": "Testing /bills/bills/:id (Postman version) — one of these two will 404"
+    },
+    {
+      "domain": "bills",
+      "name": "pay-bill",
+      "method": "PATCH",
+      "path": "/bills/69f45f11ec4b993e8f646408/pay",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Bill paid and added to expenses",
+        "bill": {
+          "_id": "69f45f11ec4b993e8f646408",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "name": "Updated Bill",
+          "amount": 3000,
+          "dueDate": "2026-05-31T00:00:00.000Z",
+          "category": "Daily Living & Utilities",
+          "frequency": "Monthly",
+          "status": "paid",
+          "reminderEnabled": false,
+          "createdAt": "2026-05-01T08:06:41.559Z",
+          "updatedAt": "2026-05-01T08:06:56.264Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "savings",
+      "name": "update-goal",
+      "method": "PUT",
+      "path": "/savings/69f45f11ec4b993e8f64640c",
+      "requestBody": {
+        "title": "Updated Probe Goal",
+        "targetAmount": 75000,
+        "deadline": "2026-05-31"
+      },
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Goal updated successfully",
+        "goal": {
+          "_id": "69f45f11ec4b993e8f64640c",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "title": "Updated Probe Goal",
+          "targetAmount": 75000,
+          "currentAmount": 0,
+          "deadline": "2026-05-31T00:00:00.000Z",
+          "description": "API probe test",
+          "status": "active",
+          "createdAt": "2026-05-01T08:06:41.835Z",
+          "fundingHistory": [],
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "archive-budget",
+      "method": "PATCH",
+      "path": "/budgets/69f45f11ec4b993e8f646405/archive",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Budget archived successfully",
+        "budget": {
+          "_id": "69f45f11ec4b993e8f646405",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "category": "Food",
+          "amount": 60000,
+          "period": "monthly",
+          "month": 5,
+          "year": 2026,
+          "startDate": "2026-05-01T00:00:00.000Z",
+          "endDate": "2026-05-31T00:00:00.000Z",
+          "categories": [],
+          "spent": 0,
+          "remaining": 60000,
+          "status": "archived",
+          "createdAt": "2026-05-01T08:06:41.344Z",
+          "updatedAt": "2026-05-01T08:06:56.747Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "restore-budget",
+      "method": "PATCH",
+      "path": "/budgets/69f45f11ec4b993e8f646405/restore",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Budget restored successfully",
+        "budget": {
+          "_id": "69f45f11ec4b993e8f646405",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "category": "Food",
+          "amount": 60000,
+          "period": "monthly",
+          "month": 5,
+          "year": 2026,
+          "startDate": "2026-05-01T00:00:00.000Z",
+          "endDate": "2026-05-31T00:00:00.000Z",
+          "categories": [],
+          "spent": 0,
+          "remaining": 60000,
+          "status": "active",
+          "createdAt": "2026-05-01T08:06:41.344Z",
+          "updatedAt": "2026-05-01T08:06:56.972Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "budgets",
+      "name": "delete-budget",
+      "method": "DELETE",
+      "path": "/budgets/69f45f11ec4b993e8f646405",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Budget deleted permanently"
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "archive-expense",
+      "method": "PATCH",
+      "path": "/expenses/69f45f10ec4b993e8f6463fd/archive",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Expense archived successfully",
+        "expense": {
+          "_id": "69f45f10ec4b993e8f6463fd",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "amount": 3000,
+          "category": "Transport",
+          "description": "Updated by probe",
+          "paymentMethod": "Cash",
+          "date": "2026-05-01T00:00:00.000Z",
+          "status": "archived",
+          "archivedAt": "2026-05-01T08:06:57.414Z",
+          "createdAt": "2026-05-01T08:06:40.853Z",
+          "updatedAt": "2026-05-01T08:06:57.414Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "restore-expense",
+      "method": "PATCH",
+      "path": "/expenses/69f45f10ec4b993e8f6463fd/restore",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Expense restored successfully",
+        "expense": {
+          "_id": "69f45f10ec4b993e8f6463fd",
+          "user": "69f45f0aec4b993e8f6463e5",
+          "amount": 3000,
+          "category": "Transport",
+          "description": "Updated by probe",
+          "paymentMethod": "Cash",
+          "date": "2026-05-01T00:00:00.000Z",
+          "status": "active",
+          "archivedAt": null,
+          "createdAt": "2026-05-01T08:06:40.853Z",
+          "updatedAt": "2026-05-01T08:06:57.659Z",
+          "__v": 0
+        }
+      },
+      "error": null,
+      "notes": ""
+    },
+    {
+      "domain": "expenses",
+      "name": "delete-expense",
+      "method": "DELETE",
+      "path": "/expenses/69f45f10ec4b993e8f6463fd",
+      "requestBody": null,
+      "statusCode": 200,
+      "responseBody": {
+        "message": "Expense deleted permanently"
+      },
+      "error": null,
+      "notes": ""
+    }
+  ]
+}
