@@ -1,0 +1,3094 @@
+{
+  "info": {
+    "_postman_id": "c052de15-9518-4c45-9612-d69916e73d2e",
+    "name": "Zorah",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49788907"
+  },
+  "item": [
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Melody\",\n  \"lastName\": \"Samuel\",\n  \"email\": \"melodysamuel137@gmail.com\",\n  \"phoneNumber\": \"+2348000000872\",\n  \"password\": \"Password123!\",\n  \"pin\": \"1234\",\n  \"preferredReminderHour\": 14\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/register",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check if the response was successful (HTTP status 200)",
+                  "if (pm.response.code === 200) {",
+                  "    // Parse the JSON response body",
+                  "    const responseJson = pm.response.json();",
+                  "",
+                  "    // Check if the 'accessToken' and 'refreshToken' properties exist in the response",
+                  "    if (responseJson && responseJson.accessToken && responseJson.refreshToken) {",
+                  "",
+                  "        // Set the 'accessToken' as an Environment variable",
+                  "        pm.environment.set(\"accessToken\", responseJson.accessToken);",
+                  "",
+                  "        // Set the 'refreshToken' as an Environment variable",
+                  "        pm.environment.set(\"refreshToken\", responseJson.refreshToken);",
+                  "",
+                  "        console.log(\"Tokens saved to environment!\");",
+                  "    } else {",
+                  "        console.log(\"Tokens not found in response.\");",
+                  "    }",
+                  "} else {",
+                  "    console.log(\"Login failed. Status code: \" + pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDUyMjM4NSwiZXhwIjoxNzYwNTI1OTg1fQ.W_JsaQWN0sbqrytlQPwIMQg4lwgAqCfkpfMB7br2RIE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"melodysamuel126@gmail.com\",\n    \"password\": \"passwordassword123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/login",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set User pin",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDQwNzgyMywiZXhwIjoxNzYyOTk5ODIzfQ.O-CJHiz7o7yIctjlU-7hU7aCrRCFvE8ioL-SF3Ghil0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pin\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/set-pin",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "set-pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}auth/profile",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify User Pin",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pin\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/verify-pin",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "verify-pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Biomertics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDQxMTY4MywiZXhwIjoxNzYzMDAzNjgzfQ.cJ97IUOY1dA_xZr-9iNAMIcNUdkRNsfBaLEaFO-aHm8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/toggle-biometrics",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "toggle-biometrics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request Reset Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \n    \"email\": \"melodysamuel126@gmail.com\" \n    }\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/request-reset",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "request-reset"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"melodysamuel126@gmail.com\", \n    \"otp\": \"918525\", \n    \"newPassword\": \"passwordassword123456\"\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/reset-password",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Access Token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": " {\n       \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWRhZGUzNTEzNDY2OWQ4NTc4YTAzMCIsImlhdCI6MTc2MDQ0Mzg3MiwiZXhwIjoxNzYxMDQ4NjcyfQ.Qgw4edi_lgLxkq8yzcwdAXevD5kKcNNLlno6Ti44fZ4\"\n    }",
+              "options": {
+                "raw": {
+                  "language": "html"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/refresh-token",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "refresh-token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Google",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Onboarding Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YjAzNjU3MjYxMmJiYzdkNDgwN2MwMSIsImlhdCI6MTc3MzIzNDQ2NywiZXhwIjoxNzczMjM4MDY3fQ.Q_kAVMXrwDjmS3Ka6mz-T_cypVfdbhvI0Fh-komarG0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"incomeSource\": \"Freelancing\",\n    \"incomeRange\": \"₦200,000 - ₦500,000\",\n    \"financialGoals\": [\n        \"Build Emergency Fund\",\n        \"Save for Rent/House\",\n        \"Start a Business\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}auth/onboarding",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "onboarding"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Usage",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YjAzNjU3MjYxMmJiYzdkNDgwN2MwMSIsImlhdCI6MTc3MzI3MDUxMiwiZXhwIjoxNzczMjc0MTEyfQ.ivuDd9QD5led-0h45pRQEVM5NPInvuo2hXg1YhxX-4g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}auth/reset-usage",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "reset-usage"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}auth/update-profile",
+              "host": [
+                "{{baseURL}}auth"
+              ],
+              "path": [
+                "update-profile"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "Add Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 10000,\n  \"category\": \"Vacation\", \n  \"description\": \"Test 80%\",\n  \"paymentMethod\": \"Transfer\",\n  \"date\": \"2026-10-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}expenses/add-expense",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "add-expense"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Voice Expense Logging",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"I just spent 5000 naira on fueling my car at the station\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}voice/log-expense",
+              "host": [
+                "{{baseURL}}voice"
+              ],
+              "path": [
+                "log-expense"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://getzorah.com/api/expenses/get-expense",
+              "protocol": "https",
+              "host": [
+                "getzorah",
+                "com"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                "get-expense"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Expense",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}expenses/get-expense",
+                  "host": [
+                    "{{baseURL}}expenses"
+                  ],
+                  "path": [
+                    "get-expense"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "699"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"2bb-lHAo8ZpnpSHF+zEBGIOS4PttXAc\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 03 Dec 2025 02:24:12 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": [\n        {\n            \"_id\": \"691dc5a8b7809ffab90d2d8e\",\n            \"user\": \"6911e3495be303045f7484d9\",\n            \"amount\": 100,\n            \"category\": \"Food\",\n            \"description\": \"Test 80%\",\n            \"paymentMethod\": \"Cash\",\n            \"date\": \"2024-10-15T00:00:00.000Z\",\n            \"status\": \"active\",\n            \"archivedAt\": null,\n            \"createdAt\": \"2025-11-19T13:27:04.501Z\",\n            \"updatedAt\": \"2025-11-19T13:27:04.501Z\",\n            \"__v\": 0,\n            \"month\": 10,\n            \"year\": 2024\n        },\n        {\n            \"_id\": \"692f34bc7b8f47fe59705ce5\",\n            \"user\": \"6911e3495be303045f7484d9\",\n            \"amount\": 500000,\n            \"category\": \"Housing\",\n            \"description\": \"Test 80%\",\n            \"paymentMethod\": \"Transfer\",\n            \"date\": \"2024-10-15T00:00:00.000Z\",\n            \"status\": \"active\",\n            \"archivedAt\": null,\n            \"createdAt\": \"2025-12-02T18:49:32.309Z\",\n            \"updatedAt\": \"2025-12-02T18:49:32.309Z\",\n            \"__v\": 0,\n            \"month\": 10,\n            \"year\": 2024\n        }\n    ],\n    \"month\": null,\n    \"year\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/summary?type=monthly",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "monthly"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Daily Expenses",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/daily",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "daily"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Monthly Expenses",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/monthly",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "monthly"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "691db2aa8776163b75fcf804"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/691db2838776163b75fcf7fc/archive",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "691db2838776163b75fcf7fc",
+                "archive"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Transport\",\n  \"amount\": 2000,\n  \"description\": \"Uber\",\n  \"date\": \"2025-02-10\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "691db2aa8776163b75fcf804"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804/restore",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "691db2aa8776163b75fcf804",
+                "restore"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/691db2aa8776163b75fcf804",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "691db2aa8776163b75fcf804"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Spending Overview",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}expenses/spending-overview?timeframe=monthly",
+              "host": [
+                "{{baseURL}}expenses"
+              ],
+              "path": [
+                "spending-overview"
+              ],
+              "query": [
+                {
+                  "key": "timeframe",
+                  "value": "monthly"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Budgets",
+      "item": [
+        {
+          "name": "Create Budgets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n        \"category\": \"Food\",\n        \"amount\": 100000,\n        \"period\": \"monthly\",\n        \"startDate\": \"2026-03-01\",\n        \"endDate\": \"2026-02-28\",\n        \"month\": 3,\n        \"year\": 2026\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}budgets/",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Budgets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}budgets/get-budgets",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "get-budgets"
+              ],
+              "query": [
+                {
+                  "key": "cacheBuster",
+                  "value": "{{$timestamp}}",
+                  "description": "Use the Postman dynamic variable $timestamp which inserts the current time in milliseconds.",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "no-budgets",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}budgets/get-budgets",
+                  "host": [
+                    "{{baseURL}}budgets"
+                  ],
+                  "path": [
+                    "get-budgets"
+                  ],
+                  "query": [
+                    {
+                      "key": "cacheBuster",
+                      "value": "{{$timestamp}}",
+                      "description": "Use the Postman dynamic variable $timestamp which inserts the current time in milliseconds.",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "36"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"24-RGW9ttlAlsL/vcxb+BLkA/JbTVA\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 03 Dec 2025 01:28:17 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": [],\n    \"month\": null,\n    \"year\": null\n}"
+            },
+            {
+              "name": "Get Budgets",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4000/api/budgets/get-budgets",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4000",
+                  "path": [
+                    "api",
+                    "budgets",
+                    "get-budgets"
+                  ],
+                  "query": [
+                    {
+                      "key": "cacheBuster",
+                      "value": "{{$timestamp}}",
+                      "description": "Use the Postman dynamic variable $timestamp which inserts the current time in milliseconds.",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "_postman_previewlanguage": "Text",
+              "header": null,
+              "cookie": [],
+              "body": null
+            }
+          ]
+        },
+        {
+          "name": "Get Archived Budgets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4000/api/budgets/archived",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4000",
+              "path": [
+                "api",
+                "budgets",
+                "archived"
+              ],
+              "query": [
+                {
+                  "key": "cacheBuster",
+                  "value": "{{$timestamp}}",
+                  "description": "Use the Postman dynamic variable $timestamp which inserts the current time in milliseconds.",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Archived Budgets",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}budgets/archived",
+                  "host": [
+                    "{{baseURL}}budgets"
+                  ],
+                  "path": [
+                    "archived"
+                  ],
+                  "query": [
+                    {
+                      "key": "cacheBuster",
+                      "value": "{{$timestamp}}",
+                      "description": "Use the Postman dynamic variable $timestamp which inserts the current time in milliseconds.",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "742"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"2e6-BHEUH4XEHI+n31cQFlzb46ZkrYM\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 03 Dec 2025 01:27:30 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"_id\": \"692024efb7809ffab90d3d90\",\n        \"user\": \"6911e3495be303045f7484d9\",\n        \"category\": \"Shopping\",\n        \"amount\": 90000,\n        \"period\": \"weekly\",\n        \"month\": 11,\n        \"year\": 2025,\n        \"startDate\": \"2025-11-29T00:00:00.000Z\",\n        \"endDate\": \"2025-11-30T00:00:00.000Z\",\n        \"categories\": [],\n        \"spent\": 0,\n        \"remaining\": 0,\n        \"status\": \"archived\",\n        \"createdAt\": \"2025-11-21T08:38:07.877Z\",\n        \"updatedAt\": \"2025-11-27T10:10:53.744Z\",\n        \"__v\": 0\n    },\n    {\n        \"_id\": \"69206c4db7809ffab90d3ebc\",\n        \"user\": \"6911e3495be303045f7484d9\",\n        \"category\": \"Phone Bill\",\n        \"amount\": 40000,\n        \"period\": \"monthly\",\n        \"month\": 10,\n        \"year\": 2024,\n        \"startDate\": \"2024-10-01T00:00:00.000Z\",\n        \"endDate\": \"2024-10-31T00:00:00.000Z\",\n        \"categories\": [],\n        \"spent\": 0,\n        \"remaining\": 0,\n        \"status\": \"archived\",\n        \"createdAt\": \"2025-11-21T13:42:37.772Z\",\n        \"updatedAt\": \"2025-11-21T13:44:23.644Z\",\n        \"__v\": 0\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Budget With Months",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}budgets/get-budgets",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "get-budgets"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Budget With Months",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}budgets/get-budgets",
+                  "host": [
+                    "{{baseURL}}budgets"
+                  ],
+                  "path": [
+                    "get-budgets"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "499"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"1f3-dgisC7Dyn7zuWaIKdlWT1LJI2eM\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 03 Dec 2025 01:59:45 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": [\n        {\n            \"_id\": \"692024efb7809ffab90d3d90\",\n            \"user\": \"6911e3495be303045f7484d9\",\n            \"category\": \"Shopping\",\n            \"amount\": 90000,\n            \"period\": \"weekly\",\n            \"month\": 11,\n            \"year\": 2025,\n            \"startDate\": \"2025-11-29T00:00:00.000Z\",\n            \"endDate\": \"2025-11-30T00:00:00.000Z\",\n            \"categories\": [],\n            \"spent\": 0,\n            \"remaining\": 90000,\n            \"createdAt\": \"2025-11-21T08:38:07.877Z\",\n            \"updatedAt\": \"2025-12-03T01:29:22.992Z\",\n            \"__v\": 0,\n            \"Limit\": 90000,\n            \"archiveStatus\": \"active\",\n            \"totalSpent\": 0,\n            \"percentageused\": \"0.00%\",\n            \"spendingStatus\": \"On track ✅\"\n        }\n    ],\n    \"month\": null,\n    \"year\": null\n}"
+            },
+            {
+              "name": "no-budgets",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}budgets/get-budgets",
+                  "host": [
+                    "{{baseURL}}budgets"
+                  ],
+                  "path": [
+                    "get-budgets"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "36"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"24-RGW9ttlAlsL/vcxb+BLkA/JbTVA\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 03 Dec 2025 02:00:13 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": [],\n    \"month\": null,\n    \"year\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get One Budget",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "68f218dd8e4469d09e75b72b"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Budget",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Transport\",\n  \"amount\": 20000,\n  \"period\": \"weekly\",\n  \"startDate\": \"2024-10-01\",\n  \"endDate\": \"2024-10-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "68f218dd8e4469d09e75b72b"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Budget",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b/archive",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "68f218dd8e4469d09e75b72b",
+                "archive"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Archive Budget",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}budgets/692024efb7809ffab90d3d90/archive",
+                  "host": [
+                    "{{baseURL}}budgets"
+                  ],
+                  "path": [
+                    "692024efb7809ffab90d3d90",
+                    "archive"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "420"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"1a4-rjB3Tsb4w+zf8Y+GC9Bvo5c0/9s\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 03 Dec 2025 02:00:07 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Budget archived successfully\",\n    \"budget\": {\n        \"_id\": \"692024efb7809ffab90d3d90\",\n        \"user\": \"6911e3495be303045f7484d9\",\n        \"category\": \"Shopping\",\n        \"amount\": 90000,\n        \"period\": \"weekly\",\n        \"month\": 11,\n        \"year\": 2025,\n        \"startDate\": \"2025-11-29T00:00:00.000Z\",\n        \"endDate\": \"2025-11-30T00:00:00.000Z\",\n        \"categories\": [],\n        \"spent\": 0,\n        \"remaining\": 0,\n        \"status\": \"archived\",\n        \"createdAt\": \"2025-11-21T08:38:07.877Z\",\n        \"updatedAt\": \"2025-12-03T02:00:07.378Z\",\n        \"__v\": 0\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Restore Archived Budget",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b/restore",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "68f218dd8e4469d09e75b72b",
+                "restore"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Budget",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}budgets/68f218dd8e4469d09e75b72b",
+              "host": [
+                "{{baseURL}}budgets"
+              ],
+              "path": [
+                "68f218dd8e4469d09e75b72b"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bills",
+      "item": [
+        {
+          "name": "Add Bill",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electricity Bill\",\n  \"amount\": 2500,\n  \"dueDate\": \"2026-01-08T00:00:00.000Z\", // Set this to 7 days from today\n  \"category\": \"Daily Living & Utilities\",\n  \"paymentMethod\": \"Bank Transfer\",\n  \"reminderEnabled\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}bills/add-bill",
+              "host": [
+                "{{baseURL}}bills"
+              ],
+              "path": [
+                "add-bill"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bill",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}bills",
+              "host": [
+                "{{baseURL}}bills"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Bill As Paid",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}bills/695734454338000f3932c709/pay",
+              "host": [
+                "{{baseURL}}bills"
+              ],
+              "path": [
+                "695734454338000f3932c709",
+                "pay"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Cron",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}bills/test-cron-logic?hour=14",
+              "host": [
+                "{{baseURL}}bills"
+              ],
+              "path": [
+                "test-cron-logic"
+              ],
+              "query": [
+                {
+                  "key": "hour",
+                  "value": "14"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Bill",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Car Insurance\",\n  \"amount\": 120000,\n  \"dueDate\": \"2026-01-05\",\n  \"category\": \"Financial & Administrative\",\n  \"frequency\": \"Yearly\",\n  \"paymentMethod\": \"Bank Transfer\",\n  \"reminderEnabled\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}bills/bills/695b9f3c3cf97f0dcbae7bb5",
+              "host": [
+                "{{baseURL}}bills"
+              ],
+              "path": [
+                "bills",
+                "695b9f3c3cf97f0dcbae7bb5"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}notifications/get-not",
+              "host": [
+                "{{baseURL}}notifications"
+              ],
+              "path": [
+                "get-not"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Read Notification",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}notifications/68f0a8def064669d3524a6a5/read",
+              "host": [
+                "{{baseURL}}notifications"
+              ],
+              "path": [
+                "68f0a8def064669d3524a6a5",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Token",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"expoPushToken\": \"ExponentPushToken[eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjBiNDc0MTkzOTk5YWJmNjFiZWE2MyIsImlhdCI6MTc2MDYwNTMwMCwiZXhwIjoxNzYzMTk3MzAwfQ.JAmO0i_itOh0D-qQafOXaQqTYwhDn71dvR9PMtfEsOY]\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}notifications/register-token",
+              "host": [
+                "{{baseURL}}notifications"
+              ],
+              "path": [
+                "register-token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjBiNDc0MTkzOTk5YWJmNjFiZWE2MyIsImlhdCI6MTc2MDYxMjEyNywiZXhwIjoxNzYwNjE1NzI3fQ.NZRtM3HElK4IP0a2pay0V2_uj58Ko-iuMyBjiJiDZBk",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expoPushToken\": \"ExponentPushToken[92d9eb93-5647-4ccd-9397-89c6d7afe0e5]\",\n  \"title\": \"Budget nearing limit 🚨\",\n  \"body\": \"You've spent 84% of your Food budget this month!\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "POST https://flashily-unintegrable-holden.ngrok-free.dev/api/notifications/test",
+              "protocol": "POST https",
+              "host": [
+                "flashily-unintegrable-holden",
+                "ngrok-free",
+                "dev"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "test"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Savings",
+      "item": [
+        {
+          "name": "Create SavingsGoal",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"December Owambe\",\n  \"targetAmount\": 100000,\n  \"deadline\": \"2025-12-01\",\n  \"description\": \"Asoebi savings for December\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}savings/create",
+              "host": [
+                "{{baseURL}}savings"
+              ],
+              "path": [
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Contribution",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goalId\": \"68fa345f567155151a8eb7b1\",\n  \"amount\": 50000\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}savings/contribute",
+              "host": [
+                "{{baseURL}}savings"
+              ],
+              "path": [
+                "contribute"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch All Goals",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}savings/get-goals",
+              "host": [
+                "{{baseURL}}savings"
+              ],
+              "path": [
+                "get-goals"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Savings Goal",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://13.48.253.14:4000/api/savings/691db78febe58cfaa9f64bbd",
+              "protocol": "http",
+              "host": [
+                "13",
+                "48",
+                "253",
+                "14"
+              ],
+              "port": "4000",
+              "path": [
+                "api",
+                "savings",
+                "691db78febe58cfaa9f64bbd"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Goal Funding History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}savings/get-goals",
+              "host": [
+                "{{baseURL}}savings"
+              ],
+              "path": [
+                "get-goals"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Savings Goals",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"iPhone 16 Pro\",\n  \"targetAmount\": 250000,\n  \"deadline\": \"2025-07-01\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}savings/691db78febe58cfaa9f64bbd",
+              "host": [
+                "{{baseURL}}savings"
+              ],
+              "path": [
+                "691db78febe58cfaa9f64bbd"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Esusu",
+      "item": [
+        {
+          "name": "Create Esusu",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lagos Ladies Esusu\",\n  \"contributionAmount\": 1000000,\n  \"frequency\": \"monthly\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}esusu/create",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Join Esusu Group",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"68f8b6f0c2ba8cc1040d05a9\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}esusu/join",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "join"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Esusu Group",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}esusu/68f8b6f0c2ba8cc1040d05a9",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "68f8b6f0c2ba8cc1040d05a9"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Esusu Contribution",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"68f8b6f0c2ba8cc1040d05a9\",\n  \"amount\": 1000000\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}esusu/contribute",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "contribute"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Esusu Payouts",
+      "item": [
+        {
+          "name": "Process Payouts",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}esusu/payouts/process",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "payouts",
+                "process"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retry Payout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}esusu/payouts/retry",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "payouts",
+                "retry"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "View Payout History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}esusu/payouts/68f9f7b6064b3859dbf0de63/history",
+              "host": [
+                "{{baseURL}}esusu"
+              ],
+              "path": [
+                "payouts",
+                "68f9f7b6064b3859dbf0de63",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Wallets",
+      "item": [
+        {
+          "name": "Submit Kyc",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tier",
+                  "value": "1",
+                  "type": "text",
+                  "uuid": "efe84db1-d99c-4919-ae6b-e21e9e9cdf0e"
+                },
+                {
+                  "key": "fullName",
+                  "value": "King Emmanuel",
+                  "type": "text",
+                  "uuid": "0d85ecab-5595-49e8-a95e-802f56210854"
+                },
+                {
+                  "key": "dateOfBirth",
+                  "value": "1990-01-11",
+                  "type": "text",
+                  "uuid": "32baf7f9-8b45-42f0-8713-70208b76ea7d"
+                },
+                {
+                  "key": "phoneNumber",
+                  "value": "08147889762",
+                  "type": "text",
+                  "uuid": "b89ed3d7-e2d2-422e-9c7a-0cc8c1f29bde"
+                },
+                {
+                  "key": "address",
+                  "value": "No 10, Adewale Ajasin University",
+                  "type": "text",
+                  "uuid": "2fbb2352-0928-471d-917a-783ffb913f09"
+                },
+                {
+                  "key": "bvn",
+                  "value": "22802460976",
+                  "type": "text",
+                  "uuid": "d81168ce-0233-487a-8095-e993cd7e3ffe"
+                },
+                {
+                  "key": "nin",
+                  "value": "38802462012",
+                  "type": "text",
+                  "uuid": "e47dfc49-57f7-4b1c-971f-71b3235af646"
+                },
+                {
+                  "key": "passportPhoto",
+                  "type": "file",
+                  "uuid": "34f14d2a-e982-4b01-b239-c95d485d7dcf",
+                  "src": "/Users/apple/Documents/Screenshot 2025-12-20 at 3.47.08 PM.png",
+                  "disabled": true
+                },
+                {
+                  "key": "utilityBill",
+                  "type": "file",
+                  "uuid": "d3cc7257-517e-443b-b1e3-928b3119e06e",
+                  "src": "/Users/apple/Downloads/Compliance form  (revised) 2 (1) (3).pdf",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}kyc/submit",
+              "host": [
+                "{{baseURL}}kyc"
+              ],
+              "path": [
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upgrade Kyc",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tier",
+                  "value": "1",
+                  "type": "text",
+                  "uuid": "efe84db1-d99c-4919-ae6b-e21e9e9cdf0e"
+                },
+                {
+                  "key": "fullName",
+                  "value": "Melody Samuel",
+                  "type": "text",
+                  "uuid": "0d85ecab-5595-49e8-a95e-802f56210854"
+                },
+                {
+                  "key": "dateOfBirth",
+                  "value": "1999-03-10",
+                  "type": "text",
+                  "uuid": "32baf7f9-8b45-42f0-8713-70208b76ea7d"
+                },
+                {
+                  "key": "phoneNumber",
+                  "value": "0912345678",
+                  "type": "text",
+                  "uuid": "b89ed3d7-e2d2-422e-9c7a-0cc8c1f29bde"
+                },
+                {
+                  "key": "address",
+                  "value": "Lagos",
+                  "type": "text",
+                  "uuid": "2fbb2352-0928-471d-917a-783ffb913f09"
+                },
+                {
+                  "key": "bvn",
+                  "value": "22624259105",
+                  "type": "text",
+                  "uuid": "d81168ce-0233-487a-8095-e993cd7e3ffe"
+                },
+                {
+                  "key": "nin",
+                  "value": "38074528687",
+                  "type": "text",
+                  "uuid": "e47dfc49-57f7-4b1c-971f-71b3235af646"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}kyc/submit",
+              "host": [
+                "{{baseURL}}kyc"
+              ],
+              "path": [
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deposit Funds",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"amount\": 5000000 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}wallet/deposit",
+              "host": [
+                "{{baseURL}}wallet"
+              ],
+              "path": [
+                "deposit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Customer-To-Customer Ttransfer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 20000\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}wallet/withdraw",
+              "host": [
+                "{{baseURL}}wallet"
+              ],
+              "path": [
+                "withdraw"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}wallet/transactions",
+              "host": [
+                "{{baseURL}}wallet"
+              ],
+              "path": [
+                "transactions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getOverview",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}wallet/overview",
+              "host": [
+                "{{baseURL}}wallet"
+              ],
+              "path": [
+                "overview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Webhook URL",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// 1. Set your secret key",
+                  "const secret = \"sk_sandbox_qOWv1SvoBGVo9QRGUT1LLjcZGZ83PNhUaCo9z5VbiCx844ha\";",
+                  "",
+                  "// 2. Get the raw body from the 'Body' tab",
+                  "const body = pm.request.body.raw;",
+                  "",
+                  "if (body) {",
+                  "    // 3. Generate the HMAC-SHA512 hash",
+                  "    const hash = CryptoJS.HmacSHA512(body, secret).toString();",
+                  "",
+                  "    // 4. Automatically add the header to the request",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-xpress-signature',",
+                  "        value: hash",
+                  "    });",
+                  "    ",
+                  "    console.log(\"✅ Signature Generated: \" + hash);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"transaction.successful\",\n  \"data\": {\n    \"amount\": 200,\n    \"reference\": \"1da8c4c6-820e-483e-be61-f6e09fafea95\",\n    \"customer_id\": \"83aa2f04-f96c-436e-8941-e94d435134c4\",\n    \"type\": \"credit\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://flashily-unintegrable-holden.ngrok-free.dev/api/webhooks/xpress",
+              "protocol": "https",
+              "host": [
+                "flashily-unintegrable-holden",
+                "ngrok-free",
+                "dev"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "xpress"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Income",
+      "item": [
+        {
+          "name": "Add Income",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source\": \"Monthly Subscription Fees\",\n  \"amount\": 150000,\n  \"category\": \"business\",\n  \"description\": \"Revenue from November product subscriptions\",\n  \"date\": \"2025-11-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://13.48.253.14:4000/api/income/add-income",
+              "protocol": "http",
+              "host": [
+                "13",
+                "48",
+                "253",
+                "14"
+              ],
+              "port": "4000",
+              "path": [
+                "api",
+                "income",
+                "add-income"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Income",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://13.48.253.14:4000/api/income/get-income",
+              "protocol": "http",
+              "host": [
+                "13",
+                "48",
+                "253",
+                "14"
+              ],
+              "port": "4000",
+              "path": [
+                "api",
+                "income",
+                "get-income"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Income",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}income/69142b5cc7d88da14b178a6a",
+              "host": [
+                "{{baseURL}}income"
+              ],
+              "path": [
+                "69142b5cc7d88da14b178a6a"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Income",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": " {\n    \"source\": \"Investment Fund\",\n    \"amount\": 100000,\n    \"category\": \"investment\",\n    \"description\": \"Birthday money from a friend\",\n    \"date\": \"2025-11-07\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}income/692443b2b7809ffab90d40a3",
+              "host": [
+                "{{baseURL}}income"
+              ],
+              "path": [
+                "692443b2b7809ffab90d40a3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Income",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}income/69142b5cc7d88da14b178a6a",
+              "host": [
+                "{{baseURL}}income"
+              ],
+              "path": [
+                "69142b5cc7d88da14b178a6a"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Seed Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://13.48.253.14:4000/api/categories?type=budget",
+              "protocol": "http",
+              "host": [
+                "13",
+                "48",
+                "253",
+                "14"
+              ],
+              "port": "4000",
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "budget"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "by-type",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://13.48.253.14:4000/api/categories/by-type?type=income",
+              "protocol": "http",
+              "host": [
+                "13",
+                "48",
+                "253",
+                "14"
+              ],
+              "port": "4000",
+              "path": [
+                "api",
+                "categories",
+                "by-type"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "income"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subcategories",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}categories/subcategories",
+              "host": [
+                "{{baseURL}}categories"
+              ],
+              "path": [
+                "subcategories"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kyc",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Assistant",
+      "item": [
+        {
+          "name": "Ai Assistant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"How much did i spend on transport\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}ai/ask",
+              "host": [
+                "{{baseURL}}ai"
+              ],
+              "path": [
+                "ask"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Ai Assistant",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"message\": \"what data do you have about my finances\"\n}\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}ai/ask",
+                  "host": [
+                    "{{baseURL}}ai"
+                  ],
+                  "path": [
+                    "ask"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "196"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"c4-pa2SEf5Fbp85HTzvqn9dmrSIaa4\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Fri, 05 Dec 2025 08:17:57 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"status\": \"success\",\n    \"reply\": \"I don't have any data about your finances yet. Once you connect your accounts, I can give you personalized insights and recommendations! \\n\",\n    \"intent\": \"general-advice\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ai Tips",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}ai/tips",
+              "host": [
+                "{{baseURL}}ai"
+              ],
+              "path": [
+                "tips"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Expense Logging",
+      "item": []
+    },
+    {
+      "name": "WebhookXpress",
+      "item": [
+        {
+          "name": "Xpress Webhook",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
