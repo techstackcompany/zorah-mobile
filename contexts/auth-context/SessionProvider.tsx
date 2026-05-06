@@ -4,6 +4,7 @@ import {
   asyncStorageSetItem,
   clearAuthTokens,
 } from "@/lib/persistedStorageConfig";
+import { clearPin } from "@/lib/pinStorage";
 import { clearPersistedQueryCache } from "@/lib/reactQuery";
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { UserProfile } from "@/src/api/types";
@@ -123,6 +124,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
     queryClient.removeQueries();
     queryClient.clear();
+
+    await clearPin();
 
     setSession(null);
     setIsVerified(null);
