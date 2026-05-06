@@ -55,7 +55,7 @@ export async function asyncStorageSetJSON(
   }
 }
 
-async function secureStoreGetItem(key: string): Promise<string | null> {
+export async function secureStoreGetItem(key: string): Promise<string | null> {
   try {
     return await SecureStore.getItemAsync(key);
   } catch {
@@ -63,13 +63,13 @@ async function secureStoreGetItem(key: string): Promise<string | null> {
   }
 }
 
-async function secureStoreSetItem(key: string, value: string): Promise<void> {
+export async function secureStoreSetItem(key: string, value: string): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {}
 }
 
-async function secureStoreRemoveItem(key: string): Promise<void> {
+export async function secureStoreRemoveItem(key: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {}
