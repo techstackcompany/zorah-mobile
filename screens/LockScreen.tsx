@@ -1,13 +1,12 @@
 import COLORS from "@/constants/colors";
-import { useVerifyUserPinMutation } from "@/src/api/hooks";
+import { useBiometricSupport } from "@/hooks/useBiometricSupport";
+import { verifyPin } from "@/lib/pinStorage";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as LocalAuthentication from "expo-local-authentication";
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Text from "@/components/ui/Text";
 import {
   ActivityIndicator,
@@ -26,77 +25,15 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+
 const CODE_FIELDS = 4;
 const OFFSET = 20;
 const TIME = 80;
-type BiometricSupport = {
-  hasHardware: boolean;
-  supportsFaceId: boolean;
-  supportsFingerprint: boolean;
-  isEnrolled: boolean;
-  checking: boolean;
-  isAvailable: boolean;
-};
 
 type LockScreenProps = {
   visible?: boolean;
   onUnlock?: () => void;
   variant?: "screen" | "modal";
-};
-
-const useDeviceBiometricSupport = (): BiometricSupport => {
-  const [support, setSupport] = useState({
-    hasHardware: false,
-    supportsFaceId: false,
-    supportsFingerprint: false,
-    isEnrolled: false,
-    checking: true,
-  });
-
-  useEffect(() => {
-    let active = true;
-
-    const checkSupport = async () => {
-      try {
-        const [hasHardware, supportedTypes, isEnrolled] = await Promise.all([
-          LocalAuthentication.hasHardwareAsync(),
-          LocalAuthentication.supportedAuthenticationTypesAsync(),
-          LocalAuthentication.isEnrolledAsync(),
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        setSupport({
-          hasHardware,
-          supportsFaceId: supportedTypes.includes(
-            LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
-          ),
-          supportsFingerprint: supportedTypes.includes(
-            LocalAuthentication.AuthenticationType.FINGERPRINT,
-          ),
-          isEnrolled,
-          checking: false,
-        });
-      } catch {
-        if (active) {
-          setSupport((prev) => ({ ...prev, checking: false }));
-        }
-      }
-    };
-
-    checkSupport();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return {
-    ...support,
-    isAvailable: !support.checking && support.hasHardware && support.isEnrolled,
-  };
 };
 
 const LockScreen = ({
@@ -106,117 +43,127 @@ const LockScreen = ({
 }: LockScreenProps) => {
   const [code, setCode] = useState<number[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
-  const router = useRouter();
+  const [pinError, setPinError] = useState(false);
+  const biometricAttempted = useRef(false);
 
   const {
     isAvailable: biometricsAvailable,
     supportsFaceId,
     supportsFingerprint,
-  } = useDeviceBiometricSupport();
+    checking,
+  } = useBiometricSupport();
 
-  
   const biometricIcon =
     Platform.OS === "android" || supportsFingerprint
       ? "fingerprint"
       : supportsFaceId
         ? "face-recognition"
         : "lock";
+
   const codeLength = Array(CODE_FIELDS).fill(null);
   const offset = useSharedValue(0);
 
-  const handleUnlockSuccess = useCallback(async () => {
-    await AsyncStorage.setItem("userInactivity:wasInBackground", "false");
+  const shakeAndReset = useCallback(() => {
+    offset.value = withSequence(
+      withTiming(-OFFSET, { duration: TIME / 20 }),
+      withRepeat(withTiming(OFFSET, { duration: TIME / 2 }), 4, true),
+      withTiming(0, { duration: TIME / 2 }),
+    );
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  }, [offset]);
+
+  // Reset state when lock hides so the next session starts clean.
+  useEffect(() => {
+    if (!visible) {
+      biometricAttempted.current = false;
+      setCode([]);
+      setIsVerifying(false);
+      setPinError(false);
+    }
+  }, [visible]);
+
+  const handleUnlockSuccess = useCallback(() => {
     setCode([]);
     setIsVerifying(false);
+    setPinError(false);
+    onUnlock?.();
+  }, [onUnlock]);
 
-    if (onUnlock) {
-      onUnlock();
+  // Auto-trigger biometric once per lock session. Guards against calling
+  // authenticateAsync before availability is confirmed (checking === false)
+  // and against re-triggering when handleUnlockSuccess reference changes.
+  useEffect(() => {
+    if (!visible || checking || !biometricsAvailable || biometricAttempted.current) {
       return;
     }
+    biometricAttempted.current = true;
 
-    router.replace("/(app)/(home)");
-  }, [onUnlock, router]);
-
-  const verifyPinMutation = useVerifyUserPinMutation({
-    onSuccess: async () => {
-      await handleUnlockSuccess();
-    },
-    onError: (error) => {
-      setIsVerifying(false);
-      offset.value = withSequence(
-        withTiming(-OFFSET, { duration: TIME / 20 }),
-        withRepeat(withTiming(OFFSET, { duration: TIME / 2 }), 4, true),
-        withTiming(0, { duration: TIME / 2 }),
-      );
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Toast.show({
-        type: "error",
-        text1: "Invalid PIN",
-        text2: error.message || "Please try again.",
+    const attempt = async () => {
+      const { success } = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Unlock Zorah",
+        disableDeviceFallback: false,
       });
-      setCode([]);
-    },
-  });
-  const style = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: offset.value }],
+      if (success) {
+        handleUnlockSuccess();
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     };
-  });
+    attempt();
+  }, [visible, checking, biometricsAvailable, handleUnlockSuccess]);
+
+  // Verify PIN locally once 4 digits are entered. No network call.
+  useEffect(() => {
+    if (code.length !== CODE_FIELDS || isVerifying) return;
+
+    setIsVerifying(true);
+    verifyPin(code.join("")).then((isCorrect) => {
+      if (isCorrect) {
+        handleUnlockSuccess();
+      } else {
+        setIsVerifying(false);
+        setCode([]);
+        setPinError(true);
+        shakeAndReset();
+        Toast.show({
+          type: "error",
+          text1: "Incorrect PIN",
+          text2: "Please try again.",
+        });
+      }
+    });
+  }, [code, isVerifying, handleUnlockSuccess, shakeAndReset]);
 
   const onNumberPress = (number: number) => {
-    
-    if (
-      code.length < CODE_FIELDS &&
-      !isVerifying &&
-      !verifyPinMutation.isPending
-    ) {
+    if (code.length < CODE_FIELDS && !isVerifying) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setPinError(false);
       setCode((prev) => [...prev, number]);
     }
   };
+
   const onBackSpacePress = () => {
-    
-    if (code.length > 0 && !isVerifying && !verifyPinMutation.isPending) {
+    if (code.length > 0 && !isVerifying) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setCode(code.slice(0, -1));
     }
   };
+
   const onBiometricPress = async () => {
-    const { success } = await LocalAuthentication.authenticateAsync();
+    const { success } = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Unlock Zorah",
+      disableDeviceFallback: false,
+    });
     if (success) {
-      await handleUnlockSuccess();
+      handleUnlockSuccess();
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
-  useEffect(() => {
-    if (!visible) return;
-
-    const handleBiometric = async () => {
-      const { success } = await LocalAuthentication.authenticateAsync();
-      if (success) {
-        await handleUnlockSuccess();
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-    };
-    handleBiometric();
-  }, [visible, handleUnlockSuccess]);
-
-  useEffect(() => {
-    
-    if (
-      code.length === CODE_FIELDS &&
-      !isVerifying &&
-      !verifyPinMutation.isPending
-    ) {
-      const pin = code.join("");
-      setIsVerifying(true);
-      verifyPinMutation.mutate({ pin });
-    }
-    
-  }, [code, isVerifying, verifyPinMutation]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: offset.value }],
+  }));
 
   if (!visible) return null;
 
@@ -251,10 +198,16 @@ const LockScreen = ({
                 styles.codeEmpty,
                 {
                   backgroundColor:
-                    index < code.length ? COLORS.primary_400 : "transparent",
+                    index < code.length
+                      ? pinError
+                        ? COLORS.error
+                        : COLORS.primary_400
+                      : "transparent",
                   borderColor:
                     index < code.length
-                      ? COLORS.primary_400
+                      ? pinError
+                        ? COLORS.error
+                        : COLORS.primary_400
                       : COLORS.primary_200,
                   borderWidth: index < code.length ? 0 : 2,
                   opacity: isVerifying ? 0 : 1,
@@ -275,10 +228,7 @@ const LockScreen = ({
             return (
               <View
                 key={rowIndex}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
+                style={{ flexDirection: "row", justifyContent: "space-between" }}
               >
                 {[base, base + 1, base + 2].map((number) => (
                   <TouchableOpacity
@@ -352,6 +302,7 @@ const LockScreen = ({
         animationType="fade"
         visible={visible}
         statusBarTranslucent
+        onRequestClose={() => {}}
       >
         {content}
       </Modal>
@@ -360,18 +311,11 @@ const LockScreen = ({
 
   return content;
 };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    alignItems: "center",
-    marginTop: 40,
-    marginBottom: 20,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  header: { alignItems: "center", marginTop: 40, marginBottom: 20 },
   iconContainer: {
     width: 80,
     height: 80,
@@ -381,18 +325,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
     shadowColor: COLORS.primary_400,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
   },
-  appIcon: {
-    width: 60,
-    height: 60,
-  },
+  appIcon: { width: 60, height: 60 },
   codeView: {
     flexDirection: "row",
     justifyContent: "center",
@@ -412,17 +350,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
-  codeEmpty: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-  },
-  numbersView: {
-    marginHorizontal: 40,
-    gap: 24,
-    marginTop: 20,
-  },
+  codeEmpty: { width: 16, height: 16, borderRadius: 8, borderWidth: 2 },
+  numbersView: { marginHorizontal: 40, gap: 24, marginTop: 20 },
   keypadBtn: {
     width: 70,
     height: 70,
@@ -433,24 +362,18 @@ const styles = StyleSheet.create({
   numberBtn: {
     backgroundColor: "#FFFFFF",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   biometricBtn: {
-    backgroundColor: COLORS.primary_100,
+    backgroundColor: COLORS.primary_200,
     borderWidth: 1,
     borderColor: COLORS.primary_200,
   },
-  backspaceBtn: {
-    backgroundColor: "transparent",
-  },
-  disabledKeypad: {
-    opacity: 0.4,
-  },
+  backspaceBtn: { backgroundColor: "transparent" },
+  disabledKeypad: { opacity: 0.4 },
 });
+
 export default LockScreen;
