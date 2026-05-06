@@ -7,29 +7,43 @@ import { AppState, AppStateStatus, StyleSheet, View } from "react-native";
 
 const LAST_BACKGROUND_KEY = "userInactivity:wasInBackground";
 const LAST_ACTIVE_KEY = "userInactivity:lastActive";
-const INACTIVITY_LOCK_TIMEOUT_MS = 60_000 * 5;
-const BACKGROUND_LOCK_TIMEOUT_MS = 5000;
+const INACTIVITY_LOCK_TIMEOUT_MS = 60_000 * 5; // 5 minutes of no interaction
+const BACKGROUND_LOCK_TIMEOUT_MS = 30_000; // 30 seconds in background before locking
 
 const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
   const appState = useRef(AppState.currentState);
   const wasInBackground = useRef<boolean>(false);
   const lastActiveAt = useRef<number | null>(null);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLockVisible, setIsLockVisible] = useState(false);
   const [showPrivacyOverlay, setShowPrivacyOverlay] = useState(false);
-  const { settings } = useAppSettings();
-  const inactivityTimeout = INACTIVITY_LOCK_TIMEOUT_MS;
+  const { settings, isLoaded: settingsLoaded } = useAppSettings();
 
   const persistState = useCallback((entries: [string, string][]) => {
     void AsyncStorage.multiSet(entries);
   }, []);
 
-  const markActive = useCallback(() => {
-    if (isLockVisible || appState.current !== "active") return;
+  const cancelInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current !== null) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+  }, []);
 
-    const now = Date.now();
-    lastActiveAt.current = now;
-    AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
-  }, [isLockVisible]);
+  const triggerLock = useCallback(() => {
+    if (!settings.enableBiometrics) return;
+    cancelInactivityTimer();
+    setIsLockVisible(true);
+  }, [settings.enableBiometrics, cancelInactivityTimer]);
+
+  // Cancels any previous timeout and schedules a new one. Called on every
+  // user touch, after unlock, and on foreground return when not locking.
+  const scheduleInactivityTimer = useCallback(() => {
+    cancelInactivityTimer();
+    inactivityTimerRef.current = setTimeout(() => {
+      triggerLock();
+    }, INACTIVITY_LOCK_TIMEOUT_MS);
+  }, [cancelInactivityTimer, triggerLock]);
 
   const hideLock = useCallback(() => {
     setIsLockVisible(false);
@@ -40,14 +54,17 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
     ]);
     lastActiveAt.current = now;
     setShowPrivacyOverlay(false);
-  }, [persistState]);
+    scheduleInactivityTimer();
+  }, [persistState, scheduleInactivityTimer]);
 
-  const triggerLock = useCallback(() => {
-    if (!settings.enableBiometrics) {
-      return;
-    }
-    setIsLockVisible(true);
-  }, [settings.enableBiometrics]);
+  // Called on every user touch via the View responder wrapper below.
+  const markActive = useCallback(() => {
+    if (isLockVisible || appState.current !== "active") return;
+    const now = Date.now();
+    lastActiveAt.current = now;
+    AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+    scheduleInactivityTimer();
+  }, [isLockVisible, scheduleInactivityTimer]);
 
   const handleAppStateChange = useCallback(
     (nextAppState: AppStateStatus) => {
@@ -58,13 +75,13 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
         previousState === "active"
       ) {
         wasInBackground.current = true;
+        cancelInactivityTimer();
         const now = Date.now();
         lastActiveAt.current = now;
         persistState([
           [LAST_BACKGROUND_KEY, "true"],
           [LAST_ACTIVE_KEY, now.toString()],
         ]);
-
         if (settings.enableBiometrics && settings.privacyOverlayEnabled) {
           setShowPrivacyOverlay(true);
         }
@@ -74,6 +91,7 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
         nextAppState === "active" &&
         (previousState === "background" || previousState === "inactive")
       ) {
+        setShowPrivacyOverlay(false);
         if (settings.enableBiometrics && wasInBackground.current) {
           wasInBackground.current = false;
           const lastActiveTime = lastActiveAt.current ?? Date.now();
@@ -86,10 +104,8 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
           }
         } else {
           wasInBackground.current = false;
-          hideLock();
+          scheduleInactivityTimer();
         }
-
-        setShowPrivacyOverlay(false);
       }
 
       appState.current = nextAppState;
@@ -100,73 +116,62 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
       settings.privacyOverlayEnabled,
       triggerLock,
       persistState,
+      cancelInactivityTimer,
+      scheduleInactivityTimer,
     ],
   );
 
+  // Register AppState listener. Separate from the cold-start check so that
+  // the listener is not re-registered when settingsLoaded changes.
   useEffect(() => {
-    const loadState = async () => {
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, [handleAppStateChange]);
+
+  // Cold-start lock check. Waits for settings to load from AsyncStorage before
+  // making any decision so the default false value never silently skips a lock.
+  useEffect(() => {
+    if (!settingsLoaded) return;
+
+    const checkInitialLockState = async () => {
       try {
-        const [storedBackground, storedLastActive] =
-          await AsyncStorage.multiGet([LAST_BACKGROUND_KEY, LAST_ACTIVE_KEY]);
+        const [storedBackground, storedLastActive] = await AsyncStorage.multiGet([
+          LAST_BACKGROUND_KEY,
+          LAST_ACTIVE_KEY,
+        ]);
         const wasBg = storedBackground?.[1] === "true";
         const lastActive = Number(storedLastActive?.[1] ?? "");
-        lastActiveAt.current = Number.isFinite(lastActive)
-          ? lastActive
-          : Date.now();
+        lastActiveAt.current = Number.isFinite(lastActive) ? lastActive : Date.now();
 
         if (
           settings.enableBiometrics &&
           wasBg &&
-          Date.now() - (lastActiveAt.current ?? Date.now()) >=
-            BACKGROUND_LOCK_TIMEOUT_MS
+          Date.now() - (lastActiveAt.current ?? Date.now()) >= BACKGROUND_LOCK_TIMEOUT_MS
         ) {
           triggerLock();
+        } else {
+          scheduleInactivityTimer();
         }
       } catch (error) {
         console.error("Failed to load background state", error);
+        scheduleInactivityTimer();
       }
     };
-    loadState();
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange,
-    );
-    return () => subscription.remove();
-  }, [handleAppStateChange, settings.enableBiometrics, triggerLock]);
+    checkInitialLockState();
+  }, [settingsLoaded, settings.enableBiometrics, triggerLock, scheduleInactivityTimer]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (
-        !settings.enableBiometrics ||
-        isLockVisible ||
-        appState.current !== "active" ||
-        lastActiveAt.current === null
-      ) {
-        return;
-      }
-
-      const shouldLock = Date.now() - lastActiveAt.current >= inactivityTimeout;
-
-      if (shouldLock) {
-        wasInBackground.current = true;
-        triggerLock();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [
-    isLockVisible,
-    inactivityTimeout,
-    settings.enableBiometrics,
-    triggerLock,
-  ]);
-
+  // Auto-dismiss lock if biometrics is disabled while lock is visible.
   useEffect(() => {
     if (!settings.enableBiometrics && isLockVisible) {
       setIsLockVisible(false);
       setShowPrivacyOverlay(false);
     }
   }, [isLockVisible, settings.enableBiometrics]);
+
+  // Cancel timer on unmount to prevent memory leaks.
+  useEffect(() => {
+    return () => cancelInactivityTimer();
+  }, [cancelInactivityTimer]);
 
   return (
     <View
