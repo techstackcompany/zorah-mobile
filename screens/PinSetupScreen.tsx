@@ -1,18 +1,16 @@
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useAppSettings from "@/contexts/settings-context/useAppSettings";
-import {
-  useSetUserPinMutation,
-  useToggleBiometricsMutation,
-} from "@/src/api/hooks";
+import { useBiometricSupport } from "@/hooks/useBiometricSupport";
+import { savePin } from "@/lib/pinStorage";
+import { useSetUserPinMutation } from "@/src/api/hooks";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -44,28 +42,20 @@ const PinSetupScreen = () => {
   const [step, setStep] = useState<PinSetupStep>("create");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  const { isAvailable: biometricsAvailable } = useBiometricSupport();
   const offset = useSharedValue(0);
 
-  useEffect(() => {
-    const checkBiometrics = async () => {
-      try {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-        setBiometricsAvailable(hasHardware && isEnrolled);
-      } catch {
-        setBiometricsAvailable(false);
-      }
-    };
-    checkBiometrics();
-  }, []);
-
-  const toggleBiometricsMutation = useToggleBiometricsMutation({
+  const setPinMutation = useSetUserPinMutation({
     onSuccess: async () => {
+      await savePin(pin);
+      updateSetting("enableBiometrics", biometricsAvailable);
+
       Toast.show({
         type: "success",
         text1: "PIN Set Successfully",
-        text2: "Your PIN has been set up and biometrics enabled.",
+        text2: biometricsAvailable
+          ? "Your PIN is set and biometric login is enabled."
+          : "Your account is now secured with a PIN.",
       });
 
       await queryClient.refetchQueries({ queryKey: ["auth", "profile"] });
@@ -73,41 +63,11 @@ const PinSetupScreen = () => {
       if (freshProfile) {
         setUserData(freshProfile);
       }
-      updateSetting("enableBiometrics", true);
 
       if (router.canGoBack()) {
         router.back();
       } else {
         router.push("/(app)/(home)");
-      }
-    },
-    onError: (error) => {
-      Toast.show({
-        type: "error",
-        text1: "Failed to Enable Biometrics",
-        text2: error.message || "Please try again.",
-      });
-      setPin("");
-      setConfirmPin("");
-      setStep("create");
-    },
-  });
-
-  const setPinMutation = useSetUserPinMutation({
-    onSuccess: () => {
-      if (biometricsAvailable) {
-        toggleBiometricsMutation.mutate({ enabled: true });
-      } else {
-        Toast.show({
-          type: "success",
-          text1: "PIN Set Successfully",
-          text2: "Your account is now secured with PIN.",
-        });
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.push("/(app)/(home)");
-        }
       }
     },
     onError: (error) => {
@@ -129,10 +89,7 @@ const PinSetupScreen = () => {
   });
 
   const currentPin = step === "create" ? pin : confirmPin;
-  const isLoading = useMemo(
-    () => setPinMutation.isPending || toggleBiometricsMutation.isPending,
-    [setPinMutation.isPending, toggleBiometricsMutation.isPending],
-  );
+  const isLoading = setPinMutation.isPending;
 
   const onNumberPress = (number: number) => {
     if (currentPin.length < PIN_LENGTH && !isLoading) {
