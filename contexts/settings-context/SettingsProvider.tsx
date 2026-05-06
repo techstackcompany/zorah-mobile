@@ -18,10 +18,6 @@ type SettingsState = {
   hasSeenTourVideo: boolean;
   hasCompletedTour: boolean;
   enableBiometrics: boolean;
-  faceIdEnabled: boolean;
-  fingerprintEnabled: boolean;
-  appLockEnabled: boolean;
-  appLockRequireFaceId: boolean;
   privacyOverlayEnabled: boolean;
   marketingEmails: boolean;
   personalizedInsights: boolean;
@@ -50,10 +46,6 @@ const defaultSettings: SettingsState = {
   hasSeenTourVideo: false,
   hasCompletedTour: false,
   enableBiometrics: false,
-  faceIdEnabled: false,
-  fingerprintEnabled: false,
-  appLockEnabled: false,
-  appLockRequireFaceId: false,
   privacyOverlayEnabled: true,
   marketingEmails: true,
   personalizedInsights: true,
@@ -97,10 +89,10 @@ export function SettingsProvider({ children }: PropsWithChildren) {
     [],
   );
 
-  const resetSettings = () => {
+  const resetSettings = useCallback(() => {
     setSettings(defaultSettings);
     AsyncStorage.setItem("settings", JSON.stringify(defaultSettings));
-  };
+  }, []);
 
   const value = useMemo<SettingsContextValue>(
     () => ({
@@ -109,7 +101,7 @@ export function SettingsProvider({ children }: PropsWithChildren) {
       updateSetting,
       resetSettings,
     }),
-    [settings, isLoaded],
+    [settings, isLoaded, updateSetting, resetSettings],
   );
 
   return (
