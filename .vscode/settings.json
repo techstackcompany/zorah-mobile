@@ -5,6 +5,8 @@
     "source.sortMembers": "explicit"
   },
   "chat.tools.terminal.autoApprove": {
-    "git commit": true
+    "git commit": true,
+    "git add": true,
+    "npx tsc": true
   }
 }

@@ -52,7 +52,6 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ],
-      "@react-native-firebase/app",
       [
         "expo-speech-recognition",
         {
