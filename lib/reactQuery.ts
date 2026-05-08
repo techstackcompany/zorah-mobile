@@ -1,20 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { onlineManager, QueryClient } from "@tanstack/react-query";
+import { focusManager, QueryClient } from "@tanstack/react-query";
 import {
   PersistedClient,
   PersistQueryClientProvider,
   Persister,
 } from "@tanstack/react-query-persist-client";
-import * as Network from "expo-network";
+import { AppState } from "react-native";
 import React, { PropsWithChildren } from "react";
 
 const QUERY_CACHE_KEY = "rq:cache";
 
-onlineManager.setEventListener((setOnline) => {
-  const subscription = Network.addNetworkStateListener((state) => {
-    const isOnline =
-      !!state.isConnected && state.isInternetReachable !== false;
-    setOnline(isOnline);
+// Bridge React Native AppState to React Query's focusManager so queries
+// refetch when the app returns to foreground from background.
+focusManager.setEventListener((setFocused) => {
+  const subscription = AppState.addEventListener("change", (state) => {
+    setFocused(state === "active");
   });
   return () => subscription.remove();
 });
