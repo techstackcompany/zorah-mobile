@@ -7,9 +7,11 @@ import { formatCurrency } from "@/constants/investments";
 import {
   calculateGoalProgress,
   getStatusTone,
+  GoalContribution,
   mapApiGoalToUiGoal,
+  SavingsGoal,
 } from "@/constants/savings";
-import { extractArrayResData } from "@/lib/utils";
+import { capitalizeWord, extractArrayResData } from "@/lib/utils";
 import { useGetSavingsGoalsQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
@@ -195,7 +197,7 @@ const SavingsGoalsScreen = () => {
                           weight="semibold"
                           className="text-lg text-textColor"
                         >
-                          {goal.name}
+                          {capitalizeWord(goal.name)}
                         </Text>
                         <Text
                           numberOfLines={2}
@@ -268,207 +270,222 @@ const SavingsGoalsScreen = () => {
           )}
         </View>
       </ScrollView>
-      <SlideUpModal
-        ref={goalModalRef}
-        onClose={() => {}}
-        title="Goal Details"
-        headerBackgroundColor={COLORS.primary_400}
-        headerTextColor="#FFFFFF"
-        snapPoints={["75%"]}
-      >
-        {selectedGoal ? (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.goalModalContent}
-          >
-            <View style={styles.goalModalCard}>
-              <View style={styles.goalModalHeader}>
-                <View style={styles.goalTitleText}>
-                  <View className="flex-row gap-2">
-                    <View>
-                      <Ionicons
-                        name={selectedGoal.icon}
-                        size={22}
-                        color={selectedGoal.iconColor}
-                      />
-                    </View>
-                    <Text weight="bold" className="text-lg text-textColor">
-                      {selectedGoal.name}
-                    </Text>
+
+      <SummaryCard
+        selectedGoal={selectedGoal}
+        goalModalRef={goalModalRef}
+        selectedGoalProgress={selectedGoalProgress}
+        selectedGoalContributions={selectedGoalContributions}
+      />
+    </MainContainer>
+  );
+};
+
+interface SummaryCardProps {
+  selectedGoal: SavingsGoal | null;
+  goalModalRef: React.RefObject<SlideUpModalRef | null>;
+  selectedGoalProgress: number;
+  selectedGoalContributions: GoalContribution[];
+}
+
+const SummaryCard = ({
+  selectedGoal,
+  goalModalRef,
+  selectedGoalProgress,
+  selectedGoalContributions,
+}: SummaryCardProps) => {
+  const router = useRouter();
+  return (
+    <SlideUpModal
+      ref={goalModalRef}
+      title="Goal Details"
+      headerBackgroundColor={COLORS.primary_400}
+      headerTextColor="#FFFFFF"
+      snapPoints={["75%"]}
+    >
+      {selectedGoal ? (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.goalModalContent}
+        >
+          <View style={styles.goalModalCard}>
+            <View style={styles.goalModalHeader}>
+              <View style={styles.goalTitleText}>
+                <View className="flex-row gap-2">
+                  <View>
+                    <Ionicons
+                      name={selectedGoal.icon}
+                      size={22}
+                      color={selectedGoal.iconColor}
+                    />
                   </View>
-                  <Text className="mt-1 text-sm text-textColor/60">
-                    {selectedGoal.description}
+                  <Text weight="bold" className="text-lg text-textColor">
+                    {capitalizeWord(selectedGoal.name)}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Edit goal"
-                  onPress={() => {
-                    if (!selectedGoal) {
-                      return;
-                    }
-                    goalModalRef.current?.dismiss();
-                    router.push({
-                      pathname: "/savings-goals/edit",
-                      params: { id: selectedGoal.id },
-                    });
-                  }}
-                >
-                  <Image
-                    source={require("@/assets/icons/edit.svg")}
-                    style={{ width: 20, height: 20 }}
-                    tintColor={COLORS.primary_400}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.goalModalSection}>
-                <Text weight="semibold" className="text-lg text-textColor">
-                  Progress
-                </Text>
-                <View style={styles.goalModalAmountRow}>
-                  <View>
-                    <Text className="text-xs text-textColor/60">
-                      Current Amount
-                    </Text>
-                    <Text
-                      weight="bold"
-                      className="mt-1 text-base"
-                      style={{ color: COLORS.secondary_500 }}
-                    >
-                      {formatCurrency(selectedGoal.currentAmount)}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text className="text-xs text-textColor/60">Target</Text>
-                    <Text
-                      weight="bold"
-                      className="mt-1 text-base text-textColor"
-                    >
-                      {formatCurrency(selectedGoal.targetAmount)}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.goalModalProgressTrack}>
-                  <View
-                    style={[
-                      styles.goalModalProgressFill,
-                      {
-                        width: `${selectedGoalProgress * 100}%`,
-                        backgroundColor:
-                          selectedGoal.status === "completed"
-                            ? COLORS.secondary_500
-                            : COLORS.primary_400,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text className="mt-2 text-xs text-textColor/70">
-                  {(selectedGoalProgress * 100).toFixed(0)}% Complete
+                <Text className="mt-1 text-sm text-textColor/60">
+                  {selectedGoal.description}
                 </Text>
               </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Edit goal"
+                onPress={() => {
+                  if (!selectedGoal) {
+                    return;
+                  }
+                  goalModalRef.current?.dismiss();
+                  router.push({
+                    pathname: "/savings-goals/edit",
+                    params: { id: selectedGoal.id },
+                  });
+                }}
+              >
+                <Image
+                  source={require("@/assets/icons/edit.svg")}
+                  style={{ width: 20, height: 20 }}
+                  tintColor={COLORS.primary_400}
+                />
+              </TouchableOpacity>
+            </View>
 
-              <View style={styles.goalModalMetaRow}>
+            <View style={styles.goalModalSection}>
+              <Text weight="semibold" className="text-lg text-textColor">
+                Progress
+              </Text>
+              <View style={styles.goalModalAmountRow}>
                 <View>
-                  <Text className="text-xs text-textColor/60">Category</Text>
+                  <Text className="text-xs text-textColor/60">
+                    Current Amount
+                  </Text>
                   <Text
-                    weight="semibold"
-                    className="mt-1 text-sm text-textColor"
+                    weight="bold"
+                    className="mt-1 text-base"
+                    style={{ color: COLORS.secondary_500 }}
                   >
-                    {selectedGoal.category}
+                    {formatCurrency(selectedGoal.currentAmount)}
                   </Text>
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text className="text-xs text-textColor/60">Target Date</Text>
-                  <Text
-                    weight="semibold"
-                    className="mt-1 text-sm text-textColor"
-                  >
-                    {new Date(selectedGoal.targetDate).toLocaleDateString(
-                      "en-US",
-                      {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                      },
-                    )}
+                  <Text className="text-xs text-textColor/60">Target</Text>
+                  <Text weight="bold" className="mt-1 text-base text-textColor">
+                    {formatCurrency(selectedGoal.targetAmount)}
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.goalModalHistorySection}>
-                <Text
-                  weight="semibold"
-                  className="border-b border-grayLight text-lg text-textColor"
-                >
-                  Funding History
+              <View style={styles.goalModalProgressTrack}>
+                <View
+                  style={[
+                    styles.goalModalProgressFill,
+                    {
+                      width: `${selectedGoalProgress * 100}%`,
+                      backgroundColor:
+                        selectedGoal.status === "completed"
+                          ? COLORS.secondary_500
+                          : COLORS.primary_400,
+                    },
+                  ]}
+                />
+              </View>
+              <Text className="mt-2 text-xs text-textColor/70">
+                {(selectedGoalProgress * 100).toFixed(0)}% Complete
+              </Text>
+            </View>
+
+            <View style={styles.goalModalMetaRow}>
+              <View>
+                <Text className="text-xs text-textColor/60">Category</Text>
+                <Text weight="semibold" className="mt-1 text-sm text-textColor">
+                  {selectedGoal.category}
                 </Text>
-                <View style={styles.goalModalHistoryList}>
-                  {selectedGoalContributions.length === 0 ? (
-                    <Text className="text-xs text-textColor/60">
-                      No contributions yet.
-                    </Text>
-                  ) : (
-                    selectedGoalContributions.map((item, index) => (
-                      <View
-                        key={item.id || index}
-                        style={styles.goalModalHistoryItem}
-                      >
-                        <View>
-                          <Text
-                            weight="bold"
-                            className="text-base text-textColor"
-                          >
-                            {formatCurrency(item.amount)}
-                          </Text>
-                        </View>
-                        <View className="items-end">
-                          <Text className="mt-1 text-xs text-textColor/50">
-                            {new Date(item.createdAt).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                          <Text className="text-xs text-textColor">
-                            {item.source}
-                          </Text>
-                        </View>
-                      </View>
-                    ))
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text className="text-xs text-textColor/60">Target Date</Text>
+                <Text weight="semibold" className="mt-1 text-sm text-textColor">
+                  {new Date(selectedGoal.targetDate).toLocaleDateString(
+                    "en-US",
+                    {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                    },
                   )}
-                </View>
+                </Text>
               </View>
             </View>
 
-            <View style={styles.goalModalActionRow}>
-              <Button
-                title="Add Money"
-                className="flex-1"
-                onPress={() => {
-                  goalModalRef.current?.dismiss();
-                  if (selectedGoal) {
-                    router.push({
-                      pathname: "/savings-goals/add-money",
-                      params: { id: selectedGoal.id },
-                    });
-                  }
-                }}
-              />
-              <Button
-                title="Share"
-                variant="outline"
-                className="flex-1"
-                onPress={() => {}}
-              />
+            <View style={styles.goalModalHistorySection}>
+              <Text
+                weight="semibold"
+                className="border-b border-grayLight text-lg text-textColor"
+              >
+                Funding History
+              </Text>
+              <View style={styles.goalModalHistoryList}>
+                {selectedGoalContributions.length === 0 ? (
+                  <Text className="text-xs text-textColor/60">
+                    No contributions yet.
+                  </Text>
+                ) : (
+                  selectedGoalContributions.map((item, index) => (
+                    <View
+                      key={item.id || index}
+                      style={styles.goalModalHistoryItem}
+                    >
+                      <View>
+                        <Text
+                          weight="bold"
+                          className="text-base text-textColor"
+                        >
+                          {formatCurrency(item.amount)}
+                        </Text>
+                      </View>
+                      <View className="items-end">
+                        <Text className="mt-1 text-xs text-textColor/50">
+                          {new Date(item.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Text>
+                        <Text className="text-xs text-textColor">
+                          {item.source}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
             </View>
-          </ScrollView>
-        ) : null}
-      </SlideUpModal>
-    </MainContainer>
+          </View>
+
+          <View style={styles.goalModalActionRow}>
+            <Button
+              title="Add Money"
+              className="flex-1"
+              onPress={() => {
+                goalModalRef.current?.dismiss();
+                if (selectedGoal) {
+                  router.push({
+                    pathname: "/savings-goals/add-money",
+                    params: { id: selectedGoal.id },
+                  });
+                }
+              }}
+            />
+            <Button
+              title="Share"
+              variant="outline"
+              className="flex-1"
+              onPress={() => {}}
+            />
+          </View>
+        </ScrollView>
+      ) : null}
+    </SlideUpModal>
   );
 };
 
