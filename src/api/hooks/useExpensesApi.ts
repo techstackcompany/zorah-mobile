@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -26,16 +27,23 @@ export const useAddExpenseMutation = (
     ApiError,
     AddExpenseRequest
   >,
-) =>
-  useMutation<ApiEnvelope<Expense>, ApiError, AddExpenseRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<Expense>, ApiError, AddExpenseRequest>({
     mutationKey: ["expenses", "addExpense"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<Expense>>({
         ...API_ENDPOINTS.expenses.addExpense,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 type VoiceExpenseResponse = {
   message: string;
@@ -67,16 +75,23 @@ export const useVoiceExpenseLoggingMutation = (
     ApiError,
     VoiceExpenseRequest
   >,
-) =>
-  useMutation<VoiceExpenseResponse, ApiError, VoiceExpenseRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<VoiceExpenseResponse, ApiError, VoiceExpenseRequest>({
     mutationKey: ["expenses", "voiceLogExpense"],
     mutationFn: (payload) =>
       apiRequest<VoiceExpenseResponse>({
         ...API_ENDPOINTS.expenses.voiceLogExpense,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useUpdateExpenseMutation = (
   expenseId: string | undefined,
@@ -85,8 +100,10 @@ export const useUpdateExpenseMutation = (
     ApiError,
     UpdateExpenseRequest
   >,
-) =>
-  useMutation<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<Expense>, ApiError, UpdateExpenseRequest>({
     mutationKey: ["expenses", "update", expenseId],
     mutationFn: (payload) => {
       if (!expenseId) {
@@ -98,8 +115,13 @@ export const useUpdateExpenseMutation = (
         data: payload,
       });
     },
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useDeleteExpenseMutation = (
   expenseId: string | undefined,
@@ -108,8 +130,10 @@ export const useDeleteExpenseMutation = (
     ApiError,
     void
   >,
-) =>
-  useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["expenses", "delete", expenseId],
     mutationFn: () => {
       if (!expenseId) {
@@ -119,8 +143,13 @@ export const useDeleteExpenseMutation = (
         ...API_ENDPOINTS.expenses.deleteExpense(expenseId),
       });
     },
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useGetExpensesQuery = (
   options?: Partial<UseQueryOptions<ApiEnvelope<Expense[]>, ApiError>>,
