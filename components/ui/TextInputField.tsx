@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from "react";
 import {
   NativeSyntheticEvent,
-  TextInput as RNTextInput,
-  TextInputFocusEventData,
+  TextInput,
+  TargetedEvent,
   TextInputProps,
   View,
 } from "react-native";
@@ -18,62 +18,54 @@ export type TextInputFieldProps = {
   onFocusChange?: (focused: boolean) => void;
 } & TextInputProps;
 
-const TextInputField = React.forwardRef<RNTextInput, TextInputFieldProps>(
-  (
-    {
-      label,
-      containerClassName,
-      inputClassName,
-      onFocusChange,
-      onFocus,
-      onBlur,
-      className,
-      ...rest
+const TextInputField = ({
+  label,
+  containerClassName,
+  inputClassName,
+  onFocusChange,
+  onFocus,
+  onBlur,
+  className,
+  ...rest
+}: TextInputFieldProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const handleFocus = useCallback(
+    (event: NativeSyntheticEvent<TargetedEvent>) => {
+      setIsFocused(true);
+      onFocusChange?.(true);
+      onFocus?.(event);
     },
-    ref,
-  ) => {
-    const [isFocused, setIsFocused] = useState(false);
+    [onFocus, onFocusChange],
+  );
 
-    const handleFocus = useCallback(
-      (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-        setIsFocused(true);
-        onFocusChange?.(true);
-        onFocus?.(event);
-      },
-      [onFocus, onFocusChange],
-    );
+  const handleBlur = useCallback(
+    (event: NativeSyntheticEvent<TargetedEvent>) => {
+      setIsFocused(false);
+      onFocusChange?.(false);
+      onBlur?.(event);
+    },
+    [onBlur, onFocusChange],
+  );
 
-    const handleBlur = useCallback(
-      (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-        setIsFocused(false);
-        onFocusChange?.(false);
-        onBlur?.(event);
-      },
-      [onBlur, onFocusChange],
-    );
-
-    return (
-      <View className={containerClassName}>
-        {label ? (
-          <Text className="text-sm text-textColor/70">{label}</Text>
-        ) : null}
-        <RNTextInput
-          ref={ref}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          className={cn(
-            "mt-2 rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",
-            isFocused ? "border-primary_400" : "border-gray-200",
-            className,
-            inputClassName,
-          )}
-          {...rest}
-        />
-      </View>
-    );
-  },
-);
-
-TextInputField.displayName = "TextInputField";
+  return (
+    <View className={containerClassName}>
+      {label ? (
+        <Text className="text-sm text-textColor/70">{label}</Text>
+      ) : null}
+      <TextInput
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        className={cn(
+          "mt-2 rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",
+          isFocused ? "border-primary_400" : "border-gray-200",
+          className,
+          inputClassName,
+        )}
+        {...rest}
+      />
+    </View>
+  );
+};
 
 export default TextInputField;
