@@ -87,6 +87,7 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
+  email?: string;
   preferredReminderHour?: number;
 }
 
@@ -316,6 +317,7 @@ export interface Notification {
   read: boolean;
   createdAt: string;
   updatedAt: string;
+  __v?: number;
 }
 
 export interface RegisterNotificationTokenRequest {
