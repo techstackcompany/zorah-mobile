@@ -43,7 +43,6 @@ export const useGetFinancialTipQuery = (
         baseClient,
       );
 
-      console.log("[AI Tips] /ai/tips response:", response);
 
       const reply = (response.reply ?? response.tip ?? "").trim();
       const tips = extractTipsFromReply(reply);

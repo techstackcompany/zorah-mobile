@@ -333,6 +333,7 @@ const AddExpenseScreen = () => {
       });
     },
     onError: (error) => {
+      console.log("error", error);
       setVoiceStatus("idle");
       Toast.show({
         type: "error",
@@ -662,7 +663,7 @@ const AddExpenseScreen = () => {
                         {isOtherCategory && (
                           <TextInputField
                             label="Custom Category"
-                            placeholder="Enter your custom category"
+                            placeholder="Enter category name"
                             value={customCategory}
                             onChangeText={setCustomCategory}
                             autoCapitalize="words"

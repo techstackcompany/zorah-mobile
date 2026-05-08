@@ -145,8 +145,9 @@ const TrackSpendingScreen = () => {
     isLoading: isLoadingOverview,
     isFetching: isFetchingOverview,
     isError: isOverviewError,
+    error: overviewError,
   } = useGetSpendingOverviewQuery(activeTab as SpendingOverviewTimeframe);
-
+  console.log(spendingOverviewData, overviewError);
   const {
     data: expenseSummary,
     isLoading: isLoadingSummary,
