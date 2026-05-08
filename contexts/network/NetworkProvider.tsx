@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import * as Network from "expo-network";
+import { onlineManager } from "@tanstack/react-query";
 
 type NetworkContextValue = {
   isOnline: boolean;
@@ -38,6 +39,9 @@ export const NetworkProvider = ({ children }: PropsWithChildren) => {
         isOffline: !isOnline,
         lastChange: Date.now(),
       });
+      // Keep React Query's onlineManager in sync — single source of truth
+      // for network state, driving both the UI banner and query pause logic.
+      onlineManager.setOnline(isOnline);
     };
 
     Network.getNetworkStateAsync()
