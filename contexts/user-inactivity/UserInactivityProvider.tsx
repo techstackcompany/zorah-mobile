@@ -71,7 +71,7 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
       const previousState = appState.current;
 
       if (
-        (nextAppState === "background" || nextAppState === "inactive") &&
+        nextAppState === "background" &&
         previousState === "active"
       ) {
         wasInBackground.current = true;
@@ -89,7 +89,7 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
 
       if (
         nextAppState === "active" &&
-        (previousState === "background" || previousState === "inactive")
+        previousState === "background"
       ) {
         setShowPrivacyOverlay(false);
         if (settings.enableBiometrics && wasInBackground.current) {
