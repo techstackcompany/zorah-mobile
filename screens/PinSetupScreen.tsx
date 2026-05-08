@@ -1,3 +1,4 @@
+import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import useAppSettings from "@/contexts/settings-context/useAppSettings";
@@ -17,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Text from "@/components/ui/Text";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -169,11 +169,14 @@ const PinSetupScreen = () => {
           <Text
             family="degular"
             weight="bold"
-            className="text-[28px] text-textColor tracking-[0.5px] mb-2 text-center"
+            className="mb-2 text-center text-[28px] tracking-[0.5px] text-textColor"
           >
             {step === "create" ? "Create PIN" : "Confirm PIN"}
           </Text>
-          <Text weight="regular" className="text-[15px] text-[#6B7280] text-center px-10">
+          <Text
+            weight="regular"
+            className="px-10 text-center text-[15px] text-[#6B7280]"
+          >
             {step === "create"
               ? biometricsAvailable
                 ? "Create a 4-digit PIN and enable biometric authentication"
@@ -230,7 +233,10 @@ const PinSetupScreen = () => {
                     onPress={() => onNumberPress(number)}
                     disabled={isLoading || currentPin.length >= PIN_LENGTH}
                   >
-                    <Text weight="semibold" className="text-[28px] text-textColor">
+                    <Text
+                      weight="semibold"
+                      className="text-[28px] text-textColor"
+                    >
                       {number}
                     </Text>
                   </TouchableOpacity>

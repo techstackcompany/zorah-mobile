@@ -25,7 +25,7 @@ const FxRatesScreen = () => {
   const toAmount = fx.toAmount;
   const fromFlag = fx.fromFlag;
   const toFlag = fx.toFlag;
-
+  console.log("x.activeRateValue", fx.activeRateValue);
   if (fx.isLoading && !fx.resolvedFxPairs.length && !fx.activeSeries.length) {
     return (
       <MainContainer edges={[]} className="bg-lightMuted pb-0">

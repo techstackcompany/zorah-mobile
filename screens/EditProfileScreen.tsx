@@ -6,7 +6,7 @@ import { extractUserData } from "@/lib/utils";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,6 +15,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useUpdateProfileMutation } from "@/src/api/hooks/useAuthApi";
+import Toast from "react-native-toast-message";
 
 const EditProfileScreen = () => {
   const router = useRouter();
@@ -27,16 +29,10 @@ const EditProfileScreen = () => {
     });
   }, [userData]);
 
-  const initialNote = useMemo(() => {
-    const safeUser = (userData ?? {}) as Record<string, unknown>;
-    return (typeof safeUser.note === "string" ? safeUser.note : "") || "";
-  }, [userData]);
-
   const [form, setForm] = useState({
     name: fullName || "",
     email: displayEmail || "",
     phone: displayPhone || "",
-    note: initialNote,
   });
 
   useEffect(() => {
@@ -44,29 +40,46 @@ const EditProfileScreen = () => {
       name: fullName || "",
       email: displayEmail || "",
       phone: displayPhone || "",
-      note: initialNote,
     });
-  }, [fullName, displayEmail, displayPhone, initialNote]);
+  }, [fullName, displayEmail, displayPhone]);
 
   const handleChange = (key: keyof typeof form) => (value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = () => {
-    const hasChanges =
-      (form.name.trim() && form.name !== fullName) ||
-      (form.email.trim() && form.email !== displayEmail) ||
-      (form.phone.trim() && form.phone !== displayPhone) ||
-      form.note !== initialNote;
+  const hasChanges =
+    (form.name.trim() && form.name !== fullName) ||
+    (form.email.trim() && form.email !== displayEmail) ||
+    (form.phone.trim() && form.phone !== displayPhone);
 
-    if (hasChanges) {
-      Alert.alert(
-        "Update Not Available",
-        "The mutation function is not available.",
-        [{ text: "OK" }],
-      );
-    } else {
+  const { mutateAsync: updateProfile, isPending } = useUpdateProfileMutation();
+
+  const handleSubmit = async () => {
+    try {
+      const nameParts = form.name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      await updateProfile({
+        firstName,
+        lastName,
+        email: form.email,
+        phoneNumber: form.phone,
+      });
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Profile updated successfully.",
+      });
+
       router.back();
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error?.response?.data?.message || "Failed to update profile.",
+      });
     }
   };
 
@@ -110,10 +123,18 @@ const EditProfileScreen = () => {
             />
           </View>
 
-          <TouchableOpacity style={styles.footer} onPress={handleSubmit}>
-            <Text weight="semibold" className="text-base text-white">
-              Save Changes
-            </Text>
+          <TouchableOpacity
+            style={[styles.footer, (!hasChanges || isPending) && styles.disabled]}
+            onPress={handleSubmit}
+            disabled={!hasChanges || isPending}
+          >
+            {isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text weight="semibold" className="text-base text-white">
+                Save Changes
+              </Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -186,6 +207,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: "center",
+  },
+  disabled: {
+    backgroundColor: COLORS.primary_400,
+    opacity: 0.6,
   },
 });
 

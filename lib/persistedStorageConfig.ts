@@ -63,7 +63,10 @@ export async function secureStoreGetItem(key: string): Promise<string | null> {
   }
 }
 
-export async function secureStoreSetItem(key: string, value: string): Promise<void> {
+export async function secureStoreSetItem(
+  key: string,
+  value: string,
+): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {}

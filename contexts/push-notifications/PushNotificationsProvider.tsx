@@ -1,9 +1,7 @@
 import { useSession } from "@/contexts/auth-context/useSession";
 import { useRegisterNotificationTokenMutation } from "@/src/api/hooks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import messaging, {
-  FirebaseMessagingTypes,
-} from "@react-native-firebase/messaging";
+
 import * as Notifications from "expo-notifications";
 import {
   PropsWithChildren,
@@ -14,12 +12,13 @@ import {
   useRef,
   useState,
 } from "react";
+import { Platform } from "react-native";
 
 const REGISTERED_TOKEN_KEY = "@push_notification_registered_token";
 
 type PushNotificationsContextValue = {
   fcmToken: string | null;
-  notification?: FirebaseMessagingTypes.RemoteMessage;
+  notification?: Notifications.Notification;
   isRegistered: boolean;
 };
 
@@ -52,20 +51,19 @@ export default function PushNotificationsProvider({
   const { isAuthenticated } = useSession();
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<
-    FirebaseMessagingTypes.RemoteMessage | undefined
+    Notifications.Notification | undefined
   >();
-  const [isRegistered, setIsRegistered] = useState(false);
-  const registrationAttempted = useRef(false);
+  const isRegistered = useRef(false);
 
   const registerTokenMutation = useRegisterNotificationTokenMutation({
     onSuccess: async () => {
       if (fcmToken) {
         await AsyncStorage.setItem(REGISTERED_TOKEN_KEY, fcmToken);
-        setIsRegistered(true);
+        isRegistered.current = true;
       }
     },
     onError: () => {
-      registrationAttempted.current = false;
+      isRegistered.current = false;
     },
   });
 
@@ -88,46 +86,78 @@ export default function PushNotificationsProvider({
         return;
       }
 
-      if (registrationAttempted.current) {
-        return;
-      }
-
       const alreadyRegistered = await checkIfTokenAlreadyRegistered(token);
       if (alreadyRegistered) {
-        setIsRegistered(true);
+        isRegistered.current = true;
         return;
       }
 
-      registrationAttempted.current = true;
       registerTokenMutation.mutate({ fcmToken: token });
     },
     [isAuthenticated, checkIfTokenAlreadyRegistered, registerTokenMutation],
   );
 
   useEffect(() => {
-    const requestPermissionsAndGetToken = async () => {
-      try {
-        const authStatus = await messaging().requestPermission();
-        const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
 
-        if (!enabled) {
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const requestPermissionsAndGetToken = async () => {
+      let token;
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("critical", {
+          name: "Critical Notifications",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+        await Notifications.setNotificationChannelAsync("warning", {
+          name: "Warning Notifications",
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+        await Notifications.setNotificationChannelAsync("info", {
+          name: "Information Notifications",
+          importance: Notifications.AndroidImportance.LOW,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+
+        const { status: existingStatus } =
+          await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== "granted") {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== "granted") {
+          alert("Failed to get push token for push notification!");
           return;
         }
 
-        await messaging().registerDeviceForRemoteMessages();
-        const token = await messaging().getToken();
-
-        if (token) {
-          setFcmToken(token);
+        try {
+          token = (await Notifications.getDevicePushTokenAsync()).data;
+        } catch (e: any) {
+          console.log(e);
+          throw new Error(e.message);
         }
-      } catch (error) {
-        console.error("Error getting FCM token:", error);
       }
+      return token;
     };
 
-    requestPermissionsAndGetToken();
+    requestPermissionsAndGetToken().then((token) => token && setFcmToken(token));
   }, []);
 
   useEffect(() => {
@@ -136,60 +166,12 @@ export default function PushNotificationsProvider({
     }
   }, [fcmToken, isAuthenticated, registerToken]);
 
-  useEffect(() => {
-    const unsubscribe = messaging().onTokenRefresh(async (newToken) => {
-      setFcmToken(newToken);
-      registrationAttempted.current = false;
-      setIsRegistered(false);
-
-      if (isAuthenticated) {
-        await AsyncStorage.removeItem(REGISTERED_TOKEN_KEY);
-        await registerToken(newToken);
-      }
-    });
-
-    return unsubscribe;
-  }, [isAuthenticated, registerToken]);
-
-  useEffect(() => {
-    const unsubscribe = messaging().onMessage(async (remoteMessage) => {
-      setNotification(remoteMessage);
-
-      if (remoteMessage.notification) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: remoteMessage.notification.title || "New Notification",
-            body: remoteMessage.notification.body || "",
-            data: remoteMessage.data,
-            sound: true,
-          },
-          trigger: null,
-        });
-      }
-    });
-
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = messaging().onNotificationOpenedApp((_remoteMessage) => {
-    });
-
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    messaging()
-      .getInitialNotification()
-      .then(() => {
-        // no-op
-      });
-  }, []);
+  
 
   const value: PushNotificationsContextValue = {
     fcmToken,
     notification,
-    isRegistered,
+    isRegistered: isRegistered.current,
   };
 
   return (

@@ -142,7 +142,7 @@ const BankTransferScreen = () => {
       <Stack.Screen options={{ title: "Bank Transfer" }} />
       <MainContainer edges={["top"]} className="bg-lightMuted">
         <View className="flex-1 px-6 pt-6">
-          <View className="rounded-3xl border border-grayLight/80 bg-white px-5 py-6 shadow-sm">
+          <View className="rounded-3xl border border-grayLight/80 bg-white px-5 py-6">
             <View className="flex-row items-center justify-between">
               <Text className="text-sm text-textColor/70">Name:</Text>
               <Text weight="semibold" className="text-base text-textColor">

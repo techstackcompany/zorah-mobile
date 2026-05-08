@@ -1,10 +1,10 @@
 import { usePushNotificationsContext } from "@/contexts/push-notifications/PushNotificationsProvider";
-import { setAuthToken } from "@/src/api/client";
+import { setAuthToken } from "@/lib/persistedStorageConfig";
 import * as Notifications from "expo-notifications";
 import { Alert, Pressable, Text, View } from "react-native";
 
 export default function PushNotificationTestScreen() {
-  const { fcmToken, notification, isRegistered } =
+  const { fcmToken, notification } =
     usePushNotificationsContext();
 
   const sendLocalNotification = async () => {
@@ -28,7 +28,7 @@ export default function PushNotificationTestScreen() {
           FCM Token Status
         </Text>
         <Text>Token: {fcmToken ? "Available" : "Not available"}</Text>
-        <Text>Registered: {isRegistered ? "Yes" : "No"}</Text>
+        {/* <Text>Registered: {isRegistered ? "Yes" : "No"}</Text> */}
         {fcmToken && (
           <Text
             style={{ fontSize: 10, marginTop: 10, maxWidth: "90%" }}
@@ -42,10 +42,10 @@ export default function PushNotificationTestScreen() {
         <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
           Last Notification
         </Text>
-        <Text>Title: {notification?.notification?.title ?? "N/A"}</Text>
-        <Text>Body: {notification?.notification?.body ?? "N/A"}</Text>
+        <Text>Title: {notification?.request.content?.title ?? "N/A"}</Text>
+        <Text>Body: {notification?.request.content?.body ?? "N/A"}</Text>
         <Text>
-          Data: {notification?.data ? JSON.stringify(notification.data) : "N/A"}
+          Data: {notification?.request.content?.data ? JSON.stringify(notification.request.content.data) : "N/A"}
         </Text>
       </View>
       <Pressable

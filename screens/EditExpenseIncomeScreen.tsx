@@ -445,7 +445,7 @@ const EditExpenseIncomeScreen = ({ route }: Props) => {
                       <View className="mt-4">
                         <TextInputField
                           label="Custom Category"
-                          placeholder="Enter your custom category"
+                          placeholder="Enter category name"
                           value={customCategory}
                           onChangeText={setCustomCategory}
                           autoCapitalize="words"

@@ -69,8 +69,7 @@ const AccountScreen = () => {
       initials: userDataExtracted.initials,
       statusLabel,
       isKycVerified: normalizedKycStatus === "verified",
-      biometricsEnabled:
-        settings.enableBiometrics,
+      biometricsEnabled: settings.enableBiometrics,
       linkedBanksText:
         linkedBanksCount === 1 ? "1 Linked" : `${linkedBanksCount} Linked`,
     };

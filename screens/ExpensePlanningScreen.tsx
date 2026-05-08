@@ -262,26 +262,7 @@ const ExpensePlanningScreen = () => {
   const isExpenseTab = activeTab === "expense";
   const addEntryRoute = isExpenseTab ? "/add-expense" : "/add-income";
 
-  const summarySegments = useMemo(() => {
-    if (!currentSummary.segments.length) {
-      return [];
-    }
-
-    let remaining = currentSummary.total;
-
-    return currentSummary.segments.map((segment, index, array) => {
-      const amount =
-        index === array.length - 1
-          ? remaining
-          : Math.round((currentSummary.total * segment.percentage) / 100);
-      remaining -= amount;
-
-      return {
-        ...segment,
-        amount,
-      };
-    });
-  }, [currentSummary]);
+  const summarySegments = currentSummary.segments;
 
   const incomesArray = useMemo(() => {
     if (activeTab !== "income") return [];
@@ -616,7 +597,6 @@ const ExpensePlanningScreen = () => {
       </MainContainer>
       <SlideUpModal
         ref={monthPickerModalRef}
-        onClose={() => {}}
         title="Select period"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"
@@ -657,7 +637,6 @@ const ExpensePlanningScreen = () => {
       </SlideUpModal>
       <SlideUpModal
         ref={periodModalRef}
-        onClose={() => {}}
         title="Select Period"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#fff"

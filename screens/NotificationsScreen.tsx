@@ -1,6 +1,7 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { capitalizeWord } from "@/lib/utils";
 import {
   useGetNotificationsQuery,
   useReadNotificationMutation,
@@ -76,6 +77,7 @@ const NotificationsScreen = () => {
     isError,
     refetch,
   } = useGetNotificationsQuery();
+  console.log("notifications", notifications);
 
   const { mutate: markAsRead } = useReadNotificationMutation({
     onMutate: async ({
@@ -98,12 +100,10 @@ const NotificationsScreen = () => {
 
       return { previousNotifications };
     },
-    onError: (
-      _err,
-      _variables,
-      onMutateResult,
-    ) => {
-      const context = onMutateResult as { previousNotifications?: Notification[] };
+    onError: (_err, _variables, onMutateResult) => {
+      const context = onMutateResult as {
+        previousNotifications?: Notification[];
+      };
       if (context.previousNotifications) {
         queryClient.setQueryData(
           ["notifications", "list"],
@@ -189,10 +189,10 @@ const NotificationsScreen = () => {
 
         <View className="mt-5 flex-row items-center justify-between">
           <Text className="text-xs text-textColor/60">
-            {formatNotificationTime(notification.createdAt)}
+            {capitalizeWord(formatNotificationTime(notification.createdAt))}
           </Text>
           <Text className="text-xs text-textColor/60">
-            {formatNotificationDate(notification.createdAt)}
+            {capitalizeWord(formatNotificationDate(notification.createdAt))}
           </Text>
         </View>
       </Pressable>
@@ -238,7 +238,7 @@ const NotificationsScreen = () => {
           ) : (
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 80, flexGrow: 1 }}
+              contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
               refreshControl={
                 <RefreshControl
                   refreshing={isFetching && !isLoading}

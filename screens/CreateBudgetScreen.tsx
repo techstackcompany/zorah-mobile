@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -157,7 +157,11 @@ const CreateBudgetScreen = () => {
     });
     return [
       ...unique,
-      { key: "other", label: "Other", icon: require("@/assets/icons/more-ellipsis.svg") },
+      {
+        key: "other",
+        label: "Other",
+        icon: require("@/assets/icons/more-ellipsis.svg"),
+      },
     ];
   }, [budgetCategories]);
 
@@ -286,7 +290,7 @@ const CreateBudgetScreen = () => {
                   <View className="mt-4">
                     <TextInputField
                       label="Custom Category"
-                      placeholder="Enter your custom category"
+                      placeholder="Enter category name"
                       value={customCategory}
                       onChangeText={setCustomCategory}
                       autoCapitalize="words"

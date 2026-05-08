@@ -1,6 +1,5 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { FX_TRENDS } from "@/constants/fx";
 import React, { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
@@ -8,8 +7,8 @@ import { LineChart } from "react-native-gifted-charts";
 const CHART_HEIGHT = 160;
 
 export type FxChartCardProps = {
-  activeTrend: keyof typeof FX_TRENDS;
-  onSelectTrend: (trend: keyof typeof FX_TRENDS) => void;
+  activeTrend: string;
+  onSelectTrend: (trend: string) => void;
   activeSeries: { label: string; value: number }[];
   lineChartData: { value: number; label: string; hideDataPoint?: boolean }[];
   isFetchingHistory: boolean;
@@ -31,7 +30,7 @@ const FxChartCard = ({
   const [chartWidth, setChartWidth] = useState(0);
   const chartSpacing =
     chartWidth > 0 && lineChartData.length > 1
-      ? (chartWidth - 70) / (lineChartData.length - 1)
+      ? (chartWidth - 100) / (lineChartData.length - 1)
       : 30;
 
   return (
@@ -43,7 +42,7 @@ const FxChartCard = ({
           return (
             <Pressable
               key={trend}
-              onPress={() => onSelectTrend(trend as keyof typeof FX_TRENDS)}
+              onPress={() => onSelectTrend(trend)}
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
               style={[styles.trendChip, isActive && styles.trendChipActive]}
@@ -71,11 +70,11 @@ const FxChartCard = ({
             style={{
               marginBottom: 8,
               position: "absolute",
-              backgroundColor:"white",
-              padding:4,
-              left:"50%",
-              borderRadius:999,
-              zIndex:999,
+              backgroundColor: "white",
+              padding: 4,
+              left: "50%",
+              borderRadius: 999,
+              zIndex: 999,
               transform: [{ translateX: "-50%" }],
             }}
           />
@@ -89,11 +88,12 @@ const FxChartCard = ({
             dataPointsColor={COLORS.grayLight}
             data={lineChartData}
             spacing={chartSpacing}
-            width={chartWidth - 35 || undefined}
+            width={chartWidth - 50 || undefined}
             animateOnDataChange
             xAxisThickness={0}
             yAxisThickness={0}
             curved
+            yAxisLabelWidth={50}
             thickness={2.5}
             color={COLORS.primary_400}
             rulesColor={COLORS.grayLight}

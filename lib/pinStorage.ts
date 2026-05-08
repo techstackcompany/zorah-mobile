@@ -1,17 +1,15 @@
 import { PIN_HASH_KEY } from "@/constants/auth";
-import * as Crypto from "expo-crypto";
 import {
   secureStoreGetItem,
   secureStoreRemoveItem,
   secureStoreSetItem,
 } from "@/lib/persistedStorageConfig";
+import * as Crypto from "expo-crypto";
 
 async function hashPin(pin: string): Promise<string> {
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    pin,
-    { encoding: Crypto.CryptoEncoding.HEX },
-  );
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin, {
+    encoding: Crypto.CryptoEncoding.HEX,
+  });
 }
 
 export async function savePin(pin: string): Promise<void> {

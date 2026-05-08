@@ -299,7 +299,7 @@ const SavingsGoalEditScreen = () => {
                   <TextInput
                     value={customCategory}
                     onChangeText={setCustomCategory}
-                    placeholder="Enter your custom category"
+                    placeholder="Enter category name"
                     placeholderTextColor="#9AA5B1"
                     autoCapitalize="words"
                     onFocus={() => setFocusedField("customCategory")}

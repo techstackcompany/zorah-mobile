@@ -1,11 +1,11 @@
 import MainContainer from "@/components/layouts/MainContainer";
-import SlideUpModal from "@/components/ui/SlideUpModal";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Alert, Linking, Pressable, TextInput, View } from "react-native";
 
 type BankOption = {
@@ -45,7 +45,7 @@ const formatAmount = (rawValue?: string) => {
 
 const BankUssdScreen = () => {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
-  const isModalOpen = useSharedValue(false);
+  const modalRef = useRef<SlideUpModalRef>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBank, setSelectedBank] = useState<BankOption | null>(null);
 
@@ -53,7 +53,7 @@ const BankUssdScreen = () => {
 
   const handleSelectBank = (bank: BankOption) => {
     setSelectedBank(bank);
-    isModalOpen.value = false;
+    modalRef.current?.dismiss();
     setSearchTerm("");
   };
 
@@ -102,7 +102,7 @@ const BankUssdScreen = () => {
           <View className="mt-6">
             <Text className="text-base text-textColor/80">Bank</Text>
             <Pressable
-              onPress={() => (isModalOpen.value = true)}
+              onPress={() => modalRef.current?.present()}
               className="mt-3 flex-row items-center justify-between rounded-2xl border border-grayLight/80 bg-white px-4 py-4"
               accessibilityRole="button"
             >
@@ -144,8 +144,7 @@ const BankUssdScreen = () => {
       </MainContainer>
 
       <SlideUpModal
-        isOpen={isModalOpen}
-        onClose={() => (isModalOpen.value = false)}
+        ref={modalRef}
         title="Bank"
         headerBackgroundColor={COLORS.primary_400}
         headerTextColor="#FFFFFF"

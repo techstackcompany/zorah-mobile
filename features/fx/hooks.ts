@@ -154,15 +154,13 @@ export const useFxRatesScreen = (initialTrend: string = "USDNGN") => {
       return usdRates.conversion_rates.NGN || 0;
     if (trendBase === "GBP" && trendQuote === "NGN") {
       if (usdRates.conversion_rates.GBP && usdRates.conversion_rates.NGN) {
-        const gbpToUsd = 1 / usdRates.conversion_rates.GBP;
-        return usdRates.conversion_rates.NGN / gbpToUsd;
+        return usdRates.conversion_rates.NGN / usdRates.conversion_rates.GBP;
       }
       return 0;
     }
     if (trendBase === "EUR" && trendQuote === "NGN") {
       if (usdRates.conversion_rates.EUR && usdRates.conversion_rates.NGN) {
-        const eurToUsd = 1 / usdRates.conversion_rates.EUR;
-        return usdRates.conversion_rates.NGN / eurToUsd;
+        return usdRates.conversion_rates.NGN / usdRates.conversion_rates.EUR;
       }
       return 0;
     }

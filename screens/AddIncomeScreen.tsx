@@ -6,7 +6,7 @@ import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
-import { cn } from "@/lib/utils";
+import { capitalizeWord, cn } from "@/lib/utils";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
@@ -190,7 +190,7 @@ const AddIncomeScreen = () => {
     const payload = {
       source: paymentMethod,
       amount: numericAmount,
-      category: finalCategory,
+      category: capitalizeWord(finalCategory),
       description: description.trim() || undefined,
       date: formattedDate,
     };

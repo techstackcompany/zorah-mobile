@@ -15,7 +15,7 @@ const TAB_CONFIG: Record<string, { label: string; iconSource: ImageSource }> = {
   budget: { label: "Budget", iconSource: require("@/assets/icons/budget.svg") },
   "expense-planning": {
     label: "Expenses",
-    iconSource: require("@/assets/icons/expenses.png"),
+    iconSource: require("@/assets/icons/expense.svg"),
   },
   profile: {
     label: "Account",
@@ -152,7 +152,7 @@ const HomeLayout = () => {
         options={{
           title: "FX Rates",
           headerShown: true,
-          href: null,
+          ...headerWithBack,
         }}
       />
       <Tabs.Screen

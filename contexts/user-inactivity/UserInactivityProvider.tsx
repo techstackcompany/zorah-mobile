@@ -7,8 +7,8 @@ import { AppState, AppStateStatus, StyleSheet, View } from "react-native";
 
 const LAST_BACKGROUND_KEY = "userInactivity:wasInBackground";
 const LAST_ACTIVE_KEY = "userInactivity:lastActive";
-const INACTIVITY_LOCK_TIMEOUT_MS = 60_000 * 5; // 5 minutes of no interaction
-const BACKGROUND_LOCK_TIMEOUT_MS = 30_000; // 30 seconds in background before locking
+const INACTIVITY_LOCK_TIMEOUT_MS = 60_000 * 5; 
+const BACKGROUND_LOCK_TIMEOUT_MS = 30_000; 
 
 const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
   const appState = useRef(AppState.currentState);
@@ -124,7 +124,10 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
   // Register AppState listener. Separate from the cold-start check so that
   // the listener is not re-registered when settingsLoaded changes.
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [handleAppStateChange]);
 
@@ -135,18 +138,19 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
 
     const checkInitialLockState = async () => {
       try {
-        const [storedBackground, storedLastActive] = await AsyncStorage.multiGet([
-          LAST_BACKGROUND_KEY,
-          LAST_ACTIVE_KEY,
-        ]);
+        const [storedBackground, storedLastActive] =
+          await AsyncStorage.multiGet([LAST_BACKGROUND_KEY, LAST_ACTIVE_KEY]);
         const wasBg = storedBackground?.[1] === "true";
         const lastActive = Number(storedLastActive?.[1] ?? "");
-        lastActiveAt.current = Number.isFinite(lastActive) ? lastActive : Date.now();
+        lastActiveAt.current = Number.isFinite(lastActive)
+          ? lastActive
+          : Date.now();
 
         if (
           settings.enableBiometrics &&
           wasBg &&
-          Date.now() - (lastActiveAt.current ?? Date.now()) >= BACKGROUND_LOCK_TIMEOUT_MS
+          Date.now() - (lastActiveAt.current ?? Date.now()) >=
+            BACKGROUND_LOCK_TIMEOUT_MS
         ) {
           triggerLock();
         } else {
@@ -158,7 +162,12 @@ const UserInactivityProvider: FC<React.PropsWithChildren> = ({ children }) => {
       }
     };
     checkInitialLockState();
-  }, [settingsLoaded, settings.enableBiometrics, triggerLock, scheduleInactivityTimer]);
+  }, [
+    settingsLoaded,
+    settings.enableBiometrics,
+    triggerLock,
+    scheduleInactivityTimer,
+  ]);
 
   // Auto-dismiss lock if biometrics is disabled while lock is visible.
   useEffect(() => {

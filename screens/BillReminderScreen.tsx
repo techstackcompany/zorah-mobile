@@ -335,6 +335,7 @@ const BillReminderCard = ({ bill }: BillCardProps) => {
           <Image
             source={buildImageSource(bill.categoryImage)}
             style={{ width: 20, height: 20 }}
+            tintColor={categoryMeta.accent}
             contentFit="contain"
           />
         </View>

@@ -1,3 +1,4 @@
+import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useBiometricSupport } from "@/hooks/useBiometricSupport";
 import { verifyPin } from "@/lib/pinStorage";
@@ -7,7 +8,6 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as LocalAuthentication from "expo-local-authentication";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import Text from "@/components/ui/Text";
 import {
   ActivityIndicator,
   Modal,
@@ -93,7 +93,12 @@ const LockScreen = ({
   // authenticateAsync before availability is confirmed (checking === false)
   // and against re-triggering when handleUnlockSuccess reference changes.
   useEffect(() => {
-    if (!visible || checking || !biometricsAvailable || biometricAttempted.current) {
+    if (
+      !visible ||
+      checking ||
+      !biometricsAvailable ||
+      biometricAttempted.current
+    ) {
       return;
     }
     biometricAttempted.current = true;
@@ -181,7 +186,7 @@ const LockScreen = ({
           <Text
             family="degular"
             weight="bold"
-            className="text-[28px] text-textColor tracking-[0.5px] mb-2"
+            className="mb-2 text-[28px] tracking-[0.5px] text-textColor"
           >
             Welcome back
           </Text>
@@ -228,7 +233,10 @@ const LockScreen = ({
             return (
               <View
                 key={rowIndex}
-                style={{ flexDirection: "row", justifyContent: "space-between" }}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
               >
                 {[base, base + 1, base + 2].map((number) => (
                   <TouchableOpacity
@@ -236,7 +244,10 @@ const LockScreen = ({
                     style={[styles.keypadBtn, styles.numberBtn]}
                     onPress={() => onNumberPress(number)}
                   >
-                    <Text weight="semibold" className="text-[28px] text-textColor">
+                    <Text
+                      weight="semibold"
+                      className="text-[28px] text-textColor"
+                    >
                       {number}
                     </Text>
                   </TouchableOpacity>

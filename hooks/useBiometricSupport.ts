@@ -11,13 +11,15 @@ export type BiometricSupport = {
 };
 
 export function useBiometricSupport(): BiometricSupport {
-  const [support, setSupport] = useState<Omit<BiometricSupport, "isAvailable">>({
-    hasHardware: false,
-    supportsFaceId: false,
-    supportsFingerprint: false,
-    isEnrolled: false,
-    checking: true,
-  });
+  const [support, setSupport] = useState<Omit<BiometricSupport, "isAvailable">>(
+    {
+      hasHardware: false,
+      supportsFaceId: false,
+      supportsFingerprint: false,
+      isEnrolled: false,
+      checking: true,
+    },
+  );
 
   useEffect(() => {
     let active = true;
