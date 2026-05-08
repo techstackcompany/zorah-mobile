@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -16,16 +17,23 @@ import {
 
 export const useAddIncomeMutation = (
   options?: UseMutationOptions<ApiEnvelope<Income>, ApiError, AddIncomeRequest>,
-) =>
-  useMutation<ApiEnvelope<Income>, ApiError, AddIncomeRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<Income>, ApiError, AddIncomeRequest>({
     mutationKey: ["income", "addIncome"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<Income>>({
         ...API_ENDPOINTS.income.addIncome,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["income"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useGetIncomesQuery = (
   options?: Partial<UseQueryOptions<GetIncomesResponse, ApiError>>,
@@ -63,8 +71,10 @@ export const useDeleteIncomeMutation = (
     ApiError,
     void
   >,
-) =>
-  useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["income", "delete", incomeId],
     mutationFn: () => {
       if (!incomeId) {
@@ -74,8 +84,13 @@ export const useDeleteIncomeMutation = (
         ...API_ENDPOINTS.income.deleteIncome(incomeId),
       });
     },
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["income"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 export const useUpdateIncomeMutation = (
   incomeId: string | undefined,
   options?: UseMutationOptions<
@@ -83,8 +98,10 @@ export const useUpdateIncomeMutation = (
     ApiError,
     UpdateIncomeRequest
   >,
-) =>
-  useMutation<ApiEnvelope<Income>, ApiError, UpdateIncomeRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<Income>, ApiError, UpdateIncomeRequest>({
     mutationKey: ["income", "update", incomeId],
     mutationFn: (payload) => {
       if (!incomeId) {
@@ -96,5 +113,10 @@ export const useUpdateIncomeMutation = (
         data: payload,
       });
     },
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["income"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
