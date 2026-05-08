@@ -25,6 +25,7 @@ import {
   useGetMonthlyExpensesQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
+  useGetNotificationsQuery,
 } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
@@ -79,6 +80,13 @@ const HomeScreen = () => {
   const [balanceHidden, setBalanceHidden] = useState(false);
   const { initials, welcomeName } = useUserDisplayData();
   const { isSetupComplete, currentStepRoute } = useSetupProgress();
+
+  const {
+    data: notifications = [],
+    refetch: refetchNotifications,
+  } = useGetNotificationsQuery();
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
+
   const {
     data: balanceData,
     isLoading: isLoadingBalance,
@@ -115,7 +123,7 @@ const HomeScreen = () => {
       expenseSummaryData.byCategory,
       categoryIcons,
     );
-    // Compute amounts from percentages
+
     let remaining = summary.total;
     const segments = summary.segments.map((segment, index, array) => {
       const amount =
@@ -165,7 +173,7 @@ const HomeScreen = () => {
       {
         id: "expense",
         label: "Expense",
-        amount: expenseAmount,
+        amount: balanceHidden ? "••••••" : expenseAmount,
         icon: require("@/assets/icons/arrow-up.svg"),
         accent: "bg-peachTint",
         onPress: () => router.navigate("/expense-planning?tab=expense"),
@@ -173,7 +181,7 @@ const HomeScreen = () => {
       {
         id: "income",
         label: "Income",
-        amount: incomeAmount,
+        amount: balanceHidden ? "••••••" : incomeAmount,
         icon: require("@/assets/icons/arrow-down.svg"),
         accent: "bg-secondary_100",
         onPress: () => router.navigate("/expense-planning?tab=income"),
@@ -185,6 +193,7 @@ const HomeScreen = () => {
     currencySymbol,
     isLoadingExpenseSummary,
     isLoadingIncomes,
+    balanceHidden,
     router,
   ]);
 
@@ -279,17 +288,19 @@ const HomeScreen = () => {
                   refetchIncomes();
                   refetchCategories();
                   refetchMonthlyExpenses();
+                  refetchNotifications();
                 }}
               />
             }
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 80 }}
+            contentContainerStyle={{ paddingBottom: 40 }}
           >
             <View className="bg-primary_200 pt-4">
               <WelcomeHeader
                 initials={initials}
                 welcomeName={welcomeName}
                 currentDate={currentDate}
+                unreadNotificationCount={unreadNotificationCount}
                 onNotificationPress={() => router.navigate("/notifications")}
               />
 
