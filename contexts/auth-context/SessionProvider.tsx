@@ -126,6 +126,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     queryClient.clear();
 
     await clearPin();
+    await clearAuthTokens();
 
     setSession(null);
     setIsVerified(null);
