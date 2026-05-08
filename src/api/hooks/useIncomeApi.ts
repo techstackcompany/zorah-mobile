@@ -16,11 +16,27 @@ import {
 } from "../types";
 
 export const useAddIncomeMutation = (
-  options?: UseMutationOptions<ApiEnvelope<Income>, ApiError, AddIncomeRequest>,
+  options?: UseMutationOptions<
+    ApiEnvelope<Income>,
+    ApiError,
+    AddIncomeRequest,
+    { snapshot: GetIncomesResponse | undefined }
+  >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
-  return useMutation<ApiEnvelope<Income>, ApiError, AddIncomeRequest>({
+  const {
+    onSuccess: callerOnSuccess,
+    onError: callerOnError,
+    onSettled: callerOnSettled,
+    ...restOptions
+  } = options ?? {};
+
+  return useMutation<
+    ApiEnvelope<Income>,
+    ApiError,
+    AddIncomeRequest,
+    { snapshot: GetIncomesResponse | undefined }
+  >({
     mutationKey: ["income", "addIncome"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<Income>>({
@@ -28,9 +44,47 @@ export const useAddIncomeMutation = (
         data: payload,
       }),
     ...restOptions,
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ["income", "list"] });
+      const snapshot = queryClient.getQueryData<GetIncomesResponse>([
+        "income",
+        "list",
+      ]);
+      queryClient.setQueryData<GetIncomesResponse>(
+        ["income", "list"],
+        (old) => {
+          const optimistic: Income = {
+            ...variables,
+            _id: `temp-${Date.now()}`,
+            user: "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          if (!old) {
+            return { success: true, count: 1, data: [optimistic] };
+          }
+          const newData = [optimistic, ...(old.data ?? [])];
+          return { ...old, count: newData.length, data: newData };
+        },
+      );
+      return { snapshot };
+    },
+
+    onError: (error, variables, context, mutationContext) => {
+      if (context?.snapshot !== undefined) {
+        queryClient.setQueryData(["income", "list"], context.snapshot);
+      }
+      callerOnError?.(error, variables, context, mutationContext);
+    },
+
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["income"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["income"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };
@@ -73,7 +127,11 @@ export const useDeleteIncomeMutation = (
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  const {
+    onSuccess: callerOnSuccess,
+    onSettled: callerOnSettled,
+    ...restOptions
+  } = options ?? {};
   return useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["income", "delete", incomeId],
     mutationFn: () => {
@@ -86,11 +144,15 @@ export const useDeleteIncomeMutation = (
     },
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["income"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["income"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };
+
 export const useUpdateIncomeMutation = (
   incomeId: string | undefined,
   options?: UseMutationOptions<
@@ -100,7 +162,11 @@ export const useUpdateIncomeMutation = (
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  const {
+    onSuccess: callerOnSuccess,
+    onSettled: callerOnSettled,
+    ...restOptions
+  } = options ?? {};
   return useMutation<ApiEnvelope<Income>, ApiError, UpdateIncomeRequest>({
     mutationKey: ["income", "update", incomeId],
     mutationFn: (payload) => {
@@ -115,8 +181,11 @@ export const useUpdateIncomeMutation = (
     },
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["income"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["income"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };
