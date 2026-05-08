@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -34,16 +35,23 @@ export const useDepositFundsMutation = (
     ApiError,
     DepositFundsRequest
   >,
-) =>
-  useMutation<ApiEnvelope<WalletDetails>, ApiError, DepositFundsRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<WalletDetails>, ApiError, DepositFundsRequest>({
     mutationKey: ["wallet", "deposit"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<WalletDetails>>({
         ...API_ENDPOINTS.wallet.deposit,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useWithdrawFundsMutation = (
   options?: UseMutationOptions<
@@ -51,16 +59,23 @@ export const useWithdrawFundsMutation = (
     ApiError,
     WithdrawFundsRequest
   >,
-) =>
-  useMutation<ApiEnvelope<WalletDetails>, ApiError, WithdrawFundsRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<WalletDetails>, ApiError, WithdrawFundsRequest>({
     mutationKey: ["wallet", "withdraw"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<WalletDetails>>({
         ...API_ENDPOINTS.wallet.withdraw,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useGetWalletBalanceQuery = (
   options?: UseQueryOptions<ApiEnvelope<WalletBalance>, ApiError>,

@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -20,16 +21,23 @@ export const useCreateSavingsGoalMutation = (
     ApiError,
     CreateSavingsGoalRequest
   >,
-) =>
-  useMutation<ApiEnvelope<SavingsGoal>, ApiError, CreateSavingsGoalRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<SavingsGoal>, ApiError, CreateSavingsGoalRequest>({
     mutationKey: ["savings", "createGoal"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<SavingsGoal>>({
         ...API_ENDPOINTS.savings.createGoal,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["savings"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useContributeToSavingsMutation = (
   options?: UseMutationOptions<
@@ -37,16 +45,25 @@ export const useContributeToSavingsMutation = (
     ApiError,
     ContributeToSavingsRequest
   >,
-) =>
-  useMutation<ApiEnvelope<SavingsGoal>, ApiError, ContributeToSavingsRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<SavingsGoal>, ApiError, ContributeToSavingsRequest>({
     mutationKey: ["savings", "contribute"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<SavingsGoal>>({
         ...API_ENDPOINTS.savings.contribute,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      // Contributions affect both the savings goal and wallet balance.
+      void queryClient.invalidateQueries({ queryKey: ["savings"] });
+      void queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useGetSavingsGoalsQuery = (
   options?: Partial<UseQueryOptions<SavingsGoal[], ApiError>>,
@@ -99,8 +116,10 @@ export const useUpdateSavingsGoalMutation = (
     ApiError,
     UpdateSavingsGoalRequest
   >,
-) =>
-  useMutation<ApiEnvelope<SavingsGoal>, ApiError, UpdateSavingsGoalRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<SavingsGoal>, ApiError, UpdateSavingsGoalRequest>({
     mutationKey: ["savings", "updateGoal", goalId],
     mutationFn: (payload) => {
       const endpoint = API_ENDPOINTS.savings.updateGoal(goalId);
@@ -109,5 +128,10 @@ export const useUpdateSavingsGoalMutation = (
         data: payload,
       });
     },
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["savings"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
