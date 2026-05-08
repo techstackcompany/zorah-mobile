@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -30,18 +31,23 @@ export const useReadNotificationMutation = (
     ApiError,
     { notificationId: string }
   >,
-) =>
-  useMutation<Notification, ApiError, { notificationId: string }>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<Notification, ApiError, { notificationId: string }>({
     mutationKey: ["notifications", "read"],
     mutationFn: ({ notificationId }) => {
       const endpoint =
         API_ENDPOINTS.notifications.readNotification(notificationId);
-      return apiRequest<Notification>({
-        ...endpoint,
-      });
+      return apiRequest<Notification>({ ...endpoint });
     },
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useRegisterNotificationTokenMutation = (
   options?: UseMutationOptions<

@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -60,16 +61,22 @@ export const useGetBillsQuery = (
 export const usePayBillMutation = (
   billId: string,
   options?: UseMutationOptions<PayBillReminderResponse, ApiError>,
-) =>
-  useMutation({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation({
     mutationKey: ["markBillAsPaid", billId],
-    mutationFn: async () => {
-      return apiRequest<PayBillReminderResponse>({
+    mutationFn: async () =>
+      apiRequest<PayBillReminderResponse>({
         ...API_ENDPOINTS.billReminders.payBill(billId),
-      });
+      }),
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["billReminders"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
     },
-    ...options,
   });
+};
 
 export const useAddBillReminderMutation = (
   options?: UseMutationOptions<
@@ -77,16 +84,23 @@ export const useAddBillReminderMutation = (
     ApiError,
     AddBillReminderRequest
   >,
-) =>
-  useMutation<AddBillReminderRequest, ApiError, AddBillReminderRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<AddBillReminderRequest, ApiError, AddBillReminderRequest>({
     mutationKey: ["addBillReminder"],
     mutationFn: (body) =>
       apiRequest<AddBillReminderRequest>({
         ...API_ENDPOINTS.billReminders.addBill,
         data: body,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["billReminders"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useUpdateBillReminderMutation = (
   billId: string,
@@ -95,13 +109,20 @@ export const useUpdateBillReminderMutation = (
     ApiError,
     UpdateBillReminderRequest
   >,
-) =>
-  useMutation<UpdateBillReminderResponse, ApiError, UpdateBillReminderRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<UpdateBillReminderResponse, ApiError, UpdateBillReminderRequest>({
     mutationKey: ["updateBillReminder", billId],
     mutationFn: (body) =>
       apiRequest<UpdateBillReminderResponse>({
         ...API_ENDPOINTS.billReminders.updateBill(billId),
         data: body,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["billReminders"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};

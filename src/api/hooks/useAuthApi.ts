@@ -2,6 +2,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "../client";
@@ -72,16 +73,23 @@ export const useUpdateProfileMutation = (
     ApiError,
     UpdateProfileRequest
   >,
-) =>
-  useMutation<ApiEnvelope<unknown>, ApiError, UpdateProfileRequest>({
+) => {
+  const queryClient = useQueryClient();
+  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  return useMutation<ApiEnvelope<unknown>, ApiError, UpdateProfileRequest>({
     mutationKey: ["auth", "updateProfile"],
     mutationFn: (payload) =>
       apiRequest<ApiEnvelope<unknown>>({
         ...API_ENDPOINTS.auth.updateProfile,
         data: payload,
       }),
-    ...options,
+    ...restOptions,
+    onSuccess: (data, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      callerOnSuccess?.(data, variables, context, mutationContext);
+    },
   });
+};
 
 export const useUpdateOnboardingMutation = (
   options?: UseMutationOptions<
