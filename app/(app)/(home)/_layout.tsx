@@ -120,13 +120,7 @@ const HomeLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: shouldHideTabBar
-          ? { display: "none" }
-          : {
-              justifyContent: "center",
-              borderWidth: 2,
-              borderColor: "white",
-            },
+        tabBarStyle: shouldHideTabBar ? { display: "none" } : undefined,
         headerShadowVisible: false,
         headerTitleStyle: { fontFamily: "NunitoSemibold" },
       }}
@@ -170,6 +164,10 @@ export default HomeLayout;
 
 const styles = StyleSheet.create({
   wrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 16,
     backgroundColor: "transparent",
   },

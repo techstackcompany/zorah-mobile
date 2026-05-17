@@ -1,115 +1,99 @@
-import COLORS from "@/constants/colors";
 import { stackOptions } from "@/constants/navigation";
 import { useSession } from "@/contexts/auth-context/useSession";
-import UserInactivityProvider from "@/contexts/user-inactivity/UserInactivityProvider";
 import { useGetUserProfileQuery } from "@/src/api/hooks";
+import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { useBillReminderNotifications } from "@/hooks/useBillReminderNotifications";
 
 const AppLayout = () => {
-  const { setUserData, signOut } = useSession();
+  const { signOut } = useSession();
+  useBillReminderNotifications();
 
   const {
-    data: profileData,
     isLoading: isProfileLoading,
     error,
+    data: profileData,
   } = useGetUserProfileQuery();
 
   useEffect(() => {
-    if (profileData) {
-      setUserData(profileData);
+    if (!isProfileLoading) {
+      SplashScreen.hideAsync();
     }
+  }, [isProfileLoading]);
+
+  useEffect(() => {
     if (error) {
       signOut();
     }
-  }, [profileData, setUserData, signOut, error]);
+  }, [signOut, error]);
 
-  if (isProfileLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={COLORS.primary_400} />
-      </View>
-    );
-  }
+  return <Navigator />;
+};
 
+const Navigator = () => {
   return (
-    <UserInactivityProvider>
-      <Stack screenOptions={stackOptions}>
-        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+    <Stack screenOptions={stackOptions}>
+      <Stack.Screen name="(home)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="expense-planning"
+        options={{ title: "Expense Report" }}
+      />
+      <Stack.Screen name="add-expense" options={{ title: "Add Expense" }} />
+      <Stack.Screen
+        name="expenses/details"
+        options={{ title: "Expense Details" }}
+      />
+      <Stack.Screen name="expenses/edit" options={{ title: "Edit Expense" }} />
+      <Stack.Screen name="add-income" options={{ title: "Add Income" }} />
+      <Stack.Screen
+        name="income/details"
+        options={{ title: "Income Details" }}
+      />
+      <Stack.Screen name="more" options={{ title: "More" }} />
+      <Stack.Screen
+        name="track-spending"
+        options={{ title: "Track Spending" }}
+      />
+      <Stack.Screen
+        name="bill-reminder/index"
+        options={{ title: "Bills Reminder" }}
+      />
+      <Stack.Screen
+        name="bill-reminder/add-bill"
+        options={{ title: "Add Bill" }}
+      />
+      <Stack.Screen name="savings-goals" options={{ headerShown: false }} />
+      <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
 
-        <Stack.Screen
-          name="expense-planning"
-          options={{ title: "Expense Report" }}
-        />
-        <Stack.Screen name="add-expense" options={{ title: "Add Expense" }} />
-        <Stack.Screen
-          name="expenses/details"
-          options={{ title: "Expense Details" }}
-        />
-        <Stack.Screen
-          name="expenses/edit"
-          options={{ title: "Edit Expense" }}
-        />
-        <Stack.Screen name="add-income" options={{ title: "Add Income" }} />
-        <Stack.Screen
-          name="income/details"
-          options={{ title: "Income Details" }}
-        />
-        <Stack.Screen name="more" options={{ title: "More" }} />
+      <Stack.Screen
+        name="fund-wallet/index"
+        options={{ title: "Fund Wallet" }}
+      />
+      <Stack.Screen
+        name="fund-wallet/bank-transfer"
+        options={{ title: "Bank Transfer" }}
+      />
+      <Stack.Screen
+        name="fund-wallet/bank-ussd"
+        options={{ title: "Bank USSD" }}
+      />
+      <Stack.Screen
+        name="transactions/index"
+        options={{ title: "Transaction History" }}
+      />
+      <Stack.Screen
+        name="transactions/details"
+        options={{ title: "Transaction History" }}
+      />
+      <Stack.Screen
+        name="notifications/index"
+        options={{ title: "Notifications" }}
+      />
 
-        <Stack.Screen
-          name="track-spending"
-          options={{ title: "Track Spending" }}
-        />
-        <Stack.Screen
-          name="bill-reminder/index"
-          options={{ title: "Bills Reminder" }}
-        />
-        <Stack.Screen
-          name="bill-reminder/add-bill"
-          options={{ title: "Add Bill" }}
-        />
-        <Stack.Screen name="savings-goals" options={{ headerShown: false }} />
-        <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
-
-        <Stack.Screen name="profile" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="fund-wallet/index"
-          options={{ title: "Fund Wallet" }}
-        />
-        <Stack.Screen
-          name="fund-wallet/bank-transfer"
-          options={{ title: "Bank Transfer" }}
-        />
-        <Stack.Screen
-          name="fund-wallet/bank-ussd"
-          options={{ title: "Bank USSD" }}
-        />
-        <Stack.Screen
-          name="transactions/index"
-          options={{ title: "Transaction History" }}
-        />
-        <Stack.Screen
-          name="transactions/details"
-          options={{ title: "Transaction History" }}
-        />
-        <Stack.Screen
-          name="notifications/index"
-          options={{ title: "Notifications" }}
-        />
-        <Stack.Screen
-          name="push-notification-test"
-          options={{ title: "Push Notification Test" }}
-        />
-        <Stack.Screen
-          name="biometrics"
-          options={{ title: "Biometric Login", headerShown: false }}
-        />
-        <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
-        <Stack.Screen name="setup" options={{ headerShown: false }} />
-      </Stack>
-    </UserInactivityProvider>
+      <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
+      <Stack.Screen name="setup" options={{ headerShown: false }} />
+    </Stack>
   );
 };
 

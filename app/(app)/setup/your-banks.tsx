@@ -1,4 +1,5 @@
-import { useSession } from "@/contexts/auth-context/useSession";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { setLocalSetupFlag } from "@/hooks/useSetupProgress";
 import YourBanksScreen from "@/screens/YourBanksScreen";
 import React, { useCallback, useMemo } from "react";
@@ -41,7 +42,8 @@ const getRecord = (value: unknown): Record<string, unknown> | null => {
 };
 
 const YourBanks = () => {
-  const { userData, setUserData } = useSession();
+  const queryClient = useQueryClient();
+  const { data: userData } = useGetUserProfileQuery();
 
   const safeUserData = useMemo(
     () => (userData ?? {}) as Record<string, unknown>,
@@ -74,12 +76,15 @@ const YourBanks = () => {
 
       setLocalSetupFlag("banks", true);
 
-      setUserData({
-        ...safeUserData,
-        selectedBanks: sanitized,
+      queryClient.setQueryData(["auth", "profile"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          selectedBanks: sanitized,
+        };
       });
     },
-    [safeUserData, setUserData, storedSelectedBanks],
+    [queryClient, storedSelectedBanks],
   );
 
   return (

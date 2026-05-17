@@ -1,4 +1,5 @@
-import { useSession } from "@/contexts/auth-context/useSession";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import YourBanksScreen from "@/screens/YourBanksScreen";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo } from "react";
@@ -77,7 +78,8 @@ const arraysEqual = (a: string[], b: string[]) =>
 
 const AddBankRoute = () => {
   const { selected } = useLocalSearchParams<{ selected?: string | string[] }>();
-  const { userData, setUserData } = useSession();
+  const queryClient = useQueryClient();
+  const { data: userData } = useGetUserProfileQuery();
 
   const selectedFromParams = useMemo(
     () => parseSelectedParam(selected),
@@ -104,12 +106,15 @@ const AddBankRoute = () => {
         return;
       }
 
-      setUserData({
-        ...(userData ?? {}),
-        selectedBanks: sanitized,
+      queryClient.setQueryData(["auth", "profile"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          selectedBanks: sanitized,
+        };
       });
     },
-    [storedSelectedBanks, setUserData, userData],
+    [queryClient, storedSelectedBanks],
   );
 
   return (

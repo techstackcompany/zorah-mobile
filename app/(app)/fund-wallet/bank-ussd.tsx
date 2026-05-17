@@ -83,7 +83,11 @@ const BankUssdScreen = () => {
     try {
       await Linking.openURL(url);
     } catch (error) {
-      Alert.alert("Dial Failed", "Unable to dial the USSD code right now.");
+      Alert.alert(
+        "Dial Failed",
+        (error as { message: string })?.message ||
+          "An error occurred while trying to dial the USSD code.",
+      );
     }
   };
 

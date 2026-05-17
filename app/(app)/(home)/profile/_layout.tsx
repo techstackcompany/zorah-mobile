@@ -11,13 +11,13 @@ const ProfileLayout = () => {
         options={{ title: "Account", ...headerWithBack }}
       />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
+      <Stack.Screen
+        name="change-password"
+        options={{ title: "Change Password" }}
+      />
       <Stack.Screen name="banks" options={{ title: "Linked Banks" }} />
       <Stack.Screen name="add-bank" options={{ title: "Add Bank" }} />
       <Stack.Screen name="pin-setup" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="kyc-verification"
-        options={{ title: "KYC Verification" }}
-      />
     </Stack>
   );
 };

@@ -1,10 +1,15 @@
 import { useSession } from "@/contexts/auth-context/useSession";
+import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 
 const AuthLayout = () => {
   const { hasOnboarded } = useSession();
-  console.log("hasOnboarded", hasOnboarded);
+
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!hasOnboarded}>

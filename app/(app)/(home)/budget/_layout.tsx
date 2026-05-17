@@ -1,5 +1,6 @@
-import { headerWithBack } from "@/components/ui/HeaderBack";
+import COLORS from "@/constants/colors";
 import { stackOptions } from "@/constants/navigation";
+import { HeaderBackButton } from "@react-navigation/elements";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React, { useCallback } from "react";
@@ -22,7 +23,18 @@ const BudgetLayout = () => {
         name="index"
         options={{
           title: "Budget Manager",
-          ...headerWithBack,
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() =>
+                props.canGoBack
+                  ? router.back()
+                  : router.replace("/(app)/(home)")
+              }
+              displayMode="minimal"
+              tintColor={COLORS.textColor}
+            />
+          ),
           headerRight: () => (
             <View className="flex-row items-center gap-2">
               <Pressable

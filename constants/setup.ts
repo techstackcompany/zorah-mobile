@@ -23,13 +23,19 @@ export const setupInfo: Record<number, { route: SetupRoute; key: string }> = {
   },
 };
 
+export const SETUP_TOTAL_STEPS = 4;
+
 export const incomeSources = [
-  { label: "Salary/Employment", value: "salary" },
-  { label: "Business/Self-employed", value: "business" },
-  { label: "Freelancing", value: "freelancing" },
-  { label: "Multiple Sources", value: "multiple" },
-  { label: "Student/No Income", value: "student", standAlone: true },
+  { label: "Salary", value: "salary" },
+  { label: "Business", value: "business" },
+  { label: "Freelance", value: "freelance" },
+  { label: "Investments", value: "investments" },
+  { label: "NYSC Allawee & Support", value: "nysc" },
+  { label: "Online Income", value: "online" },
+  { label: "Other", value: "other" },
 ];
+
+export const CUSTOM_INCOME_SOURCE_VALUE = "other";
 
 export const incomeRanges = [
   { label: "Below NGN 50,000", value: "below-50000" },
