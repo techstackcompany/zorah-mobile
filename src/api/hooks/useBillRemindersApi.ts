@@ -15,6 +15,7 @@ import {
   UpdateBillReminderRequest,
   UpdateBillReminderResponse,
 } from "../types";
+import { cancelBillReminder } from "@/lib/localNotifications";
 
 export const useGetBillsQuery = (
   options?: UseQueryOptions<GetBillRemindersResponse, ApiError>,
@@ -72,6 +73,7 @@ export const usePayBillMutation = (
       }),
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
+      void cancelBillReminder(billId);
       void queryClient.invalidateQueries({ queryKey: ["billReminders"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
     },

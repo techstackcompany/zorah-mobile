@@ -2,14 +2,20 @@ import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
-import { incomeRanges, incomeSources, setupInfo } from "@/constants/setup";
+import TextInputField from "@/components/ui/TextInputField";
+import {
+  CUSTOM_INCOME_SOURCE_VALUE,
+  incomeRanges,
+  incomeSources,
+  setupInfo,
+} from "@/constants/setup";
 import useUserData from "@/contexts/auth-context/useUserData";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/src/api/client";
 import { useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -73,19 +79,23 @@ const normalizeIncomeRangeValue = (value: string): string | undefined => {
   return byLabel?.value;
 };
 
-const isStandAloneSource = (value: string) =>
-  incomeSources.some((source) => source.value === value && source.standAlone);
+const KNOWN_SOURCE_LABELS = new Set(
+  incomeSources.map((source) => source.label.toLowerCase()),
+);
+const KNOWN_SOURCE_VALUES = new Set(
+  incomeSources.map((source) => source.value.toLowerCase()),
+);
 
 const MonthlyIncomeScreen = () => {
   const userData = useUserData();
   const [primarySource, setPrimarySource] = useState<string[]>([]);
-  const [isStandAloneSelected, setIsStandAloneSelected] = useState(false);
+  const [customSource, setCustomSource] = useState("");
   const [monthlyRange, setMonthlyRange] = useState<string | undefined>();
   const updateOnboardingMutation = useUpdateOnboardingMutation();
 
   const { goToNextStep, goToPreviousStep } = useSetUpStep(2);
 
-  useEffect(() => {
+  const prefill = useMemo(() => {
     const safeUserData = (userData ?? {}) as Record<string, unknown>;
     const onboarding =
       safeUserData.onboarding && typeof safeUserData.onboarding === "object"
@@ -102,43 +112,107 @@ const MonthlyIncomeScreen = () => {
       onboarding?.monthlyIncomeRange ??
       safeUserData.monthlyIncomeRange;
 
-    const prefilledSources = Array.from(
+    const rawSourceList = normalizeStringList(rawIncomeSource);
+    const knownSources = Array.from(
       new Set(
-        normalizeStringList(rawIncomeSource)
+        rawSourceList
           .map(normalizeIncomeSourceValue)
           .filter((entry): entry is string => Boolean(entry)),
       ),
     );
+    const customEntries = rawSourceList.filter((entry) => {
+      const normalized = entry.toLowerCase();
+      return (
+        !KNOWN_SOURCE_LABELS.has(normalized) &&
+        !KNOWN_SOURCE_VALUES.has(normalized)
+      );
+    });
 
-    const resolvedSources = prefilledSources.some(isStandAloneSource)
-      ? prefilledSources.filter(isStandAloneSource).slice(0, 1)
-      : prefilledSources;
+    const resolvedSources =
+      customEntries.length > 0 &&
+      !knownSources.includes(CUSTOM_INCOME_SOURCE_VALUE)
+        ? [...knownSources, CUSTOM_INCOME_SOURCE_VALUE]
+        : knownSources;
 
     const prefilledRange =
       typeof rawIncomeRange === "string"
         ? normalizeIncomeRangeValue(rawIncomeRange)
         : undefined;
 
-    setPrimarySource((prev) => (prev.length > 0 ? prev : resolvedSources));
-    setIsStandAloneSelected(
-      (prev) => prev || resolvedSources.some(isStandAloneSource),
-    );
-    setMonthlyRange((prev) => prev ?? prefilledRange);
+    const stepsCompleted = Array.isArray(onboarding?.stepsCompleted)
+      ? (onboarding.stepsCompleted as unknown[]).filter(
+          (entry): entry is string => typeof entry === "string",
+        )
+      : [];
+
+    return {
+      sources: resolvedSources,
+      customEntries,
+      range: prefilledRange,
+      completed: stepsCompleted.includes(setupInfo[2].key),
+    };
   }, [userData]);
+
+  useEffect(() => {
+    setPrimarySource((prev) => (prev.length > 0 ? prev : prefill.sources));
+    setCustomSource((prev) => (prev ? prev : prefill.customEntries.join(", ")));
+    setMonthlyRange((prev) => prev ?? prefill.range);
+  }, [prefill]);
 
   const handlePrevious = () => {
     goToPreviousStep();
   };
 
+  const customEntries = customSource
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const isCustomSelected = primarySource.includes(CUSTOM_INCOME_SOURCE_VALUE);
+  const hasValidSelection =
+    primarySource.length > 0 &&
+    (!isCustomSelected ||
+      primarySource.length > 1 ||
+      customEntries.length > 0);
+
   const handleNext = async () => {
-    if (primarySource.length === 0 || !monthlyRange) {
+    if (prefill.completed && (!hasValidSelection || !monthlyRange)) {
+      goToNextStep();
+      return;
+    }
+    if (!hasValidSelection || !monthlyRange) {
       return;
     }
 
-    const selectedSources = primarySource.map(
-      (val) =>
-        incomeSources.find((source) => source.value === val)?.label ?? val,
-    );
+    const sortedCurrent = [...primarySource].sort();
+    const sortedPrefill = [...prefill.sources].sort();
+    const sortedCurrentCustom = [...customEntries].sort();
+    const sortedPrefillCustom = [...prefill.customEntries].sort();
+    const sourcesUnchanged =
+      sortedCurrent.length === sortedPrefill.length &&
+      sortedCurrent.every((value, index) => value === sortedPrefill[index]) &&
+      sortedCurrentCustom.length === sortedPrefillCustom.length &&
+      sortedCurrentCustom.every(
+        (value, index) => value === sortedPrefillCustom[index],
+      );
+
+    if (
+      prefill.completed &&
+      sourcesUnchanged &&
+      monthlyRange === prefill.range
+    ) {
+      goToNextStep();
+      return;
+    }
+
+    const selectedSources = [
+      ...primarySource
+        .filter((val) => val !== CUSTOM_INCOME_SOURCE_VALUE)
+        .map(
+          (val) =>
+            incomeSources.find((source) => source.value === val)?.label ?? val,
+        ),
+      ...(isCustomSelected ? customEntries : []),
+    ];
     const selectedRange =
       incomeRanges.find((range) => range.value === monthlyRange)?.label ??
       monthlyRange;
@@ -165,7 +239,7 @@ const MonthlyIncomeScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={2}
-          totalSteps={4}
+          totalSteps={5}
           title="Monthly Income"
           description="Help us personalize your budgeting experience"
         />
@@ -192,30 +266,12 @@ const MonthlyIncomeScreen = () => {
                 return (
                   <Pressable
                     key={source.value}
-                    disabled={isStandAloneSelected && !isSelected}
                     onPress={() => {
-                      setPrimarySource((prev) => {
-                        const currentlySelected = prev.includes(source.value);
-                        let next: string[];
-
-                        if (source.standAlone) {
-                          next = currentlySelected ? [] : [source.value];
-                        } else {
-                          const withoutStandAlone = prev.filter(
-                            (value) => !isStandAloneSource(value),
-                          );
-                          next = currentlySelected
-                            ? withoutStandAlone.filter(
-                                (value) => value !== source.value,
-                              )
-                            : [...withoutStandAlone, source.value];
-                        }
-
-                        setIsStandAloneSelected(
-                          next.some((value) => isStandAloneSource(value)),
-                        );
-                        return next;
-                      });
+                      setPrimarySource((prev) =>
+                        prev.includes(source.value)
+                          ? prev.filter((value) => value !== source.value)
+                          : [...prev, source.value],
+                      );
                     }}
                     className={cn(
                       "rounded-xl border px-4 py-3",
@@ -238,6 +294,17 @@ const MonthlyIncomeScreen = () => {
                 );
               })}
             </View>
+
+            {isCustomSelected && (
+              <TextInputField
+                containerClassName="mt-4"
+                label="Custom income source"
+                placeholder="e.g. Rental, Royalties (comma separated)"
+                value={customSource}
+                onChangeText={setCustomSource}
+                autoCapitalize="words"
+              />
+            )}
 
             <Text
               family="degular"
@@ -298,8 +365,7 @@ const MonthlyIncomeScreen = () => {
               className="flex-1"
               onPress={handleNext}
               disabled={
-                primarySource.length === 0 ||
-                !monthlyRange ||
+                ((!hasValidSelection || !monthlyRange) && !prefill.completed) ||
                 updateOnboardingMutation.isPending
               }
               loading={updateOnboardingMutation.isPending}

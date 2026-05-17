@@ -1,7 +1,7 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useSession } from "@/contexts/auth-context/useSession";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { extractUserData } from "@/lib/utils";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -20,7 +20,7 @@ import Toast from "react-native-toast-message";
 
 const EditProfileScreen = () => {
   const router = useRouter();
-  const { userData } = useSession();
+  const { data: userData } = useGetUserProfileQuery();
   const { fullName, displayEmail, displayPhone, initials } = useMemo(() => {
     return extractUserData(userData, {
       fallbackName: "",

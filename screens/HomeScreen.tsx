@@ -1,7 +1,9 @@
 import CompleteSetupCard from "@/components/home/CompleteSetupCard";
 import ExpenseSummaryCard from "@/components/home/ExpenseSummaryCard";
 import FinancialTipCard from "@/components/home/FinancialTipCard";
-import QuickActions from "@/components/home/QuickActions";
+import QuickActions, {
+  type FeatureGridItem,
+} from "@/components/home/QuickActions";
 import RecentTransactions from "@/components/home/RecentTransactions";
 import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
@@ -23,9 +25,9 @@ import {
   useGetExpenseSummaryQuery,
   useGetIncomesQuery,
   useGetMonthlyExpensesQuery,
+  useGetNotificationsQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
-  useGetNotificationsQuery,
 } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
@@ -48,28 +50,55 @@ type QuickAction = {
   icon: ImageSource;
   background: string;
   aspectRatio?: 1;
+  iconTintColor?: string;
 };
 
 const CURRENCY_SYMBOL = "₦";
 
 const quickActions: QuickAction[] = [
   {
-    id: "fx-rates",
-    label: "FX Rates",
-    icon: require("@/assets/icons/fxRates.svg"),
+    id: "fund-wallet",
+    label: "Fund Wallet",
+    icon: require("@/assets/icons/wallet.svg"),
     background: "bg-white",
+    iconTintColor: COLORS.primary_400,
   },
   {
     id: "goals",
-    label: "Savings Goals",
+    label: "Set Goals",
     icon: require("@/assets/icons/piggy.svg"),
     background: "bg-white",
   },
   {
-    id: "more",
-    icon: require("@/assets/icons/more-ellipsis.svg"),
+    id: "fx-rates",
+    label: "FX Rate",
+    icon: require("@/assets/icons/fxRates.svg"),
     background: "bg-white",
-    aspectRatio: 1,
+  },
+];
+
+const featureGridItems: FeatureGridItem[] = [
+  {
+    id: "track-expense",
+    label: "Track Expense",
+    icon: require("@/assets/icons/track-spending.svg"),
+    iconBackground: "#EBF9F3",
+    iconTint: "#32A34D",
+  },
+
+  {
+    id: "bill-reminders",
+    label: "Bill Reminders",
+    icon: require("@/assets/icons/bill-reminder.svg"),
+    iconBackground: "#EAEFFF",
+    iconTint: "#6165D7",
+  },
+  {
+    id: "ai-assistant",
+    label: "AI Assistant",
+    icon: require("@/assets/icons/ai_bot.svg"),
+    iconBackground: "#FFF5DD",
+    iconTint: "#D59007",
   },
 ];
 
@@ -81,10 +110,8 @@ const HomeScreen = () => {
   const { initials, welcomeName } = useUserDisplayData();
   const { isSetupComplete, currentStepRoute } = useSetupProgress();
 
-  const {
-    data: notifications = [],
-    refetch: refetchNotifications,
-  } = useGetNotificationsQuery();
+  const { data: notifications = [], refetch: refetchNotifications } =
+    useGetNotificationsQuery();
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
   const {
@@ -239,14 +266,30 @@ const HomeScreen = () => {
 
   const handleQuickActionPress = (action: QuickAction) => {
     switch (action.id) {
+      case "fund-wallet":
+        router.navigate("/(app)/fund-wallet");
+        break;
       case "fx-rates":
         router.navigate("/(app)/(home)/fxRates");
         break;
       case "goals":
         router.navigate("/savings-goals");
         break;
-      case "more":
-        router.navigate("/more");
+      default:
+        break;
+    }
+  };
+
+  const handleFeatureGridPress = (item: FeatureGridItem) => {
+    switch (item.id) {
+      case "track-expense":
+        router.navigate("/(app)/track-spending");
+        break;
+      case "bill-reminders":
+        router.navigate("/(app)/bill-reminder");
+        break;
+      case "ai-assistant":
+        router.push("/(app)/ai-assistant");
         break;
       default:
         break;
@@ -269,7 +312,7 @@ const HomeScreen = () => {
 
   return (
     <>
-      <MainContainer className="bg-light pb-0">
+      <MainContainer edges={["top"]} className=" bg-light pb-0">
         <View className="flex-1">
           <ScrollView
             refreshControl={
@@ -326,6 +369,8 @@ const HomeScreen = () => {
               <QuickActions
                 actions={quickActions}
                 onActionPress={handleQuickActionPress}
+                featureGridItems={featureGridItems}
+                onFeatureGridPress={handleFeatureGridPress}
               />
 
               <FinancialTipCard />

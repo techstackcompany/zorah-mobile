@@ -299,16 +299,13 @@ export const useGetExpenseSummaryQuery = (
         ...API_ENDPOINTS.expenses.summary,
         params: { type },
       });
-      console.log("response in useGetExpenseSummaryQuery", response, "\n\n");
-    
-        const summary: ExpenseSummary = {
-          type,
-          total: response.reduce((acc, item) => acc + item.total, 0),
-          byCategory: response,
-        };
-        return summary;
-      
 
+      const summary: ExpenseSummary = {
+        type,
+        total: response.reduce((acc, item) => acc + item.total, 0),
+        byCategory: response,
+      };
+      return summary;
     },
     ...options,
   });

@@ -1,5 +1,5 @@
 import { setupInfo } from "@/constants/setup";
-import { useSession } from "@/contexts/auth-context/useSession";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
@@ -14,10 +14,13 @@ export interface SetupStepInfo {
 
 const BANKS_COMPLETED_KEY = "@setup_banks_completed";
 
+const LOCAL_FLAG_KEYS: Record<"banks", string> = {
+  banks: BANKS_COMPLETED_KEY,
+};
+
 export const setLocalSetupFlag = async (key: "banks", value: boolean) => {
   try {
-    const storageKey = BANKS_COMPLETED_KEY;
-    await AsyncStorage.setItem(storageKey, JSON.stringify(value));
+    await AsyncStorage.setItem(LOCAL_FLAG_KEYS[key], JSON.stringify(value));
   } catch (error) {
     console.error(`Failed to set local setup flag for ${key}:`, error);
   }
@@ -28,13 +31,15 @@ function checkIfSetupStepCompleted(userData: any, stepKey: string): boolean {
 }
 
 export const useSetupProgress = () => {
-  const { userData } = useSession();
+  const { data: userData } = useGetUserProfileQuery();
   const [localBanksCompleted, setLocalBanksCompleted] = useState(false);
 
   useEffect(() => {
     const fetchLocalFlags = async () => {
       try {
-        const banksFlag = await AsyncStorage.getItem(BANKS_COMPLETED_KEY);
+        const [banksFlag] = await Promise.all([
+          AsyncStorage.getItem(BANKS_COMPLETED_KEY),
+        ]);
 
         if (banksFlag) setLocalBanksCompleted(JSON.parse(banksFlag));
       } catch (error) {
@@ -54,14 +59,9 @@ export const useSetupProgress = () => {
     Array.isArray(userData?.onboarding?.incomeSource) &&
     userData.onboarding.incomeSource.length > 0 &&
     checkIfSetupStepCompleted(userData, setupInfo[2].key);
-  const kycCompleted =
-    // userData?.KycStatus !== undefined &&
-    // userData?.KycStatus !== "unverified" &&
-    checkIfSetupStepCompleted(userData, setupInfo[3].key);
+  const kycCompleted = checkIfSetupStepCompleted(userData, setupInfo[3].key);
 
-  const banksCompleted =
-    localBanksCompleted &&
-    checkIfSetupStepCompleted(userData, setupInfo[4].key);
+  const banksCompleted = checkIfSetupStepCompleted(userData, setupInfo[4].key);
 
   const steps: SetupStepInfo[] = [
     {
@@ -90,11 +90,12 @@ export const useSetupProgress = () => {
     },
   ];
   const completedCount = steps.filter((step) => step.completed).length;
-  const isSetupComplete =
-    banksCompleted &&
-    kycCompleted &&
-    incomeCompleted &&
-    financialGoalsCompleted;
+  const isSetupComplete = userData
+    ? banksCompleted &&
+      kycCompleted &&
+      incomeCompleted &&
+      financialGoalsCompleted
+    : true;
 
   const currentStepIndex = steps.findIndex((step) => !step.completed);
   return {

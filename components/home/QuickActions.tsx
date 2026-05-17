@@ -2,7 +2,7 @@ import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 import { Image, ImageSource } from "expo-image";
 import React from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 type QuickAction = {
   id: string;
@@ -12,14 +12,26 @@ type QuickAction = {
   aspectRatio?: 1;
 };
 
+export type FeatureGridItem = {
+  id: string;
+  label: string;
+  icon: ImageSource;
+  iconBackground: string;
+  iconTint?: string;
+};
+
 type QuickActionsProps = {
   actions: QuickAction[];
   onActionPress: (action: QuickAction) => void;
+  featureGridItems?: FeatureGridItem[];
+  onFeatureGridPress?: (item: FeatureGridItem) => void;
 };
 
 const QuickActions: React.FC<QuickActionsProps> = ({
   actions,
   onActionPress,
+  featureGridItems,
+  onFeatureGridPress,
 }) => {
   return (
     <View className="mt-4">
@@ -48,6 +60,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
                 source={action.icon}
                 style={{ aspectRatio: 1, width: "100%" }}
                 contentFit="contain"
+                tintColor={action.iconTintColor}
               />
             </View>
             {action.label && (
@@ -58,8 +71,75 @@ const QuickActions: React.FC<QuickActionsProps> = ({
           </Pressable>
         ))}
       </ScrollView>
+
+      {featureGridItems && featureGridItems.length > 0 && (
+        <View style={styles.gridContainer}>
+          {featureGridItems.map((item) => (
+            <Pressable
+              key={item.id}
+              style={styles.gridItem}
+              onPress={() => onFeatureGridPress?.(item)}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+            >
+              <View
+                style={[
+                  styles.gridIconWrapper,
+                  { backgroundColor: item.iconBackground },
+                ]}
+              >
+                <Image
+                  source={item.icon}
+                  style={styles.gridIcon}
+                  contentFit="contain"
+                  tintColor={item.iconTint}
+                />
+              </View>
+              <Text weight="medium" style={styles.gridLabel} numberOfLines={2}>
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  gridItem: {
+    width: "33.33%",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+  },
+  gridIconWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  gridIcon: {
+    width: 24,
+    height: 24,
+  },
+  gridLabel: {
+    fontSize: 12,
+    color: "#2A3A50",
+    textAlign: "center",
+    lineHeight: 16,
+  },
+});
 
 export default QuickActions;

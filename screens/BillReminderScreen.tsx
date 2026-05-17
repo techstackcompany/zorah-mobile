@@ -8,11 +8,13 @@ import {
   formatNairaCurrency,
   generateColorsFromString,
 } from "@/lib/utils";
-import { useGetCategoriesQuery } from "@/src/api/hooks";
+import { useGetCategoriesQuery, useGetUserProfileQuery } from "@/src/api/hooks";
 import {
   useGetBillsQuery,
   usePayBillMutation,
+  useUpdateBillReminderMutation,
 } from "@/src/api/hooks/useBillRemindersApi";
+import { useUpdateProfileMutation } from "@/src/api/hooks/useAuthApi";
 import { BillReminder } from "@/src/api/types";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,6 +28,7 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
+  TextInput,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
@@ -174,6 +177,8 @@ const BillReminderScreen = () => {
             </View>
           </View>
 
+          <ReminderTimeSetting />
+
           <View style={styles.segmentWrapper}>
             {BILL_FILTERS.map((tab) => {
               const isActive = tab.key === activeFilter;
@@ -308,8 +313,10 @@ interface BillCardProps {
 const BillReminderCard = ({ bill }: BillCardProps) => {
   const [isEnabled, setIsEnabled] = useState(bill.reminderEnabled);
   const { mutate, isPending: isSubmitting } = usePayBillMutation(bill._id);
+  const { mutate: updateBill } = useUpdateBillReminderMutation(bill._id);
   const handleToggleReminder = (id: string, value: boolean) => {
-    setIsEnabled(!isEnabled);
+    setIsEnabled(value);
+    updateBill({ reminderEnabled: value });
   };
   const queryClient = useQueryClient();
   const handleMarkAsPaid = () => {
@@ -548,5 +555,122 @@ const styles = StyleSheet.create({
     borderColor: COLORS.error + "20",
   },
 });
+
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+const formatHourLabel = (hour: number) =>
+  `${hour.toString().padStart(2, "0")}:00`;
+
+const ReminderTimeSetting = () => {
+  const { data: userData } = useGetUserProfileQuery();
+  const safeUser = (userData ?? {}) as Record<string, any>;
+  const initialHour =
+    typeof safeUser.preferredReminderHour === "number"
+      ? safeUser.preferredReminderHour
+      : 9;
+
+  const [selectedHour, setSelectedHour] = useState<number>(initialHour);
+  const [showPicker, setShowPicker] = useState(false);
+  const { mutateAsync: updateProfile, isPending } = useUpdateProfileMutation();
+
+  const handleSave = async (hour: number) => {
+    try {
+      await updateProfile({ preferredReminderHour: hour });
+      setShowPicker(false);
+      Toast.show({
+        type: "success",
+        text1: "Saved",
+        text2: "Reminder time updated.",
+      });
+    } catch (e: any) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: e?.response?.data?.message || "Failed to update reminder time.",
+      });
+    }
+  };
+
+  return (
+    <View
+      style={{
+        backgroundColor: "#FFFFFF",
+        borderRadius: 16,
+        padding: 16,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text weight="semibold" className="text-base text-textColor">
+            Daily Reminder Time
+          </Text>
+          <Text className="text-xs text-textColor/60 mt-1">
+            Receive alerts at {formatHourLabel(selectedHour)}
+          </Text>
+        </View>
+
+        <Pressable onPress={() => setShowPicker((prev) => !prev)}>
+          <Text className="text-sm text-primary_400" weight="semibold">
+            {showPicker ? "Done" : "Change"}
+          </Text>
+        </Pressable>
+      </View>
+
+      {showPicker && (
+        <View style={{ marginTop: 16 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+          >
+            {HOURS.map((hour) => {
+              const isActive = hour === selectedHour;
+              return (
+                <Pressable
+                  key={hour}
+                  onPress={() => {
+                    setSelectedHour(hour);
+                    handleSave(hour);
+                  }}
+                  disabled={isPending}
+                  style={{
+                    minWidth: 64,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: isActive ? COLORS.primary_400 : "#E3E7EF",
+                    backgroundColor: isActive ? COLORS.primary_400 : "#FFFFFF",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    weight="semibold"
+                    className={
+                      isActive ? "text-sm text-white" : "text-sm text-textColor"
+                    }
+                  >
+                    {formatHourLabel(hour)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {isPending && (
+            <View style={{ marginTop: 10, alignItems: "center" }}>
+              <ActivityIndicator size="small" color={COLORS.primary_400} />
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
 
 export default BillReminderScreen;

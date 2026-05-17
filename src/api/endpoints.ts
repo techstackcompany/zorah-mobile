@@ -17,7 +17,7 @@ export const API_ENDPOINTS = {
     register: { method: HttpMethod.POST, url: "/auth/register" },
     login: { method: HttpMethod.POST, url: "/auth/login" },
     profile: { method: HttpMethod.GET, url: "/auth/profile" },
-    updateProfile: { method: HttpMethod.PATCH, url: "/auth/update-profile" },
+    updateProfile: { method: HttpMethod.PUT, url: "/auth/update-profile" },
     onboarding: { method: HttpMethod.PATCH, url: "/auth/onboarding" },
     setPin: { method: HttpMethod.POST, url: "/auth/set-pin" },
     verifyPin: { method: HttpMethod.POST, url: "/auth/verify-pin" },

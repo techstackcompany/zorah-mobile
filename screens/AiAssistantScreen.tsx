@@ -2,11 +2,10 @@ import MainContainer from "@/components/layouts/MainContainer";
 import FeatureGateModal from "@/components/ui/FeatureGateModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useSession } from "@/contexts/auth-context/useSession";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { addKeyboardBehavior, cn } from "@/lib/utils";
-import { useAskAiMutation } from "@/src/api/hooks";
+import { useAskAiMutation, useGetUserProfileQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -136,7 +135,7 @@ const getInitialMessages = (): Message[] => [
 
 const AiAssistantScreen = () => {
   const router = useRouter();
-  const { userData } = useSession();
+  const { data: userData } = useGetUserProfileQuery();
   const { isSetupComplete, steps, currentStepIndex } = useSetupProgress();
   const queryClient = useQueryClient();
 
@@ -761,15 +760,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderWidth: 1,
     borderColor: "#E0E5EE",
     gap: 12,
     flex: 1,
+    minHeight: 48,
   },
   textInput: {
     flex: 1,
     fontSize: 14,
+    lineHeight: 20,
+    paddingVertical: 8,
     color: COLORS.textColor,
   },
   micButton: {

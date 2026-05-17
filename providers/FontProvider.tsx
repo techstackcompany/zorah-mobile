@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect } from "react";
+import React, { PropsWithChildren } from "react";
 import { View } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -41,10 +41,6 @@ const FontProvider = ({ children }: PropsWithChildren) => {
     PoppinsBlack: require("../assets/fonts/poppins-black.ttf"),
     PoppinsBlackItalic: require("../assets/fonts/poppins-black_Italic.ttf"),
   });
-
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
 
   if (!fontsLoaded) return <View />;
 

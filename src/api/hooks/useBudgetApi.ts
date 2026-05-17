@@ -21,23 +21,71 @@ export const useCreateBudgetMutation = (
   options?: UseMutationOptions<
     CreateBudgetResponse,
     ApiError,
-    CreateBudgetRequest
+    CreateBudgetRequest,
+    { snapshot: BudgetListItem[] | ApiEnvelope<BudgetListItem[]> | undefined }
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
-  return useMutation<CreateBudgetResponse, ApiError, CreateBudgetRequest>({
+  const {
+    onSuccess: callerOnSuccess,
+    onError: callerOnError,
+    onSettled: callerOnSettled,
+    ...restOptions
+  } = options ?? {};
+
+  return useMutation<
+    CreateBudgetResponse,
+    ApiError,
+    CreateBudgetRequest,
+    { snapshot: BudgetListItem[] | ApiEnvelope<BudgetListItem[]> | undefined }
+  >({
     mutationKey: ["budgets", "create"],
-    mutationFn: (payload) => {
-      return apiRequest<CreateBudgetResponse>({
+    mutationFn: (payload) =>
+      apiRequest<CreateBudgetResponse>({
         ...API_ENDPOINTS.budgets.createBudget,
         data: payload,
-      });
-    },
+      }),
     ...restOptions,
-    onSuccess: (data, variables, context, mutationContext) => {
+
+    onMutate: async (newBudget) => {
+      await queryClient.cancelQueries({ queryKey: ["budgets", "list"] });
+      const snapshot = queryClient.getQueryData<
+        BudgetListItem[] | ApiEnvelope<BudgetListItem[]>
+      >(["budgets", "list"]);
+      queryClient.setQueryData<BudgetListItem[] | ApiEnvelope<BudgetListItem[]>>(
+        ["budgets", "list"],
+        (old) => {
+          const optimistic: BudgetListItem = {
+            ...newBudget,
+            _id: `temp-${Date.now()}`,
+            spent: 0,
+            totalSpent: 0,
+            remaining: newBudget.amount,
+            percentageused: "0",
+            status: "active",
+          };
+          if (!old) return [optimistic];
+          if (Array.isArray(old)) return [optimistic, ...old];
+          return { ...old, data: [optimistic, ...(old.data ?? [])] };
+        },
+      );
+      return { snapshot };
+    },
+
+    onError: (error, variables, onMutateResult, mutationContext) => {
+      if (onMutateResult?.snapshot !== undefined) {
+        queryClient.setQueryData(["budgets", "list"], onMutateResult.snapshot);
+      }
+      callerOnError?.(error, variables, onMutateResult, mutationContext);
+    },
+
+    onSuccess: (data, variables, onMutateResult, mutationContext) => {
+      callerOnSuccess?.(data, variables, onMutateResult, mutationContext);
+    },
+
+    onSettled: (data, error, variables, onMutateResult, mutationContext) => {
       void queryClient.invalidateQueries({ queryKey: ["budgets"] });
-      callerOnSuccess?.(data, variables, context, mutationContext);
+      callerOnSettled?.(data, error, variables, onMutateResult, mutationContext);
     },
   });
 };
@@ -88,7 +136,7 @@ export const useUpdateBudgetMutation = (
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  const { onSuccess: callerOnSuccess, onSettled: callerOnSettled, ...restOptions } = options ?? {};
   return useMutation<UpdateBudgetResponse, ApiError, UpdateBudgetRequest>({
     mutationKey: ["budgets", "update", budgetId],
     mutationFn: (payload) => {
@@ -103,8 +151,11 @@ export const useUpdateBudgetMutation = (
     },
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };
@@ -118,7 +169,7 @@ export const useDeleteBudgetMutation = (
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  const { onSuccess: callerOnSuccess, onSettled: callerOnSettled, ...restOptions } = options ?? {};
   return useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "delete", budgetId],
     mutationFn: () => {
@@ -131,8 +182,11 @@ export const useDeleteBudgetMutation = (
     },
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };
@@ -146,7 +200,7 @@ export const useArchiveBudgetMutation = (
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  const { onSuccess: callerOnSuccess, onSettled: callerOnSettled, ...restOptions } = options ?? {};
   return useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "archive", budgetId],
     mutationFn: () => {
@@ -156,8 +210,11 @@ export const useArchiveBudgetMutation = (
     },
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };
@@ -171,7 +228,7 @@ export const useRestoreBudgetMutation = (
   >,
 ) => {
   const queryClient = useQueryClient();
-  const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
+  const { onSuccess: callerOnSuccess, onSettled: callerOnSettled, ...restOptions } = options ?? {};
   return useMutation<ApiEnvelope<{ message: string }>, ApiError, void>({
     mutationKey: ["budgets", "restore", budgetId],
     mutationFn: () => {
@@ -181,8 +238,11 @@ export const useRestoreBudgetMutation = (
     },
     ...restOptions,
     onSuccess: (data, variables, context, mutationContext) => {
-      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
       callerOnSuccess?.(data, variables, context, mutationContext);
+    },
+    onSettled: (data, error, variables, context, mutationContext) => {
+      void queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
 };

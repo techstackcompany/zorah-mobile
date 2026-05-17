@@ -1,7 +1,5 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useSession } from "@/contexts/auth-context/useSession";
-import useAppSettings from "@/contexts/settings-context/useAppSettings";
 import { useBiometricSupport } from "@/hooks/useBiometricSupport";
 import { savePin } from "@/lib/pinStorage";
 import { useSetUserPinMutation } from "@/src/api/hooks";
@@ -37,32 +35,22 @@ type PinSetupStep = "create" | "confirm";
 const PinSetupScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { updateSetting } = useAppSettings();
-  const { setUserData } = useSession();
   const [step, setStep] = useState<PinSetupStep>("create");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const { isAvailable: biometricsAvailable } = useBiometricSupport();
   const offset = useSharedValue(0);
 
   const setPinMutation = useSetUserPinMutation({
-    onSuccess: async () => {
-      await savePin(pin);
-      updateSetting("enableBiometrics", biometricsAvailable);
+    onSuccess: async (_, variables) => {
+      await savePin(variables.pin);
 
       Toast.show({
         type: "success",
-        text1: "PIN Set Successfully",
-        text2: biometricsAvailable
-          ? "Your PIN is set and biometric login is enabled."
-          : "Your account is now secured with a PIN.",
+        text1: "PIN Updated Successfully",
+        text2: "Your PIN has been successfully updated.",
       });
 
       await queryClient.refetchQueries({ queryKey: ["auth", "profile"] });
-      const freshProfile = queryClient.getQueryData(["auth", "profile"]);
-      if (freshProfile) {
-        setUserData(freshProfile);
-      }
 
       if (router.canGoBack()) {
         router.back();
@@ -73,7 +61,7 @@ const PinSetupScreen = () => {
     onError: (error) => {
       Toast.show({
         type: "error",
-        text1: "Failed to Set PIN",
+        text1: "Failed to Update PIN",
         text2: error.message || "Please try again.",
       });
       setPin("");
@@ -159,29 +147,20 @@ const PinSetupScreen = () => {
         </View>
 
         <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={styles.appIcon}
-              contentFit="contain"
-            />
-          </View>
           <Text
             family="degular"
             weight="bold"
             className="mb-2 text-center text-[28px] tracking-[0.5px] text-textColor"
           >
-            {step === "create" ? "Create PIN" : "Confirm PIN"}
+            {step === "create" ? "Update PIN" : "Confirm New PIN"}
           </Text>
           <Text
             weight="regular"
             className="px-10 text-center text-[15px] text-[#6B7280]"
           >
             {step === "create"
-              ? biometricsAvailable
-                ? "Create a 4-digit PIN and enable biometric authentication"
-                : "Enter a 4-digit PIN to secure your account"
-              : "Re-enter your PIN to confirm"}
+              ? "Enter your new 4-digit PIN"
+              : "Re-enter your new PIN to confirm"}
           </Text>
         </View>
 
@@ -351,7 +330,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
   codeEmpty: {
     width: 16,

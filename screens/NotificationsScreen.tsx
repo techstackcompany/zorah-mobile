@@ -201,8 +201,7 @@ const NotificationsScreen = () => {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Notifications" }} />
-      <MainContainer edges={["top"]} className="bg-lightMuted">
+      <MainContainer edges={[]} className="bg-lightMuted">
         <View className="flex-1 px-6 pt-6">
           {isLoading ? (
             <View className="flex-1 items-center justify-center">

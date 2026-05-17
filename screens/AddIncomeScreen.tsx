@@ -7,6 +7,7 @@ import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { capitalizeWord, cn } from "@/lib/utils";
+import { useNetworkStatus } from "@/contexts/network/NetworkProvider";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useAddIncomeMutation, useGetCategoriesQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
@@ -50,6 +51,8 @@ const AddIncomeScreen = () => {
   const paymentModalRef = useRef<SlideUpModalRef>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const timeOutId = useRef<number | null>(null);
+  const dismissedOfflineRef = useRef(false);
+  const { isOnline } = useNetworkStatus();
   const { keyboardHeight } = useKeyboardHeight();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
@@ -86,16 +89,16 @@ const AddIncomeScreen = () => {
         type: "success",
         text1: "Income Added",
         text2: "Your income has been recorded successfully.",
-        onHide: () => {
-          router.back();
-        },
       });
 
-      setAmount("");
-      setCustomCategory("");
-      setPaymentMethod("");
-      setDate("");
-      setDescription("");
+      if (!dismissedOfflineRef.current) {
+        setAmount("");
+        setCustomCategory("");
+        setPaymentMethod("");
+        setDate("");
+        setDescription("");
+        setTimeout(() => router.back(), 1500);
+      }
     },
     onError: (error) => {
       Toast.show({
@@ -195,6 +198,21 @@ const AddIncomeScreen = () => {
       date: formattedDate,
     };
     addIncomeMutation.mutate(payload);
+
+    if (!isOnline) {
+      dismissedOfflineRef.current = true;
+      Toast.show({
+        type: "success",
+        text1: "Income Saved",
+        text2: "You're offline. It will sync when you reconnect.",
+      });
+      setAmount("");
+      setCustomCategory("");
+      setPaymentMethod("");
+      setDate("");
+      setDescription("");
+      setTimeout(() => router.back(), 1500);
+    }
   }, [
     amount,
     selectedCategory,
@@ -203,6 +221,8 @@ const AddIncomeScreen = () => {
     description,
     addIncomeMutation,
     customCategory,
+    isOnline,
+    router,
   ]);
 
   return (
@@ -358,16 +378,16 @@ const AddIncomeScreen = () => {
           <View className="px-6 pb-6">
             <Pressable
               onPress={handleSubmit}
-              disabled={addIncomeMutation.isPending}
+              disabled={addIncomeMutation.isPending && isOnline}
               className={cn(
                 "items-center justify-center rounded-2xl py-4",
-                addIncomeMutation.isPending
+                addIncomeMutation.isPending && isOnline
                   ? "bg-primary_400/60"
                   : "bg-primary_400",
               )}
             >
               <Text weight="semibold" className="text-base text-white">
-                {addIncomeMutation.isPending
+                {addIncomeMutation.isPending && isOnline
                   ? "Adding Income..."
                   : "Add New Income"}
               </Text>

@@ -3,16 +3,14 @@ import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { setupInfo } from "@/constants";
-import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/src/api/client";
-import { useUpdateOnboardingMutation } from "@/src/api/hooks";
+import { useGetUserProfileQuery, useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 type Bank = {
@@ -84,19 +82,42 @@ const YourBanksScreen = ({
   initialSelected = [],
   onSelectionChange,
 }: YourBanksScreenProps) => {
-  const router = useRouter();
   const sanitizedInitial = useMemo(
     () => sanitizeSelection(initialSelected),
     [initialSelected],
   );
   const [selectedBanks, setSelectedBanks] =
     useState<string[]>(sanitizedInitial);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const queryClient = useQueryClient();
-  const { setHasCompletedSetup, setSetupStep } = useSession();
+  const { data: userData } = useGetUserProfileQuery();
   const updateOnboardingMutation = useUpdateOnboardingMutation();
 
-  const { goToPreviousStep } = useSetUpStep(4);
+  const { goToPreviousStep, goToNextStep } = useSetUpStep(4);
+
+  const { banksStepCompleted, prefilledBankIds } = useMemo(() => {
+    const root = (userData ?? {}) as Record<string, unknown>;
+    const onboarding =
+      root.onboarding && typeof root.onboarding === "object"
+        ? (root.onboarding as Record<string, unknown>)
+        : null;
+    const stepsCompleted = Array.isArray(onboarding?.stepsCompleted)
+      ? (onboarding.stepsCompleted as unknown[]).filter(
+          (entry): entry is string => typeof entry === "string",
+        )
+      : [];
+    const rawBanks =
+      (onboarding?.banks as unknown) ??
+      (onboarding?.userBanks as unknown) ??
+      (root.banks as unknown) ??
+      [];
+    const list = Array.isArray(rawBanks)
+      ? rawBanks.filter((entry): entry is string => typeof entry === "string")
+      : [];
+    return {
+      banksStepCompleted: stepsCompleted.includes(setupInfo[4].key),
+      prefilledBankIds: sanitizeSelection(list),
+    };
+  }, [userData]);
 
   useEffect(() => {
     setSelectedBanks((prev) =>
@@ -122,11 +143,29 @@ const YourBanksScreen = ({
   };
 
   const handleNext = async () => {
-    if (selectedBanks.length === 0 || updateOnboardingMutation.isPending) {
+    if (updateOnboardingMutation.isPending) {
+      return;
+    }
+    if (banksStepCompleted && selectedBanks.length === 0) {
+      goToNextStep();
+      return;
+    }
+    if (selectedBanks.length === 0) {
       return;
     }
 
     onSelectionChange?.(selectedBanks);
+
+    const sortedCurrent = [...selectedBanks].sort();
+    const sortedPrefill = [...prefilledBankIds].sort();
+    const unchanged =
+      sortedCurrent.length === sortedPrefill.length &&
+      sortedCurrent.every((value, index) => value === sortedPrefill[index]);
+
+    if (banksStepCompleted && unchanged) {
+      goToNextStep();
+      return;
+    }
 
     try {
       await updateOnboardingMutation.mutateAsync({
@@ -139,23 +178,16 @@ const YourBanksScreen = ({
         exact: true,
       });
 
-      setHasCompletedSetup(true);
-      setSetupStep(null);
-      setShowCompletionModal(true);
+      goToNextStep();
     } catch (error) {
       const _error = error as ApiError;
       console.error("_error.message", _error.message);
       Toast.show({
         type: "error",
-        text1: "Could not complete setup",
+        text1: "Could not save bank selection",
         text2: _error.message,
       });
     }
-  };
-
-  const handleCloseCompletionModal = () => {
-    setShowCompletionModal(false);
-    router.replace("/(app)/(home)");
   };
 
   return (
@@ -163,7 +195,7 @@ const YourBanksScreen = ({
       <View className="flex-1">
         <SetupHeader
           currentStep={4}
-          totalSteps={4}
+          totalSteps={5}
           title="Your Banks"
           description="Select your banks to enable automatic expense tracking"
         />
@@ -208,41 +240,18 @@ const YourBanksScreen = ({
               onPress={handlePrevious}
             />
             <Button
-              title="Finish"
+              title="Next"
               className="flex-1"
               onPress={handleNext}
               disabled={
-                selectedBanks.length === 0 || updateOnboardingMutation.isPending
+                (selectedBanks.length === 0 && !banksStepCompleted) ||
+                updateOnboardingMutation.isPending
               }
             />
           </View>
         </View>
       </View>
 
-      <Modal
-        visible={showCompletionModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseCompletionModal}
-      >
-        <View className="flex-1 items-center justify-center bg-black/35 px-6">
-          <View className="w-full max-w-[360px] rounded-2xl bg-white p-6">
-            <Text weight="bold" className="text-xl text-textColor">
-              Setup complete
-            </Text>
-            <Text className="mt-2 text-sm text-textColor/70">
-              Your onboarding is complete. You can now start using all app
-              features.
-            </Text>
-
-            <Button
-              title="Continue"
-              className="mt-5"
-              onPress={handleCloseCompletionModal}
-            />
-          </View>
-        </View>
-      </Modal>
     </SetupContainer>
   );
 };

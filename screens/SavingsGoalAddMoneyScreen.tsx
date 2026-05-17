@@ -16,7 +16,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { useNetworkStatus } from "@/contexts/network/NetworkProvider";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -33,8 +34,10 @@ const SavingsGoalAddMoneyScreen = () => {
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [amount, setAmount] = useState("");
-  const [selectedSource, setSelectedSource] = useState(PAYMENT_SOURCES[0].id);
+  const [selectedSource, setSelectedSource] = useState<typeof PAYMENT_SOURCES[number]["id"]>(PAYMENT_SOURCES[0].id);
   const [showSuccess, setShowSuccess] = useState(false);
+  const dismissedOfflineRef = useRef(false);
+  const { isOnline } = useNetworkStatus();
 
   
   const {
@@ -72,14 +75,13 @@ const SavingsGoalAddMoneyScreen = () => {
         text2: "Your contribution has been added successfully.",
       });
 
-      
-      setAmount("");
-
-      
-      setTimeout(() => {
-        setShowSuccess(false);
-        router.back();
-      }, 1500);
+      if (!dismissedOfflineRef.current) {
+        setAmount("");
+        setTimeout(() => {
+          setShowSuccess(false);
+          router.back();
+        }, 1500);
+      }
     },
     onError: (error) => {
       Toast.show({
@@ -120,7 +122,18 @@ const SavingsGoalAddMoneyScreen = () => {
     };
 
     contributeMutation.mutate(payload);
-  }, [id, amount, selectedSource, contributeMutation]);
+
+    if (!isOnline) {
+      dismissedOfflineRef.current = true;
+      Toast.show({
+        type: "success",
+        text1: "Contribution Saved",
+        text2: "You're offline. It will sync when you reconnect.",
+      });
+      setAmount("");
+      setTimeout(() => router.back(), 1500);
+    }
+  }, [id, amount, contributeMutation, isOnline, router]);
 
   
   if (isGoalLoading) {
@@ -256,13 +269,13 @@ const SavingsGoalAddMoneyScreen = () => {
 
             <Button
               title={
-                contributeMutation.isPending
+                contributeMutation.isPending && isOnline
                   ? "Adding Money..."
                   : "Add Money"
               }
               className="mt-8"
               onPress={handleSubmit}
-              disabled={!amount || contributeMutation.isPending}
+              disabled={!amount || (contributeMutation.isPending && isOnline)}
             />
           </ScrollView>
         </View>

@@ -14,11 +14,12 @@ import { addKeyboardBehavior, cn, getErrorMessage } from "@/lib/utils";
 import {
   useAddExpenseMutation,
   useGetCategoriesQuery,
+  useGetUserProfileQuery,
   useVoiceExpenseLoggingMutation,
 } from "@/src/api/hooks";
 
 import FeatureGateModal from "@/components/ui/FeatureGateModal";
-import { useSession } from "@/contexts/auth-context/useSession";
+import { useNetworkStatus } from "@/contexts/network/NetworkProvider";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { Ionicons } from "@expo/vector-icons";
@@ -196,7 +197,8 @@ const useExpenseSubCategories = () => {
 const AddExpenseScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { userData } = useSession();
+  const { isOnline } = useNetworkStatus();
+  const { data: userData } = useGetUserProfileQuery();
   const { isSetupComplete, steps, currentStepIndex } = useSetupProgress();
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -211,6 +213,7 @@ const AddExpenseScreen = () => {
   const [editableTranscript, setEditableTranscript] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
   const timeOutId = useRef<number | null>(null);
+  const dismissedOfflineRef = useRef(false);
   const { keyboardHeight } = useKeyboardHeight();
   const {
     paymentModalRef,
@@ -266,18 +269,18 @@ const AddExpenseScreen = () => {
         text1: "Expense Added",
         text2: "Your expense has been recorded successfully.",
       });
-      setAmount("");
-      setPaymentMethod("");
-      setDate("");
-      setDescription("");
-      setCustomCategory("");
-      setTimeout(() => {
-        router.back();
-      }, 1500);
+      if (!dismissedOfflineRef.current) {
+        setAmount("");
+        setPaymentMethod("");
+        setDate("");
+        setDescription("");
+        setCustomCategory("");
+        setTimeout(() => {
+          router.back();
+        }, 1500);
+      }
     },
     onError: (error) => {
-      console.error("error", error);
-
       Toast.show({
         type: "error",
         text1: "Error",
@@ -413,42 +416,44 @@ const AddExpenseScreen = () => {
       };
 
       addExpenseMutation.mutate(payload);
+
+      if (!isOnline) {
+        dismissedOfflineRef.current = true;
+        Toast.show({
+          type: "success",
+          text1: "Expense Saved",
+          text2: "You're offline. It will sync when you reconnect.",
+        });
+        setAmount("");
+        setPaymentMethod("");
+        setDate("");
+        setDescription("");
+        setCustomCategory("");
+        setTimeout(() => router.back(), 1500);
+      }
     }
   }, [
     isVoiceMode,
     editableTranscript,
-    logVoiceExpenseMutation,
     amount,
-    selectedCategory,
-    customCategory,
-    paymentMethod,
     date,
+    paymentMethod,
+    selectedCategory,
+    logVoiceExpenseMutation,
+    customCategory,
     description,
     addExpenseMutation,
+    isOnline,
+    setPaymentMethod,
+    router,
   ]);
 
   const micIsRecording = recognizing;
   const isSubmitDisabled =
     isVoiceMode && (!editableTranscript.trim() || voiceStatus === "recording");
 
-  const isLimitReached =
-    !isSetupComplete &&
-    !!userData &&
-    userData.usageMetrics?.isFeatureLocked &&
-    (userData.usageMetrics?.expensesLoggedCount || 0) >= 2;
-
   return (
     <MainContainer className="bg-light" edges={[]}>
-      <FeatureGateModal
-        visible={isLimitReached}
-        featureName="Expense Logging"
-        onCompleteSetup={() => {
-          if (steps[currentStepIndex]?.route) {
-            router.replace(steps[currentStepIndex].route as any);
-          }
-        }}
-        onGoBack={() => router.back()}
-      />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={addKeyboardBehavior()}
@@ -737,7 +742,7 @@ const AddExpenseScreen = () => {
             <PrimaryButton
               onPress={handleSubmit}
               loading={
-                addExpenseMutation.isPending ||
+                (addExpenseMutation.isPending && isOnline) ||
                 logVoiceExpenseMutation.isPending
               }
               label="Add New Expense"

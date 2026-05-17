@@ -11,6 +11,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { useUpdateBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
+import { getBillLeadDays, setBillLeadDays } from "@/lib/localNotifications";
 import { BillReminder } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
@@ -97,8 +98,10 @@ const UpdateBillScreen = () => {
   const [reminderEnabled, setReminderEnabled] = useState(
     existingBill?.reminderEnabled ?? true,
   );
+  const [leadDays, setLeadDays] = useState("1");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const paymentModalRef = useRef<PaymentModalRef>(null);
+  const leadDaysModalRef = useRef<PaymentModalRef>(null);
 
   useEffect(() => {
     if (existingBill) {
@@ -107,6 +110,11 @@ const UpdateBillScreen = () => {
       setDueDate(parseISOToDate(existingBill.dueDate));
       setCategory(existingBill.category);
       setReminderEnabled(existingBill.reminderEnabled);
+      getBillLeadDays(existingBill._id).then((days) => {
+        if (days !== undefined) {
+          setLeadDays(String(days));
+        }
+      });
     }
   }, [existingBill]);
 
@@ -115,7 +123,8 @@ const UpdateBillScreen = () => {
 
   const { mutate: updateBill, isPending: isSubmitting } =
     useUpdateBillReminderMutation(billId, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        await setBillLeadDays(billId, parseInt(leadDays, 10));
         queryClient.invalidateQueries({ queryKey: ["billReminders"] });
         Toast.show({
           type: "success",
@@ -165,6 +174,30 @@ const UpdateBillScreen = () => {
     { key: "bank_transfer", label: "Bank Transfer" },
     { key: "mobile_money", label: "Mobile Money" },
   ];
+
+  const leadDayOptions = [
+    { key: "0", label: "On due date only" },
+    { key: "1", label: "1 day before" },
+    { key: "2", label: "2 days before" },
+    { key: "3", label: "3 days before" },
+    { key: "7", label: "1 week before" },
+  ];
+
+  const openLeadDaysModal = useCallback(() => {
+    leadDaysModalRef.current?.present();
+    setFocusedField("leadDays");
+  }, []);
+
+  const closeLeadDaysModal = useCallback(() => {
+    leadDaysModalRef.current?.dismiss();
+    setFocusedField(null);
+  }, []);
+
+  const handleSelectLeadDays = useCallback((method: string) => {
+    setLeadDays(method);
+    leadDaysModalRef.current?.dismiss();
+    setFocusedField(null);
+  }, []);
 
   const handleOpenDatePicker = useCallback(() => {
     Keyboard.dismiss();
@@ -439,6 +472,22 @@ const UpdateBillScreen = () => {
                 </View>
               </View>
 
+              {reminderEnabled && (
+                <View className="mt-6">
+                  <Text className="text-sm text-textColor">Notify me</Text>
+                  <SelectButton
+                    value={
+                      leadDayOptions.find((m) => m.key === leadDays)?.label
+                    }
+                    placeholder="Select when to be notified"
+                    onPress={openLeadDaysModal}
+                    isOpen={!!leadDays}
+                    isFocused={focusedField === "leadDays"}
+                    className="mt-2"
+                  />
+                </View>
+              )}
+
               <Button
                 title={isSubmitting ? "Saving..." : "Save Changes"}
                 className="mt-10"
@@ -464,6 +513,16 @@ const UpdateBillScreen = () => {
           }))}
           selectedMethod={paymentMethod}
           onSelect={handleSelectPaymentMethod}
+        />
+        <PaymentModal
+          ref={leadDaysModalRef}
+          onClose={closeLeadDaysModal}
+          paymentMethods={leadDayOptions.map((m) => ({
+            label: m.label,
+            value: m.key,
+          }))}
+          selectedMethod={leadDays}
+          onSelect={handleSelectLeadDays}
         />
       </MainContainer>
     </>

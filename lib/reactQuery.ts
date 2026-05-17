@@ -10,8 +10,6 @@ import React, { PropsWithChildren } from "react";
 
 const QUERY_CACHE_KEY = "rq:cache";
 
-// Bridge React Native AppState to React Query's focusManager so queries
-// refetch when the app returns to foreground from background.
 focusManager.setEventListener((setFocused) => {
   const subscription = AppState.addEventListener("change", (state) => {
     setFocused(state === "active");
@@ -24,9 +22,7 @@ const asyncStoragePersister: Persister = {
     try {
       const serialized = JSON.stringify(client);
       await AsyncStorage.setItem(QUERY_CACHE_KEY, serialized);
-    } catch {
-      
-    }
+    } catch {}
   },
   restoreClient: async (): Promise<PersistedClient | undefined> => {
     try {
@@ -40,9 +36,7 @@ const asyncStoragePersister: Persister = {
   removeClient: async () => {
     try {
       await AsyncStorage.removeItem(QUERY_CACHE_KEY);
-    } catch {
-      
-    }
+    } catch {}
   },
 };
 
@@ -55,7 +49,7 @@ export const queryClient = new QueryClient({
       networkMode: "offlineFirst",
     },
     mutations: {
-      networkMode: "offlineFirst",
+      networkMode: "online",
     },
   },
 });

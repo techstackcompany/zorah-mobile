@@ -339,7 +339,7 @@ const ExpensePlanningScreen = () => {
 
   return (
     <>
-      <MainContainer className="bg-lightMuted pb-0" edges={["top"]}>
+      <MainContainer className="bg-lightMuted pb-0" edges={[]}>
         {(expenseError || incomeError || categoryError) && (
           <View
             style={{

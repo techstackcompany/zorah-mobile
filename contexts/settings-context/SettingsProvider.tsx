@@ -15,15 +15,7 @@ type LanguageOption = {
 };
 
 type SettingsState = {
-  hasSeenTourVideo: boolean;
-  hasCompletedTour: boolean;
-  enableBiometrics: boolean;
-  privacyOverlayEnabled: boolean;
-  marketingEmails: boolean;
-  personalizedInsights: boolean;
-  shareAnonymizedData: boolean;
   pushNotification: boolean;
-  language: LanguageOption;
 };
 
 type SettingsContextValue = {
@@ -36,22 +28,12 @@ type SettingsContextValue = {
   resetSettings: () => void;
 };
 
-const defaultLanguage: LanguageOption = {
-  id: "english",
-  label: "English",
-  subLabel: "British English",
-};
+
 
 const defaultSettings: SettingsState = {
-  hasSeenTourVideo: false,
-  hasCompletedTour: false,
-  enableBiometrics: false,
-  privacyOverlayEnabled: true,
-  marketingEmails: true,
-  personalizedInsights: true,
-  shareAnonymizedData: false,
+
+ 
   pushNotification: true,
-  language: defaultLanguage,
 };
 
 export type { LanguageOption };

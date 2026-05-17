@@ -11,6 +11,7 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { useAddBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
+import { setBillLeadDays } from "@/lib/localNotifications";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -69,14 +70,19 @@ const AddBillScreen = () => {
   const [category, setCategory] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [leadDays, setLeadDays] = useState("1");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const paymentModalRef = useRef<PaymentModalRef>(null);
+  const leadDaysModalRef = useRef<PaymentModalRef>(null);
 
   const { data: categories = [], isPending: isCategoriesLoading } =
     useGetCategoriesQuery("budget");
   const { mutate: addBill, isPending: isSubmitting } =
     useAddBillReminderMutation({
-      onSuccess: () => {
+      onSuccess: async (data) => {
+        if (data?.data?._id) {
+          await setBillLeadDays(data.data._id, parseInt(leadDays, 10));
+        }
         Toast.show({
           type: "success",
           text1: "Bill Added",
@@ -126,22 +132,44 @@ const AddBillScreen = () => {
     { key: "mobile_money", label: "Mobile Money" },
   ];
 
-  // Date picker handlers
-  const handleOpenDatePicker = useCallback(() => {
-    Keyboard.dismiss();
-    setShowDatePicker(true);
-    setFocusedField("dueDate");
+  const leadDayOptions = [
+    { key: "0", label: "On due date only" },
+    { key: "1", label: "1 day before" },
+    { key: "2", label: "2 days before" },
+    { key: "3", label: "3 days before" },
+    { key: "7", label: "1 week before" },
+  ];
+
+  const openLeadDaysModal = useCallback(() => {
+    leadDaysModalRef.current?.present();
+    setFocusedField("leadDays");
   }, []);
 
-  const handleOpenTimePicker = useCallback(() => {
-    Keyboard.dismiss();
-    setShowTimePicker(true);
-    setFocusedField("dueTime");
+  const closeLeadDaysModal = useCallback(() => {
+    leadDaysModalRef.current?.dismiss();
+    setFocusedField(null);
   }, []);
+
+  const handleSelectLeadDays = useCallback((method: string) => {
+    setLeadDays(method);
+    leadDaysModalRef.current?.dismiss();
+    setFocusedField(null);
+  }, []);
+
+  const handleOpenDatePicker = () => {
+    Keyboard.dismiss();
+    setShowDatePicker(!showDatePicker);
+    setFocusedField("dueDate");
+  };
+
+  const handleOpenTimePicker = () => {
+    Keyboard.dismiss();
+    setShowTimePicker(!showTimePicker);
+    setFocusedField("dueTime");
+  };
 
   const handleDateChange = useCallback(
     (event: DateTimePickerEvent, selectedDate?: Date) => {
-      // On Android, picker closes automatically; on iOS, we close on any event
       if (Platform.OS === "android") {
         setShowDatePicker(false);
         setFocusedField(null);
@@ -169,7 +197,6 @@ const AddBillScreen = () => {
 
   const handleTimeChange = useCallback(
     (event: DateTimePickerEvent, selectedTime?: Date) => {
-      // On Android, picker closes automatically; on iOS, we close on any event
       if (Platform.OS === "android") {
         setShowTimePicker(false);
         setFocusedField(null);
@@ -362,23 +389,39 @@ const AddBillScreen = () => {
                 />
               </View>
 
-              <View className="mt-6">
-                <View className="flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-4">
-                  <Text className="text-base text-textColor">
-                    Enable Reminder
-                  </Text>
-                  <Switch
-                    value={reminderEnabled}
-                    onValueChange={setReminderEnabled}
-                    trackColor={{
-                      false: COLORS.grey,
-                      true: COLORS.secondary_400,
-                    }}
-                    thumbColor="#FFFFFF"
-                    ios_backgroundColor="#D7DCE5"
-                  />
+                <View className="mt-6">
+                  <View className="flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                    <Text className="text-base text-textColor">
+                      Enable Reminder
+                    </Text>
+                    <Switch
+                      value={reminderEnabled}
+                      onValueChange={setReminderEnabled}
+                      trackColor={{
+                        false: COLORS.grey,
+                        true: COLORS.secondary_400,
+                      }}
+                      thumbColor="#FFFFFF"
+                      ios_backgroundColor="#D7DCE5"
+                    />
+                  </View>
                 </View>
-              </View>
+
+                {reminderEnabled && (
+                  <View className="mt-6">
+                    <Text className="text-sm text-textColor">Notify me</Text>
+                    <SelectButton
+                      value={
+                        leadDayOptions.find((m) => m.key === leadDays)?.label
+                      }
+                      placeholder="Select when to be notified"
+                      onPress={openLeadDaysModal}
+                      isOpen={!!leadDays}
+                      isFocused={focusedField === "leadDays"}
+                      className="mt-2"
+                    />
+                  </View>
+                )}
 
               <Button
                 title={isSubmitting ? "Adding..." : "Add Bill"}
@@ -405,6 +448,16 @@ const AddBillScreen = () => {
           }))}
           selectedMethod={paymentMethod}
           onSelect={handleSelectPaymentMethod}
+        />
+        <PaymentModal
+          ref={leadDaysModalRef}
+          onClose={closeLeadDaysModal}
+          paymentMethods={leadDayOptions.map((m) => ({
+            label: m.label,
+            value: m.key,
+          }))}
+          selectedMethod={leadDays}
+          onSelect={handleSelectLeadDays}
         />
       </MainContainer>
     </>

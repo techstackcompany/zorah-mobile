@@ -3,11 +3,10 @@ import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { setupInfo } from "@/constants";
-import { useSession } from "@/contexts/auth-context/useSession";
 import useSetUpStep from "@/hooks/useSetUpStep";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/src/api/client";
-import { useUpdateOnboardingMutation } from "@/src/api/hooks";
+import { useGetUserProfileQuery, useUpdateOnboardingMutation } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
@@ -102,7 +101,7 @@ const FinancialGoalsScreen = () => {
   const [selectedGoals, setSelectedGoals] = React.useState<string[]>([]);
   const updateOnboardingMutation = useUpdateOnboardingMutation();
   const { setSetupStep, goToNextStep } = useSetUpStep(1);
-  const { userData } = useSession();
+  const { data: userData } = useGetUserProfileQuery();
 
   const prefilledGoalIds = React.useMemo(() => {
     const safeUserData = (userData ?? {}) as Record<string, unknown>;
@@ -117,6 +116,20 @@ const FinancialGoalsScreen = () => {
       safeUserData.goals;
 
     return mapGoalEntriesToIds(normalizeStringList(rawGoals));
+  }, [userData]);
+
+  const stepCompleted = React.useMemo(() => {
+    const safeUserData = (userData ?? {}) as Record<string, unknown>;
+    const onboarding =
+      safeUserData.onboarding && typeof safeUserData.onboarding === "object"
+        ? (safeUserData.onboarding as Record<string, unknown>)
+        : null;
+    const stepsCompleted = Array.isArray(onboarding?.stepsCompleted)
+      ? (onboarding.stepsCompleted as unknown[]).filter(
+          (entry): entry is string => typeof entry === "string",
+        )
+      : [];
+    return stepsCompleted.includes(setupInfo[1].key);
   }, [userData]);
 
   const prefilledGoalTitles = React.useMemo(
@@ -148,6 +161,10 @@ const FinancialGoalsScreen = () => {
     const selectedGoalTitles = goals
       .filter((goal) => selectedGoals.includes(goal.id))
       .map((goal) => goal.title);
+    if (stepCompleted && selectedGoalTitles.length === 0) {
+      goToNextStep();
+      return;
+    }
     if (
       prefilledGoalTitles.length > 0 &&
       selectedGoalTitles.length === prefilledGoalTitles.length &&
@@ -179,7 +196,7 @@ const FinancialGoalsScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={1}
-          totalSteps={4}
+          totalSteps={5}
           title="Financial Goals"
           description="What would you like to achieve with Zorah?"
         />
@@ -248,7 +265,8 @@ const FinancialGoalsScreen = () => {
               className="flex-1"
               onPress={handleFinish}
               disabled={
-                selectedGoals.length === 0 || updateOnboardingMutation.isPending
+                (selectedGoals.length === 0 && !stepCompleted) ||
+                updateOnboardingMutation.isPending
               }
               loading={updateOnboardingMutation.isPending}
             />

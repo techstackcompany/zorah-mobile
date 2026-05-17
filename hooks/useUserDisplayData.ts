@@ -1,5 +1,5 @@
-import { useSession } from "@/contexts/auth-context/useSession";
 import { capitalizeWord, extractUserData } from "@/lib/utils";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { useMemo } from "react";
 
 type UserDisplayData = {
@@ -11,14 +11,21 @@ export function useUserDisplayData(fallback?: {
   initials?: string;
   welcomeName?: string;
 }): UserDisplayData {
-  const { userData } = useSession();
+  const { data: profileData } = useGetUserProfileQuery();
+
   return useMemo(() => {
+    if (!profileData) {
+      return {
+        initials: fallback?.initials || "U",
+        welcomeName: fallback?.welcomeName || "User",
+      };
+    }
     const defaultFallback = {
       initials: fallback?.initials || "U",
       welcomeName: fallback?.welcomeName || "User",
     };
 
-    const userDataExtracted = extractUserData(userData, {
+    const userDataExtracted = extractUserData(profileData, {
       fallbackName: "",
       fallbackInitials: defaultFallback.initials,
     });
@@ -46,5 +53,5 @@ export function useUserDisplayData(fallback?: {
       initials: userDataExtracted.initials,
       welcomeName: formattedFirstName || defaultFallback.welcomeName,
     };
-  }, [userData, fallback?.initials, fallback?.welcomeName]);
+  }, [profileData, fallback?.initials, fallback?.welcomeName]);
 }

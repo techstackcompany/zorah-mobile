@@ -6,6 +6,7 @@ import {
   useGetCategoriesQuery,
   useGetExpenseSummaryQuery,
   useGetSpendingOverviewQuery,
+  useGetFinancialTipQuery,
 } from "@/src/api/hooks";
 import {
   BudgetListItem,
@@ -165,6 +166,8 @@ const TrackSpendingScreen = () => {
     isLoadingOverview || isLoadingSummary || isLoadingBudgets;
   const isFetching = isFetchingOverview || isFetchingSummary;
   const isError = isOverviewError || isSummaryError || isBudgetsError;
+
+  const { data: tipData, isLoading: isLoadingTip } = useGetFinancialTipQuery();
 
   const budgets = useMemo(() => {
     if (!budgetsData) return [];
@@ -345,28 +348,7 @@ const TrackSpendingScreen = () => {
       .slice(0, 3);
   }, [budgets, categories]);
 
-  const aiTip = useMemo(() => {
-    if (alerts.length > 0) {
-      const topAlert = alerts[0];
-      return {
-        title: "Bobbie AI Assistance",
-        description: `Watch out! Your ${topAlert.label} spending is high. Tap for personalized tips to save more.`,
-      };
-    }
 
-    if (mostSpending.length > 0) {
-      return {
-        title: "Bobbie AI Assistance",
-        description: `Your highest spending is on ${mostSpending[0].label}. Want tips on how to optimize this category?`,
-      };
-    }
-
-    return {
-      title: "Bobbie AI Assistance",
-      description:
-        "You're doing great! Keep tracking your expenses to maintain healthy financial habits.",
-    };
-  }, [alerts, mostSpending]);
 
   const maxBarValue = useMemo(() => {
     const values = chartData.map((bar) => bar.value);
@@ -570,10 +552,13 @@ const TrackSpendingScreen = () => {
             </View>
             <View className="ml-3 flex-1">
               <Text weight="semibold" className="text-sm text-textColor">
-                {aiTip.title}
+                Ai Assistance
               </Text>
               <Text className="mt-1 text-xs text-textColor/70">
-                {aiTip.description}
+                {isLoadingTip
+                  ? "Fetching your personalized tips..."
+                  : tipData?.tip ||
+                    "You're doing great! Keep tracking your expenses to maintain healthy financial habits."}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#8A94A6" />

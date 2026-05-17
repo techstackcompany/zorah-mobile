@@ -8,6 +8,7 @@ import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
+import { useNetworkStatus } from "@/contexts/network/NetworkProvider";
 import {
   useCreateBudgetMutation,
   useGetCategoriesQuery,
@@ -177,6 +178,8 @@ const CreateBudgetScreen = () => {
   );
   const periodModalRef = useRef<SlideUpModalRef>(null);
   const customModalRef = useRef<SlideUpModalRef>(null);
+  const dismissedOfflineRef = useRef(false);
+  const { isOnline } = useNetworkStatus();
   const [customRangeDraft, setCustomRangeDraft] = useState<OptionalDateRange>({
     start: null,
     end: null,
@@ -190,10 +193,11 @@ const CreateBudgetScreen = () => {
         type: "success",
         text1: "Budget Created",
         text2: response.message || "Your budget has been created successfully.",
-        onHide: () => router.back(),
       });
 
-      router.back();
+      if (!dismissedOfflineRef.current) {
+        setTimeout(() => router.back(), 1500);
+      }
     },
     onError: (error) => {
       Toast.show({
@@ -327,7 +331,7 @@ const CreateBudgetScreen = () => {
           <View className="px-6 pb-6">
             <Button
               title="Create Budget"
-              disabled={isSubmitDisabled || createBudgetMutation.isPending}
+              disabled={isSubmitDisabled || (createBudgetMutation.isPending && isOnline)}
               className="w-full"
               onPress={() => {
                 if (!amount || Number(amount) <= 0) {
@@ -379,6 +383,16 @@ const CreateBudgetScreen = () => {
                 };
 
                 createBudgetMutation.mutate(payload);
+
+                if (!isOnline) {
+                  dismissedOfflineRef.current = true;
+                  Toast.show({
+                    type: "success",
+                    text1: "Budget Saved",
+                    text2: "You're offline. It will sync when you reconnect.",
+                  });
+                  setTimeout(() => router.back(), 1500);
+                }
               }}
             />
           </View>

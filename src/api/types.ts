@@ -89,6 +89,7 @@ export interface UpdateProfileRequest {
   phoneNumber?: string;
   email?: string;
   preferredReminderHour?: number;
+  password?: string;
 }
 
 export interface SetPinRequest {
@@ -213,7 +214,17 @@ export interface SpendingOverviewResponse {
 export interface AddIncomeRequest {
   source: string;
   amount: number;
-  category: "Allowance" | "Bonus" | "Salary" | "Business Profit" | "Freelance/Contract" | "Gifts" | "Refunds" | "Rental Income" | "Sale of item" | (string & {});
+  category:
+    | "Allowance"
+    | "Bonus"
+    | "Salary"
+    | "Business Profit"
+    | "Freelance/Contract"
+    | "Gifts"
+    | "Refunds"
+    | "Rental Income"
+    | "Sale of item"
+    | (string & {});
   description?: string;
   date: string;
 }
