@@ -2,47 +2,32 @@ import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
-import useAppSettings from "@/contexts/settings-context/useAppSettings";
-import { hasPinStored } from "@/lib/pinStorage";
 import { cn, extractUserData } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
 import React, { ReactNode, useCallback, useMemo, useState } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
 
 const AccountScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { signOut, userData, kycVerificationStatus, setUserData } =
-    useSession();
-  const { settings, updateSetting } = useAppSettings();
-  const [showDisableConfirmModal, setShowDisableConfirmModal] = useState(false);
+  const { signOut, kycVerificationStatus } = useSession();
+  const { data: userData } = useGetUserProfileQuery();
   const [pendingEnableFromAccount, setPendingEnableFromAccount] =
     useState(false);
 
-  const {
-    displayName,
-    displayEmail,
-    displayPhone,
-    initials,
-    statusLabel,
-    linkedBanksText,
-    isKycVerified,
-    biometricsEnabled,
-  } = useMemo(() => {
+  const { displayName, displayEmail, displayPhone, initials } = useMemo(() => {
     const userDataExtracted = extractUserData(userData, {
       fallbackName: "PocketMonie User",
       fallbackInitials: "PU",
@@ -69,11 +54,10 @@ const AccountScreen = () => {
       initials: userDataExtracted.initials,
       statusLabel,
       isKycVerified: normalizedKycStatus === "verified",
-      biometricsEnabled: settings.enableBiometrics,
       linkedBanksText:
         linkedBanksCount === 1 ? "1 Linked" : `${linkedBanksCount} Linked`,
     };
-  }, [kycVerificationStatus, settings.enableBiometrics, userData]);
+  }, [kycVerificationStatus, userData]);
 
   useFocusEffect(
     useCallback(() => {
@@ -86,61 +70,17 @@ const AccountScreen = () => {
           exact: true,
         });
         if (!active) return;
-        const profile = queryClient.getQueryData<Record<string, unknown>>([
-          "auth",
-          "profile",
-        ]);
-        if (profile) {
-          setUserData(profile);
-        }
         setPendingEnableFromAccount(false);
       };
       refreshProfile();
       return () => {
         active = false;
       };
-    }, [pendingEnableFromAccount, queryClient, setUserData]),
+    }, [pendingEnableFromAccount, queryClient]),
   );
 
   const handleNavigate = (path: string) => {
     router.push(path as RelativePathString);
-  };
-
-  const handleBiometricToggle = async (nextValue: boolean) => {
-    if (nextValue) {
-      const safeUser = (userData ?? {}) as Record<string, unknown>;
-      const serverHasPin =
-        typeof safeUser.hasPin === "boolean" ? safeUser.hasPin : false;
-      const localHasPin = await hasPinStored();
-
-      if (serverHasPin && localHasPin) {
-        // PIN set on server AND hash stored locally — re-enable biometrics without
-        // going through PinSetupScreen.
-        updateSetting("enableBiometrics", true);
-        Toast.show({
-          type: "success",
-          text1: "Biometric login enabled",
-          text2: "Your account can now be unlocked with biometrics.",
-        });
-      } else {
-        // No PIN yet (or local hash cleared by sign-out) — must set up PIN first.
-        setPendingEnableFromAccount(true);
-        router.push("/(app)/(home)/profile/pin-setup");
-      }
-      return;
-    }
-
-    setShowDisableConfirmModal(true);
-  };
-
-  const confirmDisableBiometric = () => {
-    updateSetting("enableBiometrics", false);
-    setShowDisableConfirmModal(false);
-    Toast.show({
-      type: "success",
-      text1: "Biometric login disabled",
-      text2: "PIN login remains available as backup.",
-    });
   };
 
   return (
@@ -186,35 +126,7 @@ const AccountScreen = () => {
               iconSource={require("@/assets/icons/edit.svg")}
               onPress={() => handleNavigate("/(app)/profile/edit-profile")}
             />
-            <AccountRow
-              label="Update KYC Info"
-              iconSource={require("@/assets/icons/circle-check.svg")}
-              value={
-                isKycVerified ? (
-                  <View className="flex-row gap-1">
-                    <Image
-                      source={require("@/assets/icons/verified-check.svg")}
-                      style={{ width: 16, height: 16 }}
-                    />
-                    <Text className="text-sm text-primary_400">
-                      {statusLabel}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text className="text-sm text-textColor/70">
-                    {statusLabel}
-                  </Text>
-                )
-              }
-              valueVariant="status"
-              onPress={() => handleNavigate("/(app)/profile/kyc-verification")}
-            />
-            <AccountRow
-              label="Bank Accounts"
-              iconSource={require("@/assets/icons/bank.svg")}
-              value={linkedBanksText}
-              onPress={() => handleNavigate("/(app)/profile/banks")}
-            />
+
             <AccountRow
               label="Transaction History"
               iconSource={require("@/assets/icons/transaction-history.svg")}
@@ -223,14 +135,18 @@ const AccountScreen = () => {
           </View>
 
           <View style={styles.sectionCard}>
-            <SectionHeader title="Security" />
-            <SectionSubHeader subtitle="Authentication & Login Settings" />
+            <SectionHeader title="Security & Authentication" />
 
-            <ToggleRow
-              label="Biometric Login"
-              description="Use Face ID or fingerprint. A backup PIN is required."
-              value={biometricsEnabled}
-              onChange={(val) => void handleBiometricToggle(val)}
+            <AccountRow
+              label="Change Password"
+              iconSource={require("@/assets/icons/lock.svg")}
+              onPress={() => handleNavigate("/(app)/profile/change-password")}
+            />
+
+            <AccountRow
+              label="Change PIN"
+              iconSource={require("@/assets/icons/lock.svg")}
+              onPress={() => handleNavigate("/(app)/(home)/profile/pin-setup")}
             />
           </View>
           <View style={styles.sectionCard}>
@@ -254,49 +170,6 @@ const AccountScreen = () => {
           </View>
         </View>
       </ScrollView>
-
-      <Modal
-        visible={showDisableConfirmModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDisableConfirmModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="shield-outline" size={28} color="#92400E" />
-              </View>
-              <Text weight="bold" className="mt-3 text-lg text-textColor">
-                Turn off biometric login?
-              </Text>
-              <Text className="mt-2 text-center text-sm text-textColor/70">
-                You will still be able to unlock your account using your backup
-                PIN.
-              </Text>
-            </View>
-
-            <View style={styles.modalActions}>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowDisableConfirmModal(false)}
-              >
-                <Text weight="semibold" className="text-primary_500">
-                  Cancel
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmDisableBiometric}
-              >
-                <Text weight="semibold" className="text-white">
-                  Turn Off
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </MainContainer>
   );
 };
@@ -371,43 +244,6 @@ const AccountRow = ({
   }
 
   return <View>{Content}</View>;
-};
-
-type ToggleRowProps = {
-  label: string;
-  description?: string;
-  value: boolean;
-  onChange: (value: boolean) => void;
-  disabled?: boolean;
-};
-
-const ToggleRow = ({
-  label,
-  description,
-  value,
-  onChange,
-  disabled = false,
-}: ToggleRowProps) => {
-  return (
-    <View style={styles.toggleRow}>
-      <View style={{ flex: 1 }}>
-        <Text weight="semibold" className=" text-textColor">
-          {label}
-        </Text>
-        {description ? (
-          <Text className="mt-1 text-sm text-textColor/60">{description}</Text>
-        ) : null}
-      </View>
-      <Switch
-        trackColor={{ true: COLORS.secondary_400, false: "#D7DCE5" }}
-        thumbColor="#FFFFFF"
-        ios_backgroundColor={COLORS.secondary_400}
-        value={value}
-        onValueChange={onChange}
-        disabled={disabled}
-      />
-    </View>
-  );
 };
 
 const styles = StyleSheet.create({
