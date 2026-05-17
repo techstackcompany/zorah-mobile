@@ -3,6 +3,7 @@ import { useRegisterNotificationTokenMutation } from "@/src/api/hooks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import * as Notifications from "expo-notifications";
+import { useRouter } from "expo-router";
 import {
   PropsWithChildren,
   createContext,
@@ -13,6 +14,7 @@ import {
   useState,
 } from "react";
 import { Platform } from "react-native";
+import Toast from "react-native-toast-message";
 
 const REGISTERED_TOKEN_KEY = "@push_notification_registered_token";
 
@@ -54,6 +56,7 @@ export default function PushNotificationsProvider({
     Notifications.Notification | undefined
   >();
   const isRegistered = useRef(false);
+  const router = useRouter();
 
   const registerTokenMutation = useRegisterNotificationTokenMutation({
     onSuccess: async () => {
@@ -98,23 +101,41 @@ export default function PushNotificationsProvider({
   );
 
   useEffect(() => {
+    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+      if (!isAuthenticated) return;
+      const data = response.notification.request.content.data;
+      if (data?.type === "bill-reminder" && data.billId) {
+         setTimeout(() => {
+           router.replace(`/(app)/bill-reminder/update-bill?billId=${data.billId}`);
+         }, 500);
+      }
+    };
+
     const notificationListener = Notifications.addNotificationReceivedListener(notification => {
       setNotification(notification);
     });
 
     const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
       console.log(response);
+      handleNotificationResponse(response);
+    });
+
+    // Check for cold start notification tap
+    Notifications.getLastNotificationResponseAsync().then(response => {
+       if (response) {
+         handleNotificationResponse(response);
+       }
     });
 
     return () => {
       notificationListener.remove();
       responseListener.remove();
     };
-  }, []);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     const requestPermissionsAndGetToken = async () => {
-      let token;
+      // 1. Setup Android channels
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync("critical", {
           name: "Critical Notifications",
@@ -134,24 +155,33 @@ export default function PushNotificationsProvider({
           vibrationPattern: [0, 250, 250, 250],
           lightColor: "#FF231F7C",
         });
+      }
 
-        const { status: existingStatus } =
-          await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== "granted") {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-        if (finalStatus !== "granted") {
-          alert("Failed to get push token for push notification!");
-          return;
-        }
+      // 2. Request permissions on ALL platforms
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== "granted") {
+        Toast.show({
+          type: "info",
+          text1: "Notifications Disabled",
+          text2: "Enable notifications in Settings to get bill reminders.",
+        });
+        return;
+      }
 
+      // 3. Get FCM Token (Android only for now)
+      let token;
+      if (Platform.OS === "android") {
         try {
           token = (await Notifications.getDevicePushTokenAsync()).data;
         } catch (e: any) {
           console.log(e);
-          throw new Error(e.message);
         }
       }
       return token;
