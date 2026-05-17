@@ -14,6 +14,8 @@ async function hashPin(pin: string): Promise<string> {
 
 export async function savePin(pin: string): Promise<void> {
   const hash = await hashPin(pin);
+  console.log('hash', hash)
+  console.log('HASH saved', )
   await secureStoreSetItem(PIN_HASH_KEY, hash);
 }
 

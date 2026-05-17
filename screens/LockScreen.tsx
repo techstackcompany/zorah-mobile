@@ -1,17 +1,13 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useBiometricSupport } from "@/hooks/useBiometricSupport";
-import { verifyPin } from "@/lib/pinStorage";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAppLock } from "@/contexts/app-lock/useAppLock";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
-import * as LocalAuthentication from "expo-local-authentication";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
-  Platform,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -24,332 +20,255 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 
-const CODE_FIELDS = 4;
+const PIN_LENGTH = 4;
 const OFFSET = 20;
 const TIME = 80;
 
 type LockScreenProps = {
-  visible?: boolean;
-  onUnlock?: () => void;
-  variant?: "screen" | "modal";
+  visible: boolean;
 };
 
-const LockScreen = ({
-  visible = true,
-  onUnlock,
-  variant = "screen",
-}: LockScreenProps) => {
-  const [code, setCode] = useState<number[]>([]);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [pinError, setPinError] = useState(false);
-  const biometricAttempted = useRef(false);
-
+const LockScreen = ({ visible }: LockScreenProps) => {
   const {
-    isAvailable: biometricsAvailable,
-    supportsFaceId,
-    supportsFingerprint,
-    checking,
-  } = useBiometricSupport();
-
-  const biometricIcon =
-    Platform.OS === "android" || supportsFingerprint
-      ? "fingerprint"
-      : supportsFaceId
-        ? "face-recognition"
-        : "lock";
-
-  const codeLength = Array(CODE_FIELDS).fill(null);
+    verifyPin,
+    authenticateWithBiometric,
+    forgotPin,
+    isBiometricAvailable,
+  } = useAppLock();
+  const [pin, setPin] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const offset = useSharedValue(0);
+  const opacity = useSharedValue(0);
 
-  const shakeAndReset = useCallback(() => {
+  useEffect(() => {
+    opacity.value = visible ? withTiming(1, { duration: 180 }) : 0;
+  }, [visible, opacity]);
+
+  useEffect(() => {
+    if (!visible || !isBiometricAvailable) return;
+    const timer = setTimeout(() => {
+      authenticateWithBiometric();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [visible, isBiometricAvailable, authenticateWithBiometric]);
+
+  useEffect(() => {
+    if (visible) setPin("");
+  }, [visible]);
+
+  const shake = () => {
     offset.value = withSequence(
-      withTiming(-OFFSET, { duration: TIME / 20 }),
+      withTiming(-OFFSET, { duration: TIME / 2 }),
       withRepeat(withTiming(OFFSET, { duration: TIME / 2 }), 4, true),
       withTiming(0, { duration: TIME / 2 }),
     );
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-  }, [offset]);
+  };
 
-  // Reset state when lock hides so the next session starts clean.
-  useEffect(() => {
-    if (!visible) {
-      biometricAttempted.current = false;
-      setCode([]);
+  const handleNumberPress = async (number: number) => {
+    if (isVerifying || pin.length >= PIN_LENGTH) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newPin = pin + number.toString();
+    setPin(newPin);
+
+    if (newPin.length === PIN_LENGTH) {
+      setIsVerifying(true);
+      const success = await verifyPin(newPin);
+      console.log("success", success);
       setIsVerifying(false);
-      setPinError(false);
-    }
-  }, [visible]);
-
-  const handleUnlockSuccess = useCallback(() => {
-    setCode([]);
-    setIsVerifying(false);
-    setPinError(false);
-    onUnlock?.();
-  }, [onUnlock]);
-
-  // Auto-trigger biometric once per lock session. Guards against calling
-  // authenticateAsync before availability is confirmed (checking === false)
-  // and against re-triggering when handleUnlockSuccess reference changes.
-  useEffect(() => {
-    if (
-      !visible ||
-      checking ||
-      !biometricsAvailable ||
-      biometricAttempted.current
-    ) {
-      return;
-    }
-    biometricAttempted.current = true;
-
-    const attempt = async () => {
-      const { success } = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Unlock Zorah",
-        disableDeviceFallback: false,
-      });
-      if (success) {
-        handleUnlockSuccess();
-      } else {
+      if (!success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        shake();
+        setPin("");
       }
-    };
-    attempt();
-  }, [visible, checking, biometricsAvailable, handleUnlockSuccess]);
-
-  // Verify PIN locally once 4 digits are entered. No network call.
-  useEffect(() => {
-    if (code.length !== CODE_FIELDS || isVerifying) return;
-
-    setIsVerifying(true);
-    verifyPin(code.join("")).then((isCorrect) => {
-      if (isCorrect) {
-        handleUnlockSuccess();
-      } else {
-        setIsVerifying(false);
-        setCode([]);
-        setPinError(true);
-        shakeAndReset();
-        Toast.show({
-          type: "error",
-          text1: "Incorrect PIN",
-          text2: "Please try again.",
-        });
-      }
-    });
-  }, [code, isVerifying, handleUnlockSuccess, shakeAndReset]);
-
-  const onNumberPress = (number: number) => {
-    if (code.length < CODE_FIELDS && !isVerifying) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setPinError(false);
-      setCode((prev) => [...prev, number]);
     }
   };
 
-  const onBackSpacePress = () => {
-    if (code.length > 0 && !isVerifying) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setCode(code.slice(0, -1));
-    }
+  const handleBackspace = () => {
+    if (isVerifying || pin.length === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPin((p) => p.slice(0, -1));
   };
 
-  const onBiometricPress = async () => {
-    const { success } = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Unlock Zorah",
-      disableDeviceFallback: false,
-    });
-    if (success) {
-      handleUnlockSuccess();
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-  };
-
-  const style = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: offset.value }],
   }));
 
-  if (!visible) return null;
-
-  const content = (
-    <LinearGradient colors={["#F6FAFF", "#FFFFFF"]} style={styles.container}>
+  return (
+    <Modal
+      visible={visible}
+      animationType="none"
+      transparent={false}
+      statusBarTranslucent
+    >
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <View style={styles.iconContainer}>
+        <View style={styles.centered}>
+          <View style={styles.header}>
             <Image
               source={require("@/assets/images/icon.png")}
               style={styles.appIcon}
               contentFit="contain"
             />
+            <Text
+              family="degular"
+              weight="bold"
+              className="mt-3 text-center text-[28px] tracking-[0.5px] text-textColor"
+            >
+              Zorah
+            </Text>
+            <Text
+              weight="regular"
+              className="mt-1 px-10 text-center text-[15px] text-[#6B7280]"
+            >
+              Enter your PIN to continue
+            </Text>
           </View>
-          <Text
-            family="degular"
-            weight="bold"
-            className="mb-2 text-[28px] tracking-[0.5px] text-textColor"
-          >
-            Welcome back
-          </Text>
-          <Text weight="regular" className="text-[15px] text-[#6B7280]">
-            Enter your PIN to continue
-          </Text>
-        </View>
 
-        <Animated.View style={[styles.codeView, style]}>
-          {codeLength.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.codeEmpty,
-                {
-                  backgroundColor:
-                    index < code.length
-                      ? pinError
-                        ? COLORS.error
-                        : COLORS.primary_400
-                      : "transparent",
-                  borderColor:
-                    index < code.length
-                      ? pinError
-                        ? COLORS.error
-                        : COLORS.primary_400
-                      : COLORS.primary_200,
-                  borderWidth: index < code.length ? 0 : 2,
-                  opacity: isVerifying ? 0 : 1,
-                },
-              ]}
-            />
-          ))}
-          {isVerifying && (
-            <View style={styles.verifyingOverlay}>
-              <ActivityIndicator size="small" color={COLORS.primary_400} />
-            </View>
-          )}
-        </Animated.View>
-
-        <View style={styles.numbersView}>
-          {[0, 1, 2].map((rowIndex) => {
-            const base = rowIndex * 3 + 1;
-            return (
-              <View
-                key={rowIndex}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                {[base, base + 1, base + 2].map((number) => (
-                  <TouchableOpacity
-                    key={number}
-                    style={[styles.keypadBtn, styles.numberBtn]}
-                    onPress={() => onNumberPress(number)}
-                  >
-                    <Text
-                      weight="semibold"
-                      className="text-[28px] text-textColor"
-                    >
-                      {number}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+          <Animated.View style={[styles.codeView, animatedStyle]}>
+            {Array(PIN_LENGTH)
+              .fill(null)
+              .map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.codeEmpty,
+                    {
+                      backgroundColor:
+                        index < pin.length
+                          ? COLORS.primary_400
+                          : COLORS.primary_200,
+                      borderColor:
+                        index < pin.length
+                          ? COLORS.primary_400
+                          : COLORS.primary_200,
+                      borderWidth: index < pin.length ? 0 : 2,
+                      opacity: isVerifying ? 0 : 1,
+                    },
+                  ]}
+                />
+              ))}
+            {isVerifying && (
+              <View style={styles.verifyingOverlay}>
+                <ActivityIndicator size="small" color={COLORS.primary_400} />
               </View>
-            );
-          })}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <TouchableOpacity
-              disabled={!biometricsAvailable}
-              onPress={biometricsAvailable ? onBiometricPress : undefined}
-              style={[
-                styles.keypadBtn,
-                styles.biometricBtn,
-                !biometricsAvailable && styles.disabledKeypad,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={biometricIcon}
-                size={28}
-                color={biometricsAvailable ? COLORS.primary_400 : COLORS.grey}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onNumberPress(0)}
-              style={[styles.keypadBtn, styles.numberBtn]}
-            >
-              <Text weight="semibold" className="text-[28px] text-textColor">
-                0
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.keypadBtn}>
-              {code.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.keypadBtn, styles.backspaceBtn]}
-                  onPress={onBackSpacePress}
-                >
-                  <MaterialCommunityIcons
-                    name="backspace"
-                    size={22}
-                    color={COLORS.textColor}
-                  />
-                </TouchableOpacity>
-              )}
+            )}
+          </Animated.View>
+
+          <View style={styles.numbersView}>
+            {[0, 1, 2].map((rowIndex) => {
+              const base = rowIndex * 3 + 1;
+              return (
+                <View key={rowIndex} style={styles.row}>
+                  {[base, base + 1, base + 2].map((number) => (
+                    <TouchableOpacity
+                      key={number}
+                      style={[styles.keypadBtn, styles.numberBtn]}
+                      onPress={() => handleNumberPress(number)}
+                      disabled={isVerifying || pin.length >= PIN_LENGTH}
+                    >
+                      <Text
+                        weight="semibold"
+                        className="text-[28px] text-textColor"
+                      >
+                        {number}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              );
+            })}
+
+            <View style={[styles.row, { alignItems: "center" }]}>
+              <View style={styles.keypadBtn}>
+                {isBiometricAvailable && (
+                  <TouchableOpacity
+                    style={[styles.keypadBtn, styles.numberBtn]}
+                    onPress={authenticateWithBiometric}
+                    disabled={isVerifying}
+                  >
+                    <Ionicons
+                      name="finger-print"
+                      size={28}
+                      color={COLORS.textColor}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.keypadBtn, styles.numberBtn]}
+                onPress={() => handleNumberPress(0)}
+                disabled={isVerifying || pin.length >= PIN_LENGTH}
+              >
+                <Text weight="semibold" className="text-[28px] text-textColor">
+                  0
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.keypadBtn}>
+                {pin.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.keypadBtn, styles.backspaceBtn]}
+                    onPress={handleBackspace}
+                    disabled={isVerifying}
+                  >
+                    <MaterialCommunityIcons
+                      name="backspace"
+                      size={22}
+                      color={COLORS.textColor}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
+          <TouchableOpacity style={styles.forgotPin} onPress={forgotPin}>
+            <Text
+              weight="regular"
+              className="text-center text-[14px] text-[#6B7280]"
+            >
+              Forgot PIN?{" "}
+              <Text weight="semibold" className="text-[14px] text-primary_400">
+                Sign out
+              </Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </Modal>
   );
-
-  if (variant === "modal") {
-    return (
-      <Modal
-        transparent
-        animationType="fade"
-        visible={visible}
-        statusBarTranslucent
-        onRequestClose={() => {}}
-      >
-        {content}
-      </Modal>
-    );
-  }
-
-  return content;
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  safeArea: { flex: 1 },
-  header: { alignItems: "center", marginTop: 40, marginBottom: 20 },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+  container: { flex: 1, justifyContent: "center" },
+  safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
+  centered: {
+    flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-    shadowColor: COLORS.primary_400,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
   },
-  appIcon: { width: 60, height: 60 },
+  header: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  appIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+  },
   codeView: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 16,
-    marginVertical: 60,
+    marginVertical: 28,
     paddingHorizontal: 20,
     position: "relative",
+  },
+  codeEmpty: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
   },
   verifyingOverlay: {
     position: "absolute",
@@ -359,10 +278,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
-  codeEmpty: { width: 16, height: 16, borderRadius: 8, borderWidth: 2 },
-  numbersView: { marginHorizontal: 40, gap: 24, marginTop: 20 },
+  numbersView: {
+    marginHorizontal: 40,
+    gap: 24,
+    marginTop: 8,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   keypadBtn: {
     width: 70,
     height: 70,
@@ -378,13 +303,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  biometricBtn: {
-    backgroundColor: COLORS.primary_200,
-    borderWidth: 1,
-    borderColor: COLORS.primary_200,
+  backspaceBtn: {
+    backgroundColor: "transparent",
   },
-  backspaceBtn: { backgroundColor: "transparent" },
-  disabledKeypad: { opacity: 0.4 },
+  forgotPin: {
+    marginTop: 28,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
 });
 
 export default LockScreen;
