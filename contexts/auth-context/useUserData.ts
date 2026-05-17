@@ -1,8 +1,8 @@
-import { useSession } from "./useSession";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 
 const useUserData = () => {
-  const { userData } = useSession();
-  return userData;
+  const { data } = useGetUserProfileQuery();
+  return data ?? null;
 };
 
 export default useUserData;

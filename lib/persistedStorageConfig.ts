@@ -69,7 +69,10 @@ export async function secureStoreSetItem(
 ): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
-  } catch {}
+  } catch (e) {
+    console.error(`Failed to set item in secure store for key ${key}`, e);
+    throw e;
+  }
 }
 
 export async function secureStoreRemoveItem(key: string): Promise<void> {

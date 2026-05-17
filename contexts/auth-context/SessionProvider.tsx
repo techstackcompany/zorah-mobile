@@ -11,6 +11,7 @@ import { UserProfile } from "@/src/api/types";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Application from "expo-application";
 import { router } from "expo-router";
+import { cancelAllBillReminders } from "@/lib/localNotifications";
 
 import {
   createContext,
@@ -38,7 +39,6 @@ export type AuthContextType = {
   kycVerificationStatus: KycStatus;
   hasCompletedSetup: boolean;
   setupStep: number | null;
-  userData: UserProfile | null;
   isAuthenticated: boolean;
 
   // Setters
@@ -47,7 +47,6 @@ export type AuthContextType = {
   setKycVerificationStatus: (value: KycStatus) => void;
   setHasCompletedSetup: (value: boolean) => void;
   setSetupStep: (value: number | null) => void;
-  setUserData: (value: unknown | null) => void;
 
   isLoading: boolean;
 };
@@ -64,8 +63,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     useAsyncStorageState("hasOnboarded");
   const [[isLoadingVerified, isVerified], setIsVerified] =
     useAsyncStorageState("isVerified");
-  const [[isLoadingUserData, userData], setUserDataRaw] =
-    useAsyncStorageState("userData");
   const [
     [isLoadingCompletedSetup, hasCompletedSetupRaw],
     setHasCompletedSetupRaw,
@@ -83,8 +80,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isLoadingVerified ||
     isLoadingCompletedSetup ||
     isLoadingSetupStep ||
-    isLoadingKycStatus ||
-    isLoadingUserData;
+    isLoadingKycStatus;
 
   useEffect(() => {
     (async () => {
@@ -108,16 +104,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = async (session: string) => setSession(session);
 
   const signOut = useCallback(async () => {
-    if (typeof userData === "string") {
-      try {
-        const parsed = JSON.parse(userData) as { email?: unknown };
-        if (typeof parsed.email === "string" && parsed.email.trim()) {
-          await asyncStorageSetItem(
-            LAST_LOGIN_EMAIL_KEY,
-            parsed.email.trim().toLowerCase(),
-          );
-        }
-      } catch {}
+    const profile = queryClient.getQueryData<UserProfile>(["auth", "profile"]);
+    if (profile?.email) {
+      await asyncStorageSetItem(
+        LAST_LOGIN_EMAIL_KEY,
+        profile.email.trim().toLowerCase(),
+      );
     }
 
     await clearPersistedQueryCache();
@@ -128,10 +120,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
     await clearPin();
     await clearAuthTokens();
 
+    try {
+      await cancelAllBillReminders();
+    } catch (e) {
+      console.log("Failed to cancel bill reminders on sign out", e);
+    }
+
     setSession(null);
     setIsVerified(null);
     setKycVerificationStatusRaw(null);
-    setUserDataRaw(null);
     setHasCompletedSetupRaw(null);
     setSetupStepRaw(null);
     router.replace("/(auth)/signIn");
@@ -140,10 +137,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSession,
     setIsVerified,
     setKycVerificationStatusRaw,
-    setUserDataRaw,
     setHasCompletedSetupRaw,
     setSetupStepRaw,
-    userData,
   ]);
 
   useEffect(() => {
@@ -161,30 +156,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     };
   }, [signOut]);
 
-  /* ---------------------------------------------
-     userData handling
-  ----------------------------------------------*/
-  const setUserData = useCallback(
-    async (data: unknown | null) => {
-      if (data === null) {
-        setUserDataRaw(null);
-      } else {
-        setUserDataRaw(JSON.stringify(data));
-      }
-    },
-    [setUserDataRaw],
-  );
-
-  let parsedUserData: UserProfile | null = null;
-  if (typeof userData === "string") {
-    try {
-      const parsed = JSON.parse(userData);
-      parsedUserData = parsed as UserProfile;
-    } catch {
-      parsedUserData = null;
-    }
-  }
-
   const kycVerificationStatus: KycStatus =
     kycVerificationStatusRaw ?? "unverified";
 
@@ -200,7 +171,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     isVerified: isVerified === "true",
     kycVerificationStatus,
     hasCompletedSetup: hasCompletedSetupRaw === "true",
-    userData: parsedUserData,
     isAuthenticated: !!session,
     setupStep: Number(setupStepRaw),
     setHasOnboarded: (v) => setHasOnboarded(String(v)),
@@ -209,7 +179,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setHasCompletedSetup: (v) => setHasCompletedSetupRaw(String(v)),
     setSetupStep: (v) =>
       setSetupStepRaw(v == null || !Number.isFinite(v) ? null : String(v)),
-    setUserData,
 
     isLoading,
   };
