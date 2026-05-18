@@ -20,11 +20,16 @@ const useVoiceTranscriber = (enableSounds = true) => {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Always-current ref — avoids stale-closure race between "result" and "end" events
+  const accumulatedRef = useRef("");
+
   const hasPermission = useRef(false);
   const permissionStatus = useRef<PermissionStatus | null>(null);
+  const autoStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Check existing permission on mount
   useEffect(() => {
-    const requestPermission = async () => {
+    const checkPermission = async () => {
       try {
         const result = await ExpoSpeechRecognitionModule.getPermissionsAsync();
         if (result.granted) {
@@ -38,7 +43,17 @@ const useVoiceTranscriber = (enableSounds = true) => {
         setError("Failed to check microphone permissions");
       }
     };
-    requestPermission();
+    checkPermission();
+  }, []);
+
+  // Abort any active session when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+      }
+      ExpoSpeechRecognitionModule.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -55,35 +70,35 @@ const useVoiceTranscriber = (enableSounds = true) => {
     endPlayerStatus.isLoaded,
   ]);
 
-  
   useSpeechRecognitionEvent("start", () => {
     setRecognizing(true);
     setError(null);
   });
 
+  // Clear the 20-second safety timeout when the session ends naturally
   useSpeechRecognitionEvent("end", () => {
+    if (autoStopTimeoutRef.current) {
+      clearTimeout(autoStopTimeoutRef.current);
+      autoStopTimeoutRef.current = null;
+    }
     setRecognizing(false);
     setInterimTranscript("");
   });
 
+  // Update both state (for rendering) and the ref (for race-safe reads in effects)
   useSpeechRecognitionEvent("result", (event) => {
-    const results = event.results;
-    let finalText = "";
-    let interimText = "";
-
-      const result = results[0];
-      if (event.isFinal) {
-        finalText += result.transcript + "";
-      } else {
-        interimText += result.transcript + "";
+    const text = event.results[0]?.transcript ?? "";
+    if (event.isFinal) {
+      if (text.trim()) {
+        const updated = accumulatedRef.current
+          ? `${accumulatedRef.current} ${text}`.trim()
+          : text.trim();
+        accumulatedRef.current = updated;
+        setTranscript(updated);
       }
-    
-
-    if (finalText.trim()) {
-      setTranscript((prev) => (prev + " " + finalText).trim());
+    } else {
+      setInterimTranscript(text.trim());
     }
-
-    setInterimTranscript(interimText.trim());
   });
 
   useSpeechRecognitionEvent("error", (event) => {
@@ -95,15 +110,17 @@ const useVoiceTranscriber = (enableSounds = true) => {
   const start = async () => {
     try {
       setError(null);
-      
-      
+
       if (!hasPermission.current) {
-        const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        const result =
+          await ExpoSpeechRecognitionModule.requestPermissionsAsync();
         if (result.granted) {
           permissionStatus.current = result.status;
           hasPermission.current = true;
         } else {
-          setError("Microphone permission denied");
+          setError(
+            "Microphone access was denied. Please go to Settings → Privacy & Security → Microphone and enable access for Zorah.",
+          );
           return;
         }
       }
@@ -115,13 +132,19 @@ const useVoiceTranscriber = (enableSounds = true) => {
 
       setTranscript("");
       setInterimTranscript("");
+      accumulatedRef.current = "";
 
       ExpoSpeechRecognitionModule.start({
         lang: "en-US",
         interimResults: true,
         maxAlternatives: 1,
-        continuous: true,
+        continuous: false,
       });
+
+      // Safety net: auto-stop after 20 s in case the OS never fires "end"
+      autoStopTimeoutRef.current = setTimeout(() => {
+        ExpoSpeechRecognitionModule.stop();
+      }, 20_000);
     } catch (err) {
       console.error("Error starting transcription:", err);
       setError("Failed to start voice recognition");
@@ -130,6 +153,10 @@ const useVoiceTranscriber = (enableSounds = true) => {
 
   const stop = async () => {
     try {
+      if (autoStopTimeoutRef.current) {
+        clearTimeout(autoStopTimeoutRef.current);
+        autoStopTimeoutRef.current = null;
+      }
       ExpoSpeechRecognitionModule.stop();
       if (enableSounds && endPlayerStatus.isLoaded) {
         await endPlayer.seekTo(0);
@@ -145,13 +172,16 @@ const useVoiceTranscriber = (enableSounds = true) => {
     setTranscript("");
     setInterimTranscript("");
     setError(null);
+    accumulatedRef.current = "";
   };
 
   return {
     recognizing,
     transcript,
     interimTranscript,
-    fullTranscript: transcript + (interimTranscript ? " " + interimTranscript : ""),
+    fullTranscript:
+      transcript + (interimTranscript ? ` ${interimTranscript}` : ""),
+    transcriptRef: accumulatedRef,
     error,
     start,
     stop,
