@@ -9,6 +9,11 @@ import { useEffect, useRef, useState } from "react";
 const startSound = require("@/assets/sounds/record-start.wav");
 const endSound = require("@/assets/sounds/record-cancel.wav");
 
+// Stop automatically after this many ms of silence following the last result.
+const SILENCE_TIMEOUT_MS = 2500;
+// Hard upper limit on a single recording session.
+const MAX_RECORDING_MS = 20_000;
+
 const useVoiceTranscriber = (enableSounds = true) => {
   const startPlayer = useAudioPlayer(enableSounds ? startSound : undefined);
   const endPlayer = useAudioPlayer(enableSounds ? endSound : undefined);
@@ -20,14 +25,19 @@ const useVoiceTranscriber = (enableSounds = true) => {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Always-current ref — avoids stale-closure race between "result" and "end" events
+  // accumulatedRef — always holds the latest finalized transcript text.
+  // Read this (not transcript state) wherever a stale-closure race is a concern.
   const accumulatedRef = useRef("");
+  // interimRef — mirrors interimTranscript state so we can rescue it on "end"
+  // when the OS fires "end" before emitting a final "result" for the last phrase.
+  const interimRef = useRef("");
 
   const hasPermission = useRef(false);
   const permissionStatus = useRef<PermissionStatus | null>(null);
-  const autoStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxRecordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check existing permission on mount
+  // ─── Permission check on mount ───────────────────────────────────────────
   useEffect(() => {
     const checkPermission = async () => {
       try {
@@ -46,49 +56,56 @@ const useVoiceTranscriber = (enableSounds = true) => {
     checkPermission();
   }, []);
 
-  // Abort any active session when the component unmounts
+  // ─── Abort any active session on unmount ─────────────────────────────────
   useEffect(() => {
     return () => {
-      if (autoStopTimeoutRef.current) {
-        clearTimeout(autoStopTimeoutRef.current);
-      }
+      clearTimers();
       ExpoSpeechRecognitionModule.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (startPlayerStatus.isLoaded) {
-      startPlayer.volume = 0.8;
+    if (startPlayerStatus.isLoaded) startPlayer.volume = 0.8;
+    if (endPlayerStatus.isLoaded) endPlayer.volume = 0.7;
+  }, [startPlayer, startPlayerStatus.isLoaded, endPlayer, endPlayerStatus.isLoaded]);
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  const clearTimers = () => {
+    if (maxRecordingTimerRef.current) {
+      clearTimeout(maxRecordingTimerRef.current);
+      maxRecordingTimerRef.current = null;
     }
-    if (endPlayerStatus.isLoaded) {
-      endPlayer.volume = 0.7;
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
     }
-  }, [
-    startPlayer,
-    startPlayerStatus.isLoaded,
-    endPlayer,
-    endPlayerStatus.isLoaded,
-  ]);
+  };
+
+  const resetSilenceTimer = () => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    silenceTimerRef.current = setTimeout(() => {
+      ExpoSpeechRecognitionModule.stop();
+    }, SILENCE_TIMEOUT_MS);
+  };
+
+  // ─── Speech recognition event listeners ──────────────────────────────────
 
   useSpeechRecognitionEvent("start", () => {
     setRecognizing(true);
     setError(null);
   });
 
-  // Clear the 20-second safety timeout when the session ends naturally
-  useSpeechRecognitionEvent("end", () => {
-    if (autoStopTimeoutRef.current) {
-      clearTimeout(autoStopTimeoutRef.current);
-      autoStopTimeoutRef.current = null;
-    }
-    setRecognizing(false);
-    setInterimTranscript("");
-  });
-
-  // Update both state (for rendering) and the ref (for race-safe reads in effects)
   useSpeechRecognitionEvent("result", (event) => {
+    // Every incoming result (interim or final) means the user is still speaking
+    // — reset the silence timer so we don't cut off mid-sentence.
+    resetSilenceTimer();
+
     const text = event.results[0]?.transcript ?? "";
+
     if (event.isFinal) {
+      interimRef.current = "";
       if (text.trim()) {
         const updated = accumulatedRef.current
           ? `${accumulatedRef.current} ${text}`.trim()
@@ -96,16 +113,47 @@ const useVoiceTranscriber = (enableSounds = true) => {
         accumulatedRef.current = updated;
         setTranscript(updated);
       }
+      setInterimTranscript("");
     } else {
+      interimRef.current = text.trim();
       setInterimTranscript(text.trim());
     }
   });
 
+  useSpeechRecognitionEvent("end", () => {
+    clearTimers();
+
+    // Rescue any interim text the OS didn't finalize before ending the session.
+    // This happens when "end" fires before the last "result" with isFinal: true.
+    if (interimRef.current) {
+      const rescue = interimRef.current;
+      const updated = accumulatedRef.current
+        ? `${accumulatedRef.current} ${rescue}`.trim()
+        : rescue.trim();
+      accumulatedRef.current = updated;
+      setTranscript(updated);
+      interimRef.current = "";
+    }
+
+    setRecognizing(false);
+    setInterimTranscript("");
+  });
+
   useSpeechRecognitionEvent("error", (event) => {
+    // "no-speech" is not a user-facing error — it just means the OS timed out
+    // before detecting any audio. Treat it as a silent end so the user can try again.
+    if (event.error === "no-speech") {
+      clearTimers();
+      setRecognizing(false);
+      return;
+    }
     console.error("Speech recognition error:", event.error);
     setError(event.error || "Speech recognition error occurred");
+    clearTimers();
     setRecognizing(false);
   });
+
+  // ─── Public API ──────────────────────────────────────────────────────────
 
   const start = async () => {
     try {
@@ -133,18 +181,22 @@ const useVoiceTranscriber = (enableSounds = true) => {
       setTranscript("");
       setInterimTranscript("");
       accumulatedRef.current = "";
+      interimRef.current = "";
 
+      // continuous: true — we manage stop timing ourselves via the silence timer.
+      // This avoids the OS's aggressive 1–2 s silence detector which cuts off
+      // natural pauses mid-sentence on iOS.
       ExpoSpeechRecognitionModule.start({
         lang: "en-US",
         interimResults: true,
         maxAlternatives: 1,
-        continuous: false,
+        continuous: true,
       });
 
-      // Safety net: auto-stop after 20 s in case the OS never fires "end"
-      autoStopTimeoutRef.current = setTimeout(() => {
+      // Hard cap: stop after MAX_RECORDING_MS regardless of silence detection.
+      maxRecordingTimerRef.current = setTimeout(() => {
         ExpoSpeechRecognitionModule.stop();
-      }, 20_000);
+      }, MAX_RECORDING_MS);
     } catch (err) {
       console.error("Error starting transcription:", err);
       setError("Failed to start voice recognition");
@@ -153,10 +205,7 @@ const useVoiceTranscriber = (enableSounds = true) => {
 
   const stop = async () => {
     try {
-      if (autoStopTimeoutRef.current) {
-        clearTimeout(autoStopTimeoutRef.current);
-        autoStopTimeoutRef.current = null;
-      }
+      clearTimers();
       ExpoSpeechRecognitionModule.stop();
       if (enableSounds && endPlayerStatus.isLoaded) {
         await endPlayer.seekTo(0);
@@ -173,6 +222,7 @@ const useVoiceTranscriber = (enableSounds = true) => {
     setInterimTranscript("");
     setError(null);
     accumulatedRef.current = "";
+    interimRef.current = "";
   };
 
   return {
