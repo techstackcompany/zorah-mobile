@@ -225,6 +225,19 @@ const useVoiceTranscriber = (enableSounds = true) => {
     interimRef.current = "";
   };
 
+  // Synchronously returns the best available text at this instant.
+  // Use this in event handlers / callbacks where you can't wait for the
+  // "end" event to settle — e.g. when the user manually taps stop.
+  const getFullTranscript = () => {
+    const base = accumulatedRef.current;
+    const interim = interimRef.current;
+    return base
+      ? interim
+        ? `${base} ${interim}`.trim()
+        : base
+      : interim;
+  };
+
   return {
     recognizing,
     transcript,
@@ -232,6 +245,7 @@ const useVoiceTranscriber = (enableSounds = true) => {
     fullTranscript:
       transcript + (interimTranscript ? ` ${interimTranscript}` : ""),
     transcriptRef: accumulatedRef,
+    getFullTranscript,
     error,
     start,
     stop,

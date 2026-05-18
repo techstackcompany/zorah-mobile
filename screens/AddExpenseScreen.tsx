@@ -229,6 +229,7 @@ const AddExpenseScreen = () => {
     recognizing,
     fullTranscript,
     transcriptRef,
+    getFullTranscript,
     start: startTranscription,
     stop: stopTranscription,
     reset: resetTranscript,
@@ -350,6 +351,15 @@ const AddExpenseScreen = () => {
 
   const handleMicPress = useCallback(async () => {
     if (recognizing) {
+      // Capture text synchronously NOW — before the async "end" event cycle
+      // which can lose interim text depending on how the OS finalises speech.
+      const captured = getFullTranscript().trim();
+      if (captured) {
+        setVoiceStatus("transcribed");
+        setEditableTranscript(captured);
+      } else {
+        setVoiceStatus("idle");
+      }
       await stopTranscription();
     } else {
       resetTranscript();
@@ -358,20 +368,21 @@ const AddExpenseScreen = () => {
       await startTranscription();
       setVoiceStatus("recording");
     }
-  }, [recognizing, stopTranscription, resetTranscript, startTranscription]);
+  }, [recognizing, getFullTranscript, stopTranscription, resetTranscript, startTranscription]);
 
+  // Auto-stop path (silence timer): recognizing goes false without handleMicPress
+  // having set voiceStatus first. The ref is updated synchronously inside the
+  // "end" event handler before setRecognizing(false) is called, so reading it
+  // here is race-safe without a setTimeout.
   useEffect(() => {
     if (!recognizing && voiceStatus === "recording") {
-      const id = setTimeout(() => {
-        const text = transcriptRef.current.trim();
-        if (text) {
-          setVoiceStatus("transcribed");
-          setEditableTranscript(text);
-        } else {
-          setVoiceStatus("idle");
-        }
-      }, 0);
-      return () => clearTimeout(id);
+      const text = transcriptRef.current.trim();
+      if (text) {
+        setVoiceStatus("transcribed");
+        setEditableTranscript(text);
+      } else {
+        setVoiceStatus("idle");
+      }
     }
   }, [recognizing, voiceStatus, transcriptRef]);
 
