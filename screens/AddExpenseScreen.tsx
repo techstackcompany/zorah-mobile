@@ -49,7 +49,13 @@ type ExpenseCategory = {
   icon: string;
 };
 
-type VoiceStatus = "idle" | "recording" | "transcribed" | "needs_category" | "detected";
+type VoiceStatus =
+  | "idle"
+  | "recording"
+  | "transcribed"
+  | "needs_category"
+  | "needs_follow_up"
+  | "detected";
 
 type DetectedExpenseDetails = {
   amountValue: string;
@@ -210,6 +216,7 @@ const AddExpenseScreen = () => {
     useState<DetectedExpenseDetails | null>(null);
   const [editableTranscript, setEditableTranscript] = useState("");
   const [aiFollowUpMessage, setAiFollowUpMessage] = useState("");
+  const [followUpAnswer, setFollowUpAnswer] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
   const timeOutId = useRef<number | null>(null);
   const dismissedOfflineRef = useRef(false);
@@ -247,6 +254,7 @@ const AddExpenseScreen = () => {
     setVoiceStatus("idle");
     setDetectedExpense(null);
     setAiFollowUpMessage("");
+    setFollowUpAnswer("");
   }, []);
 
   const handleEntryModeChange = useCallback(
@@ -338,11 +346,18 @@ const AddExpenseScreen = () => {
       });
     },
     onError: (error) => {
+      console.log('error', error)
       const aiResponse = (error.data as { aiResponse?: string } | undefined)
         ?.aiResponse;
       if (error.status === 400 && aiResponse) {
         setAiFollowUpMessage(aiResponse);
-        setVoiceStatus("needs_category");
+        setFollowUpAnswer("");
+        const isCategoryQuestion = aiResponse
+          .toLowerCase()
+          .includes("category");
+        setVoiceStatus(
+          isCategoryQuestion ? "needs_category" : "needs_follow_up",
+        );
         return;
       }
       setVoiceStatus("idle");
@@ -359,8 +374,7 @@ const AddExpenseScreen = () => {
 
   const handleMicPress = useCallback(async () => {
     if (recognizing) {
-      // Capture text synchronously NOW — before the async "end" event cycle
-      // which can lose interim text depending on how the OS finalises speech.
+   
       const captured = getFullTranscript().trim();
       if (captured) {
         setVoiceStatus("transcribed");
@@ -374,6 +388,7 @@ const AddExpenseScreen = () => {
       setDetectedExpense(null);
       setEditableTranscript("");
       setAiFollowUpMessage("");
+      setFollowUpAnswer("");
       await startTranscription();
       setVoiceStatus("recording");
     }
@@ -422,6 +437,12 @@ const AddExpenseScreen = () => {
           selectedCategory;
         logVoiceExpenseMutation.mutate({
           message: `${editableTranscript}, category: ${categoryLabel}`,
+        });
+        return;
+      }
+      if (voiceStatus === "needs_follow_up" && followUpAnswer.trim()) {
+        logVoiceExpenseMutation.mutate({
+          message: `${editableTranscript}, ${followUpAnswer.trim()}`,
         });
         return;
       }
@@ -481,6 +502,7 @@ const AddExpenseScreen = () => {
     isVoiceMode,
     voiceStatus,
     editableTranscript,
+    followUpAnswer,
     amount,
     date,
     paymentMethod,
@@ -501,7 +523,8 @@ const AddExpenseScreen = () => {
     (voiceStatus === "idle" ||
       voiceStatus === "recording" ||
       (voiceStatus === "transcribed" && !editableTranscript.trim()) ||
-      (voiceStatus === "needs_category" && !selectedCategory));
+      (voiceStatus === "needs_category" && !selectedCategory) ||
+      (voiceStatus === "needs_follow_up" && !followUpAnswer.trim()));
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -634,6 +657,36 @@ const AddExpenseScreen = () => {
                       </View>
                     </View>
                   ) : null}
+                  {voiceStatus === "needs_follow_up" ? (
+                    <View className="gap-4">
+                      <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                        <View className="mb-2 flex-row items-center gap-2">
+                          <Ionicons
+                            name="chatbubble-ellipses-outline"
+                            size={18}
+                            color={COLORS.amber}
+                          />
+                          <Text
+                            weight="semibold"
+                            className="text-sm"
+                            style={{ color: COLORS.amber }}
+                          >
+                            Zorah needs more info
+                          </Text>
+                        </View>
+                        <Text className="text-sm leading-5 text-textColor/90">
+                          {aiFollowUpMessage}
+                        </Text>
+                      </View>
+                      <TextInputField
+                        value={followUpAnswer}
+                        onChangeText={setFollowUpAnswer}
+                        placeholder="Type your answer here..."
+                        returnKeyType="done"
+                      />
+                    </View>
+                  ) : null}
+
                   {voiceStatus === "needs_category" ? (
                     <View className="gap-4">
                       <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
@@ -848,7 +901,9 @@ const AddExpenseScreen = () => {
                   ? "Done"
                   : isVoiceMode && voiceStatus === "needs_category"
                     ? "Submit with Category"
-                    : "Add New Expense"
+                    : isVoiceMode && voiceStatus === "needs_follow_up"
+                      ? "Submit Answer"
+                      : "Add New Expense"
               }
               disabled={isSubmitDisabled}
             />
