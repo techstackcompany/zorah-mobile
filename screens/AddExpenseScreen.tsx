@@ -49,7 +49,7 @@ type ExpenseCategory = {
   icon: string;
 };
 
-type VoiceStatus = "idle" | "recording" | "transcribed" | "detected";
+type VoiceStatus = "idle" | "recording" | "transcribed" | "needs_category" | "detected";
 
 type DetectedExpenseDetails = {
   amountValue: string;
@@ -209,6 +209,7 @@ const AddExpenseScreen = () => {
   const [detectedExpense, setDetectedExpense] =
     useState<DetectedExpenseDetails | null>(null);
   const [editableTranscript, setEditableTranscript] = useState("");
+  const [aiFollowUpMessage, setAiFollowUpMessage] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
   const timeOutId = useRef<number | null>(null);
   const dismissedOfflineRef = useRef(false);
@@ -245,6 +246,7 @@ const AddExpenseScreen = () => {
   const resetVoiceAssist = useCallback(() => {
     setVoiceStatus("idle");
     setDetectedExpense(null);
+    setAiFollowUpMessage("");
   }, []);
 
   const handleEntryModeChange = useCallback(
@@ -336,7 +338,13 @@ const AddExpenseScreen = () => {
       });
     },
     onError: (error) => {
-      console.log("error", error);
+      const aiResponse = (error.data as { aiResponse?: string } | undefined)
+        ?.aiResponse;
+      if (error.status === 400 && aiResponse) {
+        setAiFollowUpMessage(aiResponse);
+        setVoiceStatus("needs_category");
+        return;
+      }
       setVoiceStatus("idle");
       Toast.show({
         type: "error",
@@ -365,15 +373,18 @@ const AddExpenseScreen = () => {
       resetTranscript();
       setDetectedExpense(null);
       setEditableTranscript("");
+      setAiFollowUpMessage("");
       await startTranscription();
       setVoiceStatus("recording");
     }
-  }, [recognizing, getFullTranscript, stopTranscription, resetTranscript, startTranscription]);
+  }, [
+    recognizing,
+    getFullTranscript,
+    stopTranscription,
+    resetTranscript,
+    startTranscription,
+  ]);
 
-  // Auto-stop path (silence timer): recognizing goes false without handleMicPress
-  // having set voiceStatus first. The ref is updated synchronously inside the
-  // "end" event handler before setRecognizing(false) is called, so reading it
-  // here is race-safe without a setTimeout.
   useEffect(() => {
     if (!recognizing && voiceStatus === "recording") {
       const text = transcriptRef.current.trim();
@@ -403,6 +414,15 @@ const AddExpenseScreen = () => {
     if (isVoiceMode) {
       if (voiceStatus === "detected") {
         router.back();
+        return;
+      }
+      if (voiceStatus === "needs_category" && selectedCategory) {
+        const categoryLabel =
+          expenseCategories.find((c) => c.key === selectedCategory)?.label ??
+          selectedCategory;
+        logVoiceExpenseMutation.mutate({
+          message: `${editableTranscript}, category: ${categoryLabel}`,
+        });
         return;
       }
       if (voiceStatus === "transcribed" && editableTranscript.trim()) {
@@ -465,6 +485,7 @@ const AddExpenseScreen = () => {
     date,
     paymentMethod,
     selectedCategory,
+    expenseCategories,
     logVoiceExpenseMutation,
     customCategory,
     description,
@@ -479,7 +500,8 @@ const AddExpenseScreen = () => {
     isVoiceMode &&
     (voiceStatus === "idle" ||
       voiceStatus === "recording" ||
-      (voiceStatus === "transcribed" && !editableTranscript.trim()));
+      (voiceStatus === "transcribed" && !editableTranscript.trim()) ||
+      (voiceStatus === "needs_category" && !selectedCategory));
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -612,6 +634,48 @@ const AddExpenseScreen = () => {
                       </View>
                     </View>
                   ) : null}
+                  {voiceStatus === "needs_category" ? (
+                    <View className="gap-4">
+                      <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                        <View className="mb-2 flex-row items-center gap-2">
+                          <Ionicons
+                            name="chatbubble-ellipses-outline"
+                            size={18}
+                            color={COLORS.amber}
+                          />
+                          <Text
+                            weight="semibold"
+                            className="text-sm"
+                            style={{ color: COLORS.amber }}
+                          >
+                            Zorah needs more info
+                          </Text>
+                        </View>
+                        <Text className="text-sm leading-5 text-textColor/90">
+                          {aiFollowUpMessage}
+                        </Text>
+                      </View>
+                      <View>
+                        <Text className="mb-2 text-sm text-textColor/70">
+                          Select a category
+                        </Text>
+                        {isCategoriesLoading ? (
+                          <View className="items-center justify-center rounded-2xl border border-gray-200 bg-white py-6">
+                            <Text className="text-sm text-textColor/50">
+                              Loading categories...
+                            </Text>
+                          </View>
+                        ) : (
+                          <CategorySelector
+                            categories={expenseCategories}
+                            selectedKey={selectedCategory}
+                            onSelect={(key) => setSelectedCategory(key)}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  ) : null}
+
                   {recognizing && fullTranscript.trim() ? (
                     <View className="bg-primary_50 rounded-2xl border border-primary_200 px-4 py-4">
                       <View className="mb-3 flex-row items-center gap-2">
@@ -629,11 +693,18 @@ const AddExpenseScreen = () => {
                     </View>
                   ) : null}
 
-                  {voiceStatus === "transcribed" && editableTranscript.trim() ? (
+                  {voiceStatus === "transcribed" &&
+                  editableTranscript.trim() ? (
                     logVoiceExpenseMutation.isPending ? (
-                      <View className="items-center rounded-2xl border border-gray-200 bg-white px-4 py-6 gap-2">
-                        <Ionicons name="sync" size={22} color={COLORS.primary_400} />
-                        <Text className="text-sm text-textColor/70">Analysing your expense...</Text>
+                      <View className="items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-6">
+                        <Ionicons
+                          name="sync"
+                          size={22}
+                          color={COLORS.primary_400}
+                        />
+                        <Text className="text-sm text-textColor/70">
+                          Analysing your expense...
+                        </Text>
                       </View>
                     ) : (
                       <View>
@@ -772,7 +843,13 @@ const AddExpenseScreen = () => {
                 (addExpenseMutation.isPending && isOnline) ||
                 logVoiceExpenseMutation.isPending
               }
-              label={isVoiceMode && voiceStatus === "detected" ? "Done" : "Add New Expense"}
+              label={
+                isVoiceMode && voiceStatus === "detected"
+                  ? "Done"
+                  : isVoiceMode && voiceStatus === "needs_category"
+                    ? "Submit with Category"
+                    : "Add New Expense"
+              }
               disabled={isSubmitDisabled}
             />
           </View>
