@@ -198,8 +198,6 @@ const AddExpenseScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isOnline } = useNetworkStatus();
-  const { data: userData } = useGetUserProfileQuery();
-  const { isSetupComplete, steps, currentStepIndex } = useSetupProgress();
   const [amount, setAmount] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [customCategory, setCustomCategory] = useState("");
@@ -229,8 +227,8 @@ const AddExpenseScreen = () => {
     useExpenseSubCategories();
   const {
     recognizing,
-    transcript,
     fullTranscript,
+    transcriptRef,
     start: startTranscription,
     stop: stopTranscription,
     reset: resetTranscript,
@@ -327,6 +325,7 @@ const AddExpenseScreen = () => {
         summary: description,
         dateValue: formattedDate,
       });
+      setEditableTranscript("");
       setVoiceStatus("detected");
 
       Toast.show({
@@ -349,7 +348,7 @@ const AddExpenseScreen = () => {
     },
   });
 
-  const handleMicPress = async () => {
+  const handleMicPress = useCallback(async () => {
     if (recognizing) {
       await stopTranscription();
     } else {
@@ -359,14 +358,22 @@ const AddExpenseScreen = () => {
       await startTranscription();
       setVoiceStatus("recording");
     }
-  };
+  }, [recognizing, stopTranscription, resetTranscript, startTranscription]);
 
   useEffect(() => {
-    if (!recognizing && transcript.trim() && voiceStatus === "recording") {
-      setVoiceStatus("transcribed");
-      setEditableTranscript(transcript);
+    if (!recognizing && voiceStatus === "recording") {
+      const id = setTimeout(() => {
+        const text = transcriptRef.current.trim();
+        if (text) {
+          setVoiceStatus("transcribed");
+          setEditableTranscript(text);
+        } else {
+          setVoiceStatus("idle");
+        }
+      }, 0);
+      return () => clearTimeout(id);
     }
-  }, [recognizing, transcript, voiceStatus]);
+  }, [recognizing, voiceStatus, transcriptRef]);
 
   useEffect(() => {
     if (transcriptionError) {
@@ -382,8 +389,15 @@ const AddExpenseScreen = () => {
   const isOtherCategory = selectedCategory.toLowerCase() === "other";
 
   const handleSubmit = useCallback(() => {
-    if (isVoiceMode && editableTranscript.trim()) {
-      logVoiceExpenseMutation.mutate({ message: editableTranscript });
+    if (isVoiceMode) {
+      if (voiceStatus === "detected") {
+        router.back();
+        return;
+      }
+      if (voiceStatus === "transcribed" && editableTranscript.trim()) {
+        logVoiceExpenseMutation.mutate({ message: editableTranscript });
+        return;
+      }
       return;
     }
 
@@ -434,6 +448,7 @@ const AddExpenseScreen = () => {
     }
   }, [
     isVoiceMode,
+    voiceStatus,
     editableTranscript,
     amount,
     date,
@@ -450,7 +465,10 @@ const AddExpenseScreen = () => {
 
   const micIsRecording = recognizing;
   const isSubmitDisabled =
-    isVoiceMode && (!editableTranscript.trim() || voiceStatus === "recording");
+    isVoiceMode &&
+    (voiceStatus === "idle" ||
+      voiceStatus === "recording" ||
+      (voiceStatus === "transcribed" && !editableTranscript.trim()));
 
   return (
     <MainContainer className="bg-light" edges={[]}>
@@ -502,15 +520,16 @@ const AddExpenseScreen = () => {
                         How it works
                       </Text>
                       <Text className="mt-2 text-sm leading-5 text-textColor/80">
-                        Simply tap the microphone and say your expense. For
+                        Simply tap the microphone, speak your expense, and it
+                        will automatically stop when you&apos;re done. For
                         example:
                       </Text>
                       <View className="mt-3 rounded-xl bg-primary_100 px-3 py-3">
                         <Text className="text-sm text-primary_400">
-                          &quot;Spent $25 on food at the restaurant&quot;
+                          &quot;Spent ₦25 on food at the restaurant&quot;
                         </Text>
                         <Text className="mt-1 text-sm text-primary_400">
-                          &quot;Lunch for $18.50&quot;
+                          &quot;Lunch for ₦18.50&quot;
                         </Text>
                       </View>
                     </View>
@@ -567,16 +586,7 @@ const AddExpenseScreen = () => {
                             Category: {detectedExpense.categoryLabel}
                           </Text>
                         </View>
-                        <View className="flex-row items-center gap-2">
-                          <Ionicons
-                            name="card-outline"
-                            size={18}
-                            color={COLORS.secondary_500}
-                          />
-                          <Text className="text-sm text-textColor">
-                            Payment: {detectedExpense.paymentMethodLabel}
-                          </Text>
-                        </View>
+
                         <View className="flex-row items-start gap-2">
                           <Ionicons
                             name="document-text-outline"
@@ -608,22 +618,28 @@ const AddExpenseScreen = () => {
                     </View>
                   ) : null}
 
-                  {voiceStatus === "transcribed" &&
-                  editableTranscript.trim() ? (
-                    <View>
-                      <Text className="mb-2 text-sm text-textColor/70">
-                        Edit your transcription
-                      </Text>
-                      <TextInputField
-                        value={editableTranscript}
-                        onChangeText={setEditableTranscript}
-                        multiline
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                        placeholder="Edit the transcribed text..."
-                        inputClassName="min-h-[120px]"
-                      />
-                    </View>
+                  {voiceStatus === "transcribed" && editableTranscript.trim() ? (
+                    logVoiceExpenseMutation.isPending ? (
+                      <View className="items-center rounded-2xl border border-gray-200 bg-white px-4 py-6 gap-2">
+                        <Ionicons name="sync" size={22} color={COLORS.primary_400} />
+                        <Text className="text-sm text-textColor/70">Analysing your expense...</Text>
+                      </View>
+                    ) : (
+                      <View>
+                        <Text className="mb-2 text-sm text-textColor/70">
+                          Edit your transcription
+                        </Text>
+                        <TextInputField
+                          value={editableTranscript}
+                          onChangeText={setEditableTranscript}
+                          multiline
+                          numberOfLines={4}
+                          textAlignVertical="top"
+                          placeholder="Edit the transcribed text..."
+                          inputClassName="min-h-[120px]"
+                        />
+                      </View>
+                    )
                   ) : null}
                 </View>
               ) : (
@@ -745,7 +761,7 @@ const AddExpenseScreen = () => {
                 (addExpenseMutation.isPending && isOnline) ||
                 logVoiceExpenseMutation.isPending
               }
-              label="Add New Expense"
+              label={isVoiceMode && voiceStatus === "detected" ? "Done" : "Add New Expense"}
               disabled={isSubmitDisabled}
             />
           </View>
