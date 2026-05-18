@@ -9,10 +9,8 @@ import { useEffect, useRef, useState } from "react";
 const startSound = require("@/assets/sounds/record-start.wav");
 const endSound = require("@/assets/sounds/record-cancel.wav");
 
-// Stop automatically after this many ms of silence following the last result.
-const SILENCE_TIMEOUT_MS = 2500;
-// Hard upper limit on a single recording session.
-const MAX_RECORDING_MS = 20_000;
+// Hard upper limit on a single recording session (safety net only).
+const MAX_RECORDING_MS = 120_000; // 2 minutes
 
 const useVoiceTranscriber = (enableSounds = true) => {
   const startPlayer = useAudioPlayer(enableSounds ? startSound : undefined);
@@ -35,7 +33,6 @@ const useVoiceTranscriber = (enableSounds = true) => {
   const hasPermission = useRef(false);
   const permissionStatus = useRef<PermissionStatus | null>(null);
   const maxRecordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ─── Permission check on mount ───────────────────────────────────────────
   useEffect(() => {
@@ -77,17 +74,6 @@ const useVoiceTranscriber = (enableSounds = true) => {
       clearTimeout(maxRecordingTimerRef.current);
       maxRecordingTimerRef.current = null;
     }
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-  };
-
-  const resetSilenceTimer = () => {
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    silenceTimerRef.current = setTimeout(() => {
-      ExpoSpeechRecognitionModule.stop();
-    }, SILENCE_TIMEOUT_MS);
   };
 
   // ─── Speech recognition event listeners ──────────────────────────────────
@@ -98,10 +84,6 @@ const useVoiceTranscriber = (enableSounds = true) => {
   });
 
   useSpeechRecognitionEvent("result", (event) => {
-    // Every incoming result (interim or final) means the user is still speaking
-    // — reset the silence timer so we don't cut off mid-sentence.
-    resetSilenceTimer();
-
     const text = event.results[0]?.transcript ?? "";
 
     if (event.isFinal) {
@@ -183,9 +165,9 @@ const useVoiceTranscriber = (enableSounds = true) => {
       accumulatedRef.current = "";
       interimRef.current = "";
 
-      // continuous: true — we manage stop timing ourselves via the silence timer.
-      // This avoids the OS's aggressive 1–2 s silence detector which cuts off
-      // natural pauses mid-sentence on iOS.
+      // continuous: true — recording runs until the user explicitly taps stop.
+      // This prevents the OS's aggressive 1–2 s silence detector from cutting
+      // off natural pauses mid-sentence on iOS.
       ExpoSpeechRecognitionModule.start({
         lang: "en-US",
         interimResults: true,
