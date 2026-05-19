@@ -1,13 +1,17 @@
 import { stackOptions } from "@/constants/navigation";
+import { useAppLock } from "@/contexts/app-lock/useAppLock";
 import { useSession } from "@/contexts/auth-context/useSession";
-import { useGetUserProfileQuery } from "@/src/api/hooks";
-import * as SplashScreen from "expo-splash-screen";
-import { Stack } from "expo-router";
-import React, { useEffect } from "react";
 import { useBillReminderNotifications } from "@/hooks/useBillReminderNotifications";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
+import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import { Stack, useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
 
 const AppLayout = () => {
-  const { signOut } = useSession();
+  const { signOut, hasCompletedSetup } = useSession();
+  const { needsPinSetup, isInitializing } = useAppLock();
+  const router = useRouter();
   useBillReminderNotifications();
 
   const {
@@ -28,12 +32,29 @@ const AppLayout = () => {
     }
   }, [signOut, error]);
 
+  useEffect(() => {
+    if (!isInitializing && needsPinSetup) {
+      router.replace("/(app)/settings/pin");
+    }
+  }, [isInitializing, needsPinSetup, router]);
+
+  useEffect(() => {
+    if (isProfileLoading || !profileData || profileData.biometricEnabled)
+      return;
+    const hasMilestone =
+      hasCompletedSetup ||
+      (profileData.usageMetrics?.expensesLoggedCount ?? 0) >= 1;
+    if (hasMilestone) {
+      router.replace("/(app)/settings/pin");
+    }
+  }, [isProfileLoading, profileData, hasCompletedSetup, router]);
+
   return <Navigator />;
 };
 
 const Navigator = () => {
   return (
-    <Stack screenOptions={stackOptions}>
+    <Stack screenOptions={stackOptions as NativeStackNavigationOptions}>
       <Stack.Screen name="(home)" options={{ headerShown: false }} />
       <Stack.Screen
         name="expense-planning"
@@ -49,6 +70,24 @@ const Navigator = () => {
       <Stack.Screen
         name="income/details"
         options={{ title: "Income Details" }}
+      />
+      <Stack.Screen
+        name="budget/create"
+        options={{
+          title: "Create Budget",
+        }}
+      />
+      <Stack.Screen
+        name="budget/edit"
+        options={{
+          title: "Edit Budget",
+        }}
+      />
+      <Stack.Screen
+        name="budget/archive"
+        options={{
+          title: "Archive",
+        }}
       />
       <Stack.Screen name="more" options={{ title: "More" }} />
       <Stack.Screen
@@ -90,6 +129,18 @@ const Navigator = () => {
         name="notifications/index"
         options={{ title: "Notifications" }}
       />
+
+      <Stack.Screen
+        name="profile/edit-profile"
+        options={{ title: "Edit Profile" }}
+      />
+      <Stack.Screen
+        name="profile/change-password"
+        options={{ title: "Change Password" }}
+      />
+      <Stack.Screen name="profile/banks" options={{ title: "Linked Banks" }} />
+      <Stack.Screen name="profile/add-bank" options={{ title: "Add Bank" }} />
+      <Stack.Screen name="profile/pin-setup" options={{ headerShown: false }} />
 
       <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
       <Stack.Screen name="setup" options={{ headerShown: false }} />

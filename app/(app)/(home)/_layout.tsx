@@ -1,11 +1,15 @@
 import { HeaderBack } from "@/components/ui/HeaderBack";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { stackOptions } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type {
+  BottomTabBarProps,
+  BottomTabNavigationOptions,
+} from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { Image, ImageSource } from "expo-image";
-import { Tabs, usePathname } from "expo-router";
+import { Tabs, usePathname, useRouter } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,9 +76,10 @@ const HomeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
               key={route.key}
               onPress={onPress}
               onLongPress={onLongPress}
+              style={{ minHeight: 48, minWidth: 48 }}
               className={cn(
-                "mx-1 flex-row items-center justify-center rounded-full py-2",
-                isFocused ? "min-w-[90px] bg-white px-4" : "px-2",
+                "mx-1 flex-row items-center justify-center rounded-full py-1",
+                isFocused ? "min-w-[90px] bg-white px-4" : "px-3",
               )}
             >
               <Image
@@ -111,6 +116,15 @@ const headerWithBack = {
 
 const HomeLayout = () => {
   const path = usePathname();
+  const router = useRouter();
+
+  const handleAddBudget = () => {
+    router.push("/budget/create");
+  };
+
+  const handleArchive = () => {
+    router.push("/budget/archive");
+  };
   const isProfileSubRoute = path.startsWith("/profile/");
   const shouldHideTabBar =
     path.startsWith("/budget/") ||
@@ -119,10 +133,9 @@ const HomeLayout = () => {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
         tabBarStyle: shouldHideTabBar ? { display: "none" } : undefined,
-        headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: "NunitoSemibold" },
+        headerShown: true,
+        ...(stackOptions as BottomTabNavigationOptions),
       }}
       tabBar={(props) => (shouldHideTabBar ? null : <HomeTabBar {...props} />)}
     >
@@ -130,14 +143,46 @@ const HomeLayout = () => {
         name="index"
         options={{
           title: "Home",
+          headerShown: false,
         }}
       />
-      <Tabs.Screen name="budget" />
+      <Tabs.Screen
+        name="budget"
+        options={{
+          title: "Budget Manager",
+          ...headerWithBack,
+          headerRight: () => (
+            <View className="flex-row items-center gap-2 pr-4">
+              <Pressable
+                onPress={handleAddBudget}
+                className="h-10 w-10 items-center justify-center rounded-full "
+                accessibilityRole="button"
+                accessibilityLabel="Add budget"
+              >
+                <Image
+                  source={require("@/assets/icons/add-budget.svg")}
+                  style={{ width: 24, height: 24 }}
+                />
+              </Pressable>
+              <Pressable
+                onPress={handleArchive}
+                className="items-center justify-center rounded-full"
+                accessibilityRole="button"
+                accessibilityLabel="Archive budgets"
+              >
+                <Image
+                  source={require("@/assets/icons/archive.svg")}
+                  style={{ width: 24, height: 24 }}
+                />
+              </Pressable>
+            </View>
+          ),
+        }}
+      />
       <Tabs.Screen
         name="expense-planning"
         options={{
           title: "Expense Planning",
-          headerShown: true,
           ...headerWithBack,
         }}
       />
@@ -145,7 +190,6 @@ const HomeLayout = () => {
         name="fxRates"
         options={{
           title: "FX Rates",
-          headerShown: true,
           ...headerWithBack,
         }}
       />
@@ -153,7 +197,7 @@ const HomeLayout = () => {
         name="profile"
         options={{
           title: "Account",
-          headerShown: false,
+          ...headerWithBack,
         }}
       />
     </Tabs>
@@ -177,7 +221,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: COLORS.primary_400,
     borderRadius: 1000,
-    padding: 12,
+    padding: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
