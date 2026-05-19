@@ -1,6 +1,7 @@
 import { useSession } from "@/contexts/auth-context/useSession";
 import { useBiometricSupport } from "@/hooks/useBiometricSupport";
 import {
+  clearPin,
   hasPinStored,
   savePin,
   verifyPin as verifyLocalPin,
@@ -21,30 +22,33 @@ import {
 } from "react";
 import { AppState } from "react-native";
 
-const INACTIVITY_TIMEOUT_MS = 1 * 1000 * 60; // 5 minutes
+const INACTIVITY_TIMEOUT_MS = 60 * 1000;
 
 export type AppLockContextValue = {
   isLocked: boolean;
   isBiometricAvailable: boolean;
   isInitializing: boolean;
+  needsPinSetup: boolean;
   lock: () => void;
   unlock: () => void;
   markActive: () => void;
   verifyPin: (pin: string) => Promise<boolean>;
   authenticateWithBiometric: () => Promise<void>;
   forgotPin: () => void;
+  syncLockState: () => Promise<void>;
 };
 
 export const AppLockContext = createContext<AppLockContextValue | null>(null);
 
 export function AppLockProvider({ children }: PropsWithChildren) {
   const { signOut, isLoading } = useSession();
-  const { data: profile } = useGetUserProfileQuery();
+  const { data: profile, isLoading: isProfileLoading } = useGetUserProfileQuery();
   const { isAvailable: isBiometricAvailable } = useBiometricSupport();
   const { mutateAsync: verifyPinOnServer } = useVerifyUserPinMutation();
 
   const [isLocked, setIsLocked] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [needsPinSetup, setNeedsPinSetup] = useState(false);
 
   const hasDoneInitialCheck = useRef(false);
   const isLockedRef = useRef(false);
@@ -56,6 +60,7 @@ export function AppLockProvider({ children }: PropsWithChildren) {
   }, [isLocked]);
 
   useEffect(() => {
+    console.log("profile?.biometricEnabled", profile?.biometricEnabled);
     const syncCanLock = async () => {
       const biometricEnabled = profile?.biometricEnabled ?? false;
       console.log("biometricEnabled", biometricEnabled);
@@ -66,6 +71,7 @@ export function AppLockProvider({ children }: PropsWithChildren) {
       biometricEnabledRef.current = await hasPinStored();
       console.log(
         "biometricEnabledRef.current pin",
+        await hasPinStored(),
         biometricEnabledRef.current,
       );
     };
@@ -107,12 +113,14 @@ export function AppLockProvider({ children }: PropsWithChildren) {
   }, [startInactivityTimer]);
 
   useEffect(() => {
-    if (isLoading || hasDoneInitialCheck.current) return;
+    if (isLoading || isProfileLoading || hasDoneInitialCheck.current) return;
     hasDoneInitialCheck.current = true;
     const init = async () => {
       const biometricEnabled = profile?.biometricEnabled ?? false;
-      const canLock = biometricEnabled && (await hasPinStored());
+      const hasPin = await hasPinStored();
+      const canLock = biometricEnabled && hasPin;
       biometricEnabledRef.current = canLock;
+      setNeedsPinSetup(biometricEnabled && !hasPin);
       if (canLock) {
         setIsLocked(true);
         isLockedRef.current = true;
@@ -120,7 +128,7 @@ export function AppLockProvider({ children }: PropsWithChildren) {
       setIsInitializing(false);
     };
     init();
-  }, [isLoading, profile]);
+  }, [isLoading, isProfileLoading, profile]);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
@@ -168,31 +176,48 @@ export function AppLockProvider({ children }: PropsWithChildren) {
   const forgotPin = useCallback(() => {
     setIsLocked(false);
     isLockedRef.current = false;
+    void clearPin();
     signOut();
   }, [signOut]);
+
+  const syncLockState = useCallback(async () => {
+    const biometricEnabled = profile?.biometricEnabled ?? false;
+    if (!biometricEnabled) {
+      biometricEnabledRef.current = false;
+      setNeedsPinSetup(false);
+      return;
+    }
+    const hasPin = await hasPinStored();
+    biometricEnabledRef.current = hasPin;
+    setNeedsPinSetup(!hasPin);
+  }, [profile?.biometricEnabled]);
 
   const value = useMemo<AppLockContextValue>(
     () => ({
       isLocked,
       isBiometricAvailable,
       isInitializing,
+      needsPinSetup,
       lock,
       unlock,
       markActive,
       verifyPin,
       authenticateWithBiometric,
       forgotPin,
+      syncLockState,
     }),
     [
       isLocked,
       isBiometricAvailable,
       isInitializing,
+      needsPinSetup,
       lock,
       unlock,
       markActive,
       verifyPin,
       authenticateWithBiometric,
       forgotPin,
+      syncLockState,
     ],
   );
 

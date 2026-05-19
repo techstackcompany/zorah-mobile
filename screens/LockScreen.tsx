@@ -7,7 +7,7 @@ import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
+  BackHandler,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -42,8 +42,14 @@ const LockScreen = ({ visible }: LockScreenProps) => {
   const opacity = useSharedValue(0);
 
   useEffect(() => {
-    opacity.value = visible ? withTiming(1, { duration: 180 }) : 0;
+    opacity.value = withTiming(visible ? 1 : 0, { duration: 200 });
   }, [visible, opacity]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => true);
+    return () => sub.remove();
+  }, [visible]);
 
   useEffect(() => {
     if (!visible || !isBiometricAvailable) return;
@@ -94,12 +100,12 @@ const LockScreen = ({ visible }: LockScreenProps) => {
     transform: [{ translateX: offset.value }],
   }));
 
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
   return (
-    <Modal
-      visible={visible}
-      animationType="none"
-      transparent={false}
-      statusBarTranslucent
+    <Animated.View
+      style={[styles.overlay, fadeStyle]}
+      pointerEvents={visible ? "auto" : "none"}
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centered}>
@@ -140,7 +146,7 @@ const LockScreen = ({ visible }: LockScreenProps) => {
                       borderColor:
                         index < pin.length
                           ? COLORS.primary_400
-                          : COLORS.primary_200,
+                          : "#CBD5E1",
                       borderWidth: index < pin.length ? 0 : 2,
                       opacity: isVerifying ? 0 : 1,
                     },
@@ -235,13 +241,17 @@ const LockScreen = ({ visible }: LockScreenProps) => {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </Modal>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center" },
-  safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#F4F6FB",
+    zIndex: 999,
+  },
+  safeArea: { flex: 1 },
   centered: {
     flex: 1,
     justifyContent: "center",
@@ -297,11 +307,6 @@ const styles = StyleSheet.create({
   },
   numberBtn: {
     backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   backspaceBtn: {
     backgroundColor: "transparent",

@@ -1,17 +1,17 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useBiometricSupport } from "@/hooks/useBiometricSupport";
+import { useAppLock } from "@/contexts/app-lock/useAppLock";
 import { savePin } from "@/lib/pinStorage";
-import { useSetUserPinMutation } from "@/src/api/hooks";
+import { useGetUserProfileQuery, useSetUserPinMutation } from "@/src/api/hooks";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -35,14 +35,24 @@ type PinSetupStep = "create" | "confirm";
 const PinSetupScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { syncLockState, needsPinSetup } = useAppLock();
+  const { data: profile } = useGetUserProfileQuery();
+  const isForced = needsPinSetup || !profile?.biometricEnabled;
   const [step, setStep] = useState<PinSetupStep>("create");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+
+  useEffect(() => {
+    if (!isForced) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => true);
+    return () => sub.remove();
+  }, [isForced]);
   const offset = useSharedValue(0);
 
   const setPinMutation = useSetUserPinMutation({
     onSuccess: async (_, variables) => {
       await savePin(variables.pin);
+      await syncLockState();
 
       Toast.show({
         type: "success",
@@ -131,20 +141,22 @@ const PinSetupScreen = () => {
   return (
     <LinearGradient colors={["#F6FAFF", "#FFFFFF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.backButtonContainer}>
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/(app)/(home)/profile");
-              }
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
-          </TouchableOpacity>
-        </View>
+        {!isForced && (
+          <View style={styles.backButtonContainer}>
+            <TouchableOpacity
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(app)/(home)/profile");
+                }
+              }}
+              style={styles.backButton}
+            >
+              <Ionicons name="chevron-back" size={24} color={COLORS.tertiary} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.header}>
           <Text
@@ -152,15 +164,21 @@ const PinSetupScreen = () => {
             weight="bold"
             className="mb-2 text-center text-[28px] tracking-[0.5px] text-textColor"
           >
-            {step === "create" ? "Update PIN" : "Confirm New PIN"}
+            {step === "create"
+              ? isForced
+                ? "Set Up PIN"
+                : "Update PIN"
+              : "Confirm PIN"}
           </Text>
           <Text
             weight="regular"
             className="px-10 text-center text-[15px] text-[#6B7280]"
           >
             {step === "create"
-              ? "Enter your new 4-digit PIN"
-              : "Re-enter your new PIN to confirm"}
+              ? isForced
+                ? "Create a 4-digit PIN to secure your account"
+                : "Enter your new 4-digit PIN"
+              : "Re-enter your PIN to confirm"}
           </Text>
         </View>
 

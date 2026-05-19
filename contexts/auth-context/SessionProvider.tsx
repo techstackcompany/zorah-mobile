@@ -4,7 +4,6 @@ import {
   asyncStorageSetItem,
   clearAuthTokens,
 } from "@/lib/persistedStorageConfig";
-import { clearPin } from "@/lib/pinStorage";
 import { clearPersistedQueryCache } from "@/lib/reactQuery";
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { UserProfile } from "@/src/api/types";
@@ -18,6 +17,7 @@ import {
   PropsWithChildren,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { Alert } from "react-native";
 import { useAsyncStorageState, useStorageState } from "./useStorageState";
@@ -58,6 +58,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 ----------------------------------------------*/
 export function SessionProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
+  const isSigningOut = useRef(false);
   const [[isLoadingSession, session], setSession] = useStorageState("session");
   const [[isLoadingOnboarded, hasOnboarded], setHasOnboarded] =
     useAsyncStorageState("hasOnboarded");
@@ -101,9 +102,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
      Authentication methods
   ----------------------------------------------*/
 
-  const signIn = async (session: string) => setSession(session);
+  const signIn = async (session: string) => {
+    isSigningOut.current = false;
+    setSession(session);
+  };
 
   const signOut = useCallback(async () => {
+    isSigningOut.current = true;
     const profile = queryClient.getQueryData<UserProfile>(["auth", "profile"]);
     if (profile?.email) {
       await asyncStorageSetItem(
@@ -117,7 +122,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     queryClient.removeQueries();
     queryClient.clear();
 
-    await clearPin();
     await clearAuthTokens();
 
     try {
@@ -143,6 +147,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     setTokenRefreshFailureHandler(() => {
+      if (isSigningOut.current) return;
       signOut();
       Alert.alert(
         "Session Expired",

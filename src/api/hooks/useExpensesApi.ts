@@ -19,6 +19,7 @@ import {
   SpendingOverviewResponse,
   SpendingOverviewTimeframe,
   UpdateExpenseRequest,
+  UserProfile,
 } from "../types";
 
 export const useAddExpenseMutation = (
@@ -84,6 +85,13 @@ export const useAddExpenseMutation = (
 
     onSettled: (data, error, variables, context, mutationContext) => {
       void queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      const profile = queryClient.getQueryData<UserProfile>([
+        "auth",
+        "profile",
+      ]);
+      if (!profile?.biometricEnabled) {
+        void queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+      }
       callerOnSettled?.(data, error, variables, context, mutationContext);
     },
   });
