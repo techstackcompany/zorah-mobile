@@ -1,3 +1,4 @@
+import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -41,14 +42,15 @@ const PasswordTextInput = ({
           placeholder={placeholder || "Enter your password"}
           secureTextEntry={!showPassword}
           onFocus={focusField}
+          placeholderTextColor={COLORS.textFieldPlaceholder}
           onBlur={blurField}
-          className="flex-1 py-3 font-poppins text-base"
+          className="flex-1 py-3 font-poppins text-base text-textColor"
         />
         <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
           <Ionicons
             name={showPassword ? "eye-off-outline" : "eye-outline"}
             size={22}
-            color="#555"
+            color={COLORS.textFieldPlaceholder}
           />
         </TouchableOpacity>
       </View>

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { TextInput, TextInputProps, View } from "react-native";
 
 import Text from "@/components/ui/Text";
+import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 
 const sanitizeAmountInput = (input: string): string => {
@@ -161,7 +162,7 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
           containerClassName,
         )}
       >
-        <Text className={cn("mb-3 text-sm text-textColor/70 ", labelCLassName)}>
+        <Text className={cn("mb-3 text-sm text-textColor/70", labelCLassName)}>
           {label}
         </Text>
         <View className={cn("", inputWrapperClassName)}>
@@ -173,6 +174,7 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
             value={value ? displayValue : ""}
             onChangeText={handleChangeText}
             placeholder={placeholder}
+            placeholderTextColor={COLORS.textColor + "80"}
             className={cn(
               "py-0 text-4xl font-semibold text-textColor",
               className,
