@@ -1,6 +1,6 @@
-import PaymentModal, {
-  PaymentModalRef,
-} from "@/components/expense-planning/PaymentModal";
+import SingleSelectModal, {
+  SingleSelectModalRef,
+} from "@/components/expense-planning/SingleSelectModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import CategorySelector from "@/components/ui/CategorySelector";
@@ -14,14 +14,11 @@ import { addKeyboardBehavior, cn, getErrorMessage } from "@/lib/utils";
 import {
   useAddExpenseMutation,
   useGetCategoriesQuery,
-  useGetUserProfileQuery,
   useVoiceExpenseLoggingMutation,
 } from "@/src/api/hooks";
 
-import FeatureGateModal from "@/components/ui/FeatureGateModal";
 import { useNetworkStatus } from "@/contexts/network/NetworkProvider";
 import useKeyboardHeight from "@/hooks/useKeyboardHeight";
-import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import useVoiceTranscriber from "../hooks/useVoiceTranscriber";
@@ -132,7 +129,7 @@ const getPaymentMethodLabel = (value: string) =>
 const usePaymentMethodActions = (
   setFocusedField: React.Dispatch<React.SetStateAction<string | null>>,
 ) => {
-  const paymentModalRef = useRef<PaymentModalRef>(null);
+  const paymentModalRef = useRef<SingleSelectModalRef>(null);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
 
@@ -346,7 +343,7 @@ const AddExpenseScreen = () => {
       });
     },
     onError: (error) => {
-      console.log('error', error)
+      console.log("error", error);
       const aiResponse = (error.data as { aiResponse?: string } | undefined)
         ?.aiResponse;
       if (error.status === 400 && aiResponse) {
@@ -374,7 +371,6 @@ const AddExpenseScreen = () => {
 
   const handleMicPress = useCallback(async () => {
     if (recognizing) {
-   
       const captured = getFullTranscript().trim();
       if (captured) {
         setVoiceStatus("transcribed");
@@ -540,7 +536,7 @@ const AddExpenseScreen = () => {
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
-              paddingBottom: keyboardHeight > 0 ? 24 : 100,
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 100,
             }}
           >
             <View className="mt-4 gap-6">
@@ -659,7 +655,7 @@ const AddExpenseScreen = () => {
                   ) : null}
                   {voiceStatus === "needs_follow_up" ? (
                     <View className="gap-4">
-                      <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                      <View className="border-amber-200 bg-amber-50 rounded-2xl border px-4 py-4">
                         <View className="mb-2 flex-row items-center gap-2">
                           <Ionicons
                             name="chatbubble-ellipses-outline"
@@ -683,13 +679,22 @@ const AddExpenseScreen = () => {
                         onChangeText={setFollowUpAnswer}
                         placeholder="Type your answer here..."
                         returnKeyType="done"
+                        onFocus={() =>
+                          setTimeout(
+                            () =>
+                              scrollViewRef.current?.scrollToEnd({
+                                animated: true,
+                              }),
+                            400,
+                          )
+                        }
                       />
                     </View>
                   ) : null}
 
                   {voiceStatus === "needs_category" ? (
                     <View className="gap-4">
-                      <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                      <View className="border-amber-200 bg-amber-50 rounded-2xl border px-4 py-4">
                         <View className="mb-2 flex-row items-center gap-2">
                           <Ionicons
                             name="chatbubble-ellipses-outline"
@@ -910,11 +915,11 @@ const AddExpenseScreen = () => {
           </View>
         </View>
       </KeyboardAvoidingView>
-      <PaymentModal
+      <SingleSelectModal
         ref={paymentModalRef}
         onClose={closePaymentModal}
-        paymentMethods={PAYMENT_METHODS}
-        selectedMethod={paymentMethod}
+        options={PAYMENT_METHODS}
+        selectedValue={paymentMethod}
         onSelect={handleSelectPaymentMethod}
       />
     </MainContainer>

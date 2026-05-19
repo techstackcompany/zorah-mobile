@@ -1,6 +1,6 @@
-import PaymentModal, {
-  PaymentModalRef,
-} from "@/components/expense-planning/PaymentModal";
+import SingleSelectModal, {
+  SingleSelectModalRef,
+} from "@/components/expense-planning/SingleSelectModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
@@ -8,10 +8,10 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import SelectButton from "@/components/ui/SelectButton";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { setBillLeadDays } from "@/lib/localNotifications";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { useAddBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
-import { setBillLeadDays } from "@/lib/localNotifications";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -72,8 +72,8 @@ const AddBillScreen = () => {
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [leadDays, setLeadDays] = useState("1");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const paymentModalRef = useRef<PaymentModalRef>(null);
-  const leadDaysModalRef = useRef<PaymentModalRef>(null);
+  const paymentModalRef = useRef<SingleSelectModalRef>(null);
+  const leadDaysModalRef = useRef<SingleSelectModalRef>(null);
 
   const { data: categories = [], isPending: isCategoriesLoading } =
     useGetCategoriesQuery("budget");
@@ -237,7 +237,7 @@ const AddBillScreen = () => {
     addBill({
       name: billName,
       amount: parseFloat(amount),
-      dueDate: dueDate.toISOString(), // Direct ISO conversion with time
+      dueDate: dueDate.toISOString(),
       category,
       paymentMethod,
       reminderEnabled,
@@ -383,45 +383,45 @@ const AddBillScreen = () => {
                   }
                   placeholder="Select payment method"
                   onPress={openPaymentModal}
-                  isOpen={!!paymentMethod}
-                  isFocused={focusedField === "paymentMethod"}
+                  isOpen={focusedField === "payment"}
+                  isFocused={focusedField === "payment"}
                   className="mt-2"
                 />
               </View>
 
-                <View className="mt-6">
-                  <View className="flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-4">
-                    <Text className="text-base text-textColor">
-                      Enable Reminder
-                    </Text>
-                    <Switch
-                      value={reminderEnabled}
-                      onValueChange={setReminderEnabled}
-                      trackColor={{
-                        false: COLORS.grey,
-                        true: COLORS.secondary_400,
-                      }}
-                      thumbColor="#FFFFFF"
-                      ios_backgroundColor="#D7DCE5"
-                    />
-                  </View>
+              <View className="mt-6">
+                <View className="flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                  <Text className="text-base text-textColor">
+                    Enable Reminder
+                  </Text>
+                  <Switch
+                    value={reminderEnabled}
+                    onValueChange={setReminderEnabled}
+                    trackColor={{
+                      false: COLORS.grey,
+                      true: COLORS.secondary_400,
+                    }}
+                    thumbColor="#FFFFFF"
+                    ios_backgroundColor="#D7DCE5"
+                  />
                 </View>
+              </View>
 
-                {reminderEnabled && (
-                  <View className="mt-6">
-                    <Text className="text-sm text-textColor">Notify me</Text>
-                    <SelectButton
-                      value={
-                        leadDayOptions.find((m) => m.key === leadDays)?.label
-                      }
-                      placeholder="Select when to be notified"
-                      onPress={openLeadDaysModal}
-                      isOpen={!!leadDays}
-                      isFocused={focusedField === "leadDays"}
-                      className="mt-2"
-                    />
-                  </View>
-                )}
+              {reminderEnabled && (
+                <View className="mt-6">
+                  <Text className="text-sm text-textColor">Notify me</Text>
+                  <SelectButton
+                    value={
+                      leadDayOptions.find((m) => m.key === leadDays)?.label
+                    }
+                    placeholder="Select when to be notified"
+                    onPress={openLeadDaysModal}
+                    isOpen={focusedField === "leadDays"}
+                    isFocused={focusedField === "leadDays"}
+                    className="mt-2"
+                  />
+                </View>
+              )}
 
               <Button
                 title={isSubmitting ? "Adding..." : "Add Bill"}
@@ -439,24 +439,25 @@ const AddBillScreen = () => {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
-        <PaymentModal
+        <SingleSelectModal
           ref={paymentModalRef}
           onClose={closePaymentModal}
-          paymentMethods={paymentMethods.map((m) => ({
+          options={paymentMethods.map((m) => ({
             label: m.label,
             value: m.key,
           }))}
-          selectedMethod={paymentMethod}
+          selectedValue={paymentMethod}
           onSelect={handleSelectPaymentMethod}
         />
-        <PaymentModal
+        <SingleSelectModal
+          title="When to be notified?"
           ref={leadDaysModalRef}
           onClose={closeLeadDaysModal}
-          paymentMethods={leadDayOptions.map((m) => ({
+          options={leadDayOptions.map((m) => ({
             label: m.label,
             value: m.key,
           }))}
-          selectedMethod={leadDays}
+          selectedValue={leadDays}
           onSelect={handleSelectLeadDays}
         />
       </MainContainer>
