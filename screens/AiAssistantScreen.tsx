@@ -158,18 +158,10 @@ const AiAssistantScreen = () => {
     }
   }, [userData?.usageMetrics?.lastInteractionDate, queryClient]);
 
-  const isLimitReached =
-    !isSetupComplete && (userData?.usageMetrics?.aiSessionsCount || 0) >= 2;
-
   const { startRecording, stopRecording, isRecording, isProcessing } =
     useSpeechRecognition({
       onResult: (text) => {
         setDraftMessage((prev) => (prev ? `${prev} ${text}` : text));
-        Toast.show({
-          type: "success",
-          text1: "Voice input received",
-          text2: text,
-        });
       },
       onError: (error) => {
         Toast.show({

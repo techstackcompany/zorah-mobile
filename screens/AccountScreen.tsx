@@ -3,10 +3,10 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { cn, extractUserData } from "@/lib/utils";
+import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetUserProfileQuery } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { RelativePathString, useRouter } from "expo-router";
@@ -84,7 +84,7 @@ const AccountScreen = () => {
   };
 
   return (
-    <MainContainer edges={[]} className="bg-lightMuted pb-0">
+    <MainContainer edges={[]} className="">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -248,8 +248,8 @@ const AccountRow = ({
 
 const styles = StyleSheet.create({
   contentContainer: {
-    paddingBottom: 40,
     gap: 18,
+    paddingBottom: 100,
   },
   avatarCard: {
     backgroundColor: COLORS.purpleLight,

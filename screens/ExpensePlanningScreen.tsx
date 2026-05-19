@@ -579,7 +579,7 @@ const ExpensePlanningScreen = () => {
             </View>
             <TouchableOpacity
               activeOpacity={0.7}
-              style={[styles.floatingButton, { bottom: 16 + bottom }]}
+              style={[styles.floatingButton, { bottom: 98 + bottom }]}
               onPress={() => router.push(addEntryRoute)}
             >
               <Ionicons name="add" size={24} color="#FFFFFF" />
@@ -589,7 +589,7 @@ const ExpensePlanningScreen = () => {
 
         <TouchableOpacity
           activeOpacity={0.8}
-          style={[styles.floatingButton, { bottom: 16 + bottom }]}
+          style={[styles.floatingButton, { bottom: 98 + bottom }]}
           onPress={() => router.push(addEntryRoute)}
         >
           <Ionicons name="add" size={24} color="#FFFFFF" />
