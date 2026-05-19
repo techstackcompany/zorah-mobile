@@ -7,25 +7,22 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 
-type PaymentModalProps = {
+type SingleSelectModalProps = {
   onClose?: () => void;
-  paymentMethods: { label: string; value: string }[];
-  selectedMethod: string;
-  onSelect: (methodValue: string) => void;
+  options: { label: string; value: string }[];
+  selectedValue: string;
+  onSelect: (value: string) => void;
   title?: string;
 };
 
-export type PaymentModalRef = SlideUpModalRef;
+export type SingleSelectModalRef = SlideUpModalRef;
 
-const PaymentModal = forwardRef<PaymentModalRef, PaymentModalProps>(
+const SingleSelectModal = forwardRef<
+  SingleSelectModalRef,
+  SingleSelectModalProps
+>(
   (
-    {
-      onClose,
-      paymentMethods,
-      selectedMethod,
-      onSelect,
-      title = "Payment Method",
-    },
+    { onClose, options, selectedValue, onSelect, title = "Payment Method" },
     ref,
   ) => {
     const modalRef = useRef<SlideUpModalRef>(null);
@@ -33,6 +30,7 @@ const PaymentModal = forwardRef<PaymentModalRef, PaymentModalProps>(
     useImperativeHandle(ref, () => ({
       present: () => modalRef.current?.present(),
       dismiss: () => modalRef.current?.dismiss(),
+      isOpen: () => modalRef.current?.isOpen(),
     }));
 
     return (
@@ -46,12 +44,12 @@ const PaymentModal = forwardRef<PaymentModalRef, PaymentModalProps>(
         className="px-0"
       >
         <View className="gap-2">
-          {paymentMethods.map((method) => {
-            const isSelected = selectedMethod === method.value;
+          {options.map((option) => {
+            const isSelected = selectedValue === option.value;
             return (
               <Pressable
-                key={method.value}
-                onPress={() => onSelect(method.value)}
+                key={option.value}
+                onPress={() => onSelect(option.value)}
                 className={cn(
                   "rounded-2xl px-4 py-3",
                   isSelected ? "bg-primary_100" : "bg-white",
@@ -65,7 +63,7 @@ const PaymentModal = forwardRef<PaymentModalRef, PaymentModalProps>(
                       isSelected && "text-primary_400",
                     )}
                   >
-                    {method.label}
+                    {option.label}
                   </Text>
                   {isSelected && (
                     <Ionicons
@@ -84,6 +82,6 @@ const PaymentModal = forwardRef<PaymentModalRef, PaymentModalProps>(
   },
 );
 
-PaymentModal.displayName = "PaymentModal";
+SingleSelectModal.displayName = "SingleSelectModal";
 
-export default PaymentModal;
+export default SingleSelectModal;

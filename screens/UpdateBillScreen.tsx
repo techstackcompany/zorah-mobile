@@ -1,6 +1,6 @@
-import PaymentModal, {
-  PaymentModalRef,
-} from "@/components/expense-planning/PaymentModal";
+import SingleSelectModal, {
+  SingleSelectModalRef,
+} from "@/components/expense-planning/SingleSelectModal";
 import MainContainer from "@/components/layouts/MainContainer";
 import AmountInput from "@/components/ui/AmountInput";
 import Button from "@/components/ui/Button";
@@ -8,10 +8,10 @@ import CategorySelector from "@/components/ui/CategorySelector";
 import SelectButton from "@/components/ui/SelectButton";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import { getBillLeadDays, setBillLeadDays } from "@/lib/localNotifications";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/src/api/hooks";
 import { useUpdateBillReminderMutation } from "@/src/api/hooks/useBillRemindersApi";
-import { getBillLeadDays, setBillLeadDays } from "@/lib/localNotifications";
 import { BillReminder } from "@/src/api/types";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
@@ -100,8 +100,8 @@ const UpdateBillScreen = () => {
   );
   const [leadDays, setLeadDays] = useState("1");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const paymentModalRef = useRef<PaymentModalRef>(null);
-  const leadDaysModalRef = useRef<PaymentModalRef>(null);
+  const paymentModalRef = useRef<SingleSelectModalRef>(null);
+  const leadDaysModalRef = useRef<SingleSelectModalRef>(null);
 
   useEffect(() => {
     if (existingBill) {
@@ -504,24 +504,24 @@ const UpdateBillScreen = () => {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
-        <PaymentModal
+        <SingleSelectModal
           ref={paymentModalRef}
           onClose={closePaymentModal}
-          paymentMethods={paymentMethods.map((m) => ({
+          options={paymentMethods.map((m) => ({
             label: m.label,
             value: m.key,
           }))}
-          selectedMethod={paymentMethod}
+          selectedValue={paymentMethod}
           onSelect={handleSelectPaymentMethod}
         />
-        <PaymentModal
+        <SingleSelectModal
           ref={leadDaysModalRef}
           onClose={closeLeadDaysModal}
-          paymentMethods={leadDayOptions.map((m) => ({
+          options={leadDayOptions.map((m) => ({
             label: m.label,
             value: m.key,
           }))}
-          selectedMethod={leadDays}
+          selectedValue={leadDays}
           onSelect={handleSelectLeadDays}
         />
       </MainContainer>
