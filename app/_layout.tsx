@@ -28,27 +28,29 @@ export default function RootLayout() {
 
 const ChildrenComponent = () => {
   return (
-    <ReactQueryProvider>
-      <NetworkProvider>
-        <SessionProvider>
-          <PushNotificationsProvider>
-            <SettingsProvider>
-              <AppLockProvider>
-                <AppWrapper>
-                  <FontProvider>
-                    <BottomSheetModalProvider>
-                      <OfflineNotice />
-                      <RootNavigator />
-                    </BottomSheetModalProvider>
-                    <Toast config={toastConfig} />
-                  </FontProvider>
-                </AppWrapper>
-              </AppLockProvider>
-            </SettingsProvider>
-          </PushNotificationsProvider>
-        </SessionProvider>
-      </NetworkProvider>
-    </ReactQueryProvider>
+    <SafeAreaProvider>
+      <ReactQueryProvider>
+        <NetworkProvider>
+          <SessionProvider>
+            <PushNotificationsProvider>
+              <SettingsProvider>
+                <AppLockProvider>
+                  <AppWrapper>
+                    <FontProvider>
+                      <BottomSheetModalProvider>
+                        <OfflineNotice />
+                        <RootNavigator />
+                      </BottomSheetModalProvider>
+                      <Toast config={toastConfig} />
+                    </FontProvider>
+                  </AppWrapper>
+                </AppLockProvider>
+              </SettingsProvider>
+            </PushNotificationsProvider>
+          </SessionProvider>
+        </NetworkProvider>
+      </ReactQueryProvider>
+    </SafeAreaProvider>
   );
 };
 
@@ -66,11 +68,9 @@ const AppWrapper = ({ children }: PropsWithChildren) => {
     [markActive],
   );
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1 }} {...panHandlers}>
-        {children}
-        <LockScreen visible={isLocked} />
-      </View>
-    </SafeAreaProvider>
+    <View style={{ flex: 1 }} {...panHandlers}>
+      {children}
+      <LockScreen visible={isLocked} />
+    </View>
   );
 };
