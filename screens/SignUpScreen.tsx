@@ -1,5 +1,6 @@
 // import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import TextInputField from "@/components/ui/TextInputField";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -35,7 +35,6 @@ const OriginalSignUpScreen = () => {
     password: "",
     phoneNumber: "",
   });
-  const [focused, setFocused] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -123,6 +122,12 @@ const OriginalSignUpScreen = () => {
     signIn,
   ]);
 
+  const handleFormChange = (field: string, value: string) => {
+    setApiErrorMessage(null);
+    setForm({ ...form, [field]: value });
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -146,152 +151,79 @@ const OriginalSignUpScreen = () => {
           >
             Create Your Account
           </Text>
-          <View className="mb-4 flex-row items-center justify-between gap-2">
-            <View className="flex-1">
-              <Text className="mb-2 text-sm text-tertiary">First Name</Text>
-              <TextInput
-                value={form.firstName}
-                onChangeText={(t) => {
-                  setApiErrorMessage(null);
-                  setForm({ ...form, firstName: t });
-                }}
-                onFocus={() => setFocused("firstName")}
-                onBlur={() => setFocused(null)}
-                placeholderTextColor={COLORS.grey}
-                placeholder="John"
-                className={cn(
-                  "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
-                  focused === "firstName" && "focus",
-                  errors.firstName
-                    ? "border-red-500"
-                    : "focus:border-primary_400",
-                )}
-              />
-              {errors.firstName && (
-                <Text className="mt-1 text-sm text-red-500">
-                  {errors.firstName}
-                </Text>
-              )}
-            </View>
-            <View className="flex-1">
-              <Text className="mb-2 text-sm text-tertiary">Last Name</Text>
-              <TextInput
-                value={form.lastName}
-                placeholderTextColor={COLORS.grey}
-                onChangeText={(t) => {
-                  setApiErrorMessage(null);
-                  setForm({ ...form, lastName: t });
-                }}
-                onFocus={() => setFocused("lastName")}
-                onBlur={() => setFocused(null)}
-                placeholder="Babatunde"
-                className={cn(
-                  "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
-                  focused === "lastName" && "focus",
-                  errors.lastName
-                    ? "border-red-500"
-                    : "focus:border-primary_400",
-                )}
-              />
-              {errors.lastName && (
-                <Text className="mt-1 text-sm text-red-500">
-                  {errors.lastName}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          <View className="mb-4">
-            <Text className="mb-2 text-sm text-tertiary">Phone Number</Text>
-            <TextInput
-              value={form.phoneNumber}
-              placeholderTextColor={COLORS.grey}
-              onChangeText={(t) => {
-                setApiErrorMessage(null);
-                setForm({ ...form, phoneNumber: t });
-              }}
-              onFocus={() => setFocused("phoneNumber")}
-              onBlur={() => setFocused(null)}
-              placeholder="08012000000"
-              keyboardType="phone-pad"
-              className={cn(
-                "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
-                focused === "phoneNumber" && "focus",
-                errors.phoneNumber
-                  ? "border-red-500"
-                  : "focus:border-primary_400",
-              )}
+          <View className="mb-4 flex-row items-start justify-between gap-2">
+            <TextInputField
+              containerClassName="flex-1"
+              label="First Name"
+              value={form.firstName}
+              onChangeText={(t) => handleFormChange("firstName", t)}
+              placeholderTextColor={COLORS.textFieldPlaceholder}
+              placeholder="John"
+              error={errors.firstName}
+              inputClassName="py-3 font-poppins"
+              className="rounded-xl"
             />
-            {errors.phoneNumber && (
-              <Text className="mt-1 text-sm text-red-500">
-                {errors.phoneNumber}
-              </Text>
-            )}
-          </View>
-
-          <View className="mb-4">
-            <Text className="mb-2 text-sm text-tertiary">Email</Text>
-            <TextInput
-              value={form.email}
-              placeholderTextColor={COLORS.grey}
-              onChangeText={(t) => {
-                setApiErrorMessage(null);
-                setForm({ ...form, email: t });
-              }}
-              onFocus={() => setFocused("email")}
-              onBlur={() => setFocused(null)}
-              placeholder="example@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className={cn(
-                "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
-                focused === "email" && "focus",
-                errors.email ? "border-red-500" : "focus:border-primary_400",
-              )}
+            <TextInputField
+              containerClassName="flex-1"
+              label="Last Name"
+              value={form.lastName}
+              onChangeText={(t) => handleFormChange("lastName", t)}
+              placeholderTextColor={COLORS.textFieldPlaceholder}
+              placeholder="Babatunde"
+              error={errors.lastName}
+              inputClassName="py-3 font-poppins"
+              className="rounded-xl"
             />
-            {errors.email && (
-              <Text className="mt-1 text-sm text-red-500">{errors.email}</Text>
-            )}
           </View>
 
-          <View className="mb-6">
-            <Text className="mb-2 text-sm text-tertiary">Password</Text>
-            <View
-              className={cn(
-                "flex-row items-center rounded-xl border bg-white px-4",
-                focused === "password" && "border-blue-500",
-                errors.password
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500",
-              )}
-            >
-              <TextInput
-                value={form.password}
-                onChangeText={(t) => {
-                  setApiErrorMessage(null);
-                  setForm({ ...form, password: t });
-                }}
-                onFocus={() => setFocused("password")}
-                onBlur={() => setFocused(null)}
-                placeholderTextColor={COLORS.grey}
-                placeholder="Create a Password"
-                secureTextEntry={!showPassword}
-                className="flex-1 py-3 font-poppins text-base "
-              />
+          <TextInputField
+            containerClassName="mb-4"
+            label="Phone Number"
+            value={form.phoneNumber}
+            onChangeText={(t) => handleFormChange("phoneNumber", t)}
+            placeholderTextColor={COLORS.textFieldPlaceholder}
+            placeholder="08012000000"
+            keyboardType="phone-pad"
+            error={errors.phoneNumber}
+            inputClassName="py-3 font-poppins"
+            className="rounded-xl"
+          />
+
+          <TextInputField
+            containerClassName="mb-4"
+            label="Email"
+            value={form.email}
+            onChangeText={(t) => handleFormChange("email", t)}
+            placeholderTextColor={COLORS.textFieldPlaceholder}
+            placeholder="example@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={errors.email}
+            inputClassName="py-3 font-poppins"
+            className="rounded-xl"
+          />
+
+          <TextInputField
+            containerClassName="mb-6"
+            label="Password"
+            value={form.password}
+            onChangeText={(t) => handleFormChange("password", t)}
+            placeholderTextColor={COLORS.textFieldPlaceholder}
+            placeholder="Create a Password"
+            secureTextEntry={!showPassword}
+            error={errors.password}
+            inputClassName="py-3 font-poppins"
+            className="rounded-xl"
+            rightElement={
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={22}
-                  color="#555"
+                  color={COLORS.textFieldPlaceholder}
                 />
               </TouchableOpacity>
-            </View>
-            {errors.password && (
-              <Text className="mt-1 text-sm text-red-500">
-                {errors.password}
-              </Text>
-            )}
-          </View>
+            }
+          />
 
           <Pressable
             onPress={() => {
