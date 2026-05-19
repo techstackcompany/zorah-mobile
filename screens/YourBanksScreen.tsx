@@ -195,7 +195,7 @@ const YourBanksScreen = ({
       <View className="flex-1">
         <SetupHeader
           currentStep={4}
-          totalSteps={5}
+          totalSteps={4}
           title="Your Banks"
           description="Select your banks to enable automatic expense tracking"
         />

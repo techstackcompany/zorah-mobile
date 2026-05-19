@@ -250,7 +250,7 @@ const SubmitKycSetupScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={3}
-          totalSteps={5}
+          totalSteps={4}
           title="Wallet Creation"
           description="Please provide your KYC information to create your wallet"
         />

@@ -196,7 +196,7 @@ const FinancialGoalsScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={1}
-          totalSteps={5}
+          totalSteps={4}
           title="Financial Goals"
           description="What would you like to achieve with Zorah?"
         />

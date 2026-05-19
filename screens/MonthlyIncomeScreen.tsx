@@ -239,7 +239,7 @@ const MonthlyIncomeScreen = () => {
       <View className="flex-1">
         <SetupHeader
           currentStep={2}
-          totalSteps={5}
+          totalSteps={4}
           title="Monthly Income"
           description="Help us personalize your budgeting experience"
         />
