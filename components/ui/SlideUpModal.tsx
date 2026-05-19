@@ -21,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 
 type SlideUpModalProps = {
   title?: string;
@@ -37,6 +38,7 @@ type SlideUpModalProps = {
 export type SlideUpModalRef = {
   present: () => void;
   dismiss: () => void;
+  isOpen: () => boolean | undefined;
 };
 
 const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
@@ -55,6 +57,8 @@ const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
     ref,
   ) => {
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+    const animatedIndex = useSharedValue(-1);
+    const isOpen = useDerivedValue(() => animatedIndex.value >= 0);
 
     const snapPoints = useMemo(() => {
       if (customSnapPoints) return customSnapPoints;
@@ -86,6 +90,7 @@ const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
     useImperativeHandle(ref, () => ({
       present: () => bottomSheetModalRef.current?.present(),
       dismiss: () => bottomSheetModalRef.current?.dismiss(),
+      isOpen: () => isOpen.value,
     }));
 
     return (
@@ -95,6 +100,7 @@ const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
         onDismiss={handleDismiss}
         backdropComponent={renderBackdrop}
         enablePanDownToClose
+        animatedIndex={animatedIndex}
         backgroundStyle={styles.modal}
         handleComponent={null}
       >

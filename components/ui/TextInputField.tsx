@@ -13,6 +13,8 @@ import Text from "./Text";
 
 export type TextInputFieldProps = {
   label?: string;
+  error?: string;
+  rightElement?: React.ReactNode;
   containerClassName?: string;
   inputClassName?: string;
   onFocusChange?: (focused: boolean) => void;
@@ -20,6 +22,8 @@ export type TextInputFieldProps = {
 
 const TextInputField = ({
   label,
+  error,
+  rightElement,
   containerClassName,
   inputClassName,
   onFocusChange,
@@ -53,17 +57,28 @@ const TextInputField = ({
       {label ? (
         <Text className="text-sm text-textColor/70">{label}</Text>
       ) : null}
-      <TextInput
-        onFocus={handleFocus}
-        onBlur={handleBlur}
+      <View
         className={cn(
-          "mt-2 rounded-2xl border bg-white px-4 py-4 font-nunitoMedium text-base",
+          "mt-2 flex-row items-center rounded-2xl border bg-white px-4",
           isFocused ? "border-primary_400" : "border-gray-200",
+          error ? "border-red-500" : "",
           className,
-          inputClassName,
         )}
-        {...rest}
-      />
+      >
+        <TextInput
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          className={cn(
+            "flex-1 py-4 font-nunitoMedium text-base text-textColor",
+            inputClassName,
+          )}
+          {...rest}
+        />
+        {rightElement}
+      </View>
+      {error ? (
+        <Text className="mt-1 text-sm text-red-500">{error}</Text>
+      ) : null}
     </View>
   );
 };
