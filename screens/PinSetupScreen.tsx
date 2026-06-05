@@ -2,7 +2,7 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useAppLock } from "@/contexts/app-lock/useAppLock";
 import { savePin } from "@/lib/pinStorage";
-import { useGetUserProfileQuery, useSetUserPinMutation } from "@/src/api/hooks";
+import { useGetUserProfileQuery, useSetUserPinMutation, useToggleBiometricsMutation } from "@/src/api/hooks";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -37,6 +37,7 @@ const PinSetupScreen = () => {
   const queryClient = useQueryClient();
   const { syncLockState, needsPinSetup } = useAppLock();
   const { data: profile } = useGetUserProfileQuery();
+  const { mutateAsync: toggleBiometrics } = useToggleBiometricsMutation();
   const isForced = needsPinSetup || !profile?.biometricEnabled;
   const [step, setStep] = useState<PinSetupStep>("create");
   const [pin, setPin] = useState("");
@@ -52,12 +53,19 @@ const PinSetupScreen = () => {
   const setPinMutation = useSetUserPinMutation({
     onSuccess: async (_, variables) => {
       await savePin(variables.pin);
+
+      if (!profile?.biometricEnabled) {
+        await toggleBiometrics({ enabled: true });
+      }
+
       await syncLockState();
 
       Toast.show({
         type: "success",
-        text1: "PIN Updated Successfully",
-        text2: "Your PIN has been successfully updated.",
+        text1: !profile?.biometricEnabled ? "PIN Set Up Successfully" : "PIN Updated Successfully",
+        text2: !profile?.biometricEnabled
+          ? "Your account is now secured with a PIN."
+          : "Your PIN has been successfully updated.",
       });
 
       await queryClient.refetchQueries({ queryKey: ["auth", "profile"] });
