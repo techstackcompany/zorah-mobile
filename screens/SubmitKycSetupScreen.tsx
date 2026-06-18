@@ -511,8 +511,32 @@ const StateField = ({
   setAddress: (value: string) => void;
 } & FieldProps) => {
   const [showStateList, setShowStateList] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<TextInput | null>(null);
   const { data: nigerianStates = [], isLoading: isLoadingStates } =
     useNigerianStatesApi();
+
+  const filteredStates = useMemo(
+    () =>
+      searchQuery.trim()
+        ? nigerianStates.filter((s) =>
+            s.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+        : nigerianStates,
+    [nigerianStates, searchQuery],
+  );
+
+  const openList = () => {
+    setShowStateList(true);
+    setTimeout(() => searchInputRef.current?.focus(), 50);
+  };
+
+  const closeList = () => {
+    setShowStateList(false);
+    setSearchQuery("");
+    handleBlur("address");
+  };
+
   return (
     <View style={styles.field} onLayout={handleFieldLayout("address")}>
       <Text className="text-sm text-textColor">State</Text>
@@ -524,10 +548,7 @@ const StateField = ({
           touched.address && errors.address && styles.inputError,
         ]}
         accessibilityRole="button"
-        onPress={() => {
-          setShowStateList((s) => !s);
-          handleBlur("address");
-        }}
+        onPress={() => (showStateList ? closeList() : openList())}
       >
         <Text className={address ? "text-textColor" : "text-[#9AA5B1]"}>
           {address || "Select your state"}
@@ -536,38 +557,71 @@ const StateField = ({
         {isLoadingStates ? (
           <ActivityIndicator size="small" color="#9AA5B1" />
         ) : (
-          <Ionicons name="chevron-down" size={16} color="#9AA5B1" />
+          <Ionicons
+            name={showStateList ? "chevron-up" : "chevron-down"}
+            size={16}
+            color="#9AA5B1"
+          />
         )}
       </Pressable>
 
       {showStateList && nigerianStates.length > 0 ? (
-        <ScrollView
-          style={styles.selectList}
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-        >
-          {nigerianStates.map((state) => (
-            <Pressable
-              key={state.state_code}
-              style={[
-                styles.selectItem,
-                address === state.name && styles.selectItemActive,
-              ]}
-              onPress={() => {
-                setAddress(state.name);
-                setShowStateList(false);
-              }}
-            >
-              <Text
-                className={`text-sm ${
-                  address === state.name ? "text-primary_400" : "text-textColor"
-                }`}
-              >
-                {state.name}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={styles.selectList}>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search-outline" size={16} color="#9AA5B1" />
+            <TextInput
+              ref={searchInputRef}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search state..."
+              placeholderTextColor="#9AA5B1"
+              style={styles.searchInput}
+              autoCorrect={false}
+              onBlur={() => setTimeout(closeList, 150)}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                <Ionicons name="close-circle" size={16} color="#9AA5B1" />
+              </Pressable>
+            )}
+          </View>
+          <ScrollView
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+            keyboardShouldPersistTaps="handled"
+            style={styles.selectScroll}
+          >
+            {filteredStates.length > 0 ? (
+              filteredStates.map((state) => (
+                <Pressable
+                  key={state.state_code}
+                  style={[
+                    styles.selectItem,
+                    address === state.name && styles.selectItemActive,
+                  ]}
+                  onPress={() => {
+                    setAddress(state.name);
+                    closeList();
+                  }}
+                >
+                  <Text
+                    className={`text-sm ${
+                      address === state.name
+                        ? "text-primary_400"
+                        : "text-textColor"
+                    }`}
+                  >
+                    {state.name}
+                  </Text>
+                </Pressable>
+              ))
+            ) : (
+              <View style={styles.selectItem}>
+                <Text className="text-sm text-[#9AA5B1]">No states found</Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
       ) : null}
 
       {touched.address && errors.address && (
@@ -688,7 +742,24 @@ const styles = StyleSheet.create({
     borderColor: "#E3E7EF",
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    maxHeight: 200,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E3E7EF",
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textColor,
+    paddingVertical: 0,
+  },
+  selectScroll: {
+    maxHeight: 160,
   },
   selectItem: {
     paddingHorizontal: 14,
