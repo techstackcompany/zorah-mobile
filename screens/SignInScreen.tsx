@@ -161,7 +161,7 @@ const SignInScreen = () => {
               onFocus={() => setFocused("email")}
               onBlur={() => setFocused(null)}
               className={cn(
-                "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base",
+                "rounded-xl border border-gray-200 bg-white px-4 py-3 font-poppins text-base  placeholder:text-textFieldPlaceholder",
                 focused === "email" && "focus",
                 errors.email ? "border-red-500" : "focus:border-primary_400",
               )}

@@ -28,6 +28,7 @@ import {
   useGetNotificationsQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
+  useGetFinancialTipQuery,
 } from "@/src/api/hooks";
 import { Image, ImageSource } from "expo-image";
 import { useRouter } from "expo-router";
@@ -142,6 +143,8 @@ const HomeScreen = () => {
     isLoading: isLoadingCategories,
     refetch: refetchCategories,
   } = useGetCategoriesQuery("expense");
+
+  const { refetch: refetchFinancialTip, isError: isFinancialTipError } = useGetFinancialTipQuery();
 
   const expenseSummary = useMemo(() => {
     if (!expenseSummaryData?.byCategory) return { total: 0, segments: [] };
@@ -332,6 +335,9 @@ const HomeScreen = () => {
                   refetchCategories();
                   refetchMonthlyExpenses();
                   refetchNotifications();
+                  if (isFinancialTipError) {
+                    refetchFinancialTip();
+                  }
                 }}
               />
             }

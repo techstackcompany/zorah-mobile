@@ -6,10 +6,6 @@ import { ActivityIndicator, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import Text from "../ui/Text";
 
-const FALLBACK_MARKDOWN = `Here are 2 quick budget tips:
-
-1. **Reduce food expenses by ₦5,000.** You're spending ₦20,000 more than similar users. Try cooking at home 2 more days weekly.
-2. **Set up a Down Owambe budget.** December is party season, so create a separate budget for events and overspending.`;
 
 const markdownStyles = {
   body: {
@@ -37,7 +33,7 @@ const markdownStyles = {
 
 const SmartBudgetTips = memo(() => {
   const { data, isLoading, error } = useGetFinancialTipQuery();
-  const markdownContent = data?.reply?.trim() || FALLBACK_MARKDOWN;
+  const markdownContent = data?.reply?.trim();
 
   return (
     <View className="mt-6 px-6">
