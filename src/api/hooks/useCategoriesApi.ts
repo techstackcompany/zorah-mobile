@@ -21,16 +21,29 @@ export const useGetCategoriesQuery = (
       >({
         ...endpoint,
       });
-      return (
-        response.data?.subcategories.map(
-          ({ _id, image, name }: CategoryResponseItem) => ({
-            id: _id,
-            key: name.toLowerCase(),
-            icon: image,
-            label: name.toLowerCase(),
-          }),
-        ) || []
-      );
+      if (Array.isArray(response?.data)) {
+        return (
+          response.data[0].subcategories.map(
+            ({ _id, image, name }: CategoryResponseItem) => ({
+              id: _id,
+              key: name.toLowerCase(),
+              icon: image,
+              label: name.toLowerCase(),
+            }),
+          ) || []
+        );
+      } else if (response.data) {
+        return (
+          response.data.subcategories.map(
+            ({ _id, image, name }: CategoryResponseItem) => ({
+              id: _id,
+              key: name.toLowerCase(),
+              icon: image,
+              label: name.toLowerCase(),
+            }),
+          ) || []
+        );
+      }
     },
     ...options,
   });
