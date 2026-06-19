@@ -1,6 +1,7 @@
 import SetupContainer from "@/components/layouts/SetupContainer";
 import SetupHeader from "@/components/setup/SetupHeader";
 import Button from "@/components/ui/Button";
+import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import { setupInfo } from "@/constants";
 import COLORS from "@/constants/colors";
@@ -369,30 +370,31 @@ const DateOfBirthField = ({
   setDateOfBirthRaw: (date: Date) => void;
   dateOfBirthRaw: Date | null;
 } & FieldProps) => {
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date | null>(null);
+  const sheetRef = useRef<SlideUpModalRef>(null);
+  const maxDate = getMaxDate();
 
-  const handleDateChange = (
-    event: DateTimePickerEvent,
-    date: Date | undefined,
-  ) => {
-    setShowDatePicker(false);
-    if (event.type === "set" && date) {
-      setDateOfBirthRaw(date);
-    }
+  const handleOpen = () => {
+    setPendingDate(dateOfBirthRaw ?? maxDate);
+    sheetRef.current?.present();
   };
 
-  const maxDate = getMaxDate();
+  const handleConfirm = () => {
+    if (pendingDate) setDateOfBirthRaw(pendingDate);
+    sheetRef.current?.dismiss();
+    handleBlur("dateOfBirth");
+  };
+
+  const handleCancel = () => {
+    handleBlur("dateOfBirth");
+  };
 
   return (
     <View style={styles.field} onLayout={handleFieldLayout("dob")}>
       <Text className="text-sm text-textColor">Date Of Birth</Text>
-      <Pressable
-        onPress={() => setShowDatePicker(!showDatePicker)}
-        style={styles.inputWithIcon}
-      >
+      <Pressable onPress={handleOpen} style={styles.inputWithIcon}>
         <TextInput
           value={dateOfBirth}
-          keyboardType="numbers-and-punctuation"
           placeholder="YYYY-MM-DD"
           editable={false}
           pointerEvents="none"
@@ -402,7 +404,6 @@ const DateOfBirthField = ({
             touched.dateOfBirth && errors.dateOfBirth && styles.inputError,
           ]}
           placeholderTextColor="#9AA5B1"
-          onBlur={() => handleBlur("dateOfBirth")}
         />
         <Ionicons
           name="calendar-outline"
@@ -414,20 +415,26 @@ const DateOfBirthField = ({
       {touched.dateOfBirth && errors.dateOfBirth && (
         <Text className="text-xs text-red-500">{errors.dateOfBirth}</Text>
       )}
-      {showDatePicker && (
+
+      <SlideUpModal
+        ref={sheetRef}
+        title="Date of Birth"
+        onClose={handleCancel}
+        headerTextColor={COLORS.white}
+        snapPoints={["45%"]}
+      >
         <DateTimePicker
-          accentColor={COLORS.primary_400}
-          value={dateOfBirthRaw || maxDate}
-          onChange={handleDateChange}
+          value={pendingDate ?? maxDate}
+          onChange={(_: DateTimePickerEvent, date?: Date) =>
+            date && setPendingDate(date)
+          }
           maximumDate={maxDate}
           display="spinner"
-          positiveButton={{ label: "OK", textColor: COLORS.primary_400 }}
-          negativeButton={{
-            label: "Cancel",
-            textColor: COLORS.primary_400,
-          }}
+          accentColor={COLORS.primary_400}
+          style={{ width: "100%" }}
         />
-      )}
+        <Button title="Confirm" onPress={handleConfirm} className="mt-3" />
+      </SlideUpModal>
     </View>
   );
 };
@@ -651,7 +658,7 @@ const BvnField = ({
         value={bvn}
         onChangeText={setBvn}
         keyboardType="number-pad"
-        placeholder="22624259105"
+        placeholder="Enter your 11-digit BVN"
         style={[styles.input, touched.bvn && errors.bvn && styles.inputError]}
         placeholderTextColor="#9AA5B1"
         maxLength={11}
@@ -686,7 +693,7 @@ const NinField = ({
         value={nin}
         onChangeText={setNin}
         keyboardType="number-pad"
-        placeholder="38074528687"
+        placeholder="Enter your 11-digit NIN"
         style={[styles.input, touched.nin && errors.nin && styles.inputError]}
         placeholderTextColor="#9AA5B1"
         maxLength={11}
