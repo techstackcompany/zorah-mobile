@@ -1,14 +1,19 @@
 import CompleteSetupCard from "@/components/home/CompleteSetupCard";
 import ExpenseSummaryCard from "@/components/home/ExpenseSummaryCard";
 import FinancialTipCard from "@/components/home/FinancialTipCard";
-import QuickActions, {
-  type FeatureGridItem,
-} from "@/components/home/QuickActions";
+import QuickActions from "@/components/home/QuickActions";
 import RecentTransactions from "@/components/home/RecentTransactions";
 import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
 import COLORS from "@/constants/colors";
+import {
+  featureGridItems,
+  FeatureGridItem,
+  QuickAction,
+  quickActions,
+  SummaryCard,
+} from "@/constants/home";
 import {
   buildExpenseSummaryFromList,
   formatCurrency as formatExpenseCurrency,
@@ -23,85 +28,20 @@ import {
 import {
   useGetCategoriesQuery,
   useGetExpenseSummaryQuery,
+  useGetFinancialTipQuery,
   useGetIncomesQuery,
   useGetMonthlyExpensesQuery,
   useGetNotificationsQuery,
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
-  useGetFinancialTipQuery,
 } from "@/src/api/hooks";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export type SummaryCard = {
-  id: string;
-  label: string;
-  amount: string;
-  icon: ImageSource;
-  accent: string;
-  onPress: () => void;
-};
-
-type QuickAction = {
-  id: string;
-  label?: string;
-  icon: ImageSource;
-  background: string;
-  aspectRatio?: 1;
-  iconTintColor?: string;
-};
-
 const CURRENCY_SYMBOL = "₦";
-
-const quickActions: QuickAction[] = [
-  {
-    id: "fund-wallet",
-    label: "Fund Wallet",
-    icon: require("@/assets/icons/wallet.svg"),
-    background: "bg-white",
-    iconTintColor: COLORS.primary_400,
-  },
-  {
-    id: "goals",
-    label: "Set Goals",
-    icon: require("@/assets/icons/piggy.svg"),
-    background: "bg-white",
-  },
-  {
-    id: "fx-rates",
-    label: "FX Rate",
-    icon: require("@/assets/icons/fxRates.svg"),
-    background: "bg-white",
-  },
-];
-
-const featureGridItems: FeatureGridItem[] = [
-  {
-    id: "track-expense",
-    label: "Track Expense",
-    icon: require("@/assets/icons/track-spending.svg"),
-    iconBackground: "#EBF9F3",
-    iconTint: "#32A34D",
-  },
-
-  {
-    id: "bill-reminders",
-    label: "Bill Reminders",
-    icon: require("@/assets/icons/bill-reminder.svg"),
-    iconBackground: "#EAEFFF",
-    iconTint: "#6165D7",
-  },
-  {
-    id: "ai-assistant",
-    label: "AI Assistant",
-    icon: require("@/assets/icons/ai_bot.svg"),
-    iconBackground: "#FFF5DD",
-    iconTint: "#D59007",
-  },
-];
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -144,7 +84,8 @@ const HomeScreen = () => {
     refetch: refetchCategories,
   } = useGetCategoriesQuery("expense");
 
-  const { refetch: refetchFinancialTip, isError: isFinancialTipError } = useGetFinancialTipQuery();
+  const { refetch: refetchFinancialTip, isError: isFinancialTipError } =
+    useGetFinancialTipQuery();
 
   const expenseSummary = useMemo(() => {
     if (!expenseSummaryData?.byCategory) return { total: 0, segments: [] };
@@ -271,6 +212,9 @@ const HomeScreen = () => {
     switch (action.id) {
       case "fund-wallet":
         router.navigate("/(app)/fund-wallet");
+        break;
+      case "transfer":
+        router.navigate("/(app)/transfer");
         break;
       case "fx-rates":
         router.navigate("/(app)/(home)/fxRates");

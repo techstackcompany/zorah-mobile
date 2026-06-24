@@ -1,7 +1,7 @@
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
-import { SummaryCard } from "@/screens/HomeScreen";
+import { SummaryCard } from "@/constants/home";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";

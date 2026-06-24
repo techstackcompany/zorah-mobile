@@ -105,6 +105,7 @@ const Navigator = () => {
       <Stack.Screen name="savings-goals" options={{ headerShown: false }} />
       <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant" }} />
 
+      <Stack.Screen name="transfer" options={{ title: "Transfer" }} />
       <Stack.Screen
         name="fund-wallet/index"
         options={{ title: "Fund Wallet" }}

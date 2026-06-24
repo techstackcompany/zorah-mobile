@@ -1,24 +1,9 @@
 import Text from "@/components/ui/Text";
+import { FeatureGridItem, QuickAction } from "@/constants/home";
 import { cn } from "@/lib/utils";
-import { Image, ImageSource } from "expo-image";
+import { Image } from "expo-image";
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-
-type QuickAction = {
-  id: string;
-  label?: string;
-  icon: ImageSource;
-  background: string;
-  aspectRatio?: 1;
-};
-
-export type FeatureGridItem = {
-  id: string;
-  label: string;
-  icon: ImageSource;
-  iconBackground: string;
-  iconTint?: string;
-};
 
 type QuickActionsProps = {
   actions: QuickAction[];
