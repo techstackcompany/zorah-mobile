@@ -440,7 +440,7 @@ When endpoints or response shapes change on the backend, run the API probe scrip
 
 To run it:
 ```bash
-node scripts/api-probe.js
+pnpm exec node scripts/api-probe.js
 ```
 
 ### Adding a New Screen
@@ -508,16 +508,15 @@ node scripts/api-probe.js
 ### Prerequisites
 
 - Node.js 18+
-- Expo CLI (`npm install -g expo-cli` or use `npx expo`)
+- pnpm 9+ (install with `npm install -g pnpm` or `curl -fsSL https://get.pnpm.io/install.sh | sh -`)
 - iOS: Xcode 15+ with simulator
 - Android: Android Studio with emulator
-- EAS CLI for building: `npm install -g eas-cli`
 
 ### Install
 
 ```bash
 cd pocketMonie
-npm install
+pnpm install
 ```
 
 ### Firebase Config (required for push notifications)
@@ -531,11 +530,11 @@ These are gitignored. Get them from the Firebase console project `com.onerendzin
 ### Run
 
 ```bash
-npx expo start          # Start Metro bundler
-npx expo run:ios        # Run on iOS simulator (requires build)
-npx expo run:android    # Run on Android emulator (requires build)
-npm run web             # Run in browser
-npm run lint            # ESLint
+pnpm start              # Start Metro bundler
+pnpm ios                # Run on iOS simulator (requires build)
+pnpm android            # Run on Android emulator (requires build)
+pnpm web                # Run in browser
+pnpm lint               # ESLint
 ```
 
 ### Environment
