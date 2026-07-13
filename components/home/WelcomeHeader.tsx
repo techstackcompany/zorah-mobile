@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, View } from "react-native";
+import Animated, { ZoomIn, ZoomOut } from "react-native-reanimated";
 
 type WelcomeHeaderProps = {
   initials: string;
@@ -43,11 +44,15 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
       >
         <Ionicons name="notifications-outline" size={24} color={"#000"} />
         {unreadNotificationCount > 0 && (
-          <View className="absolute right-3 top-3 h-5 min-w-[20px] items-center justify-center rounded-full bg-error px-1">
+          <Animated.View
+            entering={ZoomIn.springify().damping(14).stiffness(220)}
+            exiting={ZoomOut.duration(120)}
+            className="absolute right-3 top-3 h-5 min-w-[20px] items-center justify-center rounded-full bg-error px-1"
+          >
             <Text weight="bold" className="text-[10px] text-white">
               {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
             </Text>
-          </View>
+          </Animated.View>
         )}
       </Pressable>
     </View>

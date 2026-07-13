@@ -49,8 +49,6 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-// I need to find an appropriate place for ai assistance
-
 const featureGridItems: FeatureGridItem[] = [
   {
     id: "track-expense",
@@ -68,11 +66,11 @@ const featureGridItems: FeatureGridItem[] = [
     iconTint: "#902AA2",
   },
   {
-    id: "ai-assistant",
-    label: "AI Assistant",
-    icon: require("@/assets/icons/ai_bot.svg"),
-    iconBackground: "#FFF5DD",
-    iconTint: "#D59007",
+    id: "fx-rates",
+    label: "FX Rates",
+    icon: require("@/assets/icons/fxRates.svg"),
+    iconBackground: "#EFF0FF",
+    iconTint: "#6165D7",
   },
 ];
 

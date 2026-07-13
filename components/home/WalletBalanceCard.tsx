@@ -1,11 +1,19 @@
+import { ScalePressable } from "@/components/ui/ScalePressable";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { SummaryCard } from "@/constants/home";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 type WalletBalanceCardProps = {
   formattedBalance: string;
@@ -22,6 +30,35 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
   summaryCards,
   onToggleBalanceVisibility,
 }) => {
+  // Crossfade the balance: fade out, swap the displayed text, fade back in.
+  const [displayedBalance, setDisplayedBalance] = useState(formattedBalance);
+  const balanceOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (formattedBalance === displayedBalance) return;
+    balanceOpacity.value = withTiming(
+      0,
+      { duration: 110, easing: Easing.in(Easing.ease) },
+      (finished) => {
+        if (finished) {
+          runOnJS(setDisplayedBalance)(formattedBalance);
+        }
+      },
+    );
+  }, [formattedBalance, displayedBalance, balanceOpacity]);
+
+  useEffect(() => {
+    balanceOpacity.value = withTiming(1, {
+      duration: 180,
+      easing: Easing.out(Easing.ease),
+    });
+  }, [displayedBalance, balanceOpacity]);
+
+  const balanceStyle = useAnimatedStyle(() => ({
+    opacity: balanceOpacity.value,
+    transform: [{ translateY: (1 - balanceOpacity.value) * 3 }],
+  }));
+
   return (
     <View className="mt-6 px-6 py-6">
       {/* Total Balance */}
@@ -38,9 +75,13 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
           hitSlop={10}
           onPress={onToggleBalanceVisibility}
         >
-          <Text weight="bold" className="text-4xl">
-            {formattedBalance}
-          </Text>
+          {/* fontFamily must match Text's family="nunito" weight="bold" mapping */}
+          <Animated.Text
+            style={[{ fontFamily: "NunitoBold" }, balanceStyle]}
+            className="text-4xl text-textColor"
+          >
+            {displayedBalance}
+          </Animated.Text>
           <Ionicons
             name={balanceHidden ? "eye-off-outline" : "eye-outline"}
             size={20}
@@ -66,7 +107,7 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
             </Text>
           </View>
           <Text weight="semibold" className="text-sm">
-            {formattedBalance}
+            {displayedBalance}
           </Text>
         </View>
       </View>
@@ -74,7 +115,7 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
       {/* Expense / Income summary cards */}
       <View className="mt-5 flex-row gap-3">
         {summaryCards.map((item) => (
-          <Pressable
+          <ScalePressable
             key={item.id}
             onPress={item.onPress}
             className={cn("flex-1 rounded-2xl bg-white px-4 py-4")}
@@ -107,7 +148,7 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
             >
               {item.amount}
             </Text>
-          </Pressable>
+          </ScalePressable>
         ))}
       </View>
     </View>

@@ -1,11 +1,20 @@
+import { ScalePressable } from "@/components/ui/ScalePressable";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { ChartSegment } from "@/features/expense-income/types";
 import { renderCategoryIcon } from "@/features/expense-income/utils";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import React, { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import Svg, { Circle, G } from "react-native-svg";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type ExpenseSummaryCardProps = {
   segments: ChartSegment[];
@@ -31,6 +40,21 @@ const MiniPieChart = ({
   formatCurrency: (value: number) => string;
 }) => {
   let cumulativeOffset = 0;
+
+  // Reveal sweeps clockwise on mount: an overlay circle matching the track
+  // color covers the segments and its dash offset shrinks its covered arc.
+  const revealProgress = useSharedValue(0);
+
+  useEffect(() => {
+    revealProgress.value = withTiming(1, {
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [revealProgress]);
+
+  const revealProps = useAnimatedProps(() => ({
+    strokeDashoffset: -CHART_CIRCUMFERENCE * revealProgress.value,
+  }));
 
   return (
     <View style={styles.chartContainer}>
@@ -64,6 +88,16 @@ const MiniPieChart = ({
             cumulativeOffset -= segmentLength;
             return element;
           })}
+          <AnimatedCircle
+            cx={CHART_SIZE / 2}
+            cy={CHART_SIZE / 2}
+            r={CHART_RADIUS}
+            stroke="#eee"
+            strokeWidth={CHART_STROKE_WIDTH + 2}
+            strokeDasharray={`${CHART_CIRCUMFERENCE} ${CHART_CIRCUMFERENCE}`}
+            animatedProps={revealProps}
+            fill="transparent"
+          />
         </G>
       </Svg>
       <View style={styles.chartCenter}>
@@ -88,8 +122,9 @@ const ExpenseSummaryCard = ({
   const topSegments = segments.slice(0, MAX_RANKING_ITEMS);
 
   return (
-    <Pressable
+    <ScalePressable
       onPress={onPress}
+      scaleTo={0.98}
       className="mt-8 rounded-3xl bg-white px-5 py-5"
       accessibilityRole="button"
     >
@@ -176,7 +211,7 @@ const ExpenseSummaryCard = ({
           </View>
         </View>
       )}
-    </Pressable>
+    </ScalePressable>
   );
 };
 

@@ -6,7 +6,6 @@ import RecentTransactions from "@/components/home/RecentTransactions";
 import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
-import COLORS from "@/constants/colors";
 import {
   featureGridItems,
   FeatureGridItem,
@@ -35,17 +34,23 @@ import {
   useGetWalletBalanceQuery,
   useGetWalletTransactionsQuery,
 } from "@/src/api/hooks";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RefreshControl, ScrollView, View } from "react-native";
+import Animated, { Easing, FadeInDown } from "react-native-reanimated";
+
+// One-time entrance stagger: each section fades in with a small upward
+// drift, 50ms after the previous one. Runs only on first mount.
+const sectionEntering = (index: number) =>
+  FadeInDown.duration(280)
+    .delay(index * 50)
+    .easing(Easing.out(Easing.cubic))
+    .withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
 
 const CURRENCY_SYMBOL = "₦";
 
 const HomeScreen = () => {
   const router = useRouter();
-  const { bottom } = useSafeAreaInsets();
   const currencySymbol = CURRENCY_SYMBOL;
   const [balanceHidden, setBalanceHidden] = useState(false);
   const { initials, welcomeName } = useUserDisplayData();
@@ -235,8 +240,8 @@ const HomeScreen = () => {
       case "bill-reminders":
         router.navigate("/(app)/bill-reminder");
         break;
-      case "ai-assistant":
-        router.push("/(app)/ai-assistant");
+      case "fx-rates":
+        router.navigate("/(app)/(home)/fxRates");
         break;
       default:
         break;
@@ -288,7 +293,10 @@ const HomeScreen = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 100 }}
           >
-            <View className="bg-primary_200 pt-4">
+            <Animated.View
+              entering={sectionEntering(0)}
+              className="bg-primary_200 pt-4"
+            >
               <WelcomeHeader
                 initials={initials}
                 welcomeName={welcomeName}
@@ -306,61 +314,51 @@ const HomeScreen = () => {
                   setBalanceHidden((prev) => !prev)
                 }
               />
-            </View>
+            </Animated.View>
             <View className="bg-lightMuted px-6">
               {!isSetupComplete && (
-                <CompleteSetupCard
-                  onCompleteSetup={() => {
-                    router.push(currentStepRoute as any);
-                  }}
-                />
+                <Animated.View entering={sectionEntering(1)}>
+                  <CompleteSetupCard
+                    onCompleteSetup={() => {
+                      router.push(currentStepRoute as any);
+                    }}
+                  />
+                </Animated.View>
               )}
 
-              <QuickActions
-                actions={quickActions}
-                onActionPress={handleQuickActionPress}
-                featureGridItems={featureGridItems}
-                onFeatureGridPress={handleFeatureGridPress}
-              />
+              <Animated.View entering={sectionEntering(2)}>
+                <QuickActions
+                  actions={quickActions}
+                  onActionPress={handleQuickActionPress}
+                  featureGridItems={featureGridItems}
+                  onFeatureGridPress={handleFeatureGridPress}
+                />
+              </Animated.View>
 
-              <FinancialTipCard />
+              <Animated.View entering={sectionEntering(3)}>
+                <FinancialTipCard />
+              </Animated.View>
 
-              <ExpenseSummaryCard
-                segments={expenseSummary.segments}
-                total={expenseSummary.total}
-                isLoading={isLoadingExpenseSummary || isLoadingCategories}
-                formatCurrency={formatExpenseCurrency}
-                onPress={() => router.navigate("/expense-planning?tab=expense")}
-              />
+              <Animated.View entering={sectionEntering(4)}>
+                <ExpenseSummaryCard
+                  segments={expenseSummary.segments}
+                  total={expenseSummary.total}
+                  isLoading={isLoadingExpenseSummary || isLoadingCategories}
+                  formatCurrency={formatExpenseCurrency}
+                  onPress={() =>
+                    router.navigate("/expense-planning?tab=expense")
+                  }
+                />
+              </Animated.View>
 
-              <RecentTransactions
-                transactions={recentTransactions}
-                showEmpty={shouldShowEmpty}
-              />
+              <Animated.View entering={sectionEntering(5)}>
+                <RecentTransactions
+                  transactions={recentTransactions}
+                  showEmpty={shouldShowEmpty}
+                />
+              </Animated.View>
             </View>
           </ScrollView>
-
-          <Pressable
-            onPress={() => router.push("/(app)/ai-assistant")}
-            accessibilityRole="button"
-            accessibilityLabel="Open AI Assistant"
-            className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-primary_400"
-            style={{
-              bottom: bottom + 20,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.2,
-              shadowRadius: 10,
-              elevation: 8,
-            }}
-          >
-            <Image
-              source={require("@/assets/icons/ai_bot.svg")}
-              style={{ width: 28, height: 28 }}
-              contentFit="contain"
-              tintColor={COLORS.white}
-            />
-          </Pressable>
         </View>
       </MainContainer>
     </>

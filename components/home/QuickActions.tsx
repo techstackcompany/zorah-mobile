@@ -1,9 +1,10 @@
+import { ScalePressable } from "@/components/ui/ScalePressable";
 import Text from "@/components/ui/Text";
 import { FeatureGridItem, QuickAction } from "@/constants/home";
 import { cn } from "@/lib/utils";
 import { Image } from "expo-image";
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 type QuickActionsProps = {
   actions: QuickAction[];
@@ -31,7 +32,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
         className="mt-4 flex-row gap-3"
       >
         {actions.map((action) => (
-          <Pressable
+          <ScalePressable
             key={action.id}
             onPress={() => onActionPress(action)}
             className={cn(
@@ -53,15 +54,16 @@ const QuickActions: React.FC<QuickActionsProps> = ({
                 {action.label}
               </Text>
             )}
-          </Pressable>
+          </ScalePressable>
         ))}
       </ScrollView>
 
       {featureGridItems && featureGridItems.length > 0 && (
         <View style={styles.gridContainer}>
           {featureGridItems.map((item) => (
-            <Pressable
+            <ScalePressable
               key={item.id}
+              scaleTo={0.94}
               style={styles.gridItem}
               onPress={() => onFeatureGridPress?.(item)}
               accessibilityRole="button"
@@ -83,7 +85,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               <Text weight="medium" style={styles.gridLabel} numberOfLines={2}>
                 {item.label}
               </Text>
-            </Pressable>
+            </ScalePressable>
           ))}
         </View>
       )}
