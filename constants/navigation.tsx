@@ -1,7 +1,10 @@
+import { BottomTabNavigationOptions } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import COLORS from "./colors";
-import { BottomTabNavigationOptions } from "@react-navigation/bottom-tabs";
 
+// Native-stack screens keep the native iOS 26 liquid-glass back button.
+// JS headers (tabs, first screens of nested stacks) render HeaderBack,
+// which mimics it via expo-glass-effect — keep both chevrons the same tint.
 export const stackOptions:
   | NativeStackNavigationOptions
   | BottomTabNavigationOptions = {
@@ -10,4 +13,5 @@ export const stackOptions:
   headerShadowVisible: false,
   statusBarStyle: "dark",
   headerStyle: { backgroundColor: COLORS.white },
+  headerTintColor: COLORS.textColor,
 };

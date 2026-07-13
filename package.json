@@ -34,6 +34,7 @@
     "expo-device": "~8.0.9",
     "expo-file-system": "~19.0.21",
     "expo-font": "~14.0.8",
+    "expo-glass-effect": "~0.1.10",
     "expo-haptics": "~15.0.7",
     "expo-image": "~3.0.8",
     "expo-linear-gradient": "~15.0.7",
@@ -77,6 +78,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "jest": "^30.4.2",
+    "jest-environment-node": "^30.4.1",
     "ts-jest": "^29.4.9",
     "typescript": "~5.9.2"
   },
