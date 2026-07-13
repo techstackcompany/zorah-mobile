@@ -33,6 +33,9 @@ type SlideUpModalProps = {
   height?: DimensionValue | undefined;
   className?: string;
   snapPoints?: (string | number)[];
+  /** v5 defaults this to true, which lets tall content grow the sheet past
+   * its snap points. Pass false to make snapPoints authoritative. */
+  enableDynamicSizing?: boolean;
 };
 
 export type SlideUpModalRef = {
@@ -53,6 +56,7 @@ const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
       height,
       className,
       snapPoints: customSnapPoints,
+      enableDynamicSizing = true,
     },
     ref,
   ) => {
@@ -97,6 +101,7 @@ const SlideUpModal = forwardRef<SlideUpModalRef, SlideUpModalProps>(
       <BottomSheetModal
         ref={bottomSheetModalRef}
         snapPoints={snapPoints}
+        enableDynamicSizing={enableDynamicSizing}
         onDismiss={handleDismiss}
         backdropComponent={renderBackdrop}
         enablePanDownToClose

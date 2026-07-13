@@ -3,94 +3,12 @@ import { TextInput, TextInputProps, View } from "react-native";
 
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
+import {
+  formatAmountValue,
+  sanitizeAmountInput,
+  sanitizeCentsInput,
+} from "@/lib/amount";
 import { cn } from "@/lib/utils";
-
-const sanitizeAmountInput = (input: string): string => {
-  const cleaned = input.replace(/[^0-9.]/g, "");
-
-  if (!cleaned) {
-    return "";
-  }
-
-  const hasTrailingDot = cleaned.endsWith(".");
-  const [integerPartRaw = "", ...fractionParts] = cleaned.split(".");
-  let integerPart = integerPartRaw.replace(/^0+(?=\d)/, "");
-
-  if (integerPart === "" && integerPartRaw !== "") {
-    integerPart = "0";
-  }
-
-  let fractionPart = fractionParts.join("");
-  if (fractionPart.length > 2) {
-    fractionPart = fractionPart.slice(0, 2);
-  }
-
-  if (!integerPart && !fractionPart && !hasTrailingDot) {
-    return "";
-  }
-
-  let normalized = integerPart;
-
-  if (!normalized && (fractionPart || hasTrailingDot)) {
-    normalized = "0";
-  }
-
-  if (fractionPart) {
-    normalized = `${normalized}.${fractionPart}`;
-  } else if (hasTrailingDot) {
-    normalized = `${normalized}.`;
-  }
-
-  return normalized;
-};
-
-type FormatAmountOptions = {
-  forceFixedDecimals?: boolean;
-  currencySymbol?: string;
-};
-
-const formatAmountValue = (
-  rawValue: string,
-  {
-    forceFixedDecimals = false,
-    currencySymbol = "₦",
-  }: FormatAmountOptions = {},
-): string => {
-  if (!rawValue) {
-    return "";
-  }
-
-  const hasTrailingDot =
-    !forceFixedDecimals && rawValue.endsWith(".") && !rawValue.includes("..");
-  const [integerPartRaw = "", decimalPartRaw = ""] = rawValue.split(".");
-  const integerPartForParsing =
-    integerPartRaw && integerPartRaw !== "." ? integerPartRaw : "0";
-
-  const integerNumber = Number(integerPartForParsing);
-  const formattedInteger = integerNumber.toLocaleString("en-NG");
-
-  const currencyPrefix = currencySymbol.endsWith(" ")
-    ? currencySymbol
-    : `${currencySymbol} `;
-
-  if (hasTrailingDot && !decimalPartRaw) {
-    return `${currencyPrefix}${formattedInteger}.`;
-  }
-
-  if (decimalPartRaw) {
-    const limitedDecimals = decimalPartRaw.slice(0, 2);
-    const decimals = forceFixedDecimals
-      ? limitedDecimals.padEnd(2, "0")
-      : limitedDecimals;
-    return `${currencyPrefix}${formattedInteger}.${decimals}`;
-  }
-
-  if (forceFixedDecimals) {
-    return `${currencyPrefix}${formattedInteger}.00`;
-  }
-
-  return `${currencyPrefix}${formattedInteger}`;
-};
 
 type AmountInputProps = Omit<TextInputProps, "value" | "onChangeText"> & {
   value: string;
@@ -102,6 +20,10 @@ type AmountInputProps = Omit<TextInputProps, "value" | "onChangeText"> & {
   currencySymbol?: string;
   forceFixedDecimalsOnBlur?: boolean;
   labelCLassName?: string;
+  /** Cash-register entry (default): digits fill the decimals from the
+   * right ("5" → 0.05, "500" → 5.00) so no decimal key is needed.
+   * Pass false to type amounts with an explicit decimal point. */
+  autoDecimal?: boolean;
 };
 
 const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
@@ -119,6 +41,7 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
       keyboardType,
       placeholder = "₦ 0.00",
       labelCLassName,
+      autoDecimal = true,
       ...rest
     },
     ref,
@@ -144,13 +67,23 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
       }
 
       return formatAmountValue(value, {
-        forceFixedDecimals: forceFixedDecimalsOnBlur && !resolvedFocused,
+        // Cash-register entry always shows both decimal places.
+        forceFixedDecimals:
+          autoDecimal || (forceFixedDecimalsOnBlur && !resolvedFocused),
         currencySymbol,
       });
-    }, [currencySymbol, forceFixedDecimalsOnBlur, resolvedFocused, value]);
+    }, [
+      autoDecimal,
+      currencySymbol,
+      forceFixedDecimalsOnBlur,
+      resolvedFocused,
+      value,
+    ]);
 
     const handleChangeText = (text: string) => {
-      const sanitized = sanitizeAmountInput(text);
+      const sanitized = autoDecimal
+        ? sanitizeCentsInput(text)
+        : sanitizeAmountInput(text);
       onChangeValue(sanitized);
     };
 
@@ -168,7 +101,9 @@ const AmountInput = React.forwardRef<TextInput, AmountInputProps>(
         <View className={cn("", inputWrapperClassName)}>
           <TextInput
             ref={ref}
-            keyboardType={keyboardType ?? "decimal-pad"}
+            keyboardType={
+              keyboardType ?? (autoDecimal ? "number-pad" : "decimal-pad")
+            }
             onFocus={handleFocus}
             onBlur={handleBlur}
             value={value ? displayValue : ""}

@@ -1,6 +1,6 @@
-import COLORS from "@/constants/colors";
+import { HeaderBack } from "@/components/ui/HeaderBack";
 import { stackOptions } from "@/constants/navigation";
-import { HeaderBackButton } from "@react-navigation/elements";
+import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
@@ -12,24 +12,14 @@ const SavingsGoalsLayout = () => {
     router.navigate("/savings-goals/create");
   };
   return (
-    <Stack screenOptions={stackOptions}>
+    <Stack screenOptions={stackOptions as NativeStackNavigationOptions}>
       <Stack.Screen
         name="index"
         options={{
           title: "Savings Goals",
-
-          headerLeft: (props) => (
-            <HeaderBackButton
-              {...props}
-              onPress={() =>
-                props.canGoBack
-                  ? router.back()
-                  : router.replace("/(app)/(home)")
-              }
-              displayMode="minimal"
-              tintColor={COLORS.textColor}
-            />
-          ),
+          // First screen of this nested stack: no native back exists here,
+          // so render the glass-matched HeaderBack (falls back to home).
+          headerLeft: () => <HeaderBack />,
           headerRight: () => (
             <Pressable
               onPress={handleCreateGoal}
