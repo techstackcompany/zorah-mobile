@@ -107,6 +107,14 @@ const Navigator = () => {
 
       <Stack.Screen name="transfer" options={{ title: "Transfer" }} />
       <Stack.Screen
+        name="transfer-success"
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name="transfer-receipt"
+        options={{ title: "Transaction Details" }}
+      />
+      <Stack.Screen
         name="fund-wallet/index"
         options={{ title: "Fund Wallet" }}
       />
@@ -140,6 +148,10 @@ const Navigator = () => {
         options={{ title: "Change Password" }}
       />
       <Stack.Screen name="profile/banks" options={{ title: "Linked Banks" }} />
+      <Stack.Screen
+        name="profile/kyc-upgrade"
+        options={{ title: "Upgrade to Tier 2" }}
+      />
       <Stack.Screen name="profile/add-bank" options={{ title: "Add Bank" }} />
       <Stack.Screen name="profile/pin-setup" options={{ headerShown: false }} />
 

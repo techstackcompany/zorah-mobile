@@ -134,6 +134,11 @@ export const API_ENDPOINTS = {
     balance: { method: HttpMethod.GET, url: "/wallet/balance" },
     transactions: { method: HttpMethod.GET, url: "/wallet/transactions" },
     overview: { method: HttpMethod.GET, url: "/wallet/overview" },
+    banks: { method: HttpMethod.GET, url: "/wallet/banks" },
+    verifyAccount: (bankCode: string, accountNumber: string) => ({
+      method: HttpMethod.GET,
+      url: `/wallet/verify-account?bankCode=${encodeURIComponent(bankCode)}&accountNumber=${encodeURIComponent(accountNumber)}`,
+    }),
   },
   categories: {
     getCategories: (type: string) => ({

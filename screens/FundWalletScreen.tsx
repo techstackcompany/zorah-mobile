@@ -69,7 +69,7 @@ const FundWalletScreen = () => {
   return (
     <>
       <Stack.Screen options={{ title: "Fund Wallet" }} />
-      <MainContainer edges={["top"]} className="bg-lightMuted">
+      <MainContainer edges={[]} className="bg-lightMuted">
         <View className="flex-1 px-6 pt-6">
           <Text weight="semibold" className="text-lg text-textColor">
             How much do you want to add to your wallet?

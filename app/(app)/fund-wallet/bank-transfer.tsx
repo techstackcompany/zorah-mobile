@@ -2,20 +2,18 @@ import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
-import { useDepositFundsMutation } from "@/src/api/hooks/useWalletApi";
+import {
+  useDepositFundsMutation,
+  useWalletOverViewQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useRef } from "react";
 import { ActivityIndicator, Alert, Pressable, Share, View } from "react-native";
 import Toast from "react-native-toast-message";
 
-const transferDetails = {
-  name: "Niyi Johnson Ademola",
-  accountNumber: "00985643221",
-  bank: "GTBank",
-};
+const WALLET_BANK_NAME = "Xpress Wallet";
 
 const shareOptions = [
   // { id: "telegram", label: "Telegram", icon: "logo-telegram" as const },
@@ -37,22 +35,27 @@ const formatAmount = (rawValue?: string) => {
 const BankTransferScreen = () => {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const shareModalRef = useRef<SlideUpModalRef>(null);
 
   const formattedAmount = useMemo(() => formatAmount(amount), [amount]);
+  const depositAmount = Number(amount || "0");
+
+  const { data: overview, isLoading: isLoadingOverview } =
+    useWalletOverViewQuery();
+  console.log("overview", overview);
+  const transferDetails = useMemo(
+    () => ({
+      name: overview?.account.accountName ?? "",
+      accountNumber: overview?.account.accountNumber ?? "",
+      bank: WALLET_BANK_NAME,
+    }),
+    [overview],
+  );
 
   const depositMutation = useDepositFundsMutation({
+    // The hook already invalidates the ["wallet"] query prefix on success.
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] });
-      queryClient.invalidateQueries({ queryKey: ["wallet", "transactions"] });
-
-      const transaction = (
-        response as unknown as {
-          transaction?: { reference?: string; status?: string };
-        }
-      ).transaction;
-      const transactionRef = transaction?.reference;
+      const transactionRef = response.transaction?.reference;
 
       Toast.show({
         type: "success",
@@ -67,6 +70,7 @@ const BankTransferScreen = () => {
       }, 1500);
     },
     onError: (error) => {
+      console.log("error", error);
       Toast.show({
         type: "error",
         text1: "Deposit Failed",
@@ -95,6 +99,14 @@ const BankTransferScreen = () => {
   };
 
   const handleCopy = async () => {
+    if (!transferDetails.accountNumber) {
+      Toast.show({
+        type: "error",
+        text1: "Account not ready",
+        text2: "Your wallet account details are still loading.",
+      });
+      return;
+    }
     try {
       await Clipboard.setStringAsync(transferDetails.accountNumber);
       Toast.show({
@@ -112,8 +124,6 @@ const BankTransferScreen = () => {
   };
 
   const handleConfirmDeposit = () => {
-    const depositAmount = Number(amount || "0");
-
     if (depositAmount <= 0) {
       Alert.alert("Invalid Amount", "Please enter a valid amount to deposit.");
       return;
@@ -140,27 +150,39 @@ const BankTransferScreen = () => {
   return (
     <>
       <Stack.Screen options={{ title: "Bank Transfer" }} />
-      <MainContainer edges={["top"]} className="bg-lightMuted">
+      <MainContainer edges={[]} className="bg-lightMuted">
         <View className="flex-1 px-6 pt-6">
           <View className="rounded-3xl border border-grayLight/80 bg-white px-5 py-6">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm text-textColor/70">Name:</Text>
-              <Text weight="semibold" className="text-base text-textColor">
-                {transferDetails.name}
-              </Text>
-            </View>
-            <View className="mt-5 flex-row items-center justify-between">
-              <Text className="text-sm text-textColor/70">Account Number:</Text>
-              <Text weight="bold" className="text-xl text-textColor">
-                {transferDetails.accountNumber}
-              </Text>
-            </View>
-            <View className="mt-5 flex-row items-center justify-between">
-              <Text className="text-sm text-textColor/70">Bank:</Text>
-              <Text weight="semibold" className="text-base text-textColor">
-                {transferDetails.bank}
-              </Text>
-            </View>
+            {isLoadingOverview ? (
+              <ActivityIndicator
+                size="small"
+                color={COLORS.primary_400}
+                className="py-10"
+              />
+            ) : (
+              <>
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-sm text-textColor/70">Name:</Text>
+                  <Text weight="semibold" className="text-base text-textColor">
+                    {transferDetails.name || "—"}
+                  </Text>
+                </View>
+                <View className="mt-5 flex-row items-center justify-between">
+                  <Text className="text-sm text-textColor/70">
+                    Account Number:
+                  </Text>
+                  <Text weight="bold" className="text-xl text-textColor">
+                    {transferDetails.accountNumber || "—"}
+                  </Text>
+                </View>
+                <View className="mt-5 flex-row items-center justify-between">
+                  <Text className="text-sm text-textColor/70">Bank:</Text>
+                  <Text weight="semibold" className="text-base text-textColor">
+                    {transferDetails.bank}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
 
           <View className="mt-6 flex-row gap-4">
@@ -199,9 +221,11 @@ const BankTransferScreen = () => {
             </Text>
             <Pressable
               onPress={handleConfirmDeposit}
-              disabled={depositMutation.isPending}
+              disabled={depositMutation.isPending || depositAmount <= 0}
               className={`flex-row items-center justify-center rounded-xl py-4 ${
-                depositMutation.isPending ? "bg-primary_300" : "bg-primary_400"
+                depositMutation.isPending || depositAmount <= 0
+                  ? "bg-primary_300"
+                  : "bg-primary_400"
               }`}
               accessibilityRole="button"
             >

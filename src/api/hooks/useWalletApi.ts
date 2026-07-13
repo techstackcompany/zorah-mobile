@@ -10,7 +10,10 @@ import { API_ENDPOINTS } from "../endpoints";
 import {
   ApiEnvelope,
   DepositFundsRequest,
+  DepositFundsResponse,
+  VerifyAccountResponse,
   WalletBalance,
+  WalletBanksResponse,
   WalletDetails,
   WalletOverviewResponse,
   WalletTransaction,
@@ -31,17 +34,17 @@ export const useGetOrCreateWalletQuery = (
 
 export const useDepositFundsMutation = (
   options?: UseMutationOptions<
-    ApiEnvelope<WalletDetails>,
+    DepositFundsResponse,
     ApiError,
     DepositFundsRequest
   >,
 ) => {
   const queryClient = useQueryClient();
   const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
-  return useMutation<ApiEnvelope<WalletDetails>, ApiError, DepositFundsRequest>({
+  return useMutation<DepositFundsResponse, ApiError, DepositFundsRequest>({
     mutationKey: ["wallet", "deposit"],
     mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<WalletDetails>>({
+      apiRequest<DepositFundsResponse>({
         ...API_ENDPOINTS.wallet.deposit,
         data: payload,
       }),
@@ -112,6 +115,38 @@ export const useGetWalletTransactionsQuery = (
 
       return response as ApiEnvelope<WalletTransaction[]>;
     },
+    ...options,
+  });
+
+export const useGetWalletBanksQuery = (
+  options?: UseQueryOptions<WalletBanksResponse, ApiError>,
+) =>
+  useQuery<WalletBanksResponse, ApiError>({
+    queryKey: ["wallet", "banks"],
+    queryFn: () =>
+      apiRequest<WalletBanksResponse>({
+        ...API_ENDPOINTS.wallet.banks,
+      }),
+    // The bank list rarely changes; keep it fresh for a day.
+    staleTime: 24 * 60 * 60 * 1000,
+    ...options,
+  });
+
+export const useVerifyBankAccountQuery = (
+  bankCode: string | undefined,
+  accountNumber: string,
+  options?: Partial<UseQueryOptions<VerifyAccountResponse, ApiError>>,
+) =>
+  useQuery<VerifyAccountResponse, ApiError>({
+    queryKey: ["wallet", "verify-account", bankCode ?? "", accountNumber],
+    queryFn: () =>
+      apiRequest<VerifyAccountResponse>({
+        ...API_ENDPOINTS.wallet.verifyAccount(bankCode ?? "", accountNumber),
+      }),
+    // Only fire once we have a bank and a complete 10-digit account number.
+    enabled: Boolean(bankCode) && /^\d{10}$/.test(accountNumber),
+    // The backend answers 500 for unresolvable accounts; retrying won't help.
+    retry: false,
     ...options,
   });
 

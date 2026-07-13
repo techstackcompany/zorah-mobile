@@ -3,7 +3,10 @@ import Text from "@/components/ui/Text";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { cn, extractUserData } from "@/lib/utils";
-import { useGetUserProfileQuery } from "@/src/api/hooks";
+import {
+  useGetUserProfileQuery,
+  useWalletOverViewQuery,
+} from "@/src/api/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,11 +22,33 @@ import {
   View,
 } from "react-native";
 
+const KYC_STATUS_STYLES: Record<
+  string,
+  { label: string; color: string; background: string }
+> = {
+  verified: {
+    label: "Verified",
+    color: COLORS.secondary_500,
+    background: COLORS.secondary_100,
+  },
+  pending: {
+    label: "Pending",
+    color: COLORS.amber,
+    background: COLORS.amber + "1A",
+  },
+  unverified: {
+    label: "Unverified",
+    color: COLORS.error,
+    background: COLORS.error + "1A",
+  },
+};
+
 const AccountScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { signOut, kycVerificationStatus } = useSession();
   const { data: userData } = useGetUserProfileQuery();
+  const { data: overview } = useWalletOverViewQuery();
   const [pendingEnableFromAccount, setPendingEnableFromAccount] =
     useState(false);
 
@@ -34,30 +59,24 @@ const AccountScreen = () => {
       includePhone: true,
     });
 
-    const safeUser = (userData ?? {}) as Record<string, any>;
-
-    let linkedBanksCount = 0;
-
-    const kycStatusRaw =
-      (safeUser.KycStatus as string | undefined) ?? kycVerificationStatus;
-    const rawKycStatus =
-      typeof kycStatusRaw === "string" && kycStatusRaw.trim()
-        ? kycStatusRaw.trim()
-        : "Unverified";
-    const normalizedKycStatus = rawKycStatus.toLowerCase();
-    const statusLabel = rawKycStatus;
-
     return {
       displayName: userDataExtracted.fullName,
       displayEmail: userDataExtracted.displayEmail,
       displayPhone: userDataExtracted.displayPhone ?? "",
       initials: userDataExtracted.initials,
-      statusLabel,
-      isKycVerified: normalizedKycStatus === "verified",
-      linkedBanksText:
-        linkedBanksCount === 1 ? "1 Linked" : `${linkedBanksCount} Linked`,
     };
-  }, [kycVerificationStatus, userData]);
+  }, [userData]);
+
+  const kyc = useMemo(() => {
+    // wallet/overview is the live source of truth; fall back to the
+    // session-cached status (set at login) while overview is still loading.
+    const rawStatus = overview?.kyc.status ?? kycVerificationStatus ?? "";
+    const normalized = rawStatus.trim().toLowerCase();
+    const style = KYC_STATUS_STYLES[normalized] ?? KYC_STATUS_STYLES.unverified;
+    const currentTier = overview?.kyc.currentTier ?? 1;
+
+    return { ...style, currentTier };
+  }, [overview, kycVerificationStatus]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,6 +150,28 @@ const AccountScreen = () => {
               label="Transaction History"
               iconSource={require("@/assets/icons/transaction-history.svg")}
               onPress={() => handleNavigate("/transactions")}
+            />
+
+            <AccountRow
+              label="KYC Verification"
+              iconSource={require("@/assets/icons/verified-check.svg")}
+              value={
+                <View
+                  style={[
+                    styles.kycBadge,
+                    { backgroundColor: kyc.background },
+                  ]}
+                >
+                  <Text
+                    weight="semibold"
+                    className="text-xs"
+                    style={{ color: kyc.color }}
+                  >
+                    {kyc.label} · Tier {kyc.currentTier}
+                  </Text>
+                </View>
+              }
+              onPress={() => handleNavigate("/(app)/profile/kyc-upgrade")}
             />
           </View>
 
@@ -307,6 +348,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+  },
+  kycBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   logoutButton: {
     marginTop: 8,

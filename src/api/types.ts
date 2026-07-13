@@ -388,6 +388,19 @@ export interface DepositFundsRequest {
   amount: number;
 }
 
+// Provisional — the success shape has not been observed live yet (the
+// backend currently 500s on every deposit; see
+// docs/api-captures/wallet-endpoints.md §5). Fields mirror what the app
+// reads. Firm up once the backend fix lands.
+export interface DepositFundsResponse {
+  success?: boolean;
+  transaction?: {
+    reference?: string;
+    status?: string;
+  };
+  [key: string]: unknown;
+}
+
 export type WithdrawFundsRequest = DepositFundsRequest;
 
 export interface WalletBalance {
@@ -497,18 +510,48 @@ export interface WalletDetails {
   [key: string]: unknown;
 }
 
+// Shape captured in docs/api-captures/wallet-endpoints.md
+export interface WalletBank {
+  code: string;
+  name: string;
+}
+
+export interface WalletBanksResponse {
+  success: boolean;
+  banks: WalletBank[];
+}
+
+// Shape captured in docs/api-captures/wallet-endpoints.md.
+// Failure is HTTP 500 with { message } — treat any non-2xx as "couldn't
+// resolve account", not a server outage.
+export interface VerifyAccountResponse {
+  success: boolean;
+  accountName: string;
+  account: {
+    bankCode: string;
+    accountName: string;
+    accountNumber: string;
+  };
+}
+
+// Shape captured in docs/api-captures/wallet-endpoints.md
 export interface WalletOverviewResponse {
+  success: boolean;
   account: {
     balance: number;
+    currency: string;
     accountNumber: string;
     accountName: string;
     tier: number;
+    xpressCustomerId: string;
+    xpressWalletId: string;
   };
   kyc: {
-    status: "ACTIVE" | string;
+    status: "unverified" | "pending" | "verified" | string;
     currentTier: number;
   };
   recentTransactions: WalletTransaction[];
+  chartData: unknown[];
   userSettings: {
     biometricEnabled: boolean;
   };
