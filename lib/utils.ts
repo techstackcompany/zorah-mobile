@@ -369,3 +369,6 @@ export const alertError = (message: string) => {
     cancelable: true,
   });
 };
+export const jsonLog = (data:any) => {
+  console.log(JSON.stringify(data, null, 2));
+};

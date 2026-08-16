@@ -106,7 +106,7 @@ const ForgotPasswordScreen = () => {
           )}
         >
           <TextInput
-            className="font-poppins text-base text-tertiary"
+            className="py-4 font-poppins text-base text-tertiary"
             value={email}
             onChangeText={(value) => {
               setError(null);

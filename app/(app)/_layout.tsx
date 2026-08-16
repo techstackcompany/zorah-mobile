@@ -39,14 +39,20 @@ const AppLayout = () => {
   }, [isInitializing, needsPinSetup, router]);
 
   useEffect(() => {
+    let timeout = null;
     if (isProfileLoading || !profileData || profileData.biometricEnabled)
       return;
     const hasMilestone =
       hasCompletedSetup ||
-      (profileData.usageMetrics?.expensesLoggedCount ?? 0) >= 1;
+      (profileData?.usageMetrics?.expensesLoggedCount ?? 0) >= 1;
     if (hasMilestone) {
-      router.replace("/(app)/settings/pin");
+      timeout = setTimeout(() => router.replace("/(app)/settings/pin"), 1000);
     }
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
   }, [isProfileLoading, profileData, hasCompletedSetup, router]);
 
   return <Navigator />;

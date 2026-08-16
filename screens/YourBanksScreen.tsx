@@ -167,6 +167,9 @@ const YourBanksScreen = ({
       return;
     }
 
+    // Scoped to the network calls only — keeping navigation inside this try
+    // meant a nav error surfaced to the user as "Could not save bank
+    // selection" long after the save had already succeeded.
     try {
       await updateOnboardingMutation.mutateAsync({
         data: {},
@@ -177,8 +180,6 @@ const YourBanksScreen = ({
         queryKey: ["auth", "profile"],
         exact: true,
       });
-
-      goToNextStep();
     } catch (error) {
       const _error = error as ApiError;
       console.error("_error.message", _error.message);
@@ -187,7 +188,10 @@ const YourBanksScreen = ({
         text1: "Could not save bank selection",
         text2: _error.message,
       });
+      return;
     }
+
+    goToNextStep();
   };
 
   return (

@@ -3,7 +3,14 @@ import COLORS from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Dimensions, Modal, Pressable, StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 type DatePickerFieldProps = {
   value: string;
@@ -15,6 +22,29 @@ type DatePickerFieldProps = {
 };
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
+
+/** How far back the year picker reaches — enough for any date of birth. */
+const YEARS_BACK = 100;
+const YEARS_FORWARD = 10;
+const YEAR_ROW_HEIGHT = 44;
+const YEAR_COLUMNS = 4;
+
+/**
+ * Resolve a two-digit year. Anything that would land more than YEARS_FORWARD
+ * beyond today is treated as the previous century, so "95" reads as 1995
+ * rather than 2095.
+ */
+const expandTwoDigitYear = (twoDigit: number) => {
+  const candidate = 2000 + twoDigit;
+  return candidate > new Date().getFullYear() + YEARS_FORWARD
+    ? candidate - 100
+    : candidate;
+};
 
 const formatDate = (value: Date) => {
   const day = value.getDate().toString().padStart(2, "0");
@@ -36,8 +66,13 @@ const parseDateString = (value: string) => {
   const [dayStr, monthStr, yearStr] = parts;
   const day = Number(dayStr);
   const monthIndex = Number(monthStr) - 1;
+  // A two-digit year is ambiguous. Assuming 2000+ turned a 1995 date of birth
+  // into 2095 on the round trip, so anything landing far in the future is read
+  // as the previous century instead.
   const fullYear =
-    yearStr.length === 2 ? 2000 + Number(yearStr) : Number(yearStr);
+    yearStr.length === 2
+      ? expandTwoDigitYear(Number(yearStr))
+      : Number(yearStr);
 
   if (Number.isNaN(day) || Number.isNaN(monthIndex) || Number.isNaN(fullYear)) {
     return null;
@@ -64,6 +99,9 @@ const DatePickerField = ({
   renderSelectIcon,
 }: DatePickerFieldProps) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // Stepping month-by-month to reach a date of birth took hundreds of taps, so
+  // the header drills down: days -> years -> months -> days.
+  const [view, setView] = useState<"days" | "months" | "years">("days");
   const [calendarCursor, setCalendarCursor] = useState(
     () => parseDateString(value) ?? new Date(),
   );
@@ -92,6 +130,7 @@ const DatePickerField = ({
   const openCalendar = useCallback(() => {
     const baseDate = selectedDateValue ?? new Date();
     setCalendarCursor(baseDate);
+    setView("days");
     if (selectButtonRef.current) {
       selectButtonRef.current.measureInWindow((x, y, width, height) => {
         setTriggerLayout({ x, y, width, height });
@@ -223,22 +262,163 @@ const DatePickerField = ({
     [onChange, closeCalendar],
   );
 
+  const yearRange = useMemo(() => {
+    const current = new Date().getFullYear();
+    const newest = current + YEARS_FORWARD;
+    const oldest = current - YEARS_BACK;
+    return Array.from({ length: newest - oldest + 1 }, (_, i) => newest - i);
+  }, []);
+
+  // Open the year grid already scrolled to the year in view.
+  const yearScrollOffset = useMemo(() => {
+    const index = yearRange.indexOf(calendarCursor.getFullYear());
+    if (index < 0) return 0;
+    return Math.floor(index / YEAR_COLUMNS) * YEAR_ROW_HEIGHT;
+  }, [yearRange, calendarCursor]);
+
+  const handleYearSelection = useCallback((year: number) => {
+    setCalendarCursor((prev) => {
+      const next = new Date(prev);
+      next.setFullYear(year);
+      return next;
+    });
+    setView("months");
+  }, []);
+
+  const handleMonthSelection = useCallback((monthIndex: number) => {
+    setCalendarCursor((prev) => {
+      const next = new Date(prev);
+      // Set the day first so e.g. 31 Jan -> Feb does not roll into March.
+      next.setDate(1);
+      next.setMonth(monthIndex);
+      return next;
+    });
+    setView("days");
+  }, []);
+
   const today = new Date();
   const isActive = isFocused || isCalendarOpen;
-  const calendarContent = (
-    <>
-      <View className="flex-row items-center justify-between">
-        <Pressable onPress={goToPreviousMonth} hitSlop={8}>
-          <Ionicons name="chevron-back" size={18} color={COLORS.textColor} />
-        </Pressable>
-        <Text weight="semibold" className="text-base text-textColor">
-          {monthLabel}
-        </Text>
-        <Pressable onPress={goToNextMonth} hitSlop={8}>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textColor} />
-        </Pressable>
-      </View>
 
+  const header = (
+    <View className="flex-row items-center justify-between">
+      <Pressable
+        onPress={goToPreviousMonth}
+        hitSlop={8}
+        disabled={view !== "days"}
+        style={{ opacity: view === "days" ? 1 : 0 }}
+      >
+        <Ionicons name="chevron-back" size={18} color={COLORS.textColor} />
+      </Pressable>
+
+      <Pressable
+        onPress={() => setView(view === "days" ? "years" : "days")}
+        hitSlop={8}
+        className="flex-row items-center gap-1"
+        accessibilityRole="button"
+        accessibilityLabel={
+          view === "days" ? "Choose month and year" : "Back to days"
+        }
+      >
+        <Text weight="semibold" className="text-base text-textColor">
+          {view === "years" ? "Select year" : monthLabel}
+        </Text>
+        <Ionicons
+          name={view === "days" ? "chevron-down" : "chevron-up"}
+          size={16}
+          color={COLORS.primary_400}
+        />
+      </Pressable>
+
+      <Pressable
+        onPress={goToNextMonth}
+        hitSlop={8}
+        disabled={view !== "days"}
+        style={{ opacity: view === "days" ? 1 : 0 }}
+      >
+        <Ionicons name="chevron-forward" size={18} color={COLORS.textColor} />
+      </Pressable>
+    </View>
+  );
+
+  const yearsView = (
+    <ScrollView
+      style={{ maxHeight: YEAR_ROW_HEIGHT * 5 }}
+      contentOffset={{ x: 0, y: yearScrollOffset }}
+      showsVerticalScrollIndicator={false}
+      className="mt-3"
+    >
+      <View className="flex-row flex-wrap">
+        {yearRange.map((year) => {
+          const isCursorYear = year === calendarCursor.getFullYear();
+          return (
+            <Pressable
+              key={year}
+              style={{ width: "25%", height: YEAR_ROW_HEIGHT }}
+              className="items-center justify-center"
+              onPress={() => handleYearSelection(year)}
+              accessibilityRole="button"
+              accessibilityLabel={`Select year ${year}`}
+            >
+              <View
+                className={cn(
+                  "rounded-full px-3 py-1.5",
+                  isCursorYear ? "bg-primary_400" : "bg-transparent",
+                )}
+              >
+                <Text
+                  weight={isCursorYear ? "semibold" : "medium"}
+                  className={cn(
+                    "text-sm",
+                    isCursorYear ? "text-white" : "text-textColor",
+                  )}
+                >
+                  {year}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+
+  const monthsView = (
+    <View className="mt-3 flex-row flex-wrap">
+      {MONTHS.map((month, index) => {
+        const isCursorMonth = index === calendarCursor.getMonth();
+        return (
+          <Pressable
+            key={month}
+            style={{ width: "33.3333%", height: YEAR_ROW_HEIGHT }}
+            className="items-center justify-center"
+            onPress={() => handleMonthSelection(index)}
+            accessibilityRole="button"
+            accessibilityLabel={`Select ${month}`}
+          >
+            <View
+              className={cn(
+                "rounded-full px-4 py-1.5",
+                isCursorMonth ? "bg-primary_400" : "bg-transparent",
+              )}
+            >
+              <Text
+                weight={isCursorMonth ? "semibold" : "medium"}
+                className={cn(
+                  "text-sm",
+                  isCursorMonth ? "text-white" : "text-textColor",
+                )}
+              >
+                {month}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  const daysView = (
+    <>
       <View className="mt-3 flex-row justify-between">
         {WEEKDAYS.map((weekday) => (
           <Text
@@ -307,6 +487,14 @@ const DatePickerField = ({
       </View>
     </>
   );
+
+  const calendarContent = (
+    <>
+      {header}
+      {view === "years" ? yearsView : view === "months" ? monthsView : daysView}
+    </>
+  );
+
   const selectBtnIcon = renderSelectIcon?.(isCalendarOpen) || (
     <Ionicons
       name={isCalendarOpen ? "chevron-up" : "chevron-down"}

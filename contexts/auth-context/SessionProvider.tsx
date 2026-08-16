@@ -4,6 +4,7 @@ import {
   asyncStorageSetItem,
   clearAuthTokens,
 } from "@/lib/persistedStorageConfig";
+import { clearPin } from "@/lib/pinStorage";
 import { clearPersistedQueryCache } from "@/lib/reactQuery";
 import { setTokenRefreshFailureHandler } from "@/src/api/client";
 import { UserProfile } from "@/src/api/types";
@@ -123,6 +124,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
     queryClient.clear();
 
     await clearAuthTokens();
+    // Without this the cached PIN verifier outlives the session, and the next
+    // account to sign in on this device could be unlocked with the previous
+    // user's PIN.
+    await clearPin();
 
     try {
       await cancelAllBillReminders();

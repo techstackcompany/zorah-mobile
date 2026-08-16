@@ -18,11 +18,14 @@ import {
   RequestPasswordResetRequest,
   ResetPasswordRequest,
   SetPinRequest,
+  SetPinResponse,
   ToggleBiometricsRequest,
+  ToggleBiometricsResponse,
   UpdateOnboardingRequest,
   UpdateProfileRequest,
   UserProfile,
   VerifyPinRequest,
+  VerifyPinResponse,
 } from "../types";
 
 export const useRegisterUserMutation = (
@@ -109,12 +112,12 @@ export const useUpdateOnboardingMutation = (
   });
 
 export const useSetUserPinMutation = (
-  options?: UseMutationOptions<ApiEnvelope<unknown>, ApiError, SetPinRequest>,
+  options?: UseMutationOptions<SetPinResponse, ApiError, SetPinRequest>,
 ) =>
-  useMutation<ApiEnvelope<unknown>, ApiError, SetPinRequest>({
+  useMutation<SetPinResponse, ApiError, SetPinRequest>({
     mutationKey: ["auth", "setPin"],
     mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<unknown>>({
+      apiRequest<SetPinResponse>({
         ...API_ENDPOINTS.auth.setPin,
         data: payload,
       }),
@@ -122,16 +125,12 @@ export const useSetUserPinMutation = (
   });
 
 export const useVerifyUserPinMutation = (
-  options?: UseMutationOptions<
-    ApiEnvelope<unknown>,
-    ApiError,
-    VerifyPinRequest
-  >,
+  options?: UseMutationOptions<VerifyPinResponse, ApiError, VerifyPinRequest>,
 ) =>
-  useMutation<ApiEnvelope<unknown>, ApiError, VerifyPinRequest>({
+  useMutation<VerifyPinResponse, ApiError, VerifyPinRequest>({
     mutationKey: ["auth", "verifyPin"],
     mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<unknown>>({
+      apiRequest<VerifyPinResponse>({
         ...API_ENDPOINTS.auth.verifyPin,
         data: payload,
       }),
@@ -140,15 +139,15 @@ export const useVerifyUserPinMutation = (
 
 export const useToggleBiometricsMutation = (
   options?: UseMutationOptions<
-    ApiEnvelope<unknown>,
+    ToggleBiometricsResponse,
     ApiError,
     ToggleBiometricsRequest
   >,
 ) =>
-  useMutation<ApiEnvelope<unknown>, ApiError, ToggleBiometricsRequest>({
+  useMutation<ToggleBiometricsResponse, ApiError, ToggleBiometricsRequest>({
     mutationKey: ["auth", "toggleBiometrics"],
     mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<unknown>>({
+      apiRequest<ToggleBiometricsResponse>({
         ...API_ENDPOINTS.auth.toggleBiometrics,
         data: payload,
       }),

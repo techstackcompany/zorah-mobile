@@ -1,8 +1,13 @@
 import Text from "@/components/ui/Text";
+import { PIN_LENGTH } from "@/constants/auth";
 import COLORS from "@/constants/colors";
 import { useAppLock } from "@/contexts/app-lock/useAppLock";
 import { savePin } from "@/lib/pinStorage";
-import { useGetUserProfileQuery, useSetUserPinMutation, useToggleBiometricsMutation } from "@/src/api/hooks";
+import {
+  useGetUserProfileQuery,
+  useSetUserPinMutation,
+  useToggleBiometricsMutation,
+} from "@/src/api/hooks";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -26,7 +31,6 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-const PIN_LENGTH = 4;
 const OFFSET = 20;
 const TIME = 80;
 
@@ -35,7 +39,7 @@ type PinSetupStep = "create" | "confirm";
 const PinSetupScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { syncLockState, needsPinSetup } = useAppLock();
+  const { syncLockState, needsPinSetup, endPinReset } = useAppLock();
   const { data: profile } = useGetUserProfileQuery();
   const { mutateAsync: toggleBiometrics } = useToggleBiometricsMutation();
   const isForced = needsPinSetup || !profile?.biometricEnabled;
@@ -48,6 +52,10 @@ const PinSetupScreen = () => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => true);
     return () => sub.remove();
   }, [isForced]);
+
+  // Leaving this screen closes the no-relock window opened by a PIN reset,
+  // whether the user finished or backed out.
+  useEffect(() => endPinReset, [endPinReset]);
   const offset = useSharedValue(0);
 
   const setPinMutation = useSetUserPinMutation({
@@ -62,7 +70,9 @@ const PinSetupScreen = () => {
 
       Toast.show({
         type: "success",
-        text1: !profile?.biometricEnabled ? "PIN Set Up Successfully" : "PIN Updated Successfully",
+        text1: !profile?.biometricEnabled
+          ? "PIN Set Up Successfully"
+          : "PIN Updated Successfully",
         text2: !profile?.biometricEnabled
           ? "Your account is now secured with a PIN."
           : "Your PIN has been successfully updated.",
@@ -77,10 +87,17 @@ const PinSetupScreen = () => {
       }
     },
     onError: (error) => {
+      // handleApiError only populates `status` from a real response, so its
+      // absence means the request never left the device. Setting a PIN has to
+      // reach the server so it works on the user's other devices.
+      const isOffline = !error.status;
+
       Toast.show({
         type: "error",
-        text1: "Failed to Update PIN",
-        text2: error.message || "Please try again.",
+        text1: isOffline ? "No Connection" : "Failed to Update PIN",
+        text2: isOffline
+          ? "Connect to the internet so your PIN works on your other devices."
+          : error.message || "Please try again.",
       });
       setPin("");
       setConfirmPin("");
@@ -165,122 +182,123 @@ const PinSetupScreen = () => {
             </TouchableOpacity>
           </View>
         )}
-
-        <View style={styles.header}>
-          <Text
-            family="degular"
-            weight="bold"
-            className="mb-2 text-center text-[28px] tracking-[0.5px] text-textColor"
-          >
-            {step === "create"
-              ? isForced
-                ? "Set Up PIN"
-                : "Update PIN"
-              : "Confirm PIN"}
-          </Text>
-          <Text
-            weight="regular"
-            className="px-10 text-center text-[15px] text-[#6B7280]"
-          >
-            {step === "create"
-              ? isForced
-                ? "Create a 4-digit PIN to secure your account"
-                : "Enter your new 4-digit PIN"
-              : "Re-enter your PIN to confirm"}
-          </Text>
-        </View>
-
-        <Animated.View style={[styles.codeView, style]}>
-          {Array(PIN_LENGTH)
-            .fill(null)
-            .map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.codeEmpty,
-                  {
-                    backgroundColor:
-                      index < currentPin.length
-                        ? COLORS.primary_400
-                        : "transparent",
-                    borderColor:
-                      index < currentPin.length
-                        ? COLORS.primary_400
-                        : COLORS.primary_200,
-                    borderWidth: index < currentPin.length ? 0 : 2,
-                    opacity: isLoading ? 0 : 1,
-                  },
-                ]}
-              />
-            ))}
-          {isLoading && (
-            <View style={styles.verifyingOverlay}>
-              <ActivityIndicator size="small" color={COLORS.primary_400} />
-            </View>
-          )}
-        </Animated.View>
-
-        <View style={styles.numbersView}>
-          {[0, 1, 2].map((rowIndex) => {
-            const base = rowIndex * 3 + 1;
-            return (
-              <View
-                key={rowIndex}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                {[base, base + 1, base + 2].map((number) => (
-                  <TouchableOpacity
-                    key={number}
-                    style={[styles.keypadBtn, styles.numberBtn]}
-                    onPress={() => onNumberPress(number)}
-                    disabled={isLoading || currentPin.length >= PIN_LENGTH}
-                  >
-                    <Text
-                      weight="semibold"
-                      className="text-[28px] text-textColor"
-                    >
-                      {number}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            );
-          })}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <View style={styles.keypadBtn} />
-            <TouchableOpacity
-              onPress={() => onNumberPress(0)}
-              style={[styles.keypadBtn, styles.numberBtn]}
-              disabled={isLoading || currentPin.length >= PIN_LENGTH}
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <View style={styles.header}>
+            <Text
+              family="degular"
+              weight="bold"
+              className="mb-2 text-center text-[28px] tracking-[0.5px] text-textColor"
             >
-              <Text weight="semibold" className="text-[28px] text-textColor">
-                0
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.keypadBtn}>
-              {currentPin.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.keypadBtn, styles.backspaceBtn]}
-                  onPress={onBackSpacePress}
-                  disabled={isLoading}
+              {step === "create"
+                ? isForced
+                  ? "Set Up PIN"
+                  : "Update PIN"
+                : "Confirm PIN"}
+            </Text>
+            <Text
+              weight="regular"
+              className="px-10 text-center text-[15px] text-[#6B7280]"
+            >
+              {step === "create"
+                ? isForced
+                  ? "Create a 4-digit PIN to secure your account"
+                  : "Enter your new 4-digit PIN"
+                : "Re-enter your PIN to confirm"}
+            </Text>
+          </View>
+
+          <Animated.View style={[styles.codeView, style]}>
+            {Array(PIN_LENGTH)
+              .fill(null)
+              .map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.codeEmpty,
+                    {
+                      backgroundColor:
+                        index < currentPin.length
+                          ? COLORS.primary_400
+                          : "transparent",
+                      borderColor:
+                        index < currentPin.length
+                          ? COLORS.primary_400
+                          : COLORS.primary_200,
+                      borderWidth: index < currentPin.length ? 0 : 2,
+                      opacity: isLoading ? 0 : 1,
+                    },
+                  ]}
+                />
+              ))}
+            {isLoading && (
+              <View style={styles.verifyingOverlay}>
+                <ActivityIndicator size="small" color={COLORS.primary_400} />
+              </View>
+            )}
+          </Animated.View>
+
+          <View style={styles.numbersView}>
+            {[0, 1, 2].map((rowIndex) => {
+              const base = rowIndex * 3 + 1;
+              return (
+                <View
+                  key={rowIndex}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
                 >
-                  <MaterialCommunityIcons
-                    name="backspace"
-                    size={22}
-                    color={COLORS.textColor}
-                  />
-                </TouchableOpacity>
-              )}
+                  {[base, base + 1, base + 2].map((number) => (
+                    <TouchableOpacity
+                      key={number}
+                      style={[styles.keypadBtn, styles.numberBtn]}
+                      onPress={() => onNumberPress(number)}
+                      disabled={isLoading || currentPin.length >= PIN_LENGTH}
+                    >
+                      <Text
+                        weight="semibold"
+                        className="text-[28px] text-textColor"
+                      >
+                        {number}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              );
+            })}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <View style={styles.keypadBtn} />
+              <TouchableOpacity
+                onPress={() => onNumberPress(0)}
+                style={[styles.keypadBtn, styles.numberBtn]}
+                disabled={isLoading || currentPin.length >= PIN_LENGTH}
+              >
+                <Text weight="semibold" className="text-[28px] text-textColor">
+                  0
+                </Text>
+              </TouchableOpacity>
+              <View style={styles.keypadBtn}>
+                {currentPin.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.keypadBtn, styles.backspaceBtn]}
+                    onPress={onBackSpacePress}
+                    disabled={isLoading}
+                  >
+                    <MaterialCommunityIcons
+                      name="backspace"
+                      size={22}
+                      color={COLORS.textColor}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>

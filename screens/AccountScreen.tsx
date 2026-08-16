@@ -1,7 +1,9 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
+import { KYC_SETUP_ROUTE } from "@/components/wallet/WalletInactiveNotice";
 import COLORS from "@/constants/colors";
 import { useSession } from "@/contexts/auth-context/useSession";
+import { getWalletKycStatus, getWalletTier } from "@/features/wallet";
 import { cn, extractUserData } from "@/lib/utils";
 import {
   useGetUserProfileQuery,
@@ -12,9 +14,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image, ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { RelativePathString, useRouter } from "expo-router";
-import React, { ReactNode, useCallback, useMemo, useState } from "react";
+import { Href, useRouter } from "expo-router";
+import { ReactNode, useCallback, useMemo, useState } from "react";
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -51,6 +54,7 @@ const AccountScreen = () => {
   const { data: overview } = useWalletOverViewQuery();
   const [pendingEnableFromAccount, setPendingEnableFromAccount] =
     useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const { displayName, displayEmail, displayPhone, initials } = useMemo(() => {
     const userDataExtracted = extractUserData(userData, {
@@ -68,14 +72,15 @@ const AccountScreen = () => {
   }, [userData]);
 
   const kyc = useMemo(() => {
-    // wallet/overview is the live source of truth; fall back to the
-    // session-cached status (set at login) while overview is still loading.
-    const rawStatus = overview?.kyc.status ?? kycVerificationStatus ?? "";
+    // wallet/overview is the live source of truth, but it only carries a `kyc`
+    // block once a wallet exists — before KYC is submitted it answers
+    // { success: true, hasWallet: false }. Fall back to the session-cached
+    // status (set at login) in that case, and while the query is loading.
+    const rawStatus =
+      getWalletKycStatus(overview) ?? kycVerificationStatus ?? "";
     const normalized = rawStatus.trim().toLowerCase();
     const style = KYC_STATUS_STYLES[normalized] ?? KYC_STATUS_STYLES.unverified;
-    const currentTier = overview?.kyc.currentTier ?? 1;
-
-    return { ...style, currentTier };
+    return { ...style, currentTier: getWalletTier(overview) };
   }, [overview, kycVerificationStatus]);
 
   useFocusEffect(
@@ -98,8 +103,11 @@ const AccountScreen = () => {
     }, [pendingEnableFromAccount, queryClient]),
   );
 
-  const handleNavigate = (path: string) => {
-    router.push(path as RelativePathString);
+  // Takes Href rather than string: the previous `path as RelativePathString`
+  // cast defeated typed routes, which is how "Change PIN" shipped pointing at
+  // /(app)/(home)/profile/pin-setup — a path that does not exist.
+  const handleNavigate = (path: Href) => {
+    router.push(path);
   };
 
   return (
@@ -157,21 +165,28 @@ const AccountScreen = () => {
               iconSource={require("@/assets/icons/verified-check.svg")}
               value={
                 <View
-                  style={[
-                    styles.kycBadge,
-                    { backgroundColor: kyc.background },
-                  ]}
+                  style={[styles.kycBadge, { backgroundColor: kyc.background }]}
                 >
                   <Text
                     weight="semibold"
                     className="text-xs"
                     style={{ color: kyc.color }}
                   >
-                    {kyc.label} · Tier {kyc.currentTier}
+                    {kyc.currentTier === null
+                      ? "Wallet not active"
+                      : `${kyc.label} · Tier ${kyc.currentTier}`}
                   </Text>
                 </View>
               }
-              onPress={() => handleNavigate("/(app)/profile/kyc-upgrade")}
+              // Without a wallet there is no Tier 2 to upgrade to — send them
+              // to the setup flow's KYC step instead.
+              onPress={() =>
+                handleNavigate(
+                  kyc.currentTier === null
+                    ? KYC_SETUP_ROUTE
+                    : "/(app)/profile/kyc-upgrade",
+                )
+              }
             />
           </View>
 
@@ -186,8 +201,17 @@ const AccountScreen = () => {
 
             <AccountRow
               label="Change PIN"
-              iconSource={require("@/assets/icons/lock.svg")}
-              onPress={() => handleNavigate("/(app)/(home)/profile/pin-setup")}
+              // Keypad rather than a second padlock — it mirrors the numeric
+              // keypad this row actually opens, and distinguishes it from
+              // Change Password directly above.
+              icon={
+                <Ionicons
+                  name="keypad-outline"
+                  size={22}
+                  color={COLORS.textColor}
+                />
+              }
+              onPress={() => handleNavigate("/(app)/settings/pin")}
             />
           </View>
           <View style={styles.sectionCard}>
@@ -196,7 +220,7 @@ const AccountScreen = () => {
             <TouchableOpacity
               activeOpacity={0.7}
               style={styles.logoutButton}
-              onPress={signOut}
+              onPress={() => setShowLogoutConfirm(true)}
               accessibilityRole="button"
               className="active:bg-primary_200"
             >
@@ -211,6 +235,69 @@ const AccountScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showLogoutConfirm}
+        transparent
+        animationType="fade"
+        // Android hardware back dismisses rather than signing out.
+        onRequestClose={() => setShowLogoutConfirm(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowLogoutConfirm(false)}
+          accessibilityLabel="Dismiss"
+        >
+          {/* Consumes taps so pressing the card does not dismiss it. */}
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <View style={styles.modalHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons
+                  name="log-out-outline"
+                  size={28}
+                  color={COLORS.amber}
+                />
+              </View>
+              <Text
+                weight="semibold"
+                className="mt-4 text-center text-lg text-textColor"
+              >
+                Log out?
+              </Text>
+              <Text className="mt-2 text-center text-sm text-textColor/70">
+                You&apos;ll need to sign in again to get back into your account.
+              </Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowLogoutConfirm(false)}
+                accessibilityRole="button"
+              >
+                <Text weight="semibold" className="text-primary_400">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={() => {
+                  setShowLogoutConfirm(false);
+                  signOut();
+                }}
+                accessibilityRole="button"
+              >
+                <Text weight="semibold" className="text-white">
+                  Log out
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </MainContainer>
   );
 };
@@ -227,7 +314,10 @@ const SectionSubHeader = ({ subtitle }: { subtitle: string }) => (
 );
 
 type AccountRowProps = {
-  iconSource: ImageSource;
+  /** Local SVG asset. Ignored when `icon` is supplied. */
+  iconSource?: ImageSource;
+  /** Vector icon, for rows with no suitable asset in assets/icons. */
+  icon?: ReactNode;
   label: string;
   value?: ReactNode | string;
   valueVariant?: "status";
@@ -236,6 +326,7 @@ type AccountRowProps = {
 
 const AccountRow = ({
   iconSource,
+  icon,
   label,
   value,
   valueVariant,
@@ -244,12 +335,16 @@ const AccountRow = ({
   const Content = (
     <View style={styles.rowContent}>
       <View style={styles.rowLeft}>
-        <View>
-          <Image
-            source={iconSource}
-            style={{ width: 24, height: 24 }}
-            contentFit="contain"
-          />
+        {/* Fixed slot so vector icons and SVG assets line up identically. */}
+        <View style={styles.rowIconSlot}>
+          {icon ??
+            (iconSource ? (
+              <Image
+                source={iconSource}
+                style={{ width: 24, height: 24 }}
+                contentFit="contain"
+              />
+            ) : null)}
         </View>
         <Text weight="semibold" className="text-textColor">
           {label}
@@ -333,6 +428,12 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: "#F1F4FD",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowIconSlot: {
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
   },

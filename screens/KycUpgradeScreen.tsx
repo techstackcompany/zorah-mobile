@@ -3,7 +3,13 @@ import MainContainer from "@/components/layouts/MainContainer";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
+import WalletInactiveNotice from "@/components/wallet/WalletInactiveNotice";
 import COLORS from "@/constants/colors";
+import {
+  getWalletInactiveMessage,
+  getWalletTier,
+  isWalletActive,
+} from "@/features/wallet";
 import type { ApiError } from "@/src/api/client";
 import {
   useGetUserProfileQuery,
@@ -15,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const TIER = 2;
@@ -40,7 +46,8 @@ const KycUpgradeScreen = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: userData } = useGetUserProfileQuery();
-  const { data: overview } = useWalletOverViewQuery();
+  const { data: overview, isLoading: isLoadingOverview } =
+    useWalletOverViewQuery();
   const submitKycMutation = useSubmitKycMutation();
 
   const prefill = useMemo(() => getPrefill(userData), [userData]);
@@ -142,8 +149,37 @@ const KycUpgradeScreen = () => {
     }
   };
 
-  const currentTier = overview?.kyc.currentTier ?? 1;
-  const alreadyTier2 = currentTier >= TIER;
+  // null while the overview is loading, or when no wallet exists yet — that
+  // response carries no `kyc` block at all.
+  const currentTier = getWalletTier(overview);
+  const alreadyTier2 = (currentTier ?? 0) >= TIER;
+  // Tier 2 builds on a Tier 1 wallet, so there is nothing to upgrade until the
+  // user has been through the setup flow's KYC step.
+  const hasWallet = isWalletActive(overview);
+
+  if (isLoadingOverview) {
+    return (
+      <MainContainer edges={["bottom"]} className="bg-light pb-0">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="small" color={COLORS.primary_400} />
+        </View>
+      </MainContainer>
+    );
+  }
+
+  if (!hasWallet) {
+    return (
+      <MainContainer edges={["bottom"]} className="bg-light pb-0">
+        <View className="flex-1 justify-center px-6">
+          <WalletInactiveNotice
+            title="Complete Tier 1 verification first"
+            message={getWalletInactiveMessage(overview)}
+            ctaLabel="Start Verification"
+          />
+        </View>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer edges={["bottom"]} className="bg-light pb-0">

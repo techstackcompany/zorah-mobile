@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import MainContainer from "@/components/layouts/MainContainer";
+import { PIN_LENGTH } from "@/constants/auth";
 import AmountInput from "@/components/ui/AmountInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import SelectButton from "@/components/ui/SelectButton";
@@ -23,7 +24,6 @@ import { WalletBank } from "@/src/api/types";
 
 const CURRENCY_SYMBOL = "₦";
 const ACCOUNT_NUMBER_LENGTH = 10;
-const PIN_LENGTH = 4;
 
 type Bank = WalletBank;
 

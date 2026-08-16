@@ -56,7 +56,6 @@ const ChildrenComponent = () => {
 
 const AppWrapper = ({ children }: PropsWithChildren) => {
   const { markActive, isLocked } = useAppLock();
-  console.log("isLocked", isLocked);
   const panHandlers = useMemo(
     () =>
       PanResponder.create({

@@ -1,7 +1,9 @@
 import MainContainer from "@/components/layouts/MainContainer";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
+import WalletInactiveNotice from "@/components/wallet/WalletInactiveNotice";
 import COLORS from "@/constants/colors";
+import { getWalletInactiveMessage, isWalletActive } from "@/features/wallet";
 import {
   useDepositFundsMutation,
   useWalletOverViewQuery,
@@ -42,11 +44,18 @@ const BankTransferScreen = () => {
 
   const { data: overview, isLoading: isLoadingOverview } =
     useWalletOverViewQuery();
-  console.log("overview", overview);
+
+  // Until KYC is submitted there is no wallet, and the overview response
+  // carries no `account` block to fund — only a message explaining why.
+  const hasWallet = isWalletActive(overview);
+  const walletUnavailableMessage = getWalletInactiveMessage(overview);
+
   const transferDetails = useMemo(
     () => ({
-      name: overview?.account.accountName ?? "",
-      accountNumber: overview?.account.accountNumber ?? "",
+      name: isWalletActive(overview) ? (overview.account?.accountName ?? "") : "",
+      accountNumber: isWalletActive(overview)
+        ? (overview.account?.accountNumber ?? "")
+        : "",
       bank: WALLET_BANK_NAME,
     }),
     [overview],
@@ -124,6 +133,11 @@ const BankTransferScreen = () => {
   };
 
   const handleConfirmDeposit = () => {
+    if (!hasWallet) {
+      Alert.alert("Wallet Not Active", walletUnavailableMessage);
+      return;
+    }
+
     if (depositAmount <= 0) {
       Alert.alert("Invalid Amount", "Please enter a valid amount to deposit.");
       return;
@@ -159,6 +173,8 @@ const BankTransferScreen = () => {
                 color={COLORS.primary_400}
                 className="py-10"
               />
+            ) : !hasWallet ? (
+              <WalletInactiveNotice message={walletUnavailableMessage} />
             ) : (
               <>
                 <View className="flex-row items-center justify-between">
@@ -185,71 +201,77 @@ const BankTransferScreen = () => {
             )}
           </View>
 
-          <View className="mt-6 flex-row gap-4">
-            <Pressable
-              onPress={openShareModal}
-              className="flex-1 flex-row items-center justify-center rounded-xl border border-primary_400 bg-white py-3"
-              accessibilityRole="button"
-            >
-              <Ionicons
-                name="share-social-outline"
-                size={18}
-                color={COLORS.primary_400}
-              />
-              <Text weight="semibold" className="ml-2 text-primary_400">
-                Share Details
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleCopy}
-              className="flex-1 flex-row items-center justify-center rounded-xl bg-primary_400 py-3"
-              accessibilityRole="button"
-            >
-              <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
-              <Text weight="semibold" className="ml-2 text-white">
-                Copy Number
-              </Text>
-            </Pressable>
-          </View>
-
-          <View className="mt-6">
-            <Text
-              weight="medium"
-              className="mb-3 text-center text-sm text-textColor/70"
-            >
-              After making the transfer, click the button below to confirm
-            </Text>
-            <Pressable
-              onPress={handleConfirmDeposit}
-              disabled={depositMutation.isPending || depositAmount <= 0}
-              className={`flex-row items-center justify-center rounded-xl py-4 ${
-                depositMutation.isPending || depositAmount <= 0
-                  ? "bg-primary_300"
-                  : "bg-primary_400"
-              }`}
-              accessibilityRole="button"
-            >
-              {depositMutation.isPending ? (
-                <>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text weight="semibold" className="ml-2 text-white">
-                    Processing...
-                  </Text>
-                </>
-              ) : (
-                <>
+          {/* Sharing, copying and confirming all act on an account number
+              that does not exist until the wallet is provisioned. */}
+          {hasWallet && (
+            <>
+              <View className="mt-6 flex-row gap-4">
+                <Pressable
+                  onPress={openShareModal}
+                  className="flex-1 flex-row items-center justify-center rounded-xl border border-primary_400 bg-white py-3"
+                  accessibilityRole="button"
+                >
                   <Ionicons
-                    name="checkmark-circle-outline"
-                    size={20}
-                    color="#FFFFFF"
+                    name="share-social-outline"
+                    size={18}
+                    color={COLORS.primary_400}
                   />
-                  <Text weight="semibold" className="ml-2 text-white">
-                    I&apos;ve Made the Transfer
+                  <Text weight="semibold" className="ml-2 text-primary_400">
+                    Share Details
                   </Text>
-                </>
-              )}
-            </Pressable>
-          </View>
+                </Pressable>
+                <Pressable
+                  onPress={handleCopy}
+                  className="flex-1 flex-row items-center justify-center rounded-xl bg-primary_400 py-3"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
+                  <Text weight="semibold" className="ml-2 text-white">
+                    Copy Number
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View className="mt-6">
+                <Text
+                  weight="medium"
+                  className="mb-3 text-center text-sm text-textColor/70"
+                >
+                  After making the transfer, click the button below to confirm
+                </Text>
+                <Pressable
+                  onPress={handleConfirmDeposit}
+                  disabled={depositMutation.isPending || depositAmount <= 0}
+                  className={`flex-row items-center justify-center rounded-xl py-4 ${
+                    depositMutation.isPending || depositAmount <= 0
+                      ? "bg-primary_300"
+                      : "bg-primary_400"
+                  }`}
+                  accessibilityRole="button"
+                >
+                  {depositMutation.isPending ? (
+                    <>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text weight="semibold" className="ml-2 text-white">
+                        Processing...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={20}
+                        color="#FFFFFF"
+                      />
+                      <Text weight="semibold" className="ml-2 text-white">
+                        I&apos;ve Made the Transfer
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
       </MainContainer>
 

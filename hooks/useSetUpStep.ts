@@ -1,10 +1,10 @@
-import { setupInfo } from "@/constants/setup";
+import { getNextSetupStep, getPreviousSetupStep } from "@/constants/setup";
 import { useSession } from "@/contexts/auth-context/useSession";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 
 const useSetUpStep = (step: number) => {
-  const { setupStep, setSetupStep } = useSession();
+  const { setupStep, setSetupStep, setHasCompletedSetup } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -19,12 +19,23 @@ const useSetUpStep = (step: number) => {
     setupStep,
     setSetupStep,
     goToNextStep: () => {
+      const next = getNextSetupStep(step);
+      // The last step has nothing after it. Finish setup rather than indexing
+      // off the end of setupInfo — that threw and left users stuck on step 4.
+      if (!next) {
+        setHasCompletedSetup(true);
+        router.replace("/(app)/(home)");
+        return;
+      }
       setSetupStep(step + 1);
-      router.push(setupInfo[step + 1].route);
+      router.push(next.route);
     },
     goToPreviousStep: () => {
+      const previous = getPreviousSetupStep(step);
+      // Already on the first step — nowhere to go back to.
+      if (!previous) return;
       setSetupStep(step - 1);
-      router.navigate(setupInfo[step - 1].route);
+      router.navigate(previous.route);
     },
   } as const;
 };

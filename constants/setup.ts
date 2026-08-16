@@ -25,6 +25,18 @@ export const setupInfo: Record<number, { route: SetupRoute; key: string }> = {
 
 export const SETUP_TOTAL_STEPS = 4;
 
+export type SetupStep = { route: SetupRoute; key: string };
+
+// `setupInfo` is typed as Record<number, …>, which tells TypeScript that every
+// numeric key is populated — it is not. These lookups return null past either
+// end so callers are forced to handle the boundary instead of reading `.route`
+// off undefined at runtime.
+export const getNextSetupStep = (step: number): SetupStep | null =>
+  setupInfo[step + 1] ?? null;
+
+export const getPreviousSetupStep = (step: number): SetupStep | null =>
+  setupInfo[step - 1] ?? null;
+
 export const incomeSources = [
   { label: "Salary", value: "salary" },
   { label: "Business", value: "business" },

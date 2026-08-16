@@ -69,12 +69,19 @@ export interface UserProfile {
   name?: string;
   phoneNumber?: string;
   fcmTokens?: string[];
-  hasPin?: boolean;
-  pin?: string;
+  // Server-side "this account has a PIN" flag. The backend renamed this from
+  // `hasPin` before the 2026-05-01 capture; the old name lingered in this type
+  // until 2026-08-16. See docs/api-captures/auth-endpoints.md.
+  isPinSet?: boolean;
   biometricEnabled: boolean;
+  // The backend now also returns `biometricsEnabled` (note the plural) and
+  // /auth/toggle-biometrics writes *that* key. Both are currently sent with
+  // the same value; the app reads `biometricEnabled` throughout. Do not switch
+  // until the backend confirms which one is authoritative.
+  biometricsEnabled?: boolean;
+  walletId?: string;
   KycStatus?: "unverified" | "pending" | "verified" | (string & {});
   onboarding?: UserOnboarding;
-  stepsCompleted?: string[];
   preferredReminderHour?: number;
   refreshToken?: string;
   usageMetrics: UserUsageMetrics;
@@ -96,10 +103,41 @@ export interface SetPinRequest {
   pin: string;
 }
 
-export type VerifyPinRequest = SetPinRequest;
+// Deliberately NOT an alias of SetPinRequest — they are separate contracts that
+// happen to match today. See docs/api-captures/auth-endpoints.md.
+export interface VerifyPinRequest {
+  pin: string;
+}
 
 export interface ToggleBiometricsRequest {
   enabled: boolean;
+}
+
+/* ---------------------------------------------
+   Auth status envelope
+
+   As of 2026-08-16 the auth endpoints wrap responses in { status, message,
+   data }. This replaced the flat { message } bodies recorded in the
+   2026-05-01 probe. Shapes captured live — see
+   docs/api-captures/auth-endpoints.md.
+----------------------------------------------*/
+export interface AuthStatusResponse {
+  status: "success" | "failed" | (string & {});
+  message?: string;
+}
+
+export interface SetPinResponse extends AuthStatusResponse {
+  data?: { isPinSet: boolean };
+}
+
+// Success is 200 { status: "success", verified: true }; a wrong PIN is 401
+// { status: "failed", message: "Invalid PIN" } and surfaces as an ApiError.
+export interface VerifyPinResponse extends AuthStatusResponse {
+  verified?: boolean;
+}
+
+export interface ToggleBiometricsResponse extends AuthStatusResponse {
+  data?: { biometricsEnabled: boolean };
 }
 
 export interface UpdateOnboardingRequest {
@@ -495,9 +533,7 @@ interface DepositTransaction extends BaseTransaction {
 }
 
 export type Transaction =
-  | ExpenseIncomeTransaction
-  | SavingsTransaction
-  | DepositTransaction;
+  ExpenseIncomeTransaction | SavingsTransaction | DepositTransaction;
 
 export type TransactionsResponse = Transaction[];
 
@@ -534,9 +570,12 @@ export interface VerifyAccountResponse {
   };
 }
 
-// Shape captured in docs/api-captures/wallet-endpoints.md
-export interface WalletOverviewResponse {
+// Shape captured in docs/api-captures/wallet-endpoints.md §2.
+// `hasWallet` has never been observed on this arm; it is declared as an
+// optional `true` so the union discriminates against the no-wallet response.
+export interface DefaultWalletOverviewResponse {
   success: boolean;
+  hasWallet?: true;
   account: {
     balance: number;
     currency: string;
@@ -551,11 +590,26 @@ export interface WalletOverviewResponse {
     currentTier: number;
   };
   recentTransactions: WalletTransaction[];
-  chartData: unknown[];
+  // Absent from the 2026-05-01 capture, present as [] on 2026-07-13 — the
+  // backend does not always send this key.
+  chartData?: unknown[];
   userSettings: {
     biometricEnabled: boolean;
   };
 }
+
+// Returned with HTTP 200 when the user has not submitted KYC, so no wallet has
+// been provisioned yet. Carries neither `account` nor `kyc`, which is why
+// consumers must narrow with `isWalletActive()` before reading either.
+export interface HasNotSubmittedKYCResponse {
+  success: boolean;
+  hasWallet: false;
+  message: string;
+}
+
+export type WalletOverviewResponse =
+  | HasNotSubmittedKYCResponse
+  | DefaultWalletOverviewResponse;
 
 /* ---------------------------------------------
    Categories

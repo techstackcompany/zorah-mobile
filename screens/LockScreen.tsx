@@ -1,14 +1,23 @@
+import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
+import { PIN_LENGTH } from "@/constants/auth";
 import COLORS from "@/constants/colors";
 import { useAppLock } from "@/contexts/app-lock/useAppLock";
+import { useSession } from "@/contexts/auth-context/useSession";
+import { setRefreshToken } from "@/lib/persistedStorageConfig";
+import { cn } from "@/lib/utils";
+import type { ApiError } from "@/src/api/client";
+import { useGetUserProfileQuery, useLoginUserMutation } from "@/src/api/hooks";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -21,25 +30,63 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const PIN_LENGTH = 4;
 const OFFSET = 20;
 const TIME = 80;
+
+const formatCountdown = (ms: number) => {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
 
 type LockScreenProps = {
   visible: boolean;
 };
+
+type LockMode = "pin" | "reset";
 
 const LockScreen = ({ visible }: LockScreenProps) => {
   const {
     verifyPin,
     authenticateWithBiometric,
     forgotPin,
+    beginPinReset,
     isBiometricAvailable,
   } = useAppLock();
+  const { signIn } = useSession();
+  const { data: profile } = useGetUserProfileQuery();
+  const loginMutation = useLoginUserMutation();
+
+  const [mode, setMode] = useState<LockMode>("pin");
+  const [password, setPassword] = useState("");
+  const [resetError, setResetError] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const offset = useSharedValue(0);
   const opacity = useSharedValue(0);
+
+  const cooldownMs = lockedUntil ? Math.max(0, lockedUntil - now) : 0;
+  const isCoolingDown = cooldownMs > 0;
+
+  // Only tick while a cooldown is actually counting down.
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  useEffect(() => {
+    if (lockedUntil && Date.now() >= lockedUntil) {
+      setLockedUntil(null);
+      setError(null);
+    }
+  }, [now, lockedUntil]);
+  
+  
 
   useEffect(() => {
     opacity.value = withTiming(visible ? 1 : 0, { duration: 200 });
@@ -60,8 +107,56 @@ const LockScreen = ({ visible }: LockScreenProps) => {
   }, [visible, isBiometricAvailable, authenticateWithBiometric]);
 
   useEffect(() => {
-    if (visible) setPin("");
+    if (visible) {
+      setPin("");
+      setMode("pin");
+      setPassword("");
+      setResetError(null);
+    }
   }, [visible]);
+
+  /**
+   * "Forgot PIN" used to sign the user out. That is now a dead end: the server
+   * keeps the PIN (`isPinSet`), so signing back in just locks them out again
+   * with the PIN they had forgotten. Prove ownership with the account password
+   * instead, then send them to set a new one.
+   */
+  const handleResetWithPassword = async () => {
+    const email = profile?.email?.trim().toLowerCase();
+    if (!email) {
+      setResetError("Could not read your account. Sign out and back in.");
+      return;
+    }
+    if (!password.trim()) {
+      setResetError("Enter your password");
+      return;
+    }
+
+    setResetError(null);
+    try {
+      const response = await loginMutation.mutateAsync({ email, password });
+      // Adopt the rotated tokens. If the backend invalidates the previous
+      // refresh token on login, discarding these would break the session on
+      // the next refresh. Mirrors processSignInResponse in SignInScreen.
+      if (response.refreshToken) await setRefreshToken(response.refreshToken);
+      if (response.accessToken) await signIn(response.accessToken);
+
+      // Suppress re-locking before navigating — the inactivity timer or a
+      // background would otherwise strand them on the way to PIN setup.
+      beginPinReset();
+      setPassword("");
+      router.push("/(app)/settings/pin");
+    } catch (error) {
+      const apiError = error as ApiError;
+      setResetError(
+        !apiError?.status
+          ? "You need a connection to reset your PIN."
+          : apiError.status === 401
+            ? "That password isn't right."
+            : apiError.message || "Could not verify your password.",
+      );
+    }
+  };
 
   const shake = () => {
     offset.value = withSequence(
@@ -72,21 +167,41 @@ const LockScreen = ({ visible }: LockScreenProps) => {
   };
 
   const handleNumberPress = async (number: number) => {
-    if (isVerifying || pin.length >= PIN_LENGTH) return;
+    if (isVerifying || isCoolingDown || pin.length >= PIN_LENGTH) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newPin = pin + number.toString();
     setPin(newPin);
+    setError(null);
 
-    if (newPin.length === PIN_LENGTH) {
-      setIsVerifying(true);
-      const success = await verifyPin(newPin);
-      console.log("success", success);
-      setIsVerifying(false);
-      if (!success) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        shake();
-        setPin("");
-      }
+    if (newPin.length !== PIN_LENGTH) return;
+
+    setIsVerifying(true);
+    const result = await verifyPin(newPin);
+    setIsVerifying(false);
+
+    if (result.ok) return;
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    shake();
+    setPin("");
+
+    switch (result.reason) {
+      case "locked_out":
+        setLockedUntil(Date.now() + result.retryInMs);
+        setNow(Date.now());
+        break;
+      case "needs_connection":
+        // First unlock on this device — there is nothing cached to check
+        // against, so the server has to confirm it.
+        setError("Connect to the internet to unlock on this device.");
+        break;
+      case "invalid":
+        setError(
+          result.attemptsRemaining === 1
+            ? "Incorrect PIN. 1 attempt left."
+            : `Incorrect PIN. ${result.attemptsRemaining} attempts left.`,
+        );
+        break;
     }
   };
 
@@ -126,10 +241,75 @@ const LockScreen = ({ visible }: LockScreenProps) => {
               weight="regular"
               className="mt-1 px-10 text-center text-[15px] text-[#6B7280]"
             >
-              Enter your PIN to continue
+              {mode === "reset"
+                ? "Enter your account password to set a new PIN"
+                : "Enter your PIN to continue"}
             </Text>
           </View>
 
+          {mode === "reset" ? (
+            <View style={styles.resetPanel}>
+              <View
+                className={cn(
+                  "rounded-2xl border bg-white px-4",
+                  resetError ? "border-error" : "border-gray-200",
+                )}
+              >
+                <TextInput
+                  value={password}
+                  onChangeText={(value) => {
+                    setPassword(value);
+                    setResetError(null);
+                  }}
+                  placeholder="Your password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  textContentType="password"
+                  autoFocus
+                  onSubmitEditing={handleResetWithPassword}
+                  returnKeyType="go"
+                  className="py-4 font-poppins text-base text-textColor"
+                />
+              </View>
+
+              <View style={styles.statusMessage}>
+                {resetError ? (
+                  <Text
+                    weight="medium"
+                    className="text-center text-[14px] text-error"
+                  >
+                    {resetError}
+                  </Text>
+                ) : null}
+              </View>
+
+              <Button
+                title="Continue"
+                onPress={handleResetWithPassword}
+                loading={loginMutation.isPending}
+                className="w-full"
+              />
+
+              <TouchableOpacity
+                style={styles.forgotPin}
+                onPress={() => {
+                  setMode("pin");
+                  setPassword("");
+                  setResetError(null);
+                }}
+              >
+                <Text
+                  weight="regular"
+                  className="text-center text-[14px] text-[#6B7280]"
+                >
+                  Back to PIN
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
           <Animated.View style={[styles.codeView, animatedStyle]}>
             {Array(PIN_LENGTH)
               .fill(null)
@@ -160,6 +340,24 @@ const LockScreen = ({ visible }: LockScreenProps) => {
             )}
           </Animated.View>
 
+          <View style={styles.statusMessage}>
+            {isCoolingDown ? (
+              <Text
+                weight="medium"
+                className="text-center text-[14px] text-error"
+              >
+                Too many attempts. Try again in {formatCountdown(cooldownMs)}.
+              </Text>
+            ) : error ? (
+              <Text
+                weight="medium"
+                className="text-center text-[14px] text-error"
+              >
+                {error}
+              </Text>
+            ) : null}
+          </View>
+
           <View style={styles.numbersView}>
             {[0, 1, 2].map((rowIndex) => {
               const base = rowIndex * 3 + 1;
@@ -170,7 +368,7 @@ const LockScreen = ({ visible }: LockScreenProps) => {
                       key={number}
                       style={[styles.keypadBtn, styles.numberBtn]}
                       onPress={() => handleNumberPress(number)}
-                      disabled={isVerifying || pin.length >= PIN_LENGTH}
+                      disabled={isVerifying || isCoolingDown || pin.length >= PIN_LENGTH}
                     >
                       <Text
                         weight="semibold"
@@ -190,7 +388,7 @@ const LockScreen = ({ visible }: LockScreenProps) => {
                   <TouchableOpacity
                     style={[styles.keypadBtn, styles.numberBtn]}
                     onPress={authenticateWithBiometric}
-                    disabled={isVerifying}
+                    disabled={isVerifying || isCoolingDown}
                   >
                     <Ionicons
                       name="finger-print"
@@ -204,7 +402,7 @@ const LockScreen = ({ visible }: LockScreenProps) => {
               <TouchableOpacity
                 style={[styles.keypadBtn, styles.numberBtn]}
                 onPress={() => handleNumberPress(0)}
-                disabled={isVerifying || pin.length >= PIN_LENGTH}
+                disabled={isVerifying || isCoolingDown || pin.length >= PIN_LENGTH}
               >
                 <Text weight="semibold" className="text-[28px] text-textColor">
                   0
@@ -216,7 +414,7 @@ const LockScreen = ({ visible }: LockScreenProps) => {
                   <TouchableOpacity
                     style={[styles.keypadBtn, styles.backspaceBtn]}
                     onPress={handleBackspace}
-                    disabled={isVerifying}
+                    disabled={isVerifying || isCoolingDown}
                   >
                     <MaterialCommunityIcons
                       name="backspace"
@@ -228,15 +426,30 @@ const LockScreen = ({ visible }: LockScreenProps) => {
               </View>
             </View>
           </View>
-          <TouchableOpacity style={styles.forgotPin} onPress={forgotPin}>
+          <TouchableOpacity
+            style={styles.forgotPin}
+            onPress={() => setMode("reset")}
+          >
             <Text
               weight="regular"
               className="text-center text-[14px] text-[#6B7280]"
             >
               Forgot PIN?{" "}
               <Text weight="semibold" className="text-[14px] text-primary_400">
-                Sign out
+                Reset it
               </Text>
+            </Text>
+          </TouchableOpacity>
+            </>
+          )}
+
+          {/* Last resort when the account password is forgotten too. */}
+          <TouchableOpacity style={styles.signOut} onPress={forgotPin}>
+            <Text
+              weight="regular"
+              className="text-center text-[13px] text-[#9CA3AF]"
+            >
+              Sign out
             </Text>
           </TouchableOpacity>
         </View>
@@ -273,6 +486,13 @@ const styles = StyleSheet.create({
     marginVertical: 28,
     paddingHorizontal: 20,
     position: "relative",
+  },
+  // Fixed height so the keypad does not shift when a message appears.
+  statusMessage: {
+    minHeight: 20,
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    marginBottom: 4,
   },
   codeEmpty: {
     width: 16,
@@ -313,6 +533,15 @@ const styles = StyleSheet.create({
   },
   forgotPin: {
     marginTop: 28,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  resetPanel: {
+    marginTop: 32,
+    paddingHorizontal: 32,
+  },
+  signOut: {
+    marginTop: 12,
     alignItems: "center",
     paddingVertical: 8,
   },
