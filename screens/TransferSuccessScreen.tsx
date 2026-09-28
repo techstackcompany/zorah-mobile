@@ -11,6 +11,18 @@ import { formatCurrencyWithSymbol } from "@/lib/utils";
 
 const CURRENCY_SYMBOL = "₦";
 
+
+type LocalURlProps  ={
+    recipientName?: string;
+    bankName?: string;
+    accountNumber?: string;
+    amount?: string;
+    narration?: string;
+    transactionId?: string;
+    /** Server-reported state. Bank payouts can settle asynchronously. */
+    status?: string;
+  }
+
 const toTitleCase = (value: string) =>
   value
     .toLowerCase()
@@ -21,20 +33,14 @@ const toTitleCase = (value: string) =>
 
 const TransferSuccessScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    recipientName?: string;
-    bankName?: string;
-    accountNumber?: string;
-    amount?: string;
-    fee?: string;
-    narration?: string;
-    transactionId?: string;
-  }>();
+  const params = useLocalSearchParams<LocalURlProps>();
 
   const amountNumber = Number(params.amount) || 0;
   const firstName = params.recipientName
     ? toTitleCase(params.recipientName).split(" ")[0]
     : "recipient";
+  // Do not claim success for a transfer the backend only queued.
+  const isPending = /pending|processing/i.test(params.status ?? "");
 
   return (
     <MainContainer edges={["top", "bottom"]} className="bg-light px-6 pb-4">
@@ -48,14 +54,14 @@ const TransferSuccessScreen = () => {
           weight="semibold"
           className="mt-12 text-center text-[32px] leading-10 text-textColor"
         >
-          Transaction Successful
+          {isPending ? "Transfer Sent" : "Transaction Successful"}
         </Text>
         <Text className="mt-4 max-w-[350px] text-center text-base text-textColor">
           Transfer of{" "}
           <Text weight="bold" className="text-base text-textColor">
             {formatCurrencyWithSymbol(amountNumber, CURRENCY_SYMBOL)}
           </Text>{" "}
-          to {firstName} was successful.
+          to {firstName} {isPending ? "is being processed." : "was successful."}
         </Text>
       </View>
 

@@ -128,28 +128,26 @@ const groupTransactionsByDate = (
     grouped.get(dateKey)!.push(txn);
   });
 
-  return Array.from(grouped.entries())
-    .map(([dateKey, items]) => {
-      const firstDate = items[0]?.createdAt || dateKey;
-      return {
-        id: dateKey,
-        title: formatSectionDate(firstDate),
-        items: items.sort((a, b) => {
-          const aTime = a.timeAgo;
-          const bTime = b.timeAgo;
-          if (aTime.includes("ago") && !bTime.includes("ago")) return -1;
-          if (!aTime.includes("ago") && bTime.includes("ago")) return 1;
-          return 0;
-        }),
-      };
-    })
-    .sort((a, b) => {
-      if (a.title === "Today") return -1;
-      if (b.title === "Today") return 1;
-      if (a.title === "Yesterday") return -1;
-      if (b.title === "Yesterday") return 1;
-      return 0;
-    });
+  return (
+    Array.from(grouped.entries())
+      .map(([dateKey, items]) => {
+        const firstDate = items[0]?.createdAt || dateKey;
+      
+        return {
+          id: dateKey,
+          title: formatSectionDate(firstDate),
+          // Newest first within the day. The old comparator sorted on the
+          // *formatted* timeAgo string, which does not order chronologically.
+          items: [...items].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        };
+      })
+      // Sort by the actual date key, newest first, rather than special-casing
+      // the "Today"/"Yesterday" labels and leaving everything else unordered.
+      .sort((a, b) => b.id.localeCompare(a.id))
+  );
 };
 
 const filterTransactionsBySearch = (
@@ -626,9 +624,38 @@ const TransactionHistoryScreen = () => {
                               >
                                 {formatAmountWithSign(item.amount)}
                               </Text>
-                              <Text className="mt-1 text-xs text-textColor/40">
-                                {item.type === "income" ? "Income" : "Expense"}
-                              </Text>
+                              {/* The sign and colour already say income vs
+                                  expense; status is the information the row
+                                  was missing. Successful is the norm, so it
+                                  stays unlabelled to avoid badge noise. */}
+                              {item.status === "successful" ? (
+                                item.fee ? (
+                                  <Text className="mt-1 text-xs text-textColor/40">
+                                    Fee {formatCurrency(item.fee)}
+                                  </Text>
+                                ) : null
+                              ) : (
+                                <View
+                                  className={cn(
+                                    "mt-1 rounded-full px-2 py-0.5",
+                                    item.status === "failed"
+                                      ? "bg-error/10"
+                                      : "bg-amber/10",
+                                  )}
+                                >
+                                  <Text
+                                    weight="semibold"
+                                    className={cn(
+                                      "text-[10px] capitalize",
+                                      item.status === "failed"
+                                        ? "text-error"
+                                        : "text-amber",
+                                    )}
+                                  >
+                                    {item.status}
+                                  </Text>
+                                </View>
+                              )}
                             </View>
                           </Pressable>
                         );

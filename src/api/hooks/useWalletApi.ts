@@ -18,6 +18,7 @@ import {
   WalletOverviewResponse,
   WalletTransaction,
   WithdrawFundsRequest,
+  WithdrawFundsResponse,
 } from "../types";
 
 export const useGetOrCreateWalletQuery = (
@@ -56,19 +57,29 @@ export const useDepositFundsMutation = (
   });
 };
 
+/**
+ * Bank payout. Validates the transaction PIN server-side and moves money, so
+ * the caller must treat a 400 naming "PIN" as a retryable wrong-PIN rather
+ * than a generic failure.
+ *
+ * The success shape is still PROVISIONAL — every probe so far has been
+ * rejected at PIN validation, so `WithdrawFundsResponse` is typed from what
+ * the app needs rather than from an observed response. Firm it up from the
+ * first real transfer.
+ */
 export const useWithdrawFundsMutation = (
   options?: UseMutationOptions<
-    ApiEnvelope<WalletDetails>,
+    WithdrawFundsResponse,
     ApiError,
     WithdrawFundsRequest
   >,
 ) => {
   const queryClient = useQueryClient();
   const { onSuccess: callerOnSuccess, ...restOptions } = options ?? {};
-  return useMutation<ApiEnvelope<WalletDetails>, ApiError, WithdrawFundsRequest>({
+  return useMutation<WithdrawFundsResponse, ApiError, WithdrawFundsRequest>({
     mutationKey: ["wallet", "withdraw"],
     mutationFn: (payload) =>
-      apiRequest<ApiEnvelope<WalletDetails>>({
+      apiRequest<WithdrawFundsResponse>({
         ...API_ENDPOINTS.wallet.withdraw,
         data: payload,
       }),
@@ -80,13 +91,17 @@ export const useWithdrawFundsMutation = (
   });
 };
 
+// Returns the figures flat: { status, balance, ledgerBalance }. This was typed
+// as ApiEnvelope<WalletBalance> (i.e. data.balance) while every consumer read
+// balanceData?.balance — it only compiled because ApiEnvelope has an index
+// signature, and it would have rendered ₦0 had anyone trusted the type.
 export const useGetWalletBalanceQuery = (
-  options?: UseQueryOptions<ApiEnvelope<WalletBalance>, ApiError>,
+  options?: UseQueryOptions<WalletBalance, ApiError>,
 ) =>
-  useQuery<ApiEnvelope<WalletBalance>, ApiError>({
+  useQuery<WalletBalance, ApiError>({
     queryKey: ["wallet", "balance"],
     queryFn: () =>
-      apiRequest<ApiEnvelope<WalletBalance>>({
+      apiRequest<WalletBalance>({
         ...API_ENDPOINTS.wallet.balance,
       }),
     ...options,
@@ -97,23 +112,35 @@ export const useGetWalletTransactionsQuery = (
 ) =>
   useQuery<ApiEnvelope<WalletTransaction[]>, ApiError>({
     queryKey: ["wallet", "transactions"],
+    // See notes/wallet-transactions-shape.md (local, gitignored) for history.
     queryFn: async () => {
-      const response = await apiRequest<
-        | ApiEnvelope<WalletTransaction[]>
-        | { success: boolean; transactions: WalletTransaction[] }
-      >({
+      const response = await apiRequest<unknown>({
         ...API_ENDPOINTS.wallet.transactions,
       });
-      if (
-        response &&
-        typeof response === "object" &&
-        "transactions" in response &&
-        Array.isArray(response.transactions)
-      ) {
-        return { data: response.transactions };
-      }
 
-      return response as ApiEnvelope<WalletTransaction[]>;
+      const pickList = (node: unknown): WalletTransaction[] | null => {
+        if (Array.isArray(node)) return node as WalletTransaction[];
+        if (!node || typeof node !== "object") return null;
+        const record = node as Record<string, unknown>;
+        if (Array.isArray(record.transactions)) {
+          return record.transactions as WalletTransaction[];
+        }
+        return null;
+      };
+
+      const record =
+        response && typeof response === "object"
+          ? (response as Record<string, unknown>)
+          : {};
+
+      const list = pickList(record) ?? pickList(record.data) ?? [];
+      const pagination = (record.data as Record<string, unknown> | undefined)
+        ?.pagination;
+
+      return {
+        data: list,
+        ...(pagination ? { pagination } : {}),
+      } as ApiEnvelope<WalletTransaction[]>;
     },
     ...options,
   });
@@ -143,9 +170,7 @@ export const useVerifyBankAccountQuery = (
       apiRequest<VerifyAccountResponse>({
         ...API_ENDPOINTS.wallet.verifyAccount(bankCode ?? "", accountNumber),
       }),
-    // Only fire once we have a bank and a complete 10-digit account number.
     enabled: Boolean(bankCode) && /^\d{10}$/.test(accountNumber),
-    // The backend answers 500 for unresolvable accounts; retrying won't help.
     retry: false,
     ...options,
   });

@@ -1,8 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import { File, Paths } from "expo-file-system";
 import { useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
-import { Pressable, ScrollView, Share, View } from "react-native";
+import * as Sharing from "expo-sharing";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  View,
+} from "react-native";
 import Toast from "react-native-toast-message";
+import ViewShot from "react-native-view-shot";
 
 import MainContainer from "@/components/layouts/MainContainer";
 import Text from "@/components/ui/Text";
@@ -29,6 +38,9 @@ const TransferReceiptScreen = () => {
     narration?: string;
     transactionId?: string;
   }>();
+
+  const viewShotRef = useRef<ViewShot>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const amountNumber = Number(params.amount) || 0;
   const feeNumber = Number(params.fee) || 0;
@@ -71,14 +83,47 @@ const TransferReceiptScreen = () => {
     });
   };
 
-  const handleDownload = () => {
-    // TODO: generate and save a PDF receipt once the receipts API is available.
-    Toast.show({
-      type: "info",
-      text1: "Download coming soon",
-      text2: "Use Share Receipt in the meantime.",
-    });
-  };
+  const handleDownload = useCallback(async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+
+    try {
+      if (!viewShotRef.current?.capture) {
+        throw new Error("ViewShot ref is not available");
+      }
+
+      const uri = await viewShotRef.current.capture();
+      const fileName = `receipt_${params.transactionId || Date.now()}.png`;
+      const target = new File(Paths.cache, fileName);
+      if (!target.exists) {
+        new File(uri).copy(target);
+      }
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Toast.show({
+          type: "error",
+          text1: "Sharing Unavailable",
+          text2: "Saving is not available on this device.",
+        });
+        return;
+      }
+
+      await Sharing.shareAsync(target.uri, {
+        mimeType: "image/png",
+        dialogTitle: "Save Receipt",
+        UTI: "public.png",
+      });
+    } catch (error) {
+      console.error("Receipt download error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Download Failed",
+        text2: "Could not prepare receipt. Please try again.",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [isDownloading, params.transactionId]);
 
   return (
     <MainContainer edges={["bottom"]} className="bg-light px-6 pb-4">
@@ -86,8 +131,13 @@ const TransferReceiptScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
       >
-        <View className="rounded-[10px] border border-lightBg">
-          {/* Receipt header */}
+        <ViewShot
+          ref={viewShotRef}
+          options={{ format: "png", quality: 1 }}
+          style={{ backgroundColor: COLORS.light }}
+        >
+          <View className="rounded-[10px] border border-lightBg">
+            {/* Receipt header */}
           <View className="items-center gap-2 rounded-t-[10px] bg-[#EEF4FF] p-4">
             <Text weight="semibold" className="text-base text-textColor">
               {recipientName}
@@ -134,20 +184,26 @@ const TransferReceiptScreen = () => {
                 </View>
               ))}
             </View>
+            </View>
           </View>
-        </View>
+        </ViewShot>
       </ScrollView>
 
       <View className="flex-row gap-2.5">
         <Pressable
           onPress={handleDownload}
+          disabled={isDownloading}
           className="h-[52px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-primary_400 bg-white"
           accessibilityRole="button"
           accessibilityLabel="Download receipt"
         >
-          <Ionicons name="download" size={18} color={COLORS.primary_400} />
+          {isDownloading ? (
+            <ActivityIndicator size="small" color={COLORS.primary_400} />
+          ) : (
+            <Ionicons name="download" size={18} color={COLORS.primary_400} />
+          )}
           <Text weight="medium" className="text-base text-primary_400">
-            Download
+            {isDownloading ? "Preparing..." : "Download"}
           </Text>
         </Pressable>
         <Pressable

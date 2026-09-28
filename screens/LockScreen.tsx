@@ -4,6 +4,7 @@ import { PIN_LENGTH } from "@/constants/auth";
 import COLORS from "@/constants/colors";
 import { useAppLock } from "@/contexts/app-lock/useAppLock";
 import { useSession } from "@/contexts/auth-context/useSession";
+import { useBiometricSupport } from "@/hooks/useBiometricSupport";
 import { setRefreshToken } from "@/lib/persistedStorageConfig";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/src/api/client";
@@ -12,10 +13,11 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
+  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -44,7 +46,13 @@ type LockScreenProps = {
   visible: boolean;
 };
 
-type LockMode = "pin" | "reset";
+/**
+ * `biometric` is the default surface on capable devices — Face ID / fingerprint
+ * is the primary unlock. `pin` is the fallback, reached by dismissing the
+ * biometric prompt or tapping "Use PIN instead". `reset` is the password
+ * re-auth used to set a new PIN.
+ */
+type LockMode = "biometric" | "pin" | "reset";
 
 const LockScreen = ({ visible }: LockScreenProps) => {
   const {
@@ -57,6 +65,9 @@ const LockScreen = ({ visible }: LockScreenProps) => {
   const { signIn } = useSession();
   const { data: profile } = useGetUserProfileQuery();
   const loginMutation = useLoginUserMutation();
+  const { supportsFaceId } = useBiometricSupport();
+
+  const biometricLabel = supportsFaceId ? "Face ID" : "Fingerprint";
 
   const [mode, setMode] = useState<LockMode>("pin");
   const [password, setPassword] = useState("");
@@ -98,10 +109,18 @@ const LockScreen = ({ visible }: LockScreenProps) => {
     return () => sub.remove();
   }, [visible]);
 
+  
+  const hasPromptedRef = useRef(false);
+
   useEffect(() => {
-    if (!visible || !isBiometricAvailable) return;
+    if (!visible) {
+      hasPromptedRef.current = false;
+      return;
+    }
+    if (!isBiometricAvailable || hasPromptedRef.current) return;
+    hasPromptedRef.current = true;
     const timer = setTimeout(() => {
-      authenticateWithBiometric();
+      void authenticateWithBiometric();
     }, 400);
     return () => clearTimeout(timer);
   }, [visible, isBiometricAvailable, authenticateWithBiometric]);
@@ -109,11 +128,14 @@ const LockScreen = ({ visible }: LockScreenProps) => {
   useEffect(() => {
     if (visible) {
       setPin("");
-      setMode("pin");
+      // Biometric-capable devices start on the biometric prompt; the PIN pad
+      // is the fallback, reached by dismissing it or tapping "Use PIN".
+      setMode(isBiometricAvailable ? "biometric" : "pin");
       setPassword("");
       setResetError(null);
+      setError(null);
     }
-  }, [visible]);
+  }, [visible, isBiometricAvailable]);
 
   /**
    * "Forgot PIN" used to sign the user out. That is now a dead end: the server
@@ -243,11 +265,46 @@ const LockScreen = ({ visible }: LockScreenProps) => {
             >
               {mode === "reset"
                 ? "Enter your account password to set a new PIN"
-                : "Enter your PIN to continue"}
+                : mode === "biometric"
+                  ? `Unlock with ${biometricLabel} to continue`
+                  : "Enter your PIN to continue"}
             </Text>
           </View>
 
-          {mode === "reset" ? (
+          {mode === "biometric" ? (
+            <View style={styles.biometricPanel}>
+              <Pressable
+                onPress={() => void authenticateWithBiometric()}
+                accessibilityRole="button"
+                accessibilityLabel={`Unlock with ${biometricLabel}`}
+                style={styles.biometricButton}
+              >
+                <Ionicons
+                  name={supportsFaceId ? "scan-outline" : "finger-print"}
+                  size={44}
+                  color={COLORS.primary_400}
+                />
+              </Pressable>
+
+              <Text className="mt-5 text-center text-[14px] text-[#6B7280]">
+                Tap to try {biometricLabel} again
+              </Text>
+
+              {/* PIN is the fallback, not the default. */}
+              <TouchableOpacity
+                style={styles.forgotPin}
+                onPress={() => setMode("pin")}
+                accessibilityRole="button"
+              >
+                <Text
+                  weight="semibold"
+                  className="text-center text-[14px] text-primary_400"
+                >
+                  Use PIN instead
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : mode === "reset" ? (
             <View style={styles.resetPanel}>
               <View
                 className={cn(
@@ -426,8 +483,29 @@ const LockScreen = ({ visible }: LockScreenProps) => {
               </View>
             </View>
           </View>
+          {/* Route back to the primary method when it is available. */}
+          {isBiometricAvailable ? (
+            <TouchableOpacity
+              style={styles.forgotPin}
+              onPress={() => {
+                setMode("biometric");
+                setPin("");
+                setError(null);
+                void authenticateWithBiometric();
+              }}
+              accessibilityRole="button"
+            >
+              <Text
+                weight="semibold"
+                className="text-center text-[14px] text-primary_400"
+              >
+                Use {biometricLabel} instead
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
           <TouchableOpacity
-            style={styles.forgotPin}
+            style={styles.forgotPinTight}
             onPress={() => setMode("reset")}
           >
             <Text
@@ -536,9 +614,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
   },
+  // Sits directly under another link, so it needs less space above.
+  forgotPinTight: {
+    marginTop: 4,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
   resetPanel: {
     marginTop: 32,
     paddingHorizontal: 32,
+  },
+  biometricPanel: {
+    marginTop: 40,
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  biometricButton: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: COLORS.primary_200,
   },
   signOut: {
     marginTop: 12,

@@ -124,9 +124,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
     queryClient.clear();
 
     await clearAuthTokens();
-    // Without this the cached PIN verifier outlives the session, and the next
-    // account to sign in on this device could be unlocked with the previous
-    // user's PIN.
     await clearPin();
 
     try {
@@ -153,7 +150,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     setTokenRefreshFailureHandler(() => {
       if (isSigningOut.current) return;
-      signOut();
+      // signOut();
       Alert.alert(
         "Session Expired",
         "Your session has expired. Please sign in again.",

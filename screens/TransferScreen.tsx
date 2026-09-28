@@ -6,19 +6,21 @@ import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import MainContainer from "@/components/layouts/MainContainer";
-import { PIN_LENGTH } from "@/constants/auth";
 import AmountInput from "@/components/ui/AmountInput";
+import PinKeypad, { PinDots } from "@/components/ui/PinKeypad";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import SelectButton from "@/components/ui/SelectButton";
 import SlideUpModal, { SlideUpModalRef } from "@/components/ui/SlideUpModal";
 import Text from "@/components/ui/Text";
 import TextInputField from "@/components/ui/TextInputField";
+import { PIN_LENGTH } from "@/constants/auth";
 import COLORS from "@/constants/colors";
 import { capitalizeWord, cn, formatCurrencyWithSymbol } from "@/lib/utils";
 import {
   useGetWalletBalanceQuery,
   useGetWalletBanksQuery,
   useVerifyBankAccountQuery,
+  useWithdrawFundsMutation,
 } from "@/src/api/hooks";
 import { WalletBank } from "@/src/api/types";
 
@@ -85,6 +87,7 @@ const TransferScreen = () => {
   const [narration, setNarration] = useState("");
   const [search, setSearch] = useState("");
   const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
 
   const { data: balanceData } = useGetWalletBalanceQuery();
   const {
@@ -139,13 +142,12 @@ const TransferScreen = () => {
     pinRef.current?.present();
   };
 
-  const handlePinChange = (text: string) => {
-    const digits = text.replace(/[^0-9]/g, "").slice(0, PIN_LENGTH);
-    setPin(digits);
-    if (digits.length === PIN_LENGTH) {
+  const withdrawMutation = useWithdrawFundsMutation({
+    onSuccess: (response) => {
       pinRef.current?.dismiss();
       setPin("");
-      // TODO: submit the transfer with the PIN once the transfer API is wired.
+      setPinError(null);
+      const reference = response?.data?.reference ?? "";
       router.push({
         pathname: "/(app)/transfer-success",
         params: {
@@ -154,16 +156,43 @@ const TransferScreen = () => {
           bankCode: selectedBank?.code ?? "",
           accountNumber,
           amount: String(amountNumber),
-          fee: String(transferFee),
           narration: narration.trim(),
-          transactionId: `TNX${Date.now().toString().slice(-9)}`,
+          transactionId: reference,
+          status: response?.data?.status ?? response?.status ?? "",
         },
       });
-    }
-  };
+    },
+    onError: (error) => {
+      const message = error?.message ?? "";
+      setPin("");
+      if (!error?.status) {
+        setPinError("You're offline. Reconnect to complete this transfer.");
+        return;
+      }
+      if (/pin/i.test(message)) {
+        setPinError("Incorrect transaction PIN. Try again.");
+        return;
+      }
+      setPinError(message || "Transfer failed. Please try again.");
+    },
+  });
 
-  // TODO: replace with the fee returned by the transfer quote API when wired.
-  const transferFee = 10;
+  const handlePinChange = (next: string) => {
+    const digits = next.replace(/[^0-9]/g, "").slice(0, PIN_LENGTH);
+    setPin(digits);
+    setPinError(null);
+
+    if (digits.length !== PIN_LENGTH || withdrawMutation.isPending) return;
+    if (!selectedBank) return;
+
+    withdrawMutation.mutate({
+      accountNumber,
+      bankCode: selectedBank.code,
+      amount: amountNumber,
+      narration: narration.trim() || undefined,
+      pin: digits,
+    });
+  };
 
   const transactionDate = useMemo(() => {
     const now = new Date();
@@ -182,10 +211,6 @@ const TransferScreen = () => {
       { label: "Account Number", value: accountNumber || "—" },
       { label: "Name", value: resolvedName ?? "—" },
       { label: "Date", value: transactionDate },
-      {
-        label: "Fee",
-        value: formatCurrencyWithSymbol(transferFee, CURRENCY_SYMBOL),
-      },
       {
         label: "Amount",
         value: formatCurrencyWithSymbol(amountNumber, CURRENCY_SYMBOL),
@@ -311,7 +336,7 @@ const TransferScreen = () => {
         closeIconColor={COLORS.white}
         snapPoints={["75%"]}
         enableDynamicSizing={false}
-        
+
         onClose={() => setSearch("")}
         className="px-0 py-0"
       >
@@ -324,7 +349,7 @@ const TransferScreen = () => {
           />
         </View>
         <BottomSheetScrollView
-          style={{ maxHeight:'90%' }}
+          style={{ maxHeight: "90%" }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
         >
@@ -350,8 +375,7 @@ const TransferScreen = () => {
             </View>
           ) : (
             <>
-              {/* Bank codes are not unique in the API response (e.g. 050023
-                  is shared by two banks), so key by code + name. */}
+              
               {filteredBanks.map((bank) => (
                 <Pressable
                   key={`${bank.code}-${bank.name}`}
@@ -458,33 +482,56 @@ const TransferScreen = () => {
       {/* Transaction PIN */}
       <SlideUpModal
         ref={pinRef}
-        snapPoints={["55%"]}
+        snapPoints={[520]}
+        enableDynamicSizing={false}
         className="px-6 pb-6 pt-2"
-        onClose={() => setPin("")}
+        onClose={() => {
+          setPin("");
+          setPinError(null);
+        }}
       >
         <View className="mb-2 flex-row justify-end">
-          <Pressable onPress={() => pinRef.current?.dismiss()} hitSlop={16}>
+          <Pressable
+            onPress={() => pinRef.current?.dismiss()}
+            hitSlop={16}
+            disabled={withdrawMutation.isPending}
+          >
             <Ionicons name="close" size={22} color={COLORS.textColor} />
           </Pressable>
         </View>
 
-        <Text
-          weight="bold"
-          className="text-center text-2xl text-textColor"
-        >
-          Enter Transaction PIN
+        <Text weight="bold" className="text-center text-2xl text-textColor">
+          {withdrawMutation.isPending
+            ? "Sending Transfer"
+            : "Enter Transaction PIN"}
         </Text>
 
-        <View className="mt-10">
-          <TextInputField
-            placeholder="Enter PIN"
-            placeholderTextColor={COLORS.textColor + "80"}
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={PIN_LENGTH}
+        <View className="mt-6">
+          <PinDots
             value={pin}
-            onChangeText={handlePinChange}
-            autoFocus
+            length={PIN_LENGTH}
+            pending={withdrawMutation.isPending}
+          />
+        </View>
+
+        <View className="mt-3 min-h-6 justify-center">
+          {withdrawMutation.isPending ? (
+            <Text className="text-center text-sm text-textColor/60">
+              Please don&apos;t close this screen
+            </Text>
+          ) : pinError ? (
+            <Text weight="medium" className="text-center text-sm text-error">
+              {pinError}
+            </Text>
+          ) : null}
+        </View>
+
+        <View className="mt-3">
+          <PinKeypad
+            value={pin}
+            onChange={handlePinChange}
+            length={PIN_LENGTH}
+            disabled={withdrawMutation.isPending}
           />
         </View>
       </SlideUpModal>
