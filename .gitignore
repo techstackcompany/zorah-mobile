@@ -62,3 +62,6 @@ AGENTS.md
 
 # MCP config (contains API tokens)
 .mcp.json
+
+# local-only dev notes
+/notes/

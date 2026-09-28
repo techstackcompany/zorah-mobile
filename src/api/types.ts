@@ -439,35 +439,149 @@ export interface DepositFundsResponse {
   [key: string]: unknown;
 }
 
-export type WithdrawFundsRequest = DepositFundsRequest;
+/* ---------------------------------------------
+   Wallet status envelope
 
-export interface WalletBalance {
+   The wallet endpoints wrap responses in { status, message, data }. Note the
+   failure strings differ from auth's: wallet uses "fail" (validation) and
+   "error" (server), where /auth/* uses "failed". Deliberately not shared with
+   AuthStatusResponse — matching on one union across both domains would break.
+   Captured in docs/api-captures/wallet-endpoints.md.
+----------------------------------------------*/
+export interface WalletStatusResponse {
+  status: "success" | "fail" | "error" | (string & {});
+  message?: string;
+}
+
+/**
+ * Bank payout. Was aliased to DepositFundsRequest ({ amount } only), which
+ * omitted every field the endpoint actually requires — see
+ * docs/api-captures/wallet-endpoints.md §6.
+ */
+export interface WithdrawFundsRequest {
+  accountNumber: string;
+  bankCode: string;
+  amount: number;
+  narration?: string;
+  pin: string;
+}
+
+/**
+ * PROVISIONAL. Every probe so far was rejected at PIN validation, so the
+ * success arm has never been observed. Fields are optional on purpose — read
+ * them defensively and firm this up from the first real transfer.
+ *
+ * Known failure arms (2026-09-11):
+ *   400 { status: "fail", message: "Invalid transaction PIN." }
+ *   400 { status: "fail", message: "Invalid withdrawal amount specified." }
+ */
+export interface WithdrawFundsResponse extends WalletStatusResponse {
+  data?: {
+    reference?: string;
+    status?: string;
+    amount?: number;
+    fee?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// Shape captured 2026-09-11: flat, no envelope wrapper around the figures.
+export interface WalletBalance extends WalletStatusResponse {
   balance: number;
+  /** Settled balance; may differ from `balance` once holds are in play. */
+  ledgerBalance?: number;
   currency?: string;
   [key: string]: unknown;
 }
 
+/**
+ * The provider payload nested under a withdrawal's `metadata.transfer`. This
+ * is where the real cost of a transfer lives: `amount` + `charges` + `vat`
+ * = `total`. The app previously showed a hardcoded ₦10 fee, which understated
+ * it — a ₦50 transfer actually debited ₦60.75.
+ */
+export interface WalletTransferMetadata {
+  amount?: number;
+  charges?: number;
+  vat?: number;
+  total?: number;
+  paidAt?: string;
+  sessionID?: string;
+  reference?: string;
+  transactionReference?: string;
+  description?: string;
+  destination?: string;
+  status?: string;
+  metadata?: {
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+    narration?: string;
+    transferRoute?: string;
+    sortCode?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// Shape captured 2026-09-11 from /wallet/transactions. Optional fields are
+// genuinely absent on some rows — older deposits carry no metadata or wallet
+// block at all — so read them defensively.
 export interface WalletTransaction {
   _id: string;
   amount: number;
-  type: "credit" | "debit" | string;
+  type: "credit" | "debit" | (string & {});
   purpose:
     | "deposit"
     | "withdrawal"
     | "savings"
     | "transfer"
     | "savings_contribution"
-    | "other";
+    | "other"
+    | (string & {});
   reference: string;
-  status: "pending" | "successful" | "failed";
+  /**
+   * Unreliable on its own: rows have been observed as "pending" while their
+   * own `metadata.transfer.status` says "success". Prefer the nested status
+   * when present — see resolveTransactionStatus in lib/utils.ts.
+   */
+  status: "pending" | "successful" | "failed" | (string & {});
+  /** Object in /wallet/transactions, bare id string in overview.recentTransactions. */
+  wallet?:
+    | string
+    | {
+        _id: string;
+        accountNumber?: string;
+        accountName?: string;
+        bankName?: string;
+      };
+  balanceBefore?: number;
+  balanceAfter?: number;
+  category?: string;
+  /** Counterparty name, e.g. the payout beneficiary. */
+  merchantName?: string;
+  originalNarration?: string;
+  isOneTime?: boolean;
   metadata?: {
     category?: string;
     description?: string;
+    message?: string;
+    status?: boolean;
+    transfer?: WalletTransferMetadata;
     [key: string]: unknown;
   };
   createdAt: string;
   updatedAt: string;
   user: string;
+  __v?: number;
+}
+
+export interface WalletTransactionsPagination {
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
 }
 
 interface TransactionMetadata {

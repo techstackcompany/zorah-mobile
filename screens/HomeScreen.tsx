@@ -7,8 +7,8 @@ import WalletBalanceCard from "@/components/home/WalletBalanceCard";
 import WelcomeHeader from "@/components/home/WelcomeHeader";
 import MainContainer from "@/components/layouts/MainContainer";
 import {
-  featureGridItems,
   FeatureGridItem,
+  featureGridItems,
   QuickAction,
   quickActions,
   SummaryCard,
@@ -22,6 +22,7 @@ import { useUserDisplayData } from "@/hooks/useUserDisplayData";
 import {
   formatCurrencyWithSymbol,
   formatCurrentDate,
+  jsonLog,
   transformTransaction,
 } from "@/lib/utils";
 import {
@@ -39,8 +40,6 @@ import React, { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { Easing, FadeInDown } from "react-native-reanimated";
 
-// One-time entrance stagger: each section fades in with a small upward
-// drift, 50ms after the previous one. Runs only on first mount.
 const sectionEntering = (index: number) =>
   FadeInDown.duration(280)
     .delay(index * 50)
@@ -55,7 +54,6 @@ const HomeScreen = () => {
   const [balanceHidden, setBalanceHidden] = useState(false);
   const { initials, welcomeName } = useUserDisplayData();
   const { isSetupComplete, currentStepRoute } = useSetupProgress();
-
   const { data: notifications = [], refetch: refetchNotifications } =
     useGetNotificationsQuery();
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
@@ -70,6 +68,7 @@ const HomeScreen = () => {
     isLoading: isLoadingTransactions,
     refetch: refetchTransactions,
   } = useGetWalletTransactionsQuery();
+  console.log("transactionsData", jsonLog(transactionsData));
   const {
     data: expenseSummaryData,
     isLoading: isLoadingExpenseSummary,
@@ -225,8 +224,8 @@ const HomeScreen = () => {
         router.navigate("/(app)/(home)/fxRates");
         break;
       case "goals":
-        router.navigate("/savings-goals");
-        break;
+        router.navigate("/(app)/savings-goals");
+
       default:
         break;
     }
@@ -242,6 +241,9 @@ const HomeScreen = () => {
         break;
       case "fx-rates":
         router.navigate("/(app)/(home)/fxRates");
+        break;
+      case "esusu":
+        router.navigate("/(app)/esusu");
         break;
       default:
         break;

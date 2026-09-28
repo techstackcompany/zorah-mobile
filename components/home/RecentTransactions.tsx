@@ -32,7 +32,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   const router = useRouter();
   const { data } = useGetAllCategoriesQuery();
   const allCategories = useMemo(() => data || [], [data]);
-
+  console.log("transactions", transactions);
   return (
     <View className="mt-8">
       <View className="flex-row items-center justify-between">
@@ -41,11 +41,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
             Recent Transactions
           </Text>
         </Text>
-       { !showEmpty && <Pressable onPress={() => router.navigate("/transactions")}>
-          <Text className="text-primary_400" weight="semibold">
-            See all
-          </Text>
-        </Pressable>}
+        {!showEmpty && (
+          <Pressable onPress={() => router.navigate("/transactions")}>
+            <Text className="text-primary_400" weight="semibold">
+              See all
+            </Text>
+          </Pressable>
+        )}
       </View>
       <View className="mt-4 rounded-xl bg-white px-5 py-5">
         {showEmpty ? (

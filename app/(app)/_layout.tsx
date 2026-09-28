@@ -163,6 +163,7 @@ const Navigator = () => {
 
       <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
       <Stack.Screen name="setup" options={{ headerShown: false }} />
+      <Stack.Screen name="esusu" options={{ headerShown: false }} />
     </Stack>
   );
 };

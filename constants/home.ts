@@ -47,6 +47,7 @@ const quickActions: QuickAction[] = [
     icon: require("@/assets/icons/piggy.svg"),
     background: "bg-white",
   },
+
 ];
 
 const featureGridItems: FeatureGridItem[] = [
@@ -71,6 +72,14 @@ const featureGridItems: FeatureGridItem[] = [
     icon: require("@/assets/icons/fxRates.svg"),
     iconBackground: "#EFF0FF",
     iconTint: "#6165D7",
+  },
+    {
+    id: "esusu",
+    label: "Savings Circles Esusu/Ajo",
+    icon: require("@/assets/icons/esusu.svg"),
+    iconBackground: "#FFFAEF",
+    iconTint: "#997008",
+
   },
 ];
 

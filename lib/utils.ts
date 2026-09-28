@@ -16,7 +16,27 @@ export type TransformedTransaction = {
   timeAgo: string;
   type: "income" | "expense";
   createdAt: string;
+  /** Resolved status — see resolveTransactionStatus. */
+  status: "successful" | "pending" | "failed";
+  /** charges + vat, when the provider reported them. */
+  fee?: number;
 };
+
+
+export function resolveTransactionStatus(
+  txn: WalletTransaction,
+): "successful" | "pending" | "failed" {
+  const providerStatus = txn.metadata?.transfer?.status?.toLowerCase();
+  if (providerStatus) {
+    if (/success|completed/.test(providerStatus)) return "successful";
+    if (/fail|revers|declin/.test(providerStatus)) return "failed";
+  }
+
+  const own = (txn.status ?? "").toLowerCase();
+  if (/success/.test(own)) return "successful";
+  if (/fail|revers|declin/.test(own)) return "failed";
+  return "pending";
+}
 
 export function transformTransaction(
   txn: WalletTransaction,
@@ -24,7 +44,10 @@ export function transformTransaction(
   const isCredit = txn.type === "credit";
   const amount = isCredit ? Math.abs(txn.amount) : -Math.abs(txn.amount);
 
+  
   const title =
+    txn.merchantName ||
+    txn.metadata?.transfer?.metadata?.accountName ||
     txn.metadata?.description ||
     (txn.purpose
       ? formatTransactionPurpose(txn.purpose)
@@ -37,18 +60,35 @@ export function transformTransaction(
       ? txn.purpose
       : txn.metadata?.category || (isCredit ? "Income" : "Expense");
 
+  // The destination bank, when this was a payout; otherwise the wallet itself.
+  const walletBank =
+    typeof txn.wallet === "object" ? txn.wallet?.bankName : undefined;
+  const account =
+    txn.metadata?.transfer?.metadata?.bankName ||
+    walletBank ||
+    "Zorah Wallet";
+
+  const charges = txn.metadata?.transfer?.charges;
+  const vat = txn.metadata?.transfer?.vat;
+  const fee =
+    typeof charges === "number" || typeof vat === "number"
+      ? (charges ?? 0) + (vat ?? 0)
+      : undefined;
+
   return {
     id: txn._id,
     title,
-    description: undefined,
+    description: txn.originalNarration || undefined,
     category,
-    account: "Wallet",
+    account,
     amount,
     timeAgo: formatDistance(new Date(txn.createdAt), new Date(), {
       addSuffix: true,
     }),
     type: isCredit ? "income" : "expense",
     createdAt: txn.createdAt,
+    status: resolveTransactionStatus(txn),
+    fee,
   };
 }
 
