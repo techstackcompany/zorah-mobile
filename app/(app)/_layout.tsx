@@ -164,6 +164,18 @@ const Navigator = () => {
       <Stack.Screen name="settings/pin" options={{ headerShown: false }} />
       <Stack.Screen name="setup" options={{ headerShown: false }} />
       <Stack.Screen name="esusu" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="debts/index"
+        options={{ title: "Debt & Lending Tracker" }}
+      />
+      <Stack.Screen
+        name="debts/details"
+        options={{ title: "Debt Details" }}
+      />
+      <Stack.Screen
+        name="debts/record"
+        options={{ title: "Record Debt" }}
+      />
     </Stack>
   );
 };

@@ -57,6 +57,7 @@ export default function Layout() {
       })}
     >
       <Drawer.Screen name="index" />
+      <Drawer.Screen name="create" options={{ headerShown: false }} />
     </Drawer>
   );
 }

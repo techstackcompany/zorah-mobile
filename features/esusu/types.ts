@@ -16,6 +16,7 @@ export interface EsusuGroup {
   totalMembers: number;
   nextContributionDate: string;
   payoutOrder?: number;
+  pickerType?: PickerType;
 }
 
 export interface EsusuSummary {
@@ -28,4 +29,27 @@ export interface EsusuTabItem {
   id: EsusuTabId;
   label: string;
   icon: string | number;
+}
+
+export type PickerType = "rotation" | "manual" | "automatic";
+
+export interface EsusuMember {
+  id: string;
+  name: string;
+  phone: string;
+  avatarUrl: string;
+  selected?: boolean;
+}
+
+export interface CreateEsusuFormData {
+  groupName: string;
+  contributionAmount: string;
+  frequency: "Daily" | "Weekly" | "Monthly";
+  totalRounds: string;
+  startDate: string;
+  groupImageUri?: string;
+  penaltyFee: string;
+  pickerType: PickerType;
+  description: string;
+  selectedMembers: string[];
 }

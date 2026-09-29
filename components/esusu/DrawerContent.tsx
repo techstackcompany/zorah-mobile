@@ -4,6 +4,7 @@ import { cn, extractUserData } from "@/lib/utils";
 import { useGetUserProfileQuery } from "@/src/api/hooks";
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -61,6 +62,7 @@ const DrawerContent = ({
 }: {
   navigation: DrawerContentComponentProps["navigation"];
 }) => {
+  const router = useRouter();
   const { data: userData } = useGetUserProfileQuery();
 
   const { displayName, displayEmail, initials } = useMemo(() => {
@@ -130,7 +132,9 @@ const DrawerContent = ({
             key={item.key}
             onPress={() => {
               navigation.closeDrawer();
-              // TODO: wire to API / navigation
+              if (item.key === "create") {
+                router.push("/(app)/esusu/create");
+              }
             }}
             className={cn(
               "mb-1 flex-row items-center rounded-xl px-3.5 py-3",

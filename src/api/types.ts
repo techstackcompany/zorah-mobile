@@ -871,10 +871,120 @@ export interface UpdateBillReminderResponse {
   bill: BillReminder;
 }
 /* ---------------------------------------------
-   Countries   
+   Countries
 ----------------------------------------------*/
 
 export type NigerianState = {
   name: string;
   state_code: string;
 };
+
+/* ---------------------------------------------
+   Esusu / Ajo
+   Shapes captured 2026-09-29 by creating a real group and running it
+   through join/contribute/payout against the live backend — there is no
+   GET /esusu list-all route (confirmed 404, and absent from the Postman
+   collection), only create/join/get-one/contribute/payout endpoints.
+
+   NOTE: `members[].user` is a bare id string on create/contribute
+   responses but populated to { _id, email } on getGroup. Likewise
+   `payoutHistory[].member` is a bare id string on the group's own
+   payoutHistory but populated on the dedicated payout-history endpoint.
+   Both are modeled as a union rather than normalised, so callers can't
+   silently assume the wrong shape.
+----------------------------------------------*/
+
+export type EsusuFrequencyApi = "daily" | "weekly" | "monthly";
+
+export type EsusuPayoutStatus = "pending" | "paid" | "failed";
+
+export interface EsusuMemberRef {
+  _id: string;
+  email: string;
+}
+
+export interface EsusuGroupMemberResponse {
+  user: string | EsusuMemberRef;
+  hasReceived: boolean;
+  payoutStatus: EsusuPayoutStatus;
+  payoutAttempts: number;
+  _id: string;
+  lastPayoutAttempt?: string;
+}
+
+export interface EsusuPayoutHistoryEntryResponse {
+  member: string | EsusuMemberRef;
+  status: EsusuPayoutStatus;
+  timestamp: string;
+  /** Verbatim backend copy, including its "Tranaction ID:" typo. */
+  note: string;
+  _id: string;
+}
+
+export interface EsusuGroupResponse {
+  _id: string;
+  name: string;
+  creator: string;
+  contributionAmount: number;
+  frequency: EsusuFrequencyApi;
+  members: EsusuGroupMemberResponse[];
+  nextPayoutDate: string;
+  active: boolean;
+  currentRound: number;
+  payoutHistory: EsusuPayoutHistoryEntryResponse[];
+  __v: number;
+}
+
+export interface CreateEsusuGroupRequest {
+  name: string;
+  contributionAmount: number;
+  frequency: EsusuFrequencyApi;
+}
+
+export interface JoinEsusuGroupRequest {
+  groupId: string;
+}
+
+/** { message: "Already a member" } on a repeat join — surface via ApiError, not a success type. */
+export interface JoinEsusuGroupResponse {
+  message: string;
+  group?: EsusuGroupResponse;
+}
+
+export interface ContributeEsusuRequest {
+  groupId: string;
+  amount: number;
+}
+
+export interface ContributeEsusuResponse {
+  success: boolean;
+  message: string;
+  group: EsusuGroupResponse;
+}
+
+export interface ProcessEsusuPayoutsResult {
+  groupId: string;
+  paidTo: string;
+  transactionId: string;
+  nextPayoutDate: string;
+}
+
+export interface ProcessEsusuPayoutsResponse {
+  message: string;
+  results: ProcessEsusuPayoutsResult[];
+}
+
+export interface RetryEsusuPayoutResponse {
+  message: string;
+  results: ProcessEsusuPayoutsResult[];
+}
+
+export interface EsusuPayoutHistoryResponse {
+  payoutHistory: {
+    member: EsusuMemberRef;
+    status: EsusuPayoutStatus;
+    timestamp: string;
+    note: string;
+    _id: string;
+  }[];
+}

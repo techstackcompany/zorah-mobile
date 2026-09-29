@@ -1,0 +1,48 @@
+import { DebtRecord } from "./types";
+
+export const MOCK_DEBTS: DebtRecord[] = [
+  {
+    id: "1",
+    counterpartyName: "David Johnson",
+    counterpartyPhone: "+234 801 234 5678",
+    direction: "lent",
+    amount: 21456.0,
+    date: "15/04/2025",
+    dueDate: "30/05/2025",
+    notes: "Lent for school fees payment.",
+    status: "outstanding",
+  },
+  {
+    id: "2",
+    counterpartyName: "Sarah Williams",
+    counterpartyPhone: "+234 802 345 6789",
+    direction: "borrowed",
+    amount: 21456.0,
+    date: "28/04/2025",
+    dueDate: "15/05/2025",
+    notes: "Borrowed for rent payment.",
+    status: "overdue",
+  },
+  {
+    id: "3",
+    counterpartyName: "Micheal Brown",
+    counterpartyPhone: "+234 803 456 7890",
+    direction: "borrowed",
+    amount: 21456.0,
+    date: "01/05/2025",
+    dueDate: "30/05/2025",
+    notes: "Borrowed to cover emergency expenses.",
+    status: "outstanding",
+  },
+  {
+    id: "4",
+    counterpartyName: "Wale Adams",
+    counterpartyPhone: "+234 804 567 8901",
+    direction: "lent",
+    amount: 21456.0,
+    date: "10/03/2025",
+    dueDate: "30/05/2025",
+    notes: "Lent for business capital.",
+    status: "settled",
+  },
+];

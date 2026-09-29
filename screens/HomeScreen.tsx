@@ -245,6 +245,9 @@ const HomeScreen = () => {
       case "esusu":
         router.navigate("/(app)/esusu");
         break;
+      case "debt-lending":
+        router.navigate("/(app)/debts");
+        break;
       default:
         break;
     }

@@ -4,6 +4,7 @@ export * from "./useBillRemindersApi";
 export * from "./useBudgetApi";
 export * from "./useCategoriesApi";
 export * from "./useCountriesApi";
+export * from "./useEsusuApi";
 export * from "./useExpensesApi";
 export * from "./useFxRatesApi";
 export * from "./useIncomeApi";

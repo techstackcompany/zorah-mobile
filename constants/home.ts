@@ -47,7 +47,6 @@ const quickActions: QuickAction[] = [
     icon: require("@/assets/icons/piggy.svg"),
     background: "bg-white",
   },
-
 ];
 
 const featureGridItems: FeatureGridItem[] = [
@@ -73,15 +72,22 @@ const featureGridItems: FeatureGridItem[] = [
     iconBackground: "#EFF0FF",
     iconTint: "#6165D7",
   },
-    {
+  {
+    id: "debt-lending",
+    label: "Debt & Lending Tracker",
+    icon: require("@/assets/icons/debt-lending.svg"),
+    iconBackground: "#EEFEFF",
+    iconTint: "#329BA3",
+  },
+  {
     id: "esusu",
     label: "Savings Circles Esusu/Ajo",
     icon: require("@/assets/icons/esusu.svg"),
     iconBackground: "#FFFAEF",
     iconTint: "#997008",
-
   },
 ];
 
 export { featureGridItems, quickActions };
 export type { FeatureGridItem, QuickAction, SummaryCard };
+

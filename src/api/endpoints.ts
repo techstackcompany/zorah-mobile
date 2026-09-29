@@ -193,6 +193,21 @@ export const API_ENDPOINTS = {
       url: "/countries/states",
     },
   },
+  esusu: {
+    create: { method: HttpMethod.POST, url: "/esusu/create" },
+    join: { method: HttpMethod.POST, url: "/esusu/join" },
+    getGroup: (id: string) => ({
+      method: HttpMethod.GET,
+      url: `/esusu/${id}`,
+    }),
+    contribute: { method: HttpMethod.POST, url: "/esusu/contribute" },
+    processPayouts: { method: HttpMethod.POST, url: "/esusu/payouts/process" },
+    retryPayout: { method: HttpMethod.POST, url: "/esusu/payouts/retry" },
+    payoutHistory: (groupId: string) => ({
+      method: HttpMethod.GET,
+      url: `/esusu/payouts/${groupId}/history`,
+    }),
+  },
 } as const;
 
 export type ApiEndpoints = typeof API_ENDPOINTS;

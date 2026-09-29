@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   gridIconWrapper: {
     width: 50,
     height: 50,
-    borderRadius: 14,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
