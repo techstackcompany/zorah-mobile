@@ -1,5 +1,4 @@
 import Text from "@/components/ui/Text";
-import COLORS from "@/constants/colors";
 import { DebtRecord } from "@/features/debts/types";
 import { formatAmountValue } from "@/lib/amount";
 import { cn } from "@/lib/utils";
@@ -34,7 +33,7 @@ export const DebtCard = ({ debt, onPress, onSendReminder }: Props) => {
       ? "text-coral"
       : "text-primary_400";
 
-  const reminderBg = isOverdue ? "bg-peachTint" : "bg-white";
+  const reminderBg = isOverdue ? "bg-peachTint" : "bg-primary_100";
 
   return (
     <Pressable
@@ -44,7 +43,11 @@ export const DebtCard = ({ debt, onPress, onSendReminder }: Props) => {
     >
       {/* Top row: name + badge */}
       <View className="mb-1 flex-row items-center justify-between">
-        <Text family="nunito" weight="bold" className="text-sm text-textColor">
+        <Text
+          family="nunito"
+          weight="semibold"
+          className="text-base text-textColor"
+        >
           {debt.counterpartyName}
         </Text>
         <DebtStatusBadge status={debt.status} />
@@ -55,7 +58,7 @@ export const DebtCard = ({ debt, onPress, onSendReminder }: Props) => {
         family="nunito"
         weight="semibold"
         className={cn(
-          "mb-0.5 text-xs",
+          "mb-2 text-xs",
           isBorrowed ? "text-secondary_500" : "text-coral",
         )}
       >

@@ -8,15 +8,15 @@ import {
 import { DebtSearchBar } from "@/components/debts/DebtSearchBar";
 import { DebtSummaryCards } from "@/components/debts/DebtSummaryCards";
 import MainContainer from "@/components/layouts/MainContainer";
+import COLORS from "@/constants/colors";
 import { MOCK_DEBTS } from "@/features/debts/mockData";
 import { DebtFilters, DebtRecord, DebtTabId } from "@/features/debts/types";
 import { applyAllFilters, computeTotals } from "@/features/debts/utils";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
-import COLORS from "@/constants/colors";
-import { Ionicons } from "@expo/vector-icons";
 
 const SEGMENTS: { key: DebtTabId; label: string }[] = [
   { key: "all", label: "All" },
@@ -66,7 +66,7 @@ const DebtTrackerScreen = () => {
     <MainContainer edges={["bottom"]} className="bg-[#F8F9FA]">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Summary Cards */}

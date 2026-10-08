@@ -9,11 +9,11 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 
 const AppLayout = () => {
-  const { signOut, hasCompletedSetup } = useSession();
+  const { signOut, hasCompletedSetup, session } = useSession();
   const { needsPinSetup, isInitializing } = useAppLock();
   const router = useRouter();
   useBillReminderNotifications();
-
+console.log('session', session)
   const {
     isLoading: isProfileLoading,
     error,

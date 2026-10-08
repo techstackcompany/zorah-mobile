@@ -21,7 +21,7 @@ export const DebtSearchBar = ({
       <View className="flex-1 flex-row items-center rounded-xl border border-gray-200 bg-white px-3 py-2.5">
         <Image
           source={require("@/assets/icons/search.svg")}
-          style={{ width: 20, height: 20 }}
+          style={{ width: 22, height: 22 }}
           contentFit="contain"
         />
         <TextInput
@@ -30,7 +30,7 @@ export const DebtSearchBar = ({
           placeholder="Search name..."
           placeholderTextColor="#9CA3AF"
           style={{ fontFamily: "NunitoMedium", includeFontPadding: false }}
-          className="ml-2 flex-1 p-0 text-base text-textColor"
+          className="ml-2 flex-1 p-0 text-lg text-textColor"
           autoCapitalize="none"
           returnKeyType="search"
         />
@@ -45,7 +45,7 @@ export const DebtSearchBar = ({
       >
         <Image
           source={require("@/assets/icons/filter.svg")}
-          style={{ width: 20, height: 20 }}
+          style={{ width: 24, height: 24 }}
           contentFit="contain"
         />
       </Pressable>

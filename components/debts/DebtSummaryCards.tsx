@@ -21,11 +21,15 @@ export const DebtSummaryCards = ({ totalBorrowed, totalLent }: Props) => {
       <View className="flex-1 overflow-hidden rounded-2xl">
         <View className="bg-secondary_100 px-3 py-2">
           <View className="flex-row items-center gap-1">
-            <Ionicons name="arrow-down" size={14} color={COLORS.secondary_500} />
+            <Ionicons
+              name="arrow-down"
+              size={18}
+              color={COLORS.secondary_500}
+            />
             <Text
               family="nunito"
               weight="semibold"
-              className="text-xs text-secondary_500"
+              className="text-sm text-secondary_500"
             >
               You Borrowed
             </Text>
@@ -35,7 +39,7 @@ export const DebtSummaryCards = ({ totalBorrowed, totalLent }: Props) => {
           <Text
             family="nunito"
             weight="bold"
-            className="text-base text-white"
+            className="text-xl text-white"
             numberOfLines={1}
           >
             {formatAmountValue(toRawString(totalBorrowed), {
@@ -50,12 +54,8 @@ export const DebtSummaryCards = ({ totalBorrowed, totalLent }: Props) => {
       <View className="flex-1 overflow-hidden rounded-2xl">
         <View className="bg-peachTint px-3 py-2">
           <View className="flex-row items-center gap-1">
-            <Ionicons name="arrow-up" size={14} color={COLORS.coral} />
-            <Text
-              family="nunito"
-              weight="semibold"
-              className="text-xs text-coral"
-            >
+            <Ionicons name="arrow-up" size={18} color={COLORS.coral} />
+            <Text family="nunito" weight="semibold" className="text-sm">
               You Lent
             </Text>
           </View>
@@ -64,7 +64,7 @@ export const DebtSummaryCards = ({ totalBorrowed, totalLent }: Props) => {
           <Text
             family="nunito"
             weight="bold"
-            className="text-base text-white"
+            className="text-xl text-white"
             numberOfLines={1}
           >
             {formatAmountValue(toRawString(totalLent), {
